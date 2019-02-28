@@ -1,0 +1,53 @@
+spring:
+  profiles:
+    active: test
+  output:
+    ansi:
+      enabled: always
+  datasource:
+    url: jdbc:h2:file:./SimpleLauncher;DB_CLOSE_ON_EXIT=TRUE
+    driver-class-name: org.h2.Driver
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      username: buskon
+      password: qjtmzmdhsWkd!
+      connection-test-query: SELECT 1
+      auto-commit: false
+      minimum-idle: 1
+      maximum-pool-size: 5
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    database: H2
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: false
+logging:
+#  file: d:/log/wcs/application.log
+  level:
+    org:
+      hibernate:
+        SQL: debug
+        type:
+          descriptor:
+            sql.BasicBinder : trace
+    io.buskon.wallet : debug
+    io:
+      undertow:
+        request: off
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %clr(%-5level) [%15.15thread] %clr(%-40.40logger{39}){cyan} : %clr(%X{ctx} ){green}%msg%n"
+error:
+  filter : |-
+    org\.springframework\.
+    org\.apache\.
+    io\.undertow\.
+    java\.lang\.reflect\.Method\.invoke
+    java\.util\.concurrent\.ThreadPoolExecutor(\.runWorker|\$Worker\.run)
+    java\.lang\.Thread\.run
+    javax\.servlet
+    oracle\.jdbc\.driver\.
+    reactor\.core\.scheduler\.SchedulerTask\.call
+    sun\.reflect\.

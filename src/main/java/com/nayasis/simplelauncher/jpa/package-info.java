@@ -1,0 +1,1 @@
+package com.nayasis.simplelauncher.jpa;
