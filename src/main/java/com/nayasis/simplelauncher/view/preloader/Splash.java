@@ -1,36 +1,31 @@
 package com.nayasis.simplelauncher.view.preloader;
 
-import io.nayasis.common.file.Files;
-import io.nayasis.common.ui.javafx.image.Images;
 import io.nayasis.common.ui.javafx.preloader.NPreLoader;
+import io.nayasis.common.ui.javafx.stage.ConfigurableStage;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
-import javafx.scene.image.Image;
 import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Background;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 
-public class Preloader extends NPreLoader {
+public class Splash extends NPreLoader {
 
     @Override
     public void start( Stage primaryStage ) throws Exception {
 
-        Stage      stage = new Stage( StageStyle.UNDECORATED );
+        Stage      stage = new ConfigurableStage( StageStyle.TRANSPARENT );
         AnchorPane root  = new AnchorPane();
-        Scene      scene = new Scene( root, 600, 250 );
+        Scene      scene = new Scene( root, 527, 297 );
 
-        root.setBackground( new Background( new Images().toBackgroundImage( "image/splash.jpg" ) ) );
-        scene.getStylesheets().add( "/view/EmuPreLoader.css" );
+        root.setId( "splash" );
+        scene.getStylesheets().add( "/view/splash.css" );
         stage.setScene( scene );
-        stage.getIcons().add( new Image( Files.getResource( "image/icon/favicon.png" ) ) );
+        stage.setAlwaysOnTop( true );
 
-        VBox statusLayout = getStatusLayout();
-
-        root.getChildren().add( statusLayout );
+        root.getChildren().add( getStatusLayout() );
 
         stage.show();
 
@@ -40,22 +35,23 @@ public class Preloader extends NPreLoader {
 
     private VBox getStatusLayout() {
 
-        Label label = new Label();
+        Label       label       = new Label();
         ProgressBar progressBar = new ProgressBar();
 
         setHandler( ( message, percentage ) -> {
-            label.setText( message );
-            progressBar.progressProperty().set( percentage );
+            if( message != null )
+                label.setText( message );
+            if( percentage != null )
+                progressBar.progressProperty().set( percentage / 100. );
         });
 
-        label.getStyleClass().add( "label-status" );
         progressBar.setMaxWidth( Double.MAX_VALUE );
 
         VBox layout = new VBox();
         layout.setAlignment( Pos.CENTER_RIGHT );
 
-        AnchorPane.setLeftAnchor( layout, 0. );
-        AnchorPane.setRightAnchor( layout, 0. );
+        AnchorPane.setLeftAnchor(   layout, 0. );
+        AnchorPane.setRightAnchor(  layout, 0. );
         AnchorPane.setBottomAnchor( layout, 0. );
 
         layout.getChildren().addAll( progressBar, label );

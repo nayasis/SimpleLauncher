@@ -1,12 +1,11 @@
 package com.nayasis.simplelauncher;
 
-import com.nayasis.simplelauncher.view.preloader.Preloader;
-import io.nayasis.common.model.Messages;
+import com.nayasis.simplelauncher.view.preloader.Splash;
+import io.nayasis.common.ui.javafx.application.NApplication;
 import io.nayasis.common.ui.javafx.dialog.Dialog;
-import io.nayasis.common.ui.javafx.loader.FxmlLoader;
-import io.nayasis.common.ui.javafx.preloader.PreloaderNotificator;
 import io.nayasis.common.ui.javafx.stage.ConfigurableStage;
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Rectangle2D;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
@@ -18,19 +17,16 @@ import org.springframework.context.ConfigurableApplicationContext;
 
 @SpringBootApplication
 @Slf4j
-public class Main extends Application {
+public class Main extends NApplication {
 
     private ConfigurableApplicationContext context;
 
     private Exception initError = null;
 
     public static void main( String... args ) {
-        setPreloader( Preloader.class );
+        addDefaultIcon( "/image/icon/favicon.png" );
+        setPreloader( Splash.class );
         Application.launch( Main.class, args );
-    }
-
-    private static void setPreloader( Class<? extends Preloader> preloader ) {
-        System.setProperty( "javafx.preloader", preloader.getName() );
     }
 
     @Override
@@ -41,9 +37,8 @@ public class Main extends Application {
     @Override
     public void init() throws Exception {
         try {
-            String[] arguments = getParameters().getRaw().toArray( new String[0] );
-            context = SpringApplication.run( Main.class, arguments );
-            FxmlLoader.setDefaultControllerFactory( context::getBean );
+            context = SpringApplication.run( Main.class, getRawParameters() );
+            setDefaultControllerFactory( context::getBean );
         } catch ( Exception e ) {
             initError = e;
         }
@@ -64,20 +59,49 @@ public class Main extends Application {
 
             stage.centerOnScreen();
 
-            closePreloader();
+            new Thread( () -> {
 
-            stage.show();
+                try {
+
+                    dummyLogic();
+
+                    throw new Exception( "MERONG ??" );
+
+                } catch ( Exception e ) {
+                    showError( e );
+                }
+
+            } ).start();
 
         } catch ( Exception e ) {
-            closePreloader();
-            Dialog.$.error( e, Messages.get("Fail on loading") );
-            throw e;
+            showError( e );
         }
 
     }
 
-    private void closePreloader() {
-        notifyPreloader( new PreloaderNotificator().setClose() );
+    private void dummyLogic() throws InterruptedException {
+
+        notifyPreloader( 10. );
+        notifyPreloader( "10 percent" );
+
+        Thread.sleep( 600 );
+
+        notifyPreloader( 20. );
+        notifyPreloader( "20 percent" );
+
+        Thread.sleep( 600 );
+
+        notifyPreloader( "Merong" );
+        Thread.sleep( 600 );
+
+    }
+
+    private void showError( Throwable e ) {
+        Platform.runLater( () -> {
+            e.printStackTrace( System.err );
+            Dialog.$.error( e );
+            closePreloader();
+        });
     }
 
 }
