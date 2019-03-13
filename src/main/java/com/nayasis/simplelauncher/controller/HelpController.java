@@ -25,15 +25,23 @@ public class HelpController {
     public void clickLinkMailTo( ActionEvent event ) {
 
     	log.debug( event.toString() );
-    	
-    	try {
-	        
-    		Desktop.getDesktop().browse( getMailLink() );
 
-    	} catch( IOException | URISyntaxException e ) {
+    	System.setProperty( "java.awt.headless", "true" );
+
+		try {
+			Desktop.getDesktop().browse( getMailLink() );
+		} catch( IOException | URISyntaxException e ) {
 			log.error( e.getMessage(), e );
-        }
-    	
+		}
+
+//		new Thread(() -> {
+//			try {
+//				Desktop.getDesktop().browse( getMailLink() );
+//			} catch( IOException | URISyntaxException e ) {
+//				log.error( e.getMessage(), e );
+//			}
+//		}).start();
+
     }
 
 	private URI getMailLink() throws URISyntaxException {

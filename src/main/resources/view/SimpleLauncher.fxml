@@ -85,8 +85,14 @@
                 <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
               </rowConstraints>
                <children>
-                  <Label text="\%search.keyword" />
-                  <Label text="\%search.group" GridPane.rowIndex="1" />
+                  <Label text="\%search.keyword">
+                     <GridPane.margin>
+                        <Insets right="5.0" />
+                     </GridPane.margin></Label>
+                  <Label text="\%search.group" GridPane.rowIndex="1">
+                     <GridPane.margin>
+                        <Insets right="5.0" />
+                     </GridPane.margin></Label>
                   <TextField fx:id="inputKeyword" onKeyPressed="#setEventOnKeyPressedGlobally" prefHeight="23.0" prefWidth="513.0" GridPane.columnIndex="1" />
                   <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="5.0" GridPane.columnIndex="2">
                      <children>
