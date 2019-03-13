@@ -29,7 +29,7 @@ public class JsonLink {
 
     public JsonLink( LinkEntity entity ) {
         this.title        = entity.getTitle();
-        this.group        = entity.getGroup();
+        this.group        = entity.getGrp();
         this.path         = entity.getPath();
         this.relativePath = entity.getRelativePath();
         this.option       = entity.getOption();
@@ -47,7 +47,7 @@ public class JsonLink {
 
         LinkEntity entity = new LinkEntity();
         entity.setTitle( getTitle() );
-        entity.setGroup( getGroup() );
+        entity.setGrp( getGroup() );
         entity.setPath( getPath() );
         entity.setRelativePath( getRelativePath() );
         entity.setOption( getOption() );

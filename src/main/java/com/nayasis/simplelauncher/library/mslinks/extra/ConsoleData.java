@@ -1,11 +1,11 @@
 package com.nayasis.simplelauncher.library.mslinks.extra;
 
-import nayasis.simpleLauncher.library.mslinks.Serializable;
-import nayasis.simpleLauncher.library.mslinks.data.ConsoleFlags;
-import nayasis.simpleLauncher.library.mslinks.data.Size;
-import nayasis.simpleLauncher.library.mslinks.exception.ShellLinkException;
-import nayasis.simpleLauncher.library.mslinks.io.ByteReader;
-import nayasis.simpleLauncher.library.mslinks.io.ByteWriter;
+import com.nayasis.simplelauncher.library.mslinks.Serializable;
+import com.nayasis.simplelauncher.library.mslinks.data.ConsoleFlags;
+import com.nayasis.simplelauncher.library.mslinks.data.Size;
+import com.nayasis.simplelauncher.library.mslinks.exception.ShellLinkException;
+import com.nayasis.simplelauncher.library.mslinks.io.ByteReader;
+import com.nayasis.simplelauncher.library.mslinks.io.ByteWriter;
 
 import java.io.IOException;
 

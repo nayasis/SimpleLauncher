@@ -1,5 +1,6 @@
 package com.nayasis.simplelauncher.jpa.entity;
 
+import io.nayasis.common.model.NDate;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -11,7 +12,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
     indexes = {
-        @Index( name="relativePath", columnList = "relative_path" )
+        @Index( name="relativePath", columnList = "relativePath" )
     }
 )
 @Data
@@ -26,7 +27,7 @@ public class LinkEntity {
     @Column
     private String title;
     @Column
-    private String group;
+    private String grp;
     @Column
     private String path;
     @Column
@@ -49,5 +50,13 @@ public class LinkEntity {
     private Integer execCount;
     @Column
     private LocalDateTime lastExecDate;
+
+    public void setLastExecDate( LocalDateTime lastExecDate ) {
+        this.lastExecDate = lastExecDate;
+    }
+
+    public void setLastExecDate( NDate lastExecDate ) {
+        this.lastExecDate = lastExecDate == null ? null : lastExecDate.toLocalDateTime();
+    }
 
 }

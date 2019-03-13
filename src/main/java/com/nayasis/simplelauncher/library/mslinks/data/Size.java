@@ -1,7 +1,7 @@
 package com.nayasis.simplelauncher.library.mslinks.data;
 
-import nayasis.simpleLauncher.library.mslinks.Serializable;
-import nayasis.simpleLauncher.library.mslinks.io.ByteWriter;
+import com.nayasis.simplelauncher.library.mslinks.Serializable;
+import com.nayasis.simplelauncher.library.mslinks.io.ByteWriter;
 
 import java.io.IOException;
 

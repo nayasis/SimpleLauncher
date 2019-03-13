@@ -8,7 +8,7 @@
 <?import java.lang.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="472.0" prefWidth="676.0" stylesheets="@Help.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="nayasis.simpleLauncher.ui.help.Help">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="472.0" prefWidth="676.0" stylesheets="@Help.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.nayasis.simplelauncher.controller.HelpController">
    <children>
       <Hyperlink fx:id="linkMailTo" layoutX="464.0" layoutY="365.0" onAction="#clickLinkMailTo" text="nayasis@gmail.com" AnchorPane.bottomAnchor="14.0" AnchorPane.rightAnchor="14.0">
          <effect>
@@ -23,7 +23,7 @@
          </effect></Hyperlink>
       <ImageView id="portrait" fitHeight="339.0" fitWidth="276.0" layoutX="14.0" layoutY="14.0" pickOnBounds="true" rotate="-8.1" smooth="false" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="10.0">
          <image>
-            <Image url="@portrait.jpg" />
+            <Image url="@../image/portrait.jpg" />
          </image>
       </ImageView>
       <AnchorPane id="descDeco" layoutX="188.0" layoutY="28.0" opacity="0.0" prefHeight="338.0" prefWidth="380.0" AnchorPane.bottomAnchor="42.0" AnchorPane.leftAnchor="200.0" AnchorPane.rightAnchor="20.0" AnchorPane.topAnchor="20.0">

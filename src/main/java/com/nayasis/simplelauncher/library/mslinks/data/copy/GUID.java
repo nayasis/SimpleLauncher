@@ -1,9 +1,9 @@
 package com.nayasis.simplelauncher.library.mslinks.data.copy;
 
-import nayasis.simpleLauncher.library.mslinks.Serializable;
-import nayasis.simpleLauncher.library.mslinks.io.ByteReader;
-import nayasis.simpleLauncher.library.mslinks.io.ByteWriter;
-import nayasis.simpleLauncher.library.mslinks.io.Bytes;
+import com.nayasis.simplelauncher.library.mslinks.Serializable;
+import com.nayasis.simplelauncher.library.mslinks.io.ByteReader;
+import com.nayasis.simplelauncher.library.mslinks.io.ByteWriter;
+import com.nayasis.simplelauncher.library.mslinks.io.Bytes;
 
 import java.io.IOException;
 import java.util.Random;

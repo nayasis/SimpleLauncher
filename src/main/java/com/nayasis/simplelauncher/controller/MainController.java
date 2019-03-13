@@ -275,7 +275,7 @@ public class MainController implements Initializable {
 
     	Platform.runLater( () -> {
     		tableMain.getSelectionModel().select( index );
-    		renderDetailViewFromTable( tableMain );
+//    		renderDetailViewFromTable( tableMain );
     	});
 
 	}

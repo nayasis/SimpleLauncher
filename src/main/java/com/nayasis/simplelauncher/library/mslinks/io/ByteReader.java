@@ -1,6 +1,6 @@
 package com.nayasis.simplelauncher.library.mslinks.io;
 
-import org.nybatis.core.conf.Const;
+import io.nayasis.common.etc.Platform;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -137,7 +137,7 @@ public class ByteReader extends InputStream {
 			buf[i] = (byte)b;
 		}
 		if (i == 0) return null;
-		return new String(buf, 0, i, Const.platform.osCharset );
+		return new String(buf, 0, i, Platform.osCharset );
 	}
 
 	/**

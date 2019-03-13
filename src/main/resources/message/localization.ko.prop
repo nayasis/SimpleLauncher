@@ -38,6 +38,8 @@ desc.description           = 설명
 desc.relativeYn            = 상대경로여부
 desc.icon                  = 아이콘
 
+preloader.loadSpring = 스프링 모듈 로딩
+
 msg.info.001    = 추가할 파일
 msg.info.002    = 아이콘 파일
 msg.info.003    = 내보낼 파일

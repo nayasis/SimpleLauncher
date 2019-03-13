@@ -1,6 +1,6 @@
 package com.nayasis.simplelauncher.library.mslinks.data.copy;
 
-import nayasis.simpleLauncher.library.mslinks.io.ByteReader;
+import com.nayasis.simplelauncher.library.mslinks.io.ByteReader;
 
 import java.io.IOException;
 

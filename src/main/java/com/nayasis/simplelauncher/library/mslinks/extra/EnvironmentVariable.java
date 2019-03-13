@@ -1,9 +1,9 @@
 package com.nayasis.simplelauncher.library.mslinks.extra;
 
-import nayasis.simpleLauncher.library.mslinks.Serializable;
-import nayasis.simpleLauncher.library.mslinks.exception.ShellLinkException;
-import nayasis.simpleLauncher.library.mslinks.io.ByteReader;
-import nayasis.simpleLauncher.library.mslinks.io.ByteWriter;
+import com.nayasis.simplelauncher.library.mslinks.Serializable;
+import com.nayasis.simplelauncher.library.mslinks.exception.ShellLinkException;
+import com.nayasis.simplelauncher.library.mslinks.io.ByteReader;
+import com.nayasis.simplelauncher.library.mslinks.io.ByteWriter;
 
 import java.io.IOException;
 
@@ -32,7 +32,7 @@ public class EnvironmentVariable implements Serializable {
 	}
 	
 	@Override
-	public void serialize(ByteWriter bw) throws IOException {
+	public void serialize( ByteWriter bw ) throws IOException {
 		bw.write4bytes(size);
 		bw.write4bytes(signature);
 		byte[] b = variable.getBytes();

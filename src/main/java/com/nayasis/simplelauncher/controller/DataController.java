@@ -14,6 +14,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
 import javafx.collections.transformation.SortedList;
+import javafx.fxml.Initializable;
 import javafx.scene.control.TableView;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,9 +23,11 @@ import org.springframework.stereotype.Component;
 
 import javax.transaction.Transactional;
 import java.io.File;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.ResourceBundle;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
@@ -33,7 +36,7 @@ import static com.nayasis.simplelauncher.common.CONSTANT.STAGE.MAIN;
 
 @Component
 @Slf4j
-public class DataController {
+public class DataController implements Initializable {
 
 	private final String FILE_EXT_DESC = "Data File (*.sl)";
 	private final String FILE_EXT      = "*.sl";
@@ -41,27 +44,30 @@ public class DataController {
 	private ObservableList<Link> linkList = FXCollections.observableArrayList();
 	private SortedList<Link>     sortedList;
 
-	private TableView<Link>      table;
-
-	private LinkExecutor         executor = null;
+	private TableView<Link> table;
 
 	@Autowired
 	private LinkRepository linkRepository;
 
-	public DataController( MainController ui ) {
+	@Autowired
+	private MainController mainController;
+
+	@Autowired
+	private LinkExecutor executor;
+
+	@Override
+	public void initialize( URL location, ResourceBundle resources ) {
 
 		// Table의 Row에서 데이터를 가져오면, Call by Value 로 값이 넘어온다. (참조가 넘어오지 않는다.)
 		// 그래서 Binding된 값을 Observable 하게 사용하지 못한다.
 
-		this.table    = ui.tableMain;
-		this.executor = ui.getExecutor();
+		this.table = mainController.tableMain;
 
-		setFilter( ui );
+		setFilter();
 
 	}
 
-	@SuppressWarnings( { "rawtypes", "unchecked" } )
-    private void setFilter( MainController ui ) {
+    private void setFilter() {
 
 		FilteredList<Link> filteredList = new FilteredList<Link>( linkList, link -> true );
 
@@ -69,10 +75,10 @@ public class DataController {
 
 			filteredList.setPredicate( new Predicate<Link>() {
 
-				private String  keyword          = ui.inputKeyword.getText();
-				private boolean keywordAndSearch = ui.checkboxKeywordAnd.isSelected();
-				private String  group            = ui.inputGroup.getText();
-				private boolean groupAndSearch   = ui.checkboxGroupAnd.isSelected();
+				private String  keyword          = mainController.inputKeyword.getText();
+				private boolean keywordAndSearch = mainController.checkboxKeywordAnd.isSelected();
+				private String  group            = mainController.inputGroup.getText();
+				private boolean groupAndSearch   = mainController.checkboxGroupAnd.isSelected();
 
 				private Pattern patternGroup   = getRegExpPattern( group,   groupAndSearch   );
 				private Pattern patternKeyword = getRegExpPattern( keyword, keywordAndSearch );
@@ -91,16 +97,16 @@ public class DataController {
 				}
 			});
 
-			ui.clearDetailView();
-			ui.printStatus( "msg.info.005", table.getItems().size(), linkList.size() );
+			mainController.clearDetailView();
+			mainController.printStatus( "msg.info.005", table.getItems().size(), linkList.size() );
 
 		};
 
 
-		ui.inputKeyword.textProperty().addListener( changeListener );
-		ui.inputGroup.textProperty().addListener( changeListener );
-		ui.checkboxKeywordAnd.selectedProperty().addListener( changeListener );
-		ui.checkboxGroupAnd.selectedProperty().addListener( changeListener );
+		mainController.inputKeyword.textProperty().addListener( changeListener );
+		mainController.inputGroup.textProperty().addListener( changeListener );
+		mainController.checkboxKeywordAnd.selectedProperty().addListener( changeListener );
+		mainController.checkboxGroupAnd.selectedProperty().addListener( changeListener );
 
 		sortedList = new SortedList<>( filteredList );
 
@@ -123,7 +129,7 @@ public class DataController {
 
 		entity.setId( link.getId() );
 		entity.setTitle( link.getTitle() );
-		entity.setGroup( link.getGroup() );
+		entity.setGrp( link.getGroup() );
 		entity.setPath( link.getPath() );
 		entity.setRelativePath( link.getRelativePath() );
 		entity.setOption( link.getOption() );

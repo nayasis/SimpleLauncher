@@ -1,13 +1,13 @@
 package com.nayasis.simplelauncher.library.mslinks;
 
-import nayasis.simpleLauncher.library.mslinks.data.CNRLink;
-import nayasis.simpleLauncher.library.mslinks.data.ItemID;
-import nayasis.simpleLauncher.library.mslinks.data.LinkFlags;
-import nayasis.simpleLauncher.library.mslinks.data.VolumeID;
-import nayasis.simpleLauncher.library.mslinks.exception.ShellLinkException;
-import nayasis.simpleLauncher.library.mslinks.extra.*;
-import nayasis.simpleLauncher.library.mslinks.io.ByteReader;
-import nayasis.simpleLauncher.library.mslinks.io.ByteWriter;
+import com.nayasis.simplelauncher.library.mslinks.data.CNRLink;
+import com.nayasis.simplelauncher.library.mslinks.data.ItemID;
+import com.nayasis.simplelauncher.library.mslinks.data.LinkFlags;
+import com.nayasis.simplelauncher.library.mslinks.data.VolumeID;
+import com.nayasis.simplelauncher.library.mslinks.exception.ShellLinkException;
+import com.nayasis.simplelauncher.library.mslinks.extra.*;
+import com.nayasis.simplelauncher.library.mslinks.io.ByteReader;
+import com.nayasis.simplelauncher.library.mslinks.io.ByteWriter;
 
 import java.io.File;
 import java.io.IOException;

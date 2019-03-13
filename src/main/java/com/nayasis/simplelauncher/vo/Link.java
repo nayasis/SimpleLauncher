@@ -3,6 +3,7 @@ package com.nayasis.simplelauncher.vo;
 import com.nayasis.simplelauncher.common.CONSTANT;
 import com.nayasis.simplelauncher.jpa.entity.LinkEntity;
 import com.nayasis.simplelauncher.library.mslinks.ShellLink;
+import com.nayasis.simplelauncher.library.mslinks.exception.ShellLinkException;
 import io.nayasis.common.base.Strings;
 import io.nayasis.common.etc.Platform;
 import io.nayasis.common.file.Files;
@@ -45,7 +46,7 @@ public class Link {
 
 		this.id           = entity.getId();
 		this.title        = entity.getTitle();
-		this.group        = entity.getGroup();
+		this.group        = entity.getGrp();
 		this.path         = entity.getPath();
 		this.relativePath = entity.getRelativePath();
 		this.option       = entity.getOption();
@@ -99,7 +100,7 @@ public class Link {
 
 			setIcon( new File(iconPath) );
 
-		} catch( IOException e ) {
+		} catch( IOException | ShellLinkException e ) {
 			setIcon( file );
 			setOptionPrefix( "cmd /c" );
         }

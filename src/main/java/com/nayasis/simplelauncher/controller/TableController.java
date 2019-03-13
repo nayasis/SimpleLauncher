@@ -5,7 +5,6 @@ import com.nayasis.simplelauncher.vo.Link;
 import io.nayasis.common.base.Strings;
 import io.nayasis.common.model.NDate;
 import io.nayasis.common.ui.javafx.control.table.NfxTable;
-import io.nayasis.common.ui.javafx.control.table.NfxTableCell;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -35,7 +34,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.File;
-import java.time.LocalDateTime;
 
 @Component
 @Slf4j
@@ -65,16 +63,13 @@ public class TableController {
 
 		assignColumns();
 
-		Link link = new Link();
-		link.getGroup();
-
 		table.bindValue( columnGroup, row -> new SimpleStringProperty(row.getGroup()) );
 		table.bindValue( columnTitle, row -> new SimpleStringProperty(row.getTitle()) );
 //		table.bindValue( columnLastUsedDt, row -> new SimpleObjectProperty(row.getLastExecDate()), Pos.CENTER );
 		table.bindValue( columnExecCount, row -> new SimpleIntegerProperty(row.getExecCount()), Pos.CENTER_RIGHT );
 
-		table.bindShape( columnTitle, new TableCell<Link,Link>() {
-			public void updateItem(Link item, boolean empty) {
+		table.bindShape( columnTitle, new TableCell<Link,IconTitle>() {
+			public void updateItem(IconTitle item, boolean empty) {
 				super.updateItem(item, empty);
 				setText(empty ? "" : Strings.nvl(item));
 				setGraphic(null);
@@ -89,27 +84,27 @@ public class TableController {
 			}
 		}, Pos.CENTER );
 
-		table.bindShape( columnLastUsedDt, new NfxTableCell() {
-
-			@Override
-			public TableCell bind( TableColumn column ) {
-				return null;
-			}
-		});
+//		table.bindShape( columnLastUsedDt, new NfxTableCell() {
+//
+//			@Override
+//			public TableCell bind( TableColumn column ) {
+//				return null;
+//			}
+//		});
 
 		columnGroup.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getGroup()));
 		columnLastUsedDt.setCellValueFactory(cellData -> new SimpleObjectProperty(cellData.getValue().getLastExecDate()));
-		columnLastUsedDt.setCellFactory(column -> {
-			TableCell<Link, LocalDateTime> cell = new TableCell<Link, LocalDateTime>() {
-				public void updateItem(LocalDateTime item, boolean empty) {
-					super.updateItem(item, empty);
-					setText(empty ? "" : Strings.nvl(item));
-					setGraphic(null);
-				}
-			};
-			cell.setAlignment(Pos.CENTER);
-			return cell;
-		});
+//		columnLastUsedDt.setCellFactory(column -> {
+//			TableCell<Link, LocalDateTime> cell = new TableCell<Link, LocalDateTime>() {
+//				public void updateItem(LocalDateTime item, boolean empty) {
+//					super.updateItem(item, empty);
+//					setText(empty ? "" : Strings.nvl(item));
+//					setGraphic(null);
+//				}
+//			};
+//			cell.setAlignment(Pos.CENTER);
+//			return cell;
+//		});
 
 		columnExecCount.setCellValueFactory(cellData -> new SimpleIntegerProperty(cellData.getValue().getExecCount()));
 		columnExecCount.setCellFactory( column -> {
