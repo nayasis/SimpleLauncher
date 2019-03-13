@@ -1,15 +1,15 @@
 package com.nayasis.simplelauncher.controller;
 
+import com.nayasis.simplelauncher.jpa.entity.LinkEntity;
 import com.nayasis.simplelauncher.jpa.repository.LinkRepository;
+import com.nayasis.simplelauncher.vo.JsonLink;
 import com.nayasis.simplelauncher.vo.Link;
 import io.nayasis.common.base.Strings;
 import io.nayasis.common.exception.unchecked.UncheckedIOException;
 import io.nayasis.common.file.Files;
-import io.nayasis.common.model.NMap;
 import io.nayasis.common.reflection.Reflector;
 import io.nayasis.common.ui.javafx.dialog.Dialog;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
@@ -17,16 +17,19 @@ import javafx.collections.transformation.SortedList;
 import javafx.scene.control.TableView;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 
+import javax.transaction.Transactional;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
+
+import static com.nayasis.simplelauncher.common.CONSTANT.STAGE.MAIN;
 
 @Component
 @Slf4j
@@ -45,7 +48,7 @@ public class DataController {
 	@Autowired
 	private LinkRepository linkRepository;
 
-	public DataController( SimpleLauncher ui ) {
+	public DataController( MainController ui ) {
 
 		// Table의 Row에서 데이터를 가져오면, Call by Value 로 값이 넘어온다. (참조가 넘어오지 않는다.)
 		// 그래서 Binding된 값을 Observable 하게 사용하지 못한다.
@@ -58,7 +61,7 @@ public class DataController {
 	}
 
 	@SuppressWarnings( { "rawtypes", "unchecked" } )
-    private void setFilter( SimpleLauncher ui ) {
+    private void setFilter( MainController ui ) {
 
 		FilteredList<Link> filteredList = new FilteredList<Link>( linkList, link -> true );
 
@@ -78,7 +81,7 @@ public class DataController {
 
 					if( patternGroup == null && patternKeyword == null ) return true;
 
-					if( patternGroup   != null && ! patternGroup.matcher( link.getGroupName() ).find() ) return false;
+					if( patternGroup   != null && ! patternGroup.matcher( link.getGroup() ).find() ) return false;
 					if( patternKeyword != null ) {
 						if( ! patternKeyword.matcher( link.getKeyword() ).find() ) return false;
 					}
@@ -111,29 +114,63 @@ public class DataController {
 		return linkList.size();
 	}
 
-	public void add( Link link ) {
+	private LinkEntity toLinkEntity( Link link ) {
 
-		linkDao.insertLink( link );
+		LinkEntity entity = getEntity( link.getId() );
+		if( entity == null ) {
+			entity = new LinkEntity();
+		}
 
-		linkList.add( link );
+		entity.setId( link.getId() );
+		entity.setTitle( link.getTitle() );
+		entity.setGroup( link.getGroup() );
+		entity.setPath( link.getPath() );
+		entity.setRelativePath( link.getRelativePath() );
+		entity.setOption( link.getOption() );
+		entity.setOptionPrefix( link.getOptionPrefix() );
+		entity.setCommandNext( link.getCommandNext() );
+		entity.setCommandPrev( link.getCommandPrev() );
+		entity.setDescription( link.getDescription() );
+		entity.setKeyword( link.getKeyword() );
+		entity.setIcon( link.getIconBytes() );
+		entity.setExecCount( link.getExecCount() );
+		entity.setLastExecDate( link.getLastExecDate() );
+
+		return entity;
 
 	}
 
+	private LinkEntity getEntity( Long id ) {
+		if( id == null ) return null;
+		Optional<LinkEntity> entity = linkRepository.findById( id );
+		return entity.isPresent() ? entity.get() : null;
+	}
+
+	@Transactional
+	public void add( Link link ) {
+		LinkEntity entity = toLinkEntity( link );
+		linkRepository.save( entity );
+		link.setId( entity.getId() );
+		linkList.add( link );
+	}
+
+	@Transactional
 	public void delete( Link link ) {
-
-		linkDao.deleteLink( link );
-
+		linkRepository.deleteById( link.getId() );
 		linkList.remove( link );
-
 	}
 
 	public void update( Link link ) {
-		linkDao.updateLink( link );
+		LinkEntity entity = toLinkEntity( link );
+		linkRepository.save( entity );
 		update( link, linkList );
 	}
 
+	@Transactional
 	public void increaseLinkUsedCount( Link link ) {
-		linkDao.increaseLinkUsedCount( link );
+		LinkEntity entity = getEntity( link.getId() );
+		if( entity == null ) return;
+		link.addExecCount();
 		update( link, linkList );
 	}
 
@@ -151,17 +188,12 @@ public class DataController {
 	}
 
 	private Integer getIndexInList( Link link, List<Link> list ) {
-
 		for( int i = 0, iCnt = list.size(); i < iCnt; i++ ) {
-
 			if( list.get(i).hasSameId(link) ) {
 				return i;
 			}
-
 		}
-
 		return null;
-
 	}
 
 	private Pattern getRegExpPattern( String text, boolean isAnd ) {
@@ -212,29 +244,21 @@ public class DataController {
 
 	}
 
-	private String toJson( boolean prettyPrint ) {
-
-		List<NMap> list = new ArrayList<>();
-
-		for( Link link :  linkList ) {
-
-			list.add( link.toJson() );
-
-		}
-
-		return Reflector.toJson( list, prettyPrint );
-
-	}
-
 	public void exportData() {
 
-		File file = Dialog.$.filePicker( "msg.info.003", FILE_EXT_DESC, FILE_EXT ).showSaveDialog( Main.mainStage );
+		File file = Dialog.$.filePicker( "msg.info.003", FILE_EXT_DESC, FILE_EXT ).showSaveDialog( MAIN );
 
 		if( file == null ) return;
 
 		try {
 
-			Files.writeTo( file, toJson(true) );
+			List<JsonLink> links = new ArrayList<>();
+
+			linkRepository.findAll( Sort.by( "id" ) ).forEach( link -> {
+				links.add( new JsonLink( link ) );
+			} );
+
+			Files.writeTo( file, Reflector.toJson( links, true ) );
 
 			Dialog.$.alert( "msg.info.010", file );
 
@@ -245,17 +269,26 @@ public class DataController {
 
 	}
 
+	@Transactional
 	public void importData() {
 
-		File file = Dialog.$.filePicker( "msg.info.004", FILE_EXT_DESC, FILE_EXT ).showOpenDialog( Main.mainStage );
+		File file = Dialog.$.filePicker( "msg.info.004", FILE_EXT_DESC, FILE_EXT ).showOpenDialog( MAIN );
 
 		if( file == null ) return;
 
 		try {
 
-			String jsonText = Files.readFrom( file );
+			String json = Files.readFrom( file );
 
-			fromJson( jsonText );
+			List<LinkEntity> entities = new ArrayList<>();
+
+			Reflector.toListFrom( json, JsonLink.class ).forEach( e -> entities.add( e.toLinkEntity() ) );
+
+			linkRepository.saveAll( entities );
+
+			entities.forEach( entity -> {
+				linkList.add( new Link(entity) );
+			});
 
 			Dialog.$.alert( "msg.info.009", file );
 
@@ -271,74 +304,32 @@ public class DataController {
 		linkList.clear();
 	}
 
-	@SuppressWarnings( "rawtypes" )
-    private void fromJson( String json ) {
-
-        List<Map<String, Object>> convertToList = Reflector.toListFrom( json );
-
-        Map<String, String> idConvertedMap = new HashMap<String, String>();
-        List<Link>          appendedList   = new ArrayList<>();
-
-        // Json 데이터를 테이블에 추가
-
-		for( Map e : convertToList ) {
-
-			Link link = new Link( e );
-
-			String prevId = link.getId();
-
-			linkDao.insertLink( link );
-			linkList.add( link );
-
-			idConvertedMap.put( prevId, link.getId() );
-			appendedList.add( link );
-
-		}
-
-	}
-
     public void readData() {
-
 		linkList.clear();
-
-		for( Link link : linkDao.retrieveLinkList() ) {
-			linkList.add( link );
-		}
-
-		log.debug( "bind to observable list" );
-
+		linkRepository.findAll().forEach( entity -> {
+			linkList.add( new Link(entity) );
+		});
 	}
 
 	public void executeLink() {
-
 		Link link = table.getFocusModel().getFocusedItem();
-
 		executeLink( link );
-
 	}
 
 	public void executeLink( Link link ) {
-
 		if( link == null ) return;
-
 		increaseLinkUsedCount( link );
-
 		executor.execute( link );
-
 	}
 
 	public void executeLink( Link link, File fileDragged ) {
-
 		if( link == null ) return;
-
 		increaseLinkUsedCount( link );
-
 		executor.execute( link, fileDragged );
-
 	}
 
 	public Link getLink( Long id ) {
-		return linkDao.retrieveLink( id );
+		return new Link( getEntity(id) );
 	}
 
 }

@@ -5,13 +5,15 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.Id;
+import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(
+    indexes = {
+        @Index( name="relativePath", columnList = "relative_path" )
+    }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -40,7 +42,9 @@ public class LinkEntity {
     @Column
     private String description;
     @Column
-    private Byte[] icon;
+    private String keyword;
+    @Column
+    private byte[] icon;
     @Column
     private Integer execCount;
     @Column

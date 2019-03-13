@@ -23,7 +23,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onKeyPressed="#setEventOnKeyPressedGlobally" prefHeight="659.0" prefWidth="1000.0" stylesheets="@SimpleLauncher.css" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="nayasis.simpleLauncher.ui.SimpleLauncher">
+<AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onKeyPressed="#setEventOnKeyPressedGlobally" prefHeight="659.0" prefWidth="1000.0" stylesheets="@SimpleLauncher.css" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.nayasis.simplelauncher.controller.MainController">
    <children>
       <VBox minWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
@@ -64,7 +64,7 @@
                 </Menu>
                 <Menu mnemonicParsing="false" text="\%menu.help">
                   <items>
-                    <MenuItem mnemonicParsing="false" onAction="#help" text="\%menu.help.about">
+                    <MenuItem mnemonicParsing="false" onAction="#showHelp" text="\%menu.help.about">
                            <accelerator>
                               <KeyCodeCombination alt="ANY" code="F1" control="UP" meta="UP" shift="UP" shortcut="UP" />
                            </accelerator>
@@ -145,10 +145,10 @@
                <children>
                   <TableView fx:id="tableMain" tableMenuButtonVisible="true" HBox.hgrow="ALWAYS">
                     <columns>
-                      <TableColumn maxWidth="1000.0" prefWidth="100.0" text="\%table.groupName" />
-                      <TableColumn maxWidth="1000.0" prefWidth="253.0" text="\%table.title" />
-                      <TableColumn maxWidth="139.0" minWidth="100.0" prefWidth="139.0" text="\%table.lastUsedDt" />
-                      <TableColumn maxWidth="299.0" minWidth="70.0" prefWidth="89.0" text="\%table.execCount" />
+                      <TableColumn fx:id="colGroup" maxWidth="1000.0" prefWidth="100.0" text="\%table.groupName" />
+                      <TableColumn fx:id="colTitle" maxWidth="1000.0" prefWidth="253.0" text="\%table.title" />
+                      <TableColumn fx:id="colLastUsedDt" maxWidth="139.0" minWidth="100.0" prefWidth="139.0" text="\%table.lastUsedDt" />
+                      <TableColumn fx:id="colExecCount" maxWidth="299.0" minWidth="70.0" prefWidth="89.0" text="\%table.execCount" />
                     </columns>
                   </TableView>
                   <GridPane fx:id="descGridPane" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="400.0" HBox.hgrow="ALWAYS">

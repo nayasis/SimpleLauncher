@@ -3,64 +3,105 @@ package com.nayasis.simplelauncher.controller;
 import com.nayasis.simplelauncher.vo.IconTitle;
 import com.nayasis.simplelauncher.vo.Link;
 import io.nayasis.common.base.Strings;
+import io.nayasis.common.model.NDate;
+import io.nayasis.common.ui.javafx.control.table.NfxTable;
+import io.nayasis.common.ui.javafx.control.table.NfxTableCell;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.ListChangeListener;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.*;
+import javafx.scene.control.Label;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.*;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.io.File;
+import java.time.LocalDateTime;
 
+@Component
 @Slf4j
 public class TableController {
 
-	private SimpleLauncher  ui;
-	private TableView<Link> table;
+	private NfxTable<Link> table;
 
-    @FXML public TableColumn<Link, String>     tableColumnGroupName;
-    @FXML public TableColumn<Link, IconTitle>  tableColumnTitle;
-    @FXML public TableColumn<Link, String>     tableColumnLastUsedDt;
-    @FXML public TableColumn<Link, Number>     tableColumnExecCount;
+    @FXML public TableColumn<Link,String>    columnGroup;
+    @FXML public TableColumn<Link,IconTitle> columnTitle;
+    @FXML public TableColumn<Link, NDate>    columnLastUsedDt;
+    @FXML public TableColumn<Link,Number>    columnExecCount;
 
-	public TableController( SimpleLauncher ui ) {
-		this.ui    = ui;
-		this.table = ui.tableMain;
-	}
+    @Autowired
+	private MainController mainController;
 
 	@SuppressWarnings( { "rawtypes", "unchecked" } )
     private void assignColumns() {
-
-		for( TableColumn column : table.getColumns() ) {
-			log.debug( column.toString() );
-		}
-
-		tableColumnGroupName  = (TableColumn<Link, String>)    this.table.getColumns().get( 0 );
-		tableColumnTitle      = (TableColumn<Link, IconTitle>) this.table.getColumns().get( 1 );
-		tableColumnLastUsedDt = (TableColumn<Link, String>)    this.table.getColumns().get( 2 );
-		tableColumnExecCount  = (TableColumn<Link, Number>)    this.table.getColumns().get( 3 );
-
+		columnGroup      = table.getColumn( "colGroup" );
+		columnTitle      = table.getColumn( "colTitle" );
+		columnLastUsedDt = table.getColumn( "colLastUsedDt" );
+		columnExecCount  = table.getColumn( "colExecCount" );
 	}
 
 	public void init() {
 
+		table = new NfxTable<>( mainController.tableMain );
+
 		assignColumns();
 
-		tableColumnGroupName.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getGroupName()));
-		tableColumnLastUsedDt.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getLastUsedDt()));
-		tableColumnLastUsedDt.setCellFactory(column -> {
+		Link link = new Link();
+		link.getGroup();
 
-			TableCell<Link, String> cell = new TableCell<Link, String>() {
-				public void updateItem(String item, boolean empty) {
+		table.bindValue( columnGroup, row -> new SimpleStringProperty(row.getGroup()) );
+		table.bindValue( columnTitle, row -> new SimpleStringProperty(row.getTitle()) );
+//		table.bindValue( columnLastUsedDt, row -> new SimpleObjectProperty(row.getLastExecDate()), Pos.CENTER );
+		table.bindValue( columnExecCount, row -> new SimpleIntegerProperty(row.getExecCount()), Pos.CENTER_RIGHT );
+
+		table.bindShape( columnTitle, new TableCell<Link,Link>() {
+			public void updateItem(Link item, boolean empty) {
+				super.updateItem(item, empty);
+				setText(empty ? "" : Strings.nvl(item));
+				setGraphic(null);
+			}
+		}, Pos.CENTER );
+
+		table.bindShape( columnLastUsedDt, new TableCell<Link,NDate>() {
+			public void updateItem(NDate item, boolean empty) {
+				super.updateItem(item, empty);
+				setText(empty ? "" : Strings.nvl(item));
+				setGraphic(null);
+			}
+		}, Pos.CENTER );
+
+		table.bindShape( columnLastUsedDt, new NfxTableCell() {
+
+			@Override
+			public TableCell bind( TableColumn column ) {
+				return null;
+			}
+		});
+
+		columnGroup.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getGroup()));
+		columnLastUsedDt.setCellValueFactory(cellData -> new SimpleObjectProperty(cellData.getValue().getLastExecDate()));
+		columnLastUsedDt.setCellFactory(column -> {
+			TableCell<Link, LocalDateTime> cell = new TableCell<Link, LocalDateTime>() {
+				public void updateItem(LocalDateTime item, boolean empty) {
 					super.updateItem(item, empty);
 					setText(empty ? "" : Strings.nvl(item));
 					setGraphic(null);
@@ -68,12 +109,10 @@ public class TableController {
 			};
 			cell.setAlignment(Pos.CENTER);
 			return cell;
-
 		});
 
-		tableColumnExecCount.setCellValueFactory(cellData -> new SimpleIntegerProperty(cellData.getValue().getExecCount()));
-		tableColumnExecCount.setCellFactory( column -> {
-
+		columnExecCount.setCellValueFactory(cellData -> new SimpleIntegerProperty(cellData.getValue().getExecCount()));
+		columnExecCount.setCellFactory( column -> {
 			TableCell<Link, Number> cell = new TableCell<Link, Number>() {
 				public void updateItem( Number item, boolean empty) {
 					super.updateItem( item, empty );
@@ -82,15 +121,12 @@ public class TableController {
 
 				}
 			};
-
 			cell.setAlignment( Pos.CENTER_RIGHT );
-
 			return cell;
-
 		});
 
-		tableColumnTitle.setCellValueFactory( new PropertyValueFactory<>( "iconTitle" ) );
-		tableColumnTitle.setCellFactory( column -> {
+		columnTitle.setCellValueFactory( new PropertyValueFactory<>( "iconTitle" ) );
+		columnTitle.setCellFactory( column -> {
 
 			TableCell<Link, IconTitle> cell = new TableCell<Link, IconTitle>() {
 
@@ -146,7 +182,7 @@ public class TableController {
                     for( File fileDragged : db.getFiles() ) {
 						Platform.runLater( () -> {
 							Link link = (Link) cell.getTableRow().getItem();
-							ui.getDataController().executeLink( link, fileDragged );
+							mainController.getDataController().executeLink( link, fileDragged );
 						});
 					}
                 }
@@ -159,13 +195,13 @@ public class TableController {
 
 		});
 
-		tableColumnTitle.setComparator( ( iconTitlePrev, iconTitleNext ) -> iconTitlePrev.getTitle().compareToIgnoreCase( iconTitleNext.getTitle() ) );
+		columnTitle.setComparator( ( iconTitlePrev, iconTitleNext ) -> iconTitlePrev.getTitle().compareToIgnoreCase( iconTitleNext.getTitle() ) );
 
 		table.addEventHandler( MouseEvent.MOUSE_CLICKED, event -> {
 
-			ui.renderDetailViewFromTable( table );
+			mainController.renderDetailViewFromTable( table );
 			if( event.getClickCount() > 1 ) {
-				ui.getDataController().executeLink( table.getSelectionModel().getSelectedItem() );
+				mainController.getDataController().executeLink( table.getFocusedItem() );
 			}
 
 		});
@@ -190,8 +226,8 @@ public class TableController {
 
 	        		event.consume();
 
-	        		ui.labelCmd.setText( "" );
-	        		ui.getDataController().executeLink();
+	        		mainController.labelCmd.setText( "" );
+	        		mainController.getDataController().executeLink();
 
 	        	} else if( keyCode == KeyCode.DELETE ) {
 
@@ -199,8 +235,8 @@ public class TableController {
 
 	        		event.consume();
 
-	        		ui.labelCmd.setText( "" );
-	        		ui.deleteLink( null );
+	        		mainController.labelCmd.setText( "" );
+	        		mainController.deleteLink( null );
 
 	        		flagTableKeypressEvent = 1;
 
@@ -212,15 +248,15 @@ public class TableController {
 		table.focusedProperty().addListener( ( observable, oldValue, newValue ) -> {
             if( newValue == true && table.getSelectionModel().getFocusedIndex() <= 0 ) { // focus gained
                 table.getSelectionModel().selectFirst();
-                ui.renderDetailViewFromTable( table );
+                mainController.renderDetailViewFromTable( table );
             }
-        } );
+        });
 
 
 		table.getSelectionModel().setSelectionMode( SelectionMode.SINGLE );
 
 		table.getSelectionModel().getSelectedItems().addListener( (ListChangeListener<Link>) change -> {
-            ui.renderDetailViewFromTable( table );
+            mainController.renderDetailViewFromTable( table );
         });
 
 		table.setColumnResizePolicy( TableView.CONSTRAINED_RESIZE_POLICY );

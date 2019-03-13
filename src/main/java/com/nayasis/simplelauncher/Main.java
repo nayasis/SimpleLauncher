@@ -14,6 +14,9 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 
+import static com.nayasis.simplelauncher.common.CONSTANT.STAGE.HELP;
+import static com.nayasis.simplelauncher.common.CONSTANT.STAGE.MAIN;
+
 
 @SpringBootApplication
 @Slf4j
@@ -51,13 +54,18 @@ public class Main extends NApplication {
 
             if( initError != null ) throw initError;
 
-            ConfigurableStage stage = new ConfigurableStage().loadFxml( "/view/main.fxml" );
+            HELP = new ConfigurableStage( "/view/Help.fxml" );
+            MAIN = new ConfigurableStage( "/view/SimpleLauncher.fxml" );
+
+            MAIN.setOnCloseRequest( event -> {
+                HELP.close();
+            });
 
             Rectangle2D screen = Screen.getPrimary().getVisualBounds();
-            stage.setWidth( screen.getWidth() * 0.5 );
-            stage.setHeight( screen.getHeight() * 0.5 );
+            MAIN.setWidth( screen.getWidth() * 0.5 );
+            MAIN.setHeight( screen.getHeight() * 0.5 );
 
-            stage.centerOnScreen();
+            MAIN.centerOnScreen();
 
             new Thread( () -> {
 

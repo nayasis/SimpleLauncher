@@ -19,7 +19,7 @@
 #tableMain .tabl-column-cell {
   -fx-alignment: CENTER-RIGHT;
 }
-#tableColumnExecCount .table-cell {
+#columnExecCount .table-cell {
   -fx-alignment: CENTER-RIGHT;
 }
 */

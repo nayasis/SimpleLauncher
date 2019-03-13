@@ -8,31 +8,27 @@ import io.nayasis.common.ui.desktop.Desktop;
 import io.nayasis.common.ui.javafx.dialog.Dialog;
 import lombok.extern.slf4j.Slf4j;
 import io.nayasis.common.base.Strings;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.IOException;
 
+@Component
 @Slf4j
 public class LinkExecutor {
 
-	private SimpleLauncher ui;
-
-	public LinkExecutor( SimpleLauncher ui ) {
-		this.ui = ui;
-	}
+	@Autowired
+	private MainController mainController;
 
 	private String getExecPathFrom( Link link ) {
-
-		if( Files.exists( link.getExecPath() ) ) {
-			link.setExecPathRelative(link.getExecPath());
-		} else {
-			if( Files.exists( link.getExecPathRelative() ) ) {
-				link.setExecPath( link.getExecPathRelative() );
+		if( Files.notExists( link.getPath() ) ) {
+			String newPath = Files.getRootPath() + "/" + link.getRelativePath();
+			if( Files.exists( newPath) ) {
+				link.setPath( newPath );
 			}
 		}
-
-		return link.getExecPath();
-
+		return link.getPath();
 	}
 
 	public void execute( Link link ) {
@@ -42,7 +38,7 @@ public class LinkExecutor {
 
 		CommandExecutor executor = new CommandExecutor();
 
-		for( String commandLine : Strings.tokenize( link.getCmdPrev(), "\n" ) ) {
+		for( String commandLine : Strings.tokenize( link.getCommandPrev(), "\n" ) ) {
 			run( executor, commandLine, null ).waitFor();
 		}
 
@@ -50,9 +46,9 @@ public class LinkExecutor {
 
 			String execPath = getExecPathFrom( link );
 
-			String cmd = String.format( "%s \"%s\" %s", link.getExecOptionPrefix(), execPath, link.getExecOption() );
+			String cmd = String.format( "%s \"%s\" %s", link.getOptionPrefix(), execPath, link.getOption() );
 
-			ui.labelCmd.setText( cmd );
+			mainController.labelCmd.setText( cmd );
 
 			run( executor, cmd, execPath );
 
@@ -63,7 +59,7 @@ public class LinkExecutor {
 			Dialog.$.error( throwable, "msg.error.003", throwable.getMessage() );
 		}
 
-		if( ! Strings.isEmpty( link.getCmdNext() ) ) {
+		if( ! Strings.isEmpty( link.getCommandNext() ) ) {
 
             final Link threadLink = link;
 
@@ -71,7 +67,7 @@ public class LinkExecutor {
 
 				executor.waitFor();
 
-				for( String commandLine : Strings.tokenize( threadLink.getCmdNext(), "\n" ) ) {
+				for( String commandLine : Strings.tokenize( threadLink.getCommandNext(), "\n" ) ) {
 					run( executor, commandLine, null ).waitFor();
 				}
 
@@ -109,9 +105,9 @@ public class LinkExecutor {
             newLink.setbindOptions( file );
 
             if( file != null && file.exists() ) {
-                if( link.getExecOption().equals(newLink.getExecOption()) ) {
-                    String newOption = newLink.getExecOption() + String.format( "\"%s\"", file.getPath() );
-                    newLink.setExecOption( newOption );
+                if( link.getOption().equals(newLink.getOption()) ) {
+                    String newOption = newLink.getOption() + String.format( "\"%s\"", file.getPath() );
+                    newLink.setOption( newOption );
                 }
             }
 
@@ -123,7 +119,7 @@ public class LinkExecutor {
 
 	public void openFolder( Link link ) {
 
-		File file = new File( link.getExecPath() );
+		File file = new File( link.getPath() );
 
 		if( file.isFile() ) {
 			file = file.getParentFile();
@@ -135,9 +131,7 @@ public class LinkExecutor {
 		}
 
 		try {
-
 			new Desktop().open( file );
-
 		} catch( IOException e ) {
 			log.error( e.getMessage(), e );
 			Dialog.$.error( e, "msg.error.003", e.getMessage() );
@@ -147,7 +141,7 @@ public class LinkExecutor {
 
 	public void copyFolder( Link link ) {
 
-		File file = new File( link.getExecPath() );
+		File file = new File( link.getPath() );
 
 		if( file.isFile() ) {
 			file = file.getParentFile();
@@ -157,7 +151,7 @@ public class LinkExecutor {
 			new Desktop().copyToClipboard( file.getPath() );
 
 		} else {
-			new Desktop().copyToClipboard( link.getExecPath() );
+			new Desktop().copyToClipboard( link.getPath() );
 
 		}
 
