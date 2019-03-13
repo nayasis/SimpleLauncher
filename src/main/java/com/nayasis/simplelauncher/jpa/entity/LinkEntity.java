@@ -44,7 +44,7 @@ public class LinkEntity {
     private String description;
     @Column
     private String keyword;
-    @Column
+    @Column(length=2000)
     private byte[] icon;
     @Column
     private Integer execCount;

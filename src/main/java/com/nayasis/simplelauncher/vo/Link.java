@@ -56,8 +56,8 @@ public class Link {
 		this.description  = entity.getDescription();
 		this.keyword      = entity.getKeyword();
 		this.execCount    = entity.getExecCount();
-		this.lastExecDate = new NDate( entity.getLastExecDate() );
 
+		setLastExecDate( entity.getLastExecDate() );
 		setIcon( entity.getIcon() );
 
 	}
@@ -182,6 +182,14 @@ public class Link {
 
 	public void setGroup( String group ) {
 		this.group = Strings.trim( group );
+	}
+
+	public void setLastExecDate( NDate lastExecDate ) {
+		this.lastExecDate = lastExecDate;
+	}
+
+	public void setLastExecDate( LocalDateTime lastExecDate ) {
+		this.lastExecDate = lastExecDate == null ? null : new NDate( lastExecDate );
 	}
 
 	public void addExecCount() {

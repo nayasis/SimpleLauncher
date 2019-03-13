@@ -312,7 +312,9 @@ public class DataController implements Initializable {
 
     public void readData() {
 		linkList.clear();
-		linkRepository.findAll().forEach( entity -> {
+		List<LinkEntity> links = linkRepository.findAll();
+		log.debug( ">> links : {}", links.size() );
+		links.forEach(entity -> {
 			linkList.add( new Link(entity) );
 		});
 	}

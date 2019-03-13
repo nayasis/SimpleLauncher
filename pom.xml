@@ -54,6 +54,12 @@
       <scope>provided</scope>
     </dependency>
 
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx</artifactId>
+      <version>11</version>
+    </dependency>
+
     <!-- Spring Boot -->
     <dependency>
       <groupId>org.springframework.boot</groupId>

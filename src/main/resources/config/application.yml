@@ -33,10 +33,7 @@ logging:
         type:
           descriptor:
             sql.BasicBinder : trace
-    io.buskon.wallet : debug
-    io:
-      undertow:
-        request: off
+    com.nayasis.simplelauncher : debug
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %clr(%-5level) [%15.15thread] %clr(%-40.40logger{39}){cyan} : %clr(%X{ctx} ){green}%msg%n"
 error:
