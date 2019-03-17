@@ -4,7 +4,7 @@ import com.nayasis.simplelauncher.common.CONSTANT;
 import com.nayasis.simplelauncher.vo.Link;
 import io.nayasis.common.base.Strings;
 import io.nayasis.common.model.Messages;
-import io.nayasis.common.ui.javafx.control.table.NfxTable;
+import io.nayasis.common.ui.javafx.control.table.NTable;
 import io.nayasis.common.ui.javafx.dialog.Dialog;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
@@ -88,15 +88,16 @@ public class MainController implements Initializable {
     @FXML public Label            labelStatus;
     @FXML public Label            labelCmd;
 
-    @FXML public TableView<Link>  tableMain;
+    @FXML public TableView<Link>  tableMainRaw;
+	      public NTable<Link> tableMain;
 
-    private Link                  linkDetail = new Link();
+    private Link linkDetail = new Link();
 
 	@Autowired
     private DataController dataController;
 
 	@Autowired
-    private TableController tableController;
+    private MainTableCreator tableController;
 
     @Autowired
     private LinkExecutor executor;
@@ -109,12 +110,12 @@ public class MainController implements Initializable {
 
     	log.debug( ">> start initialize" );
 
-    	tableController.init();
+    	tableMain = tableController.init( tableMainRaw );
 		log.debug( ">> initTable" );
 
 		log.debug( ">> bindConfigUi" );
 
-		dataController.readData();
+		dataController.init().readData();
 		log.debug( ">> readData" );
 
 		setEventForButtonSaveEnable();
@@ -197,7 +198,7 @@ public class MainController implements Initializable {
 
 		tableMain.getSelectionModel().select( prevIndex );
 
-		setDetailView( tableMain.getSelectionModel().getSelectedItem() );
+		setDetailView( tableMain.getFocusedItem() );
 
 		Dialog.$.alert( "msg.info.008" );
 
@@ -264,8 +265,8 @@ public class MainController implements Initializable {
 		if( linkDetail.getId() == null ) return;
 
 		String linkInfo = Strings.isEmpty(linkDetail.getGroup())
-				? linkDetail.getTitle()
-				: linkDetail.getGroup() + " : " + linkDetail.getTitle();
+				? linkDetail.getTitle().get()
+				: linkDetail.getGroup().get() + " : " + linkDetail.getTitle().get();
 
 		if( ! Dialog.$.confirm( "msg.confirm.001", linkInfo ) ) return;
 
@@ -489,8 +490,8 @@ public class MainController implements Initializable {
 		}
 
 		descLinkId.setText( id );
-		descTitle.setText( linkDetail.getTitle() );
-		descGroupName.setText( linkDetail.getGroup() );
+		descTitle.setText( linkDetail.getTitle().get() );
+		descGroupName.setText( linkDetail.getGroup().get() );
 		descDescription.setText( linkDetail.getDescription() );
 		descExecPath.setText( linkDetail.getPath() );
 		descExecOption.setText( linkDetail.getOption() );
@@ -515,7 +516,7 @@ public class MainController implements Initializable {
 
 	}
 
-	public void renderDetailViewFromTable( NfxTable<Link> table ) {
+	public void renderDetailViewFromTable( NTable<Link> table ) {
 
 		labelCmd.setText( "" );
 

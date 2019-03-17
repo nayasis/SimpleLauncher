@@ -149,7 +149,7 @@
             </GridPane>
             <HBox spacing="10.0" VBox.vgrow="ALWAYS">
                <children>
-                  <TableView fx:id="tableMain" tableMenuButtonVisible="true" HBox.hgrow="ALWAYS">
+                  <TableView fx:id="tableMainRaw" tableMenuButtonVisible="true" HBox.hgrow="ALWAYS">
                     <columns>
                       <TableColumn fx:id="colGroup" maxWidth="1000.0" prefWidth="100.0" text="\%table.groupName" />
                       <TableColumn fx:id="colTitle" maxWidth="1000.0" prefWidth="253.0" text="\%table.title" />

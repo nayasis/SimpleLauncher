@@ -10,6 +10,10 @@ import io.nayasis.common.file.Files;
 import io.nayasis.common.model.NDate;
 import io.nayasis.common.ui.javafx.image.Images;
 import io.nayasis.common.validation.Validator;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleLongProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.image.Image;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -19,6 +23,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.LocalDateTime;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
 
 @Data
 @NoArgsConstructor
@@ -27,26 +35,27 @@ public class Link {
 
     private static final long serialVersionUID = 4803934592882695337L;
 
-	private Long          id;
-	private String        title;
-	private String        group;
-	private String        path;
-	private String        relativePath;
-	private String        option;
-	private String        optionPrefix;
-	private String        commandPrev;
-	private String        commandNext;
-	private String        description;
-	private String        keyword;
-	private Image         icon;
-	private Integer       execCount;
-	private NDate         lastExecDate;
+	private Long                            id;
+	private SimpleStringProperty            title         = new SimpleStringProperty();
+	private SimpleStringProperty            group         = new SimpleStringProperty();
+	private String                          path;
+	private String                          relativePath;
+	private String                          option;
+	private String                          optionPrefix;
+	private String                          commandPrev;
+	private String                          commandNext;
+	private String                          description;
+	private Set<String>                     keyword;
+	private SimpleObjectProperty<IconTitle> iconTitle     = new SimpleObjectProperty<>();
+	private Image                           icon;
+	private SimpleObjectProperty<Integer>   execCount     = new SimpleObjectProperty();
+	private SimpleObjectProperty<NDate>     lastExecDate  = new SimpleObjectProperty<>();
 
 	public Link( LinkEntity entity ) {
 
 		this.id           = entity.getId();
-		this.title        = entity.getTitle();
-		this.group        = entity.getGrp();
+		this.title        .set( entity.getTitle() );
+		this.group        .set( entity.getGrp() );
 		this.path         = entity.getPath();
 		this.relativePath = entity.getRelativePath();
 		this.option       = entity.getOption();
@@ -54,9 +63,9 @@ public class Link {
 		this.commandPrev  = entity.getCommandPrev();
 		this.commandNext  = entity.getCommandNext();
 		this.description  = entity.getDescription();
-		this.keyword      = entity.getKeyword();
-		this.execCount    = entity.getExecCount();
+		this.execCount    .set( entity.getExecCount() );
 
+		setKeyword( entity.getKeyword() );
 		setLastExecDate( entity.getLastExecDate() );
 		setIcon( entity.getIcon() );
 
@@ -118,6 +127,7 @@ public class Link {
 			bytes = CONSTANT.ICON_NEW;
 		try {
 			icon = Images.$.toImage( bytes );
+			refreshIconTitle();
 		} catch ( UncheckedIOException e ) {
 			setIcon( CONSTANT.ICON_NEW );
 		}
@@ -125,11 +135,13 @@ public class Link {
 
 	public void setIcon( Image icon ) {
 		this.icon = icon;
+		refreshIconTitle();
 	}
 
 	public boolean setIcon( File file ) {
 		try {
 			icon = Images.$.toImage( file );
+			refreshIconTitle();
 			return true;
 		} catch ( UncheckedIOException e ) {
 			log.error( e.getMessage(), e );
@@ -141,8 +153,8 @@ public class Link {
 		return Images.$.toBinary( icon, CONSTANT.ICON_IMAGE_TYPE );
 	}
 
-	public IconTitle getIconTitle() {
-		return new IconTitle( icon, title );
+	private void refreshIconTitle() {
+		iconTitle.set( new IconTitle( icon, title.get() ) );
 	}
 
 	public boolean isRelativePath() {
@@ -159,42 +171,72 @@ public class Link {
 
 		Link clone = new Link();
 
-		clone.id = id;
-		clone.title = title;
-		clone.group = group;
-		clone.path = path;
+		clone.id           = id;
+		clone.title        = title;
+		clone.group        = group;
+		clone.path         = path;
 		clone.relativePath = relativePath;
-		clone.option = option;
+		clone.option       = option;
 		clone.optionPrefix = optionPrefix;
-		clone.commandPrev = commandPrev;
-		clone.commandNext = commandNext;
-		clone.description = description;
-		clone.keyword = keyword;
-		clone.icon = Images.$.copy( icon );
+		clone.commandPrev  = commandPrev;
+		clone.commandNext  = commandNext;
+		clone.description  = description;
+		clone.keyword      = new LinkedHashSet<>( keyword );
+		clone.icon         = Images.$.copy( icon );
 
-		return clone;
+		return clone.refreshKeyword();
 
 	}
 
 	public void setTitle( String title ) {
-		this.title = Strings.trim( title );
+		this.title.set( Strings.trim( title ) );
+		refreshIconTitle();
+		refreshKeyword();
 	}
 
 	public void setGroup( String group ) {
-		this.group = Strings.trim( group );
+		this.group.set( Strings.trim( group ) );
+		refreshKeyword();
 	}
 
 	public void setLastExecDate( NDate lastExecDate ) {
-		this.lastExecDate = lastExecDate;
+		this.lastExecDate.set( lastExecDate );
 	}
 
 	public void setLastExecDate( LocalDateTime lastExecDate ) {
-		this.lastExecDate = lastExecDate == null ? null : new NDate( lastExecDate );
+		this.lastExecDate.set( lastExecDate == null ? null : new NDate( lastExecDate ) );
+	}
+
+	public void setKeyword( Set<String> keyword ) {
+		this.keyword = keyword;
+	}
+
+	public boolean isKeywordMatched( Pattern pattern ) {
+		if( pattern == null || Validator.isEmpty(keyword) ) return true;
+		for( String k : keyword ) {
+			if( Validator.isFound( k, pattern ) ) return true;
+		}
+		return false;
+	}
+
+	public boolean isGroupMatched( Pattern pattern ) {
+		if( pattern == null || Validator.isEmpty(group.get()) ) return true;
+		return Validator.isFound( group.get(), pattern );
+	}
+
+	public void setKeyword( String keyword ) {
+		List<String> values = Strings.tokenize(keyword, " \t\n");
+		this.keyword = new LinkedHashSet<>( values );
+	}
+
+	public Link refreshKeyword() {
+		setKeyword( Strings.format("{}\n{}\n{}", title.get(), group.get(), description) );
+		return this;
 	}
 
 	public void addExecCount() {
-		this.execCount ++;
-		this.lastExecDate.setNow();
+		execCount.set( Validator.nvl(execCount.get(),0) + 1 );
+		lastExecDate.set( new NDate() );
 	}
 
 	public void setPath( String path ) {
@@ -238,6 +280,7 @@ public class Link {
 
 	public void setDescription( String description ) {
 		this.description = Strings.trim( description );
+		refreshKeyword();
 	}
 
 	public void setRelativePath( String relativePath ) {
@@ -257,8 +300,8 @@ public class Link {
 	}
 
 	public void clearId() {
-		this.id           = null;
-		this.lastExecDate = null;
+		this.id = null;
+		this.lastExecDate.set( null );
 	}
 
 	public void setbindOptions( File file ) {

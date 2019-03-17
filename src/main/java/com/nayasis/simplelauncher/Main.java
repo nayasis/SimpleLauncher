@@ -66,6 +66,7 @@ public class Main extends NApplication {
             HELP = new ConfigurableStage( "/view/Help.fxml" );
             MAIN = new ConfigurableStage( "/view/SimpleLauncher.fxml" );
 
+            MAIN.setTitle( "Simple Launcher");
             MAIN.setOnCloseRequest( event -> {
                 HELP.close();
             });

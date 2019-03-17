@@ -9,12 +9,12 @@ spring:
     driver-class-name: org.h2.Driver
     type: com.zaxxer.hikari.HikariDataSource
     hikari:
-      username: buskon
-      password: qjtmzmdhsWkd!
+      username: simple
+      password: launcher
       connection-test-query: SELECT 1
       auto-commit: false
       minimum-idle: 1
-      maximum-pool-size: 5
+      maximum-pool-size: 2
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     database: H2
@@ -35,7 +35,7 @@ logging:
             sql.BasicBinder : trace
     com.nayasis.simplelauncher : debug
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %clr(%-5level) [%15.15thread] %clr(%-40.40logger{39}){cyan} : %clr(%X{ctx} ){green}%msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %clr(%-5level) [%15.15thread] %clr(%-40.40logger{39}){cyan} : %clr(%X{guid} ){green}%msg%n"
 error:
   filter : |-
     org\.springframework\.

@@ -1,23 +1,16 @@
 package com.nayasis.simplelauncher.vo;
 
 import javafx.scene.image.Image;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class IconTitle {
 
-	private Image   icon;
-	private String  title;
-	
-	public IconTitle( Image icon, String title ) {
-		this.icon  = icon;
-		this.title = title;
-	}
-	
-	public Image getIcon() {
-		return icon;
-	}
-	
-	public String getTitle() {
-		return title;
-	}
+	private Image  icon;
+	private String title;
 	
 }

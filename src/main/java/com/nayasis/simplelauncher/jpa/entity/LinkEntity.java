@@ -1,6 +1,7 @@
 package com.nayasis.simplelauncher.jpa.entity;
 
 import io.nayasis.common.model.NDate;
+import io.nayasis.common.reflection.Reflector;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,6 +9,7 @@ import lombok.ToString;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.Collection;
 
 @Entity
 @Table(
@@ -42,7 +44,7 @@ public class LinkEntity {
     private String commandNext;
     @Column
     private String description;
-    @Column
+    @Column(columnDefinition="CLOB")
     private String keyword;
     @Column(length=2000)
     private byte[] icon;
@@ -57,6 +59,14 @@ public class LinkEntity {
 
     public void setLastExecDate( NDate lastExecDate ) {
         this.lastExecDate = lastExecDate == null ? null : lastExecDate.toLocalDateTime();
+    }
+
+    public void setKeyword( String keyword ) {
+        this.keyword = keyword;
+    }
+
+    public void setKeyword( Collection<String> keyword ) {
+        this.keyword = Reflector.toJson( keyword );
     }
 
 }
