@@ -10,8 +10,6 @@ import io.nayasis.common.file.Files;
 import io.nayasis.common.model.NDate;
 import io.nayasis.common.ui.javafx.image.Images;
 import io.nayasis.common.validation.Validator;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleLongProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.image.Image;
@@ -126,7 +124,7 @@ public class Link {
 		if( Validator.isEmpty(bytes) )
 			bytes = CONSTANT.ICON_NEW;
 		try {
-			icon = Images.$.toImage( bytes );
+			icon = Images.toImage( bytes );
 			refreshIconTitle();
 		} catch ( UncheckedIOException e ) {
 			setIcon( CONSTANT.ICON_NEW );
@@ -140,7 +138,7 @@ public class Link {
 
 	public boolean setIcon( File file ) {
 		try {
-			icon = Images.$.toImage( file );
+			icon = Images.toImage( file );
 			refreshIconTitle();
 			return true;
 		} catch ( UncheckedIOException e ) {
@@ -150,7 +148,7 @@ public class Link {
 	}
 
 	public byte[] getIconBytes() {
-		return Images.$.toBinary( icon, CONSTANT.ICON_IMAGE_TYPE );
+		return Images.toBinary( icon, CONSTANT.ICON_IMAGE_TYPE );
 	}
 
 	private void refreshIconTitle() {
@@ -182,7 +180,7 @@ public class Link {
 		clone.commandNext  = commandNext;
 		clone.description  = description;
 		clone.keyword      = new LinkedHashSet<>( keyword );
-		clone.icon         = Images.$.copy( icon );
+		clone.icon         = Images.copy( icon );
 
 		return clone.refreshKeyword();
 
