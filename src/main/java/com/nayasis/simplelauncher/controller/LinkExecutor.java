@@ -21,6 +21,9 @@ public class LinkExecutor {
 	@Autowired
 	private MainController mainController;
 
+	@Autowired
+	private DataController dataController;
+
 	private String getExecPathFrom( Link link ) {
 		if( Files.notExists( link.getPath() ) ) {
 			String newPath = Files.getRootPath() + "/" + link.getRelativePath();
@@ -32,6 +35,10 @@ public class LinkExecutor {
 	}
 
 	public void execute( Link link ) {
+
+		if( link == null ) return;
+
+		dataController.increaseUsedCount( link );
 
         link = link.clone();
         link.clearBindOptions();
@@ -78,17 +85,11 @@ public class LinkExecutor {
 	}
 
 	private CommandExecutor run( CommandExecutor executor, String commandLine, String workingDirectory ) {
-
 		Command command = new Command();
-
 		command.setWorkingDirectory( workingDirectory );
-
 		command.set( commandLine );
-
 		executor.run( command );
-
 		return executor;
-
 	}
 
 	public void execute( Link link, File file ) {
