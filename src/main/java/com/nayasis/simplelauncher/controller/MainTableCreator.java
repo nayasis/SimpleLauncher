@@ -5,6 +5,7 @@ import com.nayasis.simplelauncher.vo.Link;
 import io.nayasis.common.base.Strings;
 import io.nayasis.common.model.NDate;
 import io.nayasis.common.ui.javafx.control.table.NTable;
+import io.nayasis.common.ui.javafx.control.table.NTableColumn;
 import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.event.EventHandler;
@@ -13,7 +14,6 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
@@ -24,7 +24,6 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import javafx.util.Callback;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -40,10 +39,10 @@ public class MainTableCreator {
 
 	private NTable<Link> table;
 
-    private TableColumn<Link,String>    columnGroup;
-    private TableColumn<Link,IconTitle> columnTitle;
-    private TableColumn<Link,NDate>     columnLastUsedDt;
-    private TableColumn<Link,Integer>   columnExecCount;
+    private NTableColumn<Link,String>    columnGroup;
+    private NTableColumn<Link,IconTitle> columnTitle;
+    private NTableColumn<Link,NDate>     columnLastUsedDt;
+    private NTableColumn<Link,Integer>   columnExecCount;
 
     @Autowired
 	private MainController mainController;
@@ -57,29 +56,51 @@ public class MainTableCreator {
 
 		assignColumns();
 
-		table.bindValue( columnGroup,      row -> row.getGroup()        );
-		table.bindValue( columnTitle,      row -> row.getIconTitle()    );
-		table.bindValue( columnLastUsedDt, row -> row.getLastExecDate() );
-		table.bindValue( columnExecCount,  row -> row.getExecCount()    );
+        columnGroup.bindValue( row -> row.getGroup() );
+        columnTitle.bindValue( row -> row.getIconTitle() );
+        columnLastUsedDt.bindValue( row -> row.getLastExecDate() );
+        columnExecCount.bindValue( row -> row.getExecCount() );
 
-		table.bindShape( columnTitle, column -> createCellIconTitle() );
+        columnTitle.bindShape( column -> createCellIconTitle() );
 
-		table.bindShape( columnLastUsedDt, column -> new TableCell<Link,NDate>() {
-			public void updateItem( NDate item, boolean empty ) {
-				super.updateItem(item, empty);
-				if( ! empty ) {
-					setText( Strings.nvl(item) );
-				}
-				setGraphic(null);
-			}
-		}, Pos.CENTER );
+//        columnLastUsedDt.bindShape( column -> new TableCell<Link,NDate>() {
+//			public void updateItem( NDate item, boolean empty ) {
+//				super.updateItem(item, empty);
+//                if( empty ) {
+//                    setText( null );
+//                } else {
+//                    setText( Strings.nvl(item) );
+//                }
+//			}
+//		}, Pos.CENTER );
 
-		table.bindShape( columnExecCount, column -> new TableCell<Link,Integer>() {
+        columnLastUsedDt.bindShape2( ( cell, item, empty ) -> {
+            if( empty ) {
+                cell.setText( null );
+            } else {
+                cell.setText( Strings.nvl(item) );
+            }
+        }, Pos.CENTER );
+
+//        columnLastUsedDt.bindShape( column -> new TableCell<Link,NDate>() {
+//            public void updateItem( NDate item, boolean empty ) {
+//                super.updateItem(item, empty);
+//                if( empty ) {
+//                    setText( null );
+//                } else {
+//                    setText( Strings.nvl(item) );
+//                }
+//            }
+//        }, Pos.CENTER );
+
+        columnExecCount.bindShape( column -> new TableCell<Link,Integer>() {
 			public void updateItem( Integer item, boolean empty ) {
 				super.updateItem(item, empty);
-				if( ! empty ) {
-					setText( Strings.nvl(item) );
-				}
+                if( empty ) {
+                    setText( null );
+                } else {
+                    setText( Strings.nvl(item) );
+                }
 				setGraphic(null);
 			}
 		}, Pos.CENTER_RIGHT );
@@ -252,7 +273,7 @@ public class MainTableCreator {
 	}
 
 	private void assignColumns() {
-		columnGroup      = table.getColumn( "colGroup" );
+        columnGroup      = table.getColumn( "colGroup" );
 		columnTitle      = table.getColumn( "colTitle" );
 		columnLastUsedDt = table.getColumn( "colLastUsedDt" );
 		columnExecCount  = table.getColumn( "colExecCount" );
