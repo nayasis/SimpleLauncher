@@ -89,7 +89,7 @@ public class MainController implements Initializable {
     @FXML public Label            labelCmd;
 
     @FXML public TableView<Link>  tableMainRaw;
-	      public NTable<Link> tableMain;
+	      public NTable<Link>     tableMain;
 
     private Link linkDetail = new Link();
 
@@ -115,7 +115,7 @@ public class MainController implements Initializable {
 
 		log.debug( ">> bindConfigUi" );
 
-		dataController.init().readData();
+		dataController.readData();
 		log.debug( ">> readData" );
 
 		setEventForButtonSaveEnable();
@@ -176,10 +176,6 @@ public class MainController implements Initializable {
 
 	}
 
-	public  DataController getDataController() {
-    	return dataController;
-    }
-
 	public LinkExecutor getExecutor() {
 		return executor;
 	}
@@ -187,7 +183,6 @@ public class MainController implements Initializable {
 	public void printStatus( Object value, Object... param ) {
 		labelStatus.setText( Messages.get( value, param ) );
 	}
-
 
 	@FXML
 	public void loadFromFile( ActionEvent event ) {
@@ -262,21 +257,22 @@ public class MainController implements Initializable {
 	@FXML
 	public void deleteLink( ActionEvent event ) {
 
-		if( linkDetail.getId() == null ) return;
+		Link link = tableMain.getFocusedItem();
+		if( link == null ) return;
 
-		String linkInfo = Strings.isEmpty(linkDetail.getGroup())
-				? linkDetail.getTitle().get()
-				: linkDetail.getGroup().get() + " : " + linkDetail.getTitle().get();
+		String linkInfo = Strings.isEmpty(link.getGroup())
+				? link.getTitle().get()
+				: link.getGroup().get() + " : " + link.getTitle().get();
 
 		if( ! Dialog.$.confirm( "msg.confirm.001", linkInfo ) ) return;
 
-		final int index = tableMain.getSelectionModel().getSelectedIndex();
+		int focusedIndex = tableMain.getFocusedIndex();
 
-		dataController.delete( linkDetail );
+		dataController.delete( link );
 
     	Platform.runLater( () -> {
-    		tableMain.getSelectionModel().select( index );
-//    		renderDetailViewFromTable( tableMain );
+    		tableMain.getSelectionModel().select( focusedIndex );
+			setDetailView( null );
     	});
 
 	}
@@ -316,12 +312,9 @@ public class MainController implements Initializable {
 	@SuppressWarnings( { "rawtypes", "unchecked" } )
 	private void setEventForButtonSaveEnable() {
 
-        ChangeListener changeListener = new ChangeListener() {
-            public void changed( ObservableValue observableValue, Object oldValue, Object newValue) {
-//                log.debug( "Property changed !! : [{}]", observableValue );
-            	buttonSave.setDisable( false );
-            }
-        };
+        ChangeListener changeListener = ( observableValue, oldValue, newValue ) -> {
+			buttonSave.setDisable( false );
+		};
 
         descLinkId.textProperty().addListener( changeListener );
         descGroupName.textProperty().addListener( changeListener );
@@ -451,13 +444,13 @@ public class MainController implements Initializable {
 
 	}
 
-	public void setDetailView( Link vo ) {
+	public void setDetailView( Link link ) {
 
-		if( vo == null ) {
-			vo = new Link();
+		if( link == null ) {
+			link = new Link();
 		}
 
-		linkDetail = vo;
+		linkDetail = link;
 
 		bindLinkToView();
 
@@ -516,13 +509,14 @@ public class MainController implements Initializable {
 
 	}
 
-	public void renderDetailViewFromTable( NTable<Link> table ) {
+	public void drawDetailViewFromTable() {
 
 		labelCmd.setText( "" );
 
-		Link data = table.getFocusedItem();
-
-		if( data != null ) setDetailView( data );
+		Link data = tableMain.getFocusedItem();
+		if( data != null ) {
+			setDetailView( data );
+		}
 
 	}
 

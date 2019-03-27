@@ -7,11 +7,8 @@ import com.nayasis.simplelauncher.vo.Link;
 import io.nayasis.common.exception.unchecked.UncheckedIOException;
 import io.nayasis.common.file.Files;
 import io.nayasis.common.reflection.Reflector;
-import io.nayasis.common.ui.javafx.control.table.NTable;
 import io.nayasis.common.ui.javafx.dialog.Dialog;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
-import javafx.collections.transformation.SortedList;
+import javafx.application.Platform;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Sort;
@@ -32,83 +29,11 @@ public class DataController {
 	private final String FILE_EXT_DESC = "Data File (*.sl)";
 	private final String FILE_EXT      = "*.sl";
 
-	private ObservableList<Link> linkList = FXCollections.observableArrayList();
-	private SortedList<Link>     sortedList;
-
-	private NTable<Link> table;
-
 	@Autowired
 	private LinkRepository linkRepository;
 
 	@Autowired
 	private MainController main;
-
-	@Autowired
-	private LinkExecutor executor;
-
-    public DataController init() {
-        // Table의 Row에서 데이터를 가져오면, Call by Value 로 값이 넘어온다. (참조가 넘어오지 않는다.)
-        // 그래서 Binding된 값을 Observable 하게 사용하지 못한다.
-        this.table = main.tableMain;
-//        setFilter();
-        return this;
-    }
-
-//    public void setFilter() {
-//
-//		FilteredList<Link> filteredList = new FilteredList<>( linkList, link -> true );
-//
-//		ChangeListener changeListener = new ChangeListener() {
-//            @Override
-//            public void changed( ObservableValue observable, Object oldValue, Object newValue ) {
-//
-//                filteredList.setPredicate(new Predicate<Link>() {
-//
-//                    private String keyword = main.inputKeyword.getText();
-//                    private boolean keywordAndSearch = main.checkboxKeywordAnd.isSelected();
-//                    private String group = main.inputGroup.getText();
-//                    private boolean groupAndSearch = main.checkboxGroupAnd.isSelected();
-//
-//                    private Pattern patternGroup = getRegExpPattern(group, groupAndSearch);
-//                    private Pattern patternKeyword = getRegExpPattern(keyword, keywordAndSearch);
-//
-//                    public boolean test( Link link ) {
-//
-//                        if (patternGroup == null && patternKeyword == null) return true;
-//
-//                        if (patternGroup != null && !patternGroup.matcher(link.getGroup()).find()) return false;
-//                        if (patternKeyword != null) {
-//                            if (!patternKeyword.matcher(link.getKeyword()).find()) return false;
-//                        }
-//
-//                        return true;
-//
-//                    }
-//                });
-//
-//                main.clearDetailView();
-//                main.printStatus("msg.info.005", table.getData().size(), linkList.size());
-//
-//            }
-//        };
-//
-//
-//		main.inputKeyword.textProperty().addListener( changeListener );
-//		main.inputGroup.textProperty().addListener( changeListener );
-//		main.checkboxKeywordAnd.selectedProperty().addListener( changeListener );
-//		main.checkboxGroupAnd.selectedProperty().addListener( changeListener );
-//
-//		sortedList = new SortedList<>( filteredList );
-//
-//		sortedList.comparatorProperty().bind( table.comparatorProperty() );
-//
-////		table.setData( sortedList );
-//
-//	}
-
-//	public int getDataSize() {
-//		return linkList.size();
-//	}
 
 	private LinkEntity toLinkEntity( Link link ) {
 
@@ -147,54 +72,28 @@ public class DataController {
 		LinkEntity entity = toLinkEntity( link );
 		linkRepository.save( entity );
 		link.setId( entity.getId() );
-		table.add( link );
+		main.tableMain.add( link );
 	}
 
 	@Transactional
 	public void delete( Link link ) {
 		linkRepository.deleteById( link.getId() );
-		table.remove( link );
+		main.tableMain.remove( link );
 	}
 
 	public void update( Link link ) {
 		LinkEntity entity = toLinkEntity( link );
 		linkRepository.save( entity );
-		update( link, linkList );
 	}
 
 	@Transactional
-	public void increaseLinkUsedCount( Link link ) {
+	public void increaseUsedCount( Link link ) {
 		LinkEntity entity = getEntity( link.getId() );
 		if( entity == null ) return;
 		link.addExecCount();
 		entity.setLastExecDate( link.getLastExecDate().get() );
 		entity.setExecCount( link.getExecCount().get() );
 		linkRepository.save( entity );
-//		update( link, linkList );
-	}
-
-	private void update( Link link, List<Link> list ) {
-
-        return;
-
-//		Integer index = getIndexInList( link, list );
-//
-//		if( index == null ) return;
-//
-//		list.set( index, link );
-//
-//		table.getSelectionModel().clearSelection();
-//		table.getSelectionModel().select( link );
-
-	}
-
-	private Integer getIndexInList( Link link, List<Link> list ) {
-		for( int i = 0, iCnt = list.size(); i < iCnt; i++ ) {
-			if( list.get(i).hasSameId(link) ) {
-				return i;
-			}
-		}
-		return null;
 	}
 
 	public void exportData() {
@@ -239,9 +138,7 @@ public class DataController {
 
 			linkRepository.saveAll( entities );
 
-			entities.forEach( entity -> {
-				linkList.add( new Link(entity) );
-			});
+			Platform.runLater( () -> readData() );
 
 			Dialog.$.alert( "msg.info.009", file );
 
@@ -252,44 +149,21 @@ public class DataController {
 
 	}
 
+	@Transactional
 	public void clearData() {
 		if( ! Dialog.$.confirm( "msg.confirm.003" ) ) return;
-		linkList.clear();
+		linkRepository.deleteAll();
+		main.tableMain.clear();
 	}
 
     public void readData() {
-		linkList.clear();
+		main.tableMain.clear();
 		List<LinkEntity> links = linkRepository.findAll();
 		log.debug( ">> links : {}", links.size() );
 		links.forEach(entity -> {
             Link link = new Link(entity);
-            table.getData().add(link);
-//			linkList.add(link);
+			main.tableMain.getData().add(link);
 		});
-
-//		table.bind( linkList );
-
-	}
-
-	public void executeLink() {
-		Link link = table.getFocusedItem();
-		executeLink( link );
-	}
-
-	public void executeLink( Link link ) {
-		if( link == null ) return;
-		increaseLinkUsedCount( link );
-		executor.execute( link );
-	}
-
-	public void executeLink( Link link, File fileDragged ) {
-		if( link == null ) return;
-		increaseLinkUsedCount( link );
-		executor.execute( link, fileDragged );
-	}
-
-	public Link getLink( Long id ) {
-		return new Link( getEntity(id) );
 	}
 
 }

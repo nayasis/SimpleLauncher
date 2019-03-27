@@ -29,6 +29,7 @@ public class HelpController {
     	System.setProperty( "java.awt.headless", "true" );
 
 		try {
+			// TODO : 재구현 필요 (AWT Desktop은 현재 기능 지원되지 않음)
 			Desktop.getDesktop().browse( getMailLink() );
 		} catch( IOException | URISyntaxException e ) {
 			log.error( e.getMessage(), e );

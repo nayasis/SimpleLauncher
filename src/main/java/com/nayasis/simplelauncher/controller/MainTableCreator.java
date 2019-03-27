@@ -6,14 +6,13 @@ import io.nayasis.common.base.Strings;
 import io.nayasis.common.model.NDate;
 import io.nayasis.common.ui.javafx.control.table.NTable;
 import io.nayasis.common.ui.javafx.control.table.NTableColumn;
+import io.nayasis.common.ui.javafx.control.table.byfunction.CellFormatter;
 import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
-import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
-import javafx.scene.control.TableCell;
 import javafx.scene.control.TableView;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
@@ -47,6 +46,9 @@ public class MainTableCreator {
     @Autowired
 	private MainController mainController;
 
+    @Autowired
+    private LinkExecutor linkExecutor;
+
 	public NTable<Link> init( TableView<Link> tableView ) {
 
 		table = new NTable<>( tableView )
@@ -61,49 +63,15 @@ public class MainTableCreator {
         columnLastUsedDt.bindValue( row -> row.getLastExecDate() );
         columnExecCount.bindValue( row -> row.getExecCount() );
 
-        columnTitle.bindShape( column -> createCellIconTitle() );
+        columnTitle.bindShape( drawTitleCell() );
 
-//        columnLastUsedDt.bindShape( column -> new TableCell<Link,NDate>() {
-//			public void updateItem( NDate item, boolean empty ) {
-//				super.updateItem(item, empty);
-//                if( empty ) {
-//                    setText( null );
-//                } else {
-//                    setText( Strings.nvl(item) );
-//                }
-//			}
-//		}, Pos.CENTER );
+        columnLastUsedDt.bindShape( ( cell, item, empty ) -> {
+			cell.setText( empty ? null : Strings.nvl(item) );
+        }).setAlignment( Pos.CENTER );
 
-        columnLastUsedDt.bindShape2( ( cell, item, empty ) -> {
-            if( empty ) {
-                cell.setText( null );
-            } else {
-                cell.setText( Strings.nvl(item) );
-            }
-        }, Pos.CENTER );
-
-//        columnLastUsedDt.bindShape( column -> new TableCell<Link,NDate>() {
-//            public void updateItem( NDate item, boolean empty ) {
-//                super.updateItem(item, empty);
-//                if( empty ) {
-//                    setText( null );
-//                } else {
-//                    setText( Strings.nvl(item) );
-//                }
-//            }
-//        }, Pos.CENTER );
-
-        columnExecCount.bindShape( column -> new TableCell<Link,Integer>() {
-			public void updateItem( Integer item, boolean empty ) {
-				super.updateItem(item, empty);
-                if( empty ) {
-                    setText( null );
-                } else {
-                    setText( Strings.nvl(item) );
-                }
-				setGraphic(null);
-			}
-		}, Pos.CENTER_RIGHT );
+		columnExecCount.bindShape( ( cell, item, empty ) -> {
+			cell.setText( empty ? null : Strings.nvl(item) );
+		}).setAlignment( Pos.CENTER_RIGHT );
 
 		columnTitle.setComparator( ( iconTitlePrev, iconTitleNext ) -> iconTitlePrev.getTitle().compareToIgnoreCase( iconTitleNext.getTitle() ) );
 
@@ -118,16 +86,71 @@ public class MainTableCreator {
 
 	}
 
+	private CellFormatter<Link, IconTitle> drawTitleCell() {
+		return ( cell, item, empty ) -> {
+
+			if( empty ) {
+				cell.setGraphic( null );
+				return;
+			}
+
+			HBox hbox = new HBox();
+
+			hbox.setAlignment(Pos.CENTER_LEFT);
+
+			ImageView imageIcon = new ImageView(item.getIcon());
+			Label labelTitle = new Label(item.getTitle());
+
+			HBox.setHgrow(imageIcon, Priority.ALWAYS);
+			HBox.setHgrow(labelTitle, Priority.ALWAYS);
+			HBox.setMargin(imageIcon, new Insets(0, 5, 0, 0));
+
+			hbox.getChildren().addAll(imageIcon, labelTitle);
+
+			cell.setGraphic( hbox );
+
+			cell.addEventHandler( DragEvent.DRAG_OVER, event -> {
+				Dragboard db = event.getDragboard();
+				if ( db.hasFiles() ) {
+					event.acceptTransferModes( TransferMode.COPY );
+				} else {
+					event.consume();
+				}
+			});
+
+			cell.addEventHandler( DragEvent.DRAG_DROPPED, event -> {
+
+				Dragboard db = event.getDragboard();
+
+				boolean success = false;
+
+				if ( db.hasFiles() ) {
+					success = true;
+					for( File fileDragged : db.getFiles() ) {
+						Platform.runLater( () -> {
+							Link link = (Link) cell.getTableRow().getItem();
+							linkExecutor.execute( link, fileDragged );
+						});
+					}
+				}
+
+				event.setDropCompleted( success );
+				event.consume();
+			});
+
+		};
+	}
+
 	private void drawDetailView() {
 		table.focusedProperty().addListener( ( observable, oldValue, newValue ) -> {
             if( newValue == true && table.getSelectionModel().getFocusedIndex() <= 0 ) { // focus gained
                 table.getSelectionModel().selectFirst();
-                mainController.renderDetailViewFromTable( table );
+                mainController.drawDetailViewFromTable();
             }
         });
 
 		table.getSelectionModel().getSelectedItems().addListener( (ListChangeListener<Link>) change -> {
-            mainController.renderDetailViewFromTable( table );
+            mainController.drawDetailViewFromTable();
         });
 	}
 
@@ -160,123 +183,48 @@ public class MainTableCreator {
 	}
 
 	private void setKeyEvent() {
-		table.addEventHandler( KeyEvent.KEY_RELEASED, new EventHandler<KeyEvent>() {
+		// Enter는 KEY_RELEASED 이벤트에서 action 이벤트로 계속 전파되 stop propagation 안됨
+		table.addEventHandler( KeyEvent.KEY_PRESSED, event -> {
 
-			private int flagTableKeypressEvent = 0;
+			log.debug( ">>> table keypress event : {}, source : {}, target : {}", event, event.getSource(), event.getTarget() );
 
-			public void handle( KeyEvent event ) {
+			KeyCode keyCode = event.getCode();
 
-				log.debug( ">>> table keypress event : {}, source : {}, target : {}", event, event.getSource(), event.getTarget() );
+			if( keyCode == KeyCode.ENTER ) {
 
-	        	KeyCode keyCode = event.getCode();
+				event.consume();
 
-	        	if( keyCode == KeyCode.ENTER ) {
+				mainController.labelCmd.setText( "" );
+				linkExecutor.execute( table.getFocusedItem() );
 
-	        		// Dialog에서 Event Propagation을 막지 못해, 지저분한 방법으로 처리
-	        		if( flagTableKeypressEvent != 0 ) {
-	        			flagTableKeypressEvent = 0;
-	        			return;
-	        		}
+			} else if( keyCode == KeyCode.DELETE ) {
 
-	        		event.consume();
+				log.debug( "Delete action" );
 
-	        		mainController.labelCmd.setText( "" );
-	        		mainController.getDataController().executeLink();
+				event.consume();
 
-	        	} else if( keyCode == KeyCode.DELETE ) {
+				mainController.labelCmd.setText( "" );
+				mainController.deleteLink( null );
 
-	        		log.debug( "Delete action" );
+			}
 
-	        		event.consume();
-
-	        		mainController.labelCmd.setText( "" );
-	        		mainController.deleteLink( null );
-
-	        		flagTableKeypressEvent = 1;
-
-	        	}
-
-	        }
-        });
+		});
 	}
 
 	private void setMouseEvent() {
 		table.addEventHandler( MouseEvent.MOUSE_CLICKED, event -> {
-
-			mainController.renderDetailViewFromTable( table );
+			mainController.drawDetailViewFromTable();
 			if( event.getClickCount() > 1 ) {
-				mainController.getDataController().executeLink( table.getFocusedItem() );
-			}
-
-		});
-	}
-
-	private TableCell<Link, IconTitle> createCellIconTitle() {
-
-		TableCell<Link, IconTitle> cell = new TableCell<Link, IconTitle>() { protected void updateItem( IconTitle item, boolean empty ) {
-
-			super.updateItem(item, empty);
-
-			if (empty || item == null) {
-				setText(null);
-				setGraphic(null);
-				return;
-			}
-
-			HBox hbox = new HBox();
-
-			hbox.setAlignment(Pos.CENTER_LEFT);
-
-			ImageView imageIcon = new ImageView(item.getIcon());
-			Label labelTitle = new Label(item.getTitle());
-
-			HBox.setHgrow(imageIcon, Priority.ALWAYS);
-			HBox.setHgrow(labelTitle, Priority.ALWAYS);
-			HBox.setMargin(imageIcon, new Insets(0, 5, 0, 0));
-
-			hbox.getChildren().addAll(imageIcon, labelTitle);
-
-			setGraphic(hbox);
-
-		}};
-
-		cell.addEventHandler( DragEvent.DRAG_OVER, event -> {
-			Dragboard db = event.getDragboard();
-			if ( db.hasFiles() ) {
-				event.acceptTransferModes( TransferMode.COPY );
-			} else {
-				event.consume();
+				linkExecutor.execute( table.getFocusedItem() );
 			}
 		});
-
-		cell.addEventHandler( DragEvent.DRAG_DROPPED, event -> {
-
-			Dragboard db = event.getDragboard();
-
-			boolean success = false;
-
-			if ( db.hasFiles() ) {
-				success = true;
-				for( File fileDragged : db.getFiles() ) {
-					Platform.runLater( () -> {
-						Link link = (Link) cell.getTableRow().getItem();
-						mainController.getDataController().executeLink( link, fileDragged );
-					});
-				}
-			}
-
-			event.setDropCompleted( success );
-			event.consume();
-		});
-
-		return cell;
 	}
 
 	private void assignColumns() {
-        columnGroup      = table.getColumn( "colGroup" );
-		columnTitle      = table.getColumn( "colTitle" );
+        columnGroup      = table.getColumn( "colGroup"      );
+		columnTitle      = table.getColumn( "colTitle"      );
 		columnLastUsedDt = table.getColumn( "colLastUsedDt" );
-		columnExecCount  = table.getColumn( "colExecCount" );
+		columnExecCount  = table.getColumn( "colExecCount"  );
 	}
 
 	private Pattern toPattern( String text, boolean isAnd ) {
