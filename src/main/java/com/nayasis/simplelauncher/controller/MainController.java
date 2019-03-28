@@ -1,17 +1,17 @@
 package com.nayasis.simplelauncher.controller;
 
 import com.nayasis.simplelauncher.common.CONSTANT;
+import com.nayasis.simplelauncher.service.LinkExecutor;
+import com.nayasis.simplelauncher.service.MainTableCreator;
 import com.nayasis.simplelauncher.vo.Link;
 import io.nayasis.common.base.Strings;
 import io.nayasis.common.model.Messages;
 import io.nayasis.common.ui.javafx.control.table.NTable;
 import io.nayasis.common.ui.javafx.dialog.Dialog;
+import io.nayasis.common.ui.javafx.etc.FxNodes;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
-import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
@@ -35,7 +35,6 @@ import javafx.scene.input.TransferMode;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -125,52 +124,42 @@ public class MainController implements Initializable {
 
 	private void setKeywordHistoryDropdownList() {
 
-		inputKeyword.focusedProperty().addListener( new ChangeListener<Boolean>() {
-			public void changed( ObservableValue<? extends Boolean> observable, Boolean focusedOut, Boolean focusedIn ) {
-				if( focusedOut == true ) {
-					String keyword = inputKeyword.getText();
-					if( Strings.isEmpty(keyword) ) return;
-					configController.getKeywordHistory().put( keyword, null );
-				}
-			}
-		});
-
-		listKeywordHistory.setVisible( false );
-		listKeywordHistory.focusedProperty().addListener( new ChangeListener<Boolean>() {
-            public void changed( ObservableValue<? extends Boolean> observable, Boolean focusedOut, Boolean focusedIn ) {
-            	if( focusedIn == true ) {
-            		listKeywordHistory.getSelectionModel().selectFirst();
-            	} else if( focusedOut == true ) {
-            		listKeywordHistory.setVisible( false );
-            	}
-            	log.debug( "focusedOut:{}, focusedIn:{}", focusedOut, focusedIn );
+		inputKeyword.focusedProperty().addListener(( observable, focusedOut, focusedIn ) -> {
+            if( focusedOut == true ) {
+                String keyword = inputKeyword.getText();
+                if( Strings.isEmpty(keyword) ) return;
+                configController.getKeywordHistory().put( keyword, null );
             }
-		});
-
-		listKeywordHistory.addEventHandler( KeyEvent.KEY_RELEASED, new EventHandler<KeyEvent>() {
-			public void handle( KeyEvent event ) {
-
-	        	KeyCode keyCode = event.getCode();
-
-	        	if( keyCode == KeyCode.ENTER ) {
-	        		event.consume();
-	        		String selectedValue = listKeywordHistory.getSelectionModel().getSelectedItem();
-	        		inputKeyword.setText( Strings.nvl(selectedValue) );
-	        		inputKeyword.requestFocus();
-
-	        	} else if( keyCode == KeyCode.ESCAPE ) {
-	        		event.consume();
-	        		inputKeyword.requestFocus();
-	        	}
-
-	        }
         });
 
-		inputKeyword.widthProperty().addListener( new ChangeListener<Number>() {
-            public void changed( ObservableValue<? extends Number> observable, Number oldValue, Number newValue ) {
-            	listKeywordHistory.setPrefWidth( newValue.doubleValue() );
+		listKeywordHistory.setVisible( false );
+		listKeywordHistory.focusedProperty().addListener(( observable, focusedOut, focusedIn ) -> {
+            if( focusedIn == true ) {
+                listKeywordHistory.getSelectionModel().selectFirst();
+            } else if( focusedOut == true ) {
+                listKeywordHistory.setVisible( false );
             }
-		} );
+            log.debug( "focusedOut:{}, focusedIn:{}", focusedOut, focusedIn );
+        });
+
+		listKeywordHistory.addEventHandler( KeyEvent.KEY_RELEASED, event -> {
+
+            KeyCode keyCode = event.getCode();
+
+            if( keyCode == KeyCode.ENTER ) {
+                event.consume();
+                String selectedValue = listKeywordHistory.getSelectionModel().getSelectedItem();
+                inputKeyword.setText( Strings.nvl(selectedValue) );
+                inputKeyword.requestFocus();
+
+            } else if( keyCode == KeyCode.ESCAPE ) {
+                event.consume();
+                inputKeyword.requestFocus();
+            }
+
+        });
+
+		inputKeyword.widthProperty().addListener(( observable, oldValue, newValue ) -> listKeywordHistory.setPrefWidth( newValue.doubleValue() ));
 
 		root.getChildren().add( listKeywordHistory );
 
@@ -351,15 +340,8 @@ public class MainController implements Initializable {
 				Dialog.$.alert( "msg.warn.001" );
 
 			} else {
-
 				File file = db.getFiles().get( 0 );
-
-				Platform.runLater( new Runnable() {
-					public void run() {
-						runnable.run( file );
-					}
-				});
-
+				Platform.runLater(() -> runnable.run( file ));
 			}
 
 		}
@@ -367,12 +349,13 @@ public class MainController implements Initializable {
 		event.setDropCompleted( success );
 		event.consume();
 
-
 	}
 
 	@FXML
 	public void eventDragDroppedOnFileAdd( DragEvent event ) {
-		eventDragDropped( event, file -> addFile( file ) );
+		eventDragDropped( event, file -> {
+			addFile( file );
+		});
 	}
 
 	@FXML
@@ -439,8 +422,10 @@ public class MainController implements Initializable {
 		buttonCopy.setDisable( true );
 		buttonSave.setDisable( false );
 
-		Platform.runLater( () -> { descGroupName.requestFocus(); } );
-
+		Platform.runLater( () -> {
+			CONSTANT.STAGE.MAIN.requestFocus();
+			descGroupName.requestFocus();
+		});
 
 	}
 
@@ -523,41 +508,20 @@ public class MainController implements Initializable {
 	@FXML
 	public void showDescription( ActionEvent event ) {
 
-		boolean showDescription = isDescriptionShown();
+		boolean show = ! isDescriptionShown();
 
-		descGridPane.setVisible( ! showDescription );
+		HBox parent = (HBox) tableMainRaw.getParent();
 
-		setFocusTraversable( descGridPane, showDescription );
+		if( show ) {
+			parent.getChildren().remove( descGridPane );
+		} else {
+			parent.getChildren().add( descGridPane );
+		}
 
 	}
 
 	private boolean isDescriptionShown() {
 		return menuitemViewDesc.isSelected();
-	}
-
-	private void setFocusTraversable( Node node, boolean value ) {
-
-		if( node == null ) return;
-
-		if( node instanceof TextField || node instanceof Button || node instanceof TextArea ) {
-			node.setFocusTraversable( value );
-		}
-
-		ObservableList<Node> list = null;
-
-		if( node instanceof Pane ) {
-			list = ((Pane)node).getChildren();
-
-		} else if( node instanceof HBox ) {
-			list = ((HBox)node).getChildren();
-		}
-
-		if( list == null ) return;
-
-		for( Node subNode : list ) {
-			setFocusTraversable( subNode, value );
-		}
-
 	}
 
 	@FXML
@@ -572,13 +536,13 @@ public class MainController implements Initializable {
 
 		log.debug( "show:{}, heightMenubar:{}, topSplitMain:{}", show, heightMenubar, topSplitMain );
 
-		menubarTop.setVisible( show );
-
 		if( show ) {
+			FxNodes.show( menubarTop );
 			AnchorPane.setTopAnchor( paneSearchCondition, heightMenubar + 13 );
 			AnchorPane.setTopAnchor( paneSplitMain, topSplitMain + heightMenubar + margin );
 
 		} else {
+			FxNodes.hide( menubarTop );
 			AnchorPane.setTopAnchor( paneSearchCondition, 5.0  );
 			AnchorPane.setTopAnchor( paneSplitMain, topSplitMain - heightMenubar - margin );
 

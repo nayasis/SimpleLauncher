@@ -48,7 +48,7 @@ public class ConfigController {
 
 	}
 
-	public void saveMainStageProperties() {
+	private void saveMainStageProperties() {
 
 		StageProperties properties = CONSTANT.STAGE.MAIN.getConfigureProperties();
 
@@ -71,6 +71,7 @@ public class ConfigController {
 		keywordHistory.putAll( Reflector.toBeanFrom( config.getValue(), LruCache.class ) );
 
 	}
+
 
 	private void saveKeywordHistory() {
 

@@ -1,5 +1,6 @@
-package com.nayasis.simplelauncher.controller;
+package com.nayasis.simplelauncher.service;
 
+import com.nayasis.simplelauncher.controller.MainController;
 import com.nayasis.simplelauncher.vo.IconTitle;
 import com.nayasis.simplelauncher.vo.Link;
 import io.nayasis.common.base.Strings;
@@ -25,14 +26,14 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
-@Component
+@Service
 @Slf4j
 public class MainTableCreator {
 
@@ -148,7 +149,6 @@ public class MainTableCreator {
                 mainController.drawDetailViewFromTable();
             }
         });
-
 		table.getSelectionModel().getSelectedItems().addListener( (ListChangeListener<Link>) change -> {
             mainController.drawDetailViewFromTable();
         });

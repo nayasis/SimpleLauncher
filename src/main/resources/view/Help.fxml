@@ -1,24 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.scene.effect.*?>
-<?import javafx.scene.image.*?>
-<?import javafx.scene.shape.*?>
-<?import javafx.scene.control.*?>
-<?import javafx.scene.text.*?>
-<?import java.lang.*?>
-<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.Hyperlink?>
+<?import javafx.scene.effect.InnerShadow?>
+<?import javafx.scene.effect.Lighting?>
+<?import javafx.scene.effect.SepiaTone?>
+<?import javafx.scene.effect.Shadow?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+<?import javafx.scene.text.TextFlow?>
 
-<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="472.0" prefWidth="676.0" stylesheets="@Help.css" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.nayasis.simplelauncher.controller.HelpController">
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="472.0" prefWidth="676.0" stylesheets="@Help.css" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.nayasis.simplelauncher.controller.HelpController">
    <children>
-      <Hyperlink fx:id="linkMailTo" layoutX="464.0" layoutY="365.0" onAction="#clickLinkMailTo" text="nayasis@gmail.com" AnchorPane.bottomAnchor="14.0" AnchorPane.rightAnchor="14.0">
+      <Hyperlink layoutX="464.0" layoutY="365.0" onAction="#sendMail" text="nayasis@gmail.com" AnchorPane.bottomAnchor="14.0" AnchorPane.rightAnchor="14.0">
          <effect>
             <Lighting>
                <bumpInput>
                   <Shadow />
                </bumpInput>
-               <light>
-                  <Light.Distant />
-               </light>
             </Lighting>
          </effect></Hyperlink>
       <ImageView id="portrait" fitHeight="339.0" fitWidth="276.0" layoutX="14.0" layoutY="14.0" pickOnBounds="true" rotate="-8.1" smooth="false" AnchorPane.leftAnchor="10.0" AnchorPane.topAnchor="10.0">

@@ -1,6 +1,6 @@
 package com.nayasis.simplelauncher;
 
-import com.nayasis.simplelauncher.controller.MainController;
+import com.nayasis.simplelauncher.controller.ConfigController;
 import com.nayasis.simplelauncher.view.preloader.Splash;
 import io.nayasis.common.model.Messages;
 import io.nayasis.common.ui.javafx.application.NApplication;
@@ -9,8 +9,6 @@ import io.nayasis.common.ui.javafx.stage.ConfigurableStage;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
-import javafx.geometry.Rectangle2D;
-import javafx.stage.Screen;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,17 +19,16 @@ import org.springframework.context.ConfigurableApplicationContext;
 import static com.nayasis.simplelauncher.common.CONSTANT.STAGE.HELP;
 import static com.nayasis.simplelauncher.common.CONSTANT.STAGE.MAIN;
 
-
 @SpringBootApplication
 @Slf4j
 public class Main extends NApplication {
 
+    @Autowired
+    private ConfigController configController;
+
     private ConfigurableApplicationContext context;
 
     private Exception initError = null;
-
-    @Autowired
-    private MainController mainController;
 
     public static void main( String... args ) {
         addDefaultIcon( "/image/icon/favicon.png" );
@@ -48,6 +45,7 @@ public class Main extends NApplication {
     public void init() throws Exception {
         try {
             context = SpringApplication.run( Main.class, getRawParameters() );
+            context.getAutowireCapableBeanFactory().autowireBean( this );
             setDefaultControllerFactory( context::getBean );
         } catch ( Exception e ) {
             initError = e;
@@ -66,9 +64,12 @@ public class Main extends NApplication {
             HELP = new ConfigurableStage( "/view/Help.fxml" );
             MAIN = new ConfigurableStage( "/view/SimpleLauncher.fxml" );
 
+            configController.restore();
+
             MAIN.setTitle( "Simple Launcher");
             MAIN.setOnCloseRequest( event -> {
                 HELP.close();
+                configController.save();
             });
 
             Task task = new Task<Void>() {

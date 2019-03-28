@@ -1,20 +1,22 @@
-package com.nayasis.simplelauncher.controller;
+package com.nayasis.simplelauncher.service;
 
+import com.nayasis.simplelauncher.controller.DataController;
+import com.nayasis.simplelauncher.controller.MainController;
 import com.nayasis.simplelauncher.vo.Link;
+import io.nayasis.common.base.Strings;
 import io.nayasis.common.cli.Command;
 import io.nayasis.common.cli.CommandExecutor;
 import io.nayasis.common.file.Files;
 import io.nayasis.common.ui.desktop.Desktop;
 import io.nayasis.common.ui.javafx.dialog.Dialog;
 import lombok.extern.slf4j.Slf4j;
-import io.nayasis.common.base.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.io.File;
-import java.io.IOException;
 
-@Component
+@Service
 @Slf4j
 public class LinkExecutor {
 
@@ -84,38 +86,38 @@ public class LinkExecutor {
 
 	}
 
+	public void execute( Link link, File file ) {
+
+		Link newLink;
+
+		if( file == null  && ! file.exists() ) {
+			newLink = link;
+
+		} else {
+
+			newLink = link.clone();
+
+			newLink.setbindOptions( file );
+
+			if( file != null && file.exists() ) {
+				if( link.getOption().equals(newLink.getOption()) ) {
+					String newOption = newLink.getOption() + String.format( "\"%s\"", file.getPath() );
+					newLink.setOption( newOption );
+				}
+			}
+
+		}
+
+		execute( newLink );
+
+	}
+
 	private CommandExecutor run( CommandExecutor executor, String commandLine, String workingDirectory ) {
 		Command command = new Command();
 		command.setWorkingDirectory( workingDirectory );
 		command.set( commandLine );
 		executor.run( command );
 		return executor;
-	}
-
-	public void execute( Link link, File file ) {
-
-        Link newLink;
-
-        if( file == null  && ! file.exists() ) {
-            newLink = link;
-
-        } else {
-
-            newLink = link.clone();
-
-            newLink.setbindOptions( file );
-
-            if( file != null && file.exists() ) {
-                if( link.getOption().equals(newLink.getOption()) ) {
-                    String newOption = newLink.getOption() + String.format( "\"%s\"", file.getPath() );
-                    newLink.setOption( newOption );
-                }
-            }
-
-        }
-
-        execute( newLink );
-
 	}
 
 	public void openFolder( Link link ) {
@@ -132,8 +134,8 @@ public class LinkExecutor {
 		}
 
 		try {
-			new Desktop().open( file );
-		} catch( IOException e ) {
+			Desktop.open( file );
+		} catch( Exception e ) {
 			log.error( e.getMessage(), e );
 			Dialog.$.error( e, "msg.error.003", e.getMessage() );
         }
