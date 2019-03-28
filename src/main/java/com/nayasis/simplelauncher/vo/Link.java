@@ -2,8 +2,6 @@ package com.nayasis.simplelauncher.vo;
 
 import com.nayasis.simplelauncher.common.CONSTANT;
 import com.nayasis.simplelauncher.jpa.entity.LinkEntity;
-import com.nayasis.simplelauncher.library.mslinks.ShellLink;
-import com.nayasis.simplelauncher.library.mslinks.exception.ShellLinkException;
 import io.nayasis.common.base.Strings;
 import io.nayasis.common.etc.Platform;
 import io.nayasis.common.file.Files;
@@ -16,6 +14,8 @@ import javafx.scene.image.Image;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import mslinks.ShellLink;
+import mslinks.ShellLinkException;
 
 import java.io.File;
 import java.io.IOException;
@@ -99,7 +99,7 @@ public class Link {
 
 			ShellLink lnk = new ShellLink( file );
 
-			setPath( lnk.getTargetPath() );
+			setPath( lnk.getRelativePath() );
 			setOption( lnk.getCMDArgs() );
 			setDescription( lnk.getName() );
 

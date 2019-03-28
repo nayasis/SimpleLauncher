@@ -65,9 +65,13 @@ public class MainTableCreator {
 
         columnTitle.bindShape( drawTitleCell() );
 
-        columnLastUsedDt.bindShape( ( cell, item, empty ) -> cell.setText( empty ? null : Strings.nvl(item) )).setAlignment( Pos.CENTER );
+        columnLastUsedDt.bindShape( ( cell, item, empty ) -> {
+			cell.setText( empty ? null : Strings.nvl(item) );
+        }).setAlignment( Pos.CENTER );
 
-		columnExecCount.bindShape( ( cell, item, empty ) -> cell.setText( empty ? null : Strings.nvl(item) )).setAlignment( Pos.CENTER_RIGHT );
+		columnExecCount.bindShape( ( cell, item, empty ) -> {
+			cell.setText( empty ? null : Strings.nvl(item) );
+		}).setAlignment( Pos.CENTER_RIGHT );
 
 		columnTitle.setComparator( ( iconTitlePrev, iconTitleNext ) -> iconTitlePrev.getTitle().compareToIgnoreCase( iconTitleNext.getTitle() ) );
 
@@ -194,6 +198,8 @@ public class MainTableCreator {
 				linkExecutor.execute( table.getFocusedItem() );
 
 			} else if( keyCode == KeyCode.DELETE ) {
+
+				log.debug( "Delete action" );
 
 				event.consume();
 
