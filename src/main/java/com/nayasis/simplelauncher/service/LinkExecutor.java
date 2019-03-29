@@ -65,7 +65,7 @@ public class LinkExecutor {
 		} catch( Exception e ) {
 			Throwable throwable = e.getCause() == null ? e : e.getCause();
 			log.error( throwable.getMessage(), throwable );
-			Dialog.$.error( throwable, "msg.error.003", throwable.getMessage() );
+			Dialog.error( throwable, "msg.error.003", throwable.getMessage() );
 		}
 
 		if( ! Strings.isEmpty( link.getCommandNext() ) ) {
@@ -129,7 +129,7 @@ public class LinkExecutor {
 		}
 
 		if( ! file.isDirectory() ) {
-			Dialog.$.error( "msg.error.005", file );
+			Dialog.error( "msg.error.005", file );
 			return;
 		}
 
@@ -137,7 +137,7 @@ public class LinkExecutor {
 			Desktop.open( file );
 		} catch( Exception e ) {
 			log.error( e.getMessage(), e );
-			Dialog.$.error( e, "msg.error.003", e.getMessage() );
+			Dialog.error( e, "msg.error.003", e.getMessage() );
         }
 
 	}

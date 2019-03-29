@@ -19,7 +19,7 @@ public class FxmlErrorHandler {
             return joinPoint.proceed();
         } catch ( Throwable e ) {
             log.error( e.getMessage(), e );
-            Dialog.$.error( e, e.getMessage() );
+            Dialog.error( e, e.getMessage() );
             throw e;
         }
     }

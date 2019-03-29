@@ -25,7 +25,7 @@
 
 <AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onKeyPressed="#setEventOnKeyPressedGlobally" prefHeight="659.0" prefWidth="1000.0" stylesheets="@SimpleLauncher.css" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.nayasis.simplelauncher.controller.MainController">
    <children>
-      <VBox minWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+      <VBox fx:id="vboxTop" minWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
             <MenuBar fx:id="menubarTop" prefHeight="15.0" prefWidth="919.0">
               <menus>
@@ -50,12 +50,12 @@
                 </Menu>
                 <Menu mnemonicParsing="false" text="\%menu.view">
                   <items>
-                        <CheckMenuItem fx:id="menuitemViewDesc" mnemonicParsing="false" onAction="#showDescription" text="\%menu.view.description">
+                        <CheckMenuItem fx:id="menuitemViewDesc" mnemonicParsing="false" text="\%menu.view.description">
                            <accelerator>
                               <KeyCodeCombination alt="DOWN" code="E" control="UP" meta="UP" shift="UP" shortcut="UP" />
                            </accelerator>
                         </CheckMenuItem>
-                        <CheckMenuItem fx:id="menuitemViewMenuBar" mnemonicParsing="false" onAction="#showMenuBar" text="\%menu.view.showMenuBar">
+                        <CheckMenuItem fx:id="menuitemViewMenuBar" mnemonicParsing="false" text="\%menu.view.showMenuBar">
                            <accelerator>
                               <KeyCodeCombination alt="DOWN" code="V" control="UP" meta="UP" shift="UP" shortcut="UP" />
                            </accelerator>
@@ -159,11 +159,6 @@
                   </TableView>
                   <GridPane fx:id="descGridPane" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="400.0" HBox.hgrow="ALWAYS">
                      <children>
-                        <Label text="\%desc.id" wrapText="true">
-                           <GridPane.margin>
-                              <Insets right="3.0" />
-                           </GridPane.margin>
-                        </Label>
                         <Label text="\%desc.groupName" textAlignment="RIGHT" wrapText="true" GridPane.rowIndex="1">
                            <GridPane.margin>
                               <Insets right="3.0" />
@@ -265,11 +260,6 @@
                             <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                           </rowConstraints>
                            <children>
-                              <Label fx:id="descLinkId" ellipsisString=".." graphicTextGap="0.0" prefHeight="15.0" prefWidth="52.0">
-                                 <padding>
-                                    <Insets left="1.0" />
-                                 </padding>
-                              </Label>
                               <HBox alignment="CENTER_RIGHT" prefHeight="30.0" prefWidth="240.0" GridPane.columnIndex="1">
                                  <children>
                                     <Button fx:id="buttonNew" ellipsisString="" focusTraversable="false" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#createNewLink" text="\%btn.new" textOverrun="CLIP">

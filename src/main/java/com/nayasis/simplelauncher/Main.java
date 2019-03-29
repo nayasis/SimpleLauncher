@@ -64,7 +64,9 @@ public class Main extends NApplication {
             HELP = new ConfigurableStage( "/view/Help.fxml" );
             MAIN = new ConfigurableStage( "/view/SimpleLauncher.fxml" );
 
-            configController.restore();
+            MAIN.setOnShowing( event -> {
+                configController.restore();
+            });
 
             MAIN.setTitle( "Simple Launcher");
             MAIN.setOnCloseRequest( event -> {
@@ -116,7 +118,7 @@ public class Main extends NApplication {
     private void showError( Throwable e ) {
         Platform.runLater( () -> {
             e.printStackTrace( System.err );
-            Dialog.$.error( e );
+            Dialog.error( e );
             closePreloader();
         });
     }

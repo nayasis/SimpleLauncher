@@ -98,7 +98,7 @@ public class DataController {
 
 	public void exportData() {
 
-		File file = Dialog.$.filePicker( "msg.info.003", FILE_EXT_DESC, FILE_EXT ).showSaveDialog( MAIN );
+		File file = Dialog.filePicker( "msg.info.003", FILE_EXT_DESC, FILE_EXT ).showSaveDialog( MAIN );
 
 		if( file == null ) return;
 
@@ -112,11 +112,11 @@ public class DataController {
 
 			Files.writeTo( file, Reflector.toJson( links, true ) );
 
-			Dialog.$.alert( "msg.info.010", file );
+			Dialog.alert( "msg.info.010", file );
 
 		} catch( UncheckedIOException e ) {
 			log.error( e.getMessage(), e );
-			Dialog.$.error( e, "msg.error.003", e.getMessage() );
+			Dialog.error( e, "msg.error.003", e.getMessage() );
         }
 
 	}
@@ -124,7 +124,7 @@ public class DataController {
 	@Transactional
 	public void importData() {
 
-		File file = Dialog.$.filePicker( "msg.info.004", FILE_EXT_DESC, FILE_EXT ).showOpenDialog( MAIN );
+		File file = Dialog.filePicker( "msg.info.004", FILE_EXT_DESC, FILE_EXT ).showOpenDialog( MAIN );
 
 		if( file == null ) return;
 
@@ -140,18 +140,18 @@ public class DataController {
 
 			Platform.runLater( () -> readData() );
 
-			Dialog.$.alert( "msg.info.009", file );
+			Dialog.alert( "msg.info.009", file );
 
 		} catch( UncheckedIOException e ) {
 			log.error( e.getMessage(), e );
-			Dialog.$.error( e, "msg.error.003", e.getMessage() );
+			Dialog.error( e, "msg.error.003", e.getMessage() );
         }
 
 	}
 
 	@Transactional
 	public void clearData() {
-		if( ! Dialog.$.confirm( "msg.confirm.003" ) ) return;
+		if( ! Dialog.confirm( "msg.confirm.003" ) ) return;
 		linkRepository.deleteAll();
 		main.tableMain.clear();
 	}

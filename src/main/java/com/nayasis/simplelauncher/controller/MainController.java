@@ -11,6 +11,8 @@ import io.nayasis.common.ui.javafx.dialog.Dialog;
 import io.nayasis.common.ui.javafx.etc.FxNodes;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -35,6 +37,7 @@ import javafx.scene.input.TransferMode;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -48,8 +51,8 @@ import java.util.ResourceBundle;
 public class MainController implements Initializable {
 
 	@FXML public AnchorPane       root;
+	@FXML public VBox             vboxTop;
 	@FXML public GridPane         paneSearchCondition;
-	@FXML public SplitPane        paneSplitMain;
 
 	@FXML public MenuBar          menubarTop;
     @FXML public CheckMenuItem    menuitemViewDesc;
@@ -63,17 +66,14 @@ public class MainController implements Initializable {
 
           public ListView<String> listKeywordHistory = new ListView<>();
 
-    @FXML public Button           buttonSearch;
     @FXML public Button           buttonNew;
     @FXML public Button           buttonCopy;
     @FXML public Button           buttonSave;
     @FXML public Button           buttonDelete;
     @FXML public Button           buttonChangeIcon;
-    @FXML public Button           buttonChangePath;
     @FXML public Button           buttonOpenFolder;
 
     @FXML public GridPane         descGridPane;
-    @FXML public Label            descLinkId;
     @FXML public TextField        descGroupName;
     @FXML public TextField        descTitle;
     @FXML public TextArea         descDescription;
@@ -165,10 +165,6 @@ public class MainController implements Initializable {
 
 	}
 
-	public LinkExecutor getExecutor() {
-		return executor;
-	}
-
 	public void printStatus( Object value, Object... param ) {
 		labelStatus.setText( Messages.get( value, param ) );
 	}
@@ -184,7 +180,7 @@ public class MainController implements Initializable {
 
 		setDetailView( tableMain.getFocusedItem() );
 
-		Dialog.$.alert( "msg.info.008" );
+		Dialog.alert( "msg.info.008" );
 
 	}
 
@@ -253,7 +249,7 @@ public class MainController implements Initializable {
 				? link.getTitle().get()
 				: link.getGroup().get() + " : " + link.getTitle().get();
 
-		if( ! Dialog.$.confirm( "msg.confirm.001", linkInfo ) ) return;
+		if( ! Dialog.confirm( "msg.confirm.001", linkInfo ) ) return;
 
 		int focusedIndex = tableMain.getFocusedIndex();
 
@@ -261,7 +257,7 @@ public class MainController implements Initializable {
 
     	Platform.runLater( () -> {
     		tableMain.getSelectionModel().select( focusedIndex );
-			setDetailView( null );
+			clearDetailView();
     	});
 
 	}
@@ -284,7 +280,7 @@ public class MainController implements Initializable {
 
 	@FXML
 	public void addFile( MouseEvent event ) {
-		File file = Dialog.$.filePicker( "msg.info.001", "msg.info.006", "*.*" ).showOpenDialog( CONSTANT.STAGE.MAIN );
+		File file = Dialog.filePicker( "msg.info.001", "msg.info.006", "*.*" ).showOpenDialog( CONSTANT.STAGE.MAIN );
 		addFile( file );
 	}
 
@@ -305,7 +301,6 @@ public class MainController implements Initializable {
 			buttonSave.setDisable( false );
 		};
 
-        descLinkId.textProperty().addListener( changeListener );
         descGroupName.textProperty().addListener( changeListener );
         descTitle.textProperty().addListener( changeListener );
         descDescription.textProperty().addListener( changeListener );
@@ -318,6 +313,13 @@ public class MainController implements Initializable {
 
 		// 이미지 변경시 focus가 Image에 귀속되어, 이를 변경해 주지 않으면 다른 이벤트(버튼 fire 이벤트 등)가 발생하지 않는다.
 		descIcon.imageProperty().addListener( changeListener );
+
+
+		// 보여주기 체크메뉴 기능
+		menuitemViewDesc.selectedProperty().addListener( ( observable, oldValue, newValue )
+			-> showDescription( newValue == Boolean.TRUE ) );
+		menuitemViewMenuBar.selectedProperty().addListener( ( observable, oldValue, newValue )
+			-> showMenuBar( newValue == Boolean.TRUE ) );
 
 	}
 
@@ -337,7 +339,7 @@ public class MainController implements Initializable {
 
 			if( db.getFiles().size() > 1 ) {
 
-				Dialog.$.alert( "msg.warn.001" );
+				Dialog.alert( "msg.warn.001" );
 
 			} else {
 				File file = db.getFiles().get( 0 );
@@ -360,12 +362,10 @@ public class MainController implements Initializable {
 
 	@FXML
 	public void eventDragDroppedOnChangeIcon( DragEvent event ) {
-
 		eventDragDropped( event, file -> {
 			changeIcon( file );
 			buttonSave.requestFocus();
 		});
-
 	}
 
 	@FXML
@@ -384,17 +384,14 @@ public class MainController implements Initializable {
 
             bindLinkToView();
 
-        } );
+        });
 
 	}
 
 	@FXML
 	public void changeIcon( ActionEvent event ) {
-
 		File iconFile = getIconFile();
-
 		changeIcon( iconFile );
-
 	}
 
 	private void changeIcon( File iconFile ) {
@@ -404,7 +401,7 @@ public class MainController implements Initializable {
 	}
 
 	private File getIconFile() {
-		return Dialog.$.filePicker( "msg.info.002", "Icon File", "*.*" ).showOpenDialog( CONSTANT.STAGE.MAIN );
+		return Dialog.filePicker( "msg.info.002", "Icon File", "*.*" ).showOpenDialog( CONSTANT.STAGE.MAIN );
 	}
 
 	private void addFile( File file ) {
@@ -412,7 +409,7 @@ public class MainController implements Initializable {
 		if( file == null ) return;
 
 		if( ! file.exists() ) {
-			Dialog.$.alert( "msg.error.001", file );
+			Dialog.alert( "msg.error.001", file );
 			return;
 		}
 
@@ -459,15 +456,6 @@ public class MainController implements Initializable {
 
 	private void bindLinkToView() {
 
-		String id = null;
-
-		if( linkDetail.getId() != null ) {
-			id = String.format( "#{%s}", linkDetail.getId() );
-		} else {
-			id = Messages.get( "desc.id.new" );
-		}
-
-		descLinkId.setText( id );
 		descTitle.setText( linkDetail.getTitle().get() );
 		descGroupName.setText( linkDetail.getGroup().get() );
 		descDescription.setText( linkDetail.getDescription() );
@@ -505,61 +493,37 @@ public class MainController implements Initializable {
 
 	}
 
-	@FXML
-	public void showDescription( ActionEvent event ) {
-
-		boolean show = ! isDescriptionShown();
+	private void showDescription( boolean show ) {
 
 		HBox parent = (HBox) tableMainRaw.getParent();
+		ObservableList<Node> children = parent.getChildren();
 
 		if( show ) {
-			parent.getChildren().remove( descGridPane );
+			children.remove( descGridPane );
 		} else {
-			parent.getChildren().add( descGridPane );
+			if( ! children.contains( descGridPane ) )
+				children.add( descGridPane );
 		}
 
 	}
 
-	private boolean isDescriptionShown() {
-		return menuitemViewDesc.isSelected();
-	}
-
-	@FXML
-	public void showMenuBar( ActionEvent event ) {
-
-		int margin = 5;
-
-		boolean show = menuitemViewMenuBar.isSelected();
-
-		double heightMenubar = menubarTop.getPrefHeight();
-		double topSplitMain  = AnchorPane.getTopAnchor( paneSplitMain );
-
-		log.debug( "show:{}, heightMenubar:{}, topSplitMain:{}", show, heightMenubar, topSplitMain );
-
+	private void showMenuBar( boolean show ) {
+		ObservableList<Node> children = vboxTop.getChildren();
 		if( show ) {
-			FxNodes.show( menubarTop );
-			AnchorPane.setTopAnchor( paneSearchCondition, heightMenubar + 13 );
-			AnchorPane.setTopAnchor( paneSplitMain, topSplitMain + heightMenubar + margin );
-
+			if( ! children.contains( menubarTop ) )
+				children.add( 0, menubarTop );
 		} else {
-			FxNodes.hide( menubarTop );
-			AnchorPane.setTopAnchor( paneSearchCondition, 5.0  );
-			AnchorPane.setTopAnchor( paneSplitMain, topSplitMain - heightMenubar - margin );
-
+			children.remove( menubarTop );
 		}
-
 	}
 
 	@FXML
 	public void showInputGroupSearch( ActionEvent event ) {
 
-		boolean show         = checkboxIncludeGroup.isSelected();
-		double  rowHeight    = paneSearchCondition.getRowConstraints().get( 0 ).getPrefHeight();
-		double  topSplitMain = AnchorPane.getTopAnchor( paneSplitMain );
+		boolean show      = checkboxIncludeGroup.isSelected();
+		double  rowHeight = paneSearchCondition.getRowConstraints().get( 0 ).getPrefHeight();
 
-		log.debug( "showInputGroupSearch:{}, topSplitMain:{}, height:{}", show, topSplitMain, rowHeight );
-
-		topSplitMain += show ? +rowHeight : -rowHeight;
+		log.debug( "showInputGroupSearch:{}, height:{}", show, rowHeight );
 
 		for( Node node : paneSearchCondition.getChildren() ) {
 			Integer rowIndex = GridPane.getRowIndex( node );
@@ -567,8 +531,6 @@ public class MainController implements Initializable {
 				node.setVisible( show );
 			}
 		}
-
-		AnchorPane.setTopAnchor( paneSplitMain, topSplitMain );
 
 	}
 
@@ -641,9 +603,15 @@ public class MainController implements Initializable {
 
 		log.debug( "Event id:{}, keyCode:{}, source:{}", nodeId, event.getCode(), source );
 
-		if( source == inputKeyword && keyCode == KeyCode.DOWN ) {
-			event.consume();
-			showKeywordHistory();
+		if( source == inputKeyword ) {
+
+			if( keyCode == KeyCode.DOWN ) {
+				event.consume();
+				showKeywordHistory();
+			} else if( keyCode == KeyCode.ESCAPE ) {
+				event.consume();
+				tableMain.focus();
+			}
 
 		} else if( event.isControlDown() ) {
 
@@ -732,6 +700,10 @@ public class MainController implements Initializable {
 
 		}
 
+	}
+
+	private boolean isDescriptionShown() {
+		return menuitemViewDesc.isSelected();
 	}
 
 }

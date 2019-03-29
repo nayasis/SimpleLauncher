@@ -17,6 +17,9 @@ import javax.transaction.Transactional;
 public class ConfigController {
 
 	@Autowired
+	private MainController mainController;
+
+	@Autowired
 	private ConfigRepository configRepository;
 
 	private LruCache<String,String> keywordHistory = new LruCache<>( 20 );
@@ -33,7 +36,7 @@ public class ConfigController {
 	@Transactional
 	public void save() {
 		saveMainStageProperties();
-		saveKeywordHistory();
+//		saveKeywordHistory();
 	}
 
 	private void restoreMainStageProperties() {
@@ -44,7 +47,6 @@ public class ConfigController {
 		StageProperties properties = Reflector.toBeanFrom( config.getValue(), StageProperties.class );
 
 		CONSTANT.STAGE.MAIN.setConfigureProperties( properties );
-
 
 	}
 

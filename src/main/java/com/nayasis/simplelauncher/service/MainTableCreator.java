@@ -206,6 +206,8 @@ public class MainTableCreator {
 				mainController.labelCmd.setText( "" );
 				mainController.deleteLink( null );
 
+			} else if( keyCode == KeyCode.ESCAPE ) {
+				mainController.inputKeyword.requestFocus();
 			}
 
 		});
