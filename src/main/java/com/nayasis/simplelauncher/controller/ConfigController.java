@@ -1,16 +1,20 @@
 package com.nayasis.simplelauncher.controller;
 
 import com.nayasis.simplelauncher.common.CONSTANT;
+import com.nayasis.simplelauncher.common.CONSTANT.STAGE;
 import com.nayasis.simplelauncher.jpa.entity.ConfigEntity;
 import com.nayasis.simplelauncher.jpa.repository.ConfigRepository;
 import io.nayasis.common.cache.implement.LruCache;
 import io.nayasis.common.reflection.Reflector;
 import io.nayasis.common.ui.javafx.properties.StageProperties;
+import io.nayasis.common.ui.javafx.stage.ConfigurableStage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import javax.transaction.Transactional;
+
+import static com.nayasis.simplelauncher.common.CONSTANT.STAGE.MAIN;
 
 @Component
 @Slf4j
@@ -24,7 +28,7 @@ public class ConfigController {
 
 	private LruCache<String,String> keywordHistory = new LruCache<>( 20 );
 
-	private enum ConfigKey {
+	public enum ConfigKey {
 		MAIN_STAGE, KEYWORD_HISTORY
 	}
 
@@ -46,13 +50,18 @@ public class ConfigController {
 
 		StageProperties properties = Reflector.toBeanFrom( config.getValue(), StageProperties.class );
 
-		CONSTANT.STAGE.MAIN.setConfigureProperties( properties );
+		log.debug( ">> bind stage property");
+
+		MAIN.setConfigureProperties( properties );
+
+		mainController.showDescription( mainController.menuitemViewDesc.isSelected() );
+		mainController.showMenuBar( mainController.menuitemViewMenuBar.isSelected() );
 
 	}
 
 	private void saveMainStageProperties() {
 
-		StageProperties properties = CONSTANT.STAGE.MAIN.getConfigureProperties();
+		StageProperties properties = MAIN.getConfigureProperties();
 
 		ConfigEntity config = getConfig( ConfigKey.MAIN_STAGE );
 		if( config == null ) {
@@ -73,7 +82,6 @@ public class ConfigController {
 		keywordHistory.putAll( Reflector.toBeanFrom( config.getValue(), LruCache.class ) );
 
 	}
-
 
 	private void saveKeywordHistory() {
 

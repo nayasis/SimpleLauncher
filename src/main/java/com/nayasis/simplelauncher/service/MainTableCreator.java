@@ -159,19 +159,17 @@ public class MainTableCreator {
 		// filter 트리거 설정
 		mainController.inputKeyword.textProperty().addListener( table.getChangeListener() );
 		mainController.inputGroup.textProperty().addListener( table.getChangeListener() );
-		mainController.checkboxKeywordAnd.selectedProperty().addListener( table.getChangeListener() );
-		mainController.checkboxGroupAnd.selectedProperty().addListener( table.getChangeListener() );
+		mainController.chkRegexSearch.selectedProperty().addListener( table.getChangeListener() );
 
 		// 데이터 필터 설정
 		table.setFilter( (observable, oldVal, newVal) -> {
 
-			String  keyword          = mainController.inputKeyword.getText();
-			boolean keywordAndSearch = mainController.checkboxKeywordAnd.isSelected();
-			String  group            = mainController.inputGroup.getText();
-			boolean groupAndSearch   = mainController.checkboxGroupAnd.isSelected();
+			String  keyword  = mainController.inputKeyword.getText();
+			boolean isRegexp = mainController.chkRegexSearch.isSelected();
+			String  group    = mainController.inputGroup.getText();
 
-			Pattern patternGroup     = toPattern( group,   groupAndSearch   );
-			Pattern patternKeyword   = toPattern( keyword, keywordAndSearch );
+			Pattern patternGroup   = toPattern( group,   isRegexp );
+			Pattern patternKeyword = toPattern( keyword, isRegexp );
 
 			return link -> {
 				if (patternGroup == null && patternKeyword == null) return true;
@@ -229,9 +227,7 @@ public class MainTableCreator {
 		columnExecCount  = table.getColumn( "colExecCount"  );
 	}
 
-	private Pattern toPattern( String text, boolean isAnd ) {
-
-		if( text == null ) return null;
+	private Pattern toPattern( String text, boolean isRegexp ) {
 
 		text = Strings.compressSpace( text ).trim();
 
@@ -250,15 +246,15 @@ public class MainTableCreator {
 
 			List<String> split = Strings.tokenize( text, " " );
 
-			if( isAnd ) {
-				sb.append( "(?=.*" );
-				sb.append( Strings.join( split, ")(?=.*" ) );
-				sb.append( ")" );
-			} else {
-				sb.append( "(" );
-				sb.append( Strings.join( split, "|" ) );
-				sb.append( ")" );
-			}
+//			if( isAnd ) {
+//				sb.append( "(?=.*" );
+//				sb.append( Strings.join( split, ")(?=.*" ) );
+//				sb.append( ")" );
+//			}
+
+			sb.append( "(" );
+			sb.append( Strings.join( split, "|" ) );
+			sb.append( ")" );
 
 			return Pattern.compile( sb.toString() );
 

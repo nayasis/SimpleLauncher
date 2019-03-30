@@ -23,7 +23,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onKeyPressed="#setEventOnKeyPressedGlobally" prefHeight="659.0" prefWidth="1000.0" stylesheets="@SimpleLauncher.css" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.nayasis.simplelauncher.controller.MainController">
+<AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" onKeyPressed="#globalKeyPressedEvent" prefHeight="659.0" prefWidth="1000.0" stylesheets="@SimpleLauncher.css" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.nayasis.simplelauncher.controller.MainController">
    <children>
       <VBox fx:id="vboxTop" minWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
@@ -64,7 +64,7 @@
                 </Menu>
                 <Menu mnemonicParsing="false" text="\%menu.help">
                   <items>
-                    <MenuItem mnemonicParsing="false" onAction="#showHelp" text="\%menu.help.about">
+                    <MenuItem fx:id="menuItemHelp" mnemonicParsing="false" onAction="#showHelp" text="\%menu.help.about">
                            <accelerator>
                               <KeyCodeCombination alt="ANY" code="F1" control="UP" meta="UP" shift="UP" shortcut="UP" />
                            </accelerator>
@@ -72,51 +72,21 @@
                   </items>
                 </Menu>
               </menus>
+               <VBox.margin>
+                  <Insets />
+               </VBox.margin>
             </MenuBar>
-            <GridPane fx:id="paneSearchCondition" maxHeight="-Infinity" minHeight="-Infinity">
-              <columnConstraints>
-                <ColumnConstraints halignment="RIGHT" hgrow="SOMETIMES" maxWidth="70.0" minWidth="70.0" prefWidth="70.0" />
-                <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="536.0" />
-                  <ColumnConstraints hgrow="SOMETIMES" maxWidth="250.0" minWidth="90.0" />
-                  <ColumnConstraints hgrow="ALWAYS" maxWidth="163.0" minWidth="80.0" prefWidth="163.0" />
-              </columnConstraints>
-              <rowConstraints>
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-              </rowConstraints>
+            <HBox alignment="CENTER_LEFT" prefHeight="30.0" spacing="5.0">
                <children>
-                  <Label text="\%search.keyword">
-                     <GridPane.margin>
-                        <Insets right="5.0" />
-                     </GridPane.margin></Label>
-                  <Label text="\%search.group" GridPane.rowIndex="1">
-                     <GridPane.margin>
-                        <Insets right="5.0" />
-                     </GridPane.margin></Label>
-                  <TextField fx:id="inputKeyword" onKeyPressed="#setEventOnKeyPressedGlobally" prefHeight="23.0" prefWidth="513.0" GridPane.columnIndex="1" />
-                  <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="5.0" GridPane.columnIndex="2">
-                     <children>
-                        <CheckBox fx:id="checkboxKeywordAnd" focusTraversable="false" mnemonicParsing="false" onKeyPressed="#setEventOnKeyPressedGlobally" text="\%search.and" />
-                        <CheckBox fx:id="checkboxIncludeGroup" focusTraversable="false" mnemonicParsing="false" onAction="#showInputGroupSearch" onKeyPressed="#setEventOnKeyPressedGlobally" text="\%search.includeGroup">
-                           <HBox.margin>
-                              <Insets left="10.0" />
-                           </HBox.margin>
-                        </CheckBox>
-                     </children>
-                     <GridPane.margin>
-                        <Insets left="10.0" />
-                     </GridPane.margin>
-                  </HBox>
-                  <TextField fx:id="inputGroup" onKeyPressed="#setEventOnKeyPressedGlobally" GridPane.columnIndex="1" GridPane.rowIndex="1" />
-                  <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="5.0" GridPane.columnIndex="2" GridPane.rowIndex="1">
-                     <children>
-                        <CheckBox fx:id="checkboxGroupAnd" focusTraversable="false" mnemonicParsing="false" onKeyPressed="#setEventOnKeyPressedGlobally" text="\%search.and" />
-                     </children>
-                     <GridPane.margin>
-                        <Insets left="10.0" />
-                     </GridPane.margin>
-                  </HBox>
-                  <HBox alignment="CENTER_RIGHT" onDragDropped="#eventDragDroppedOnFileAdd" onDragOver="#eventDragOverByFile" prefHeight="100.0" prefWidth="200.0" GridPane.columnIndex="3">
+                  <Label alignment="CENTER_RIGHT" text="\%search.keyword" />
+                  <TextField fx:id="inputKeyword" onKeyPressed="#globalKeyPressedEvent" prefWidth="520.0" HBox.hgrow="ALWAYS" />
+                  <CheckBox fx:id="chkRegexSearch" mnemonicParsing="false" onKeyPressed="#globalKeyPressedEvent" text="\%search.regex" />
+                  <Label alignment="CENTER_RIGHT" text="\%search.group">
+                     <HBox.margin>
+                        <Insets left="5.0" />
+                     </HBox.margin></Label>
+                  <TextField fx:id="inputGroup" onKeyPressed="#globalKeyPressedEvent" HBox.hgrow="ALWAYS" />
+                  <HBox alignment="CENTER_RIGHT" onDragDropped="#eventDragDroppedOnFileAdd" onDragOver="#eventDragOverByFile" HBox.hgrow="ALWAYS">
                      <children>
                         <ImageView id="faviconAddFile" fitHeight="27.0" fitWidth="26.0" onMouseClicked="#addFile">
                            <image>
@@ -135,26 +105,29 @@
                            </cursor>
                         </Label>
                      </children>
+                     <opaqueInsets>
+                        <Insets />
+                     </opaqueInsets>
+                     <HBox.margin>
+                        <Insets left="5.0" />
+                     </HBox.margin>
                   </HBox>
                </children>
-               <padding>
-                  <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
-               </padding>
                <opaqueInsets>
                   <Insets />
                </opaqueInsets>
                <VBox.margin>
-                  <Insets left="5.0" right="5.0" />
+                  <Insets bottom="2.0" left="5.0" right="5.0" top="2.0" />
                </VBox.margin>
-            </GridPane>
+            </HBox>
             <HBox spacing="10.0" VBox.vgrow="ALWAYS">
                <children>
                   <TableView fx:id="tableMainRaw" tableMenuButtonVisible="true" HBox.hgrow="ALWAYS">
                     <columns>
-                      <TableColumn fx:id="colGroup" maxWidth="1000.0" prefWidth="100.0" text="\%table.groupName" />
-                      <TableColumn fx:id="colTitle" maxWidth="1000.0" prefWidth="253.0" text="\%table.title" />
-                      <TableColumn fx:id="colLastUsedDt" maxWidth="139.0" minWidth="100.0" prefWidth="139.0" text="\%table.lastUsedDt" />
-                      <TableColumn fx:id="colExecCount" maxWidth="299.0" minWidth="70.0" prefWidth="89.0" text="\%table.execCount" />
+                      <TableColumn fx:id="colGroup" maxWidth="1000.0" minWidth="-1.0" prefWidth="100.0" text="\%table.groupName" />
+                      <TableColumn fx:id="colTitle" maxWidth="1000.0" minWidth="-1.0" prefWidth="253.0" text="\%table.title" />
+                      <TableColumn fx:id="colLastUsedDt" maxWidth="1000.0" minWidth="-1.0" prefWidth="139.0" text="\%table.lastUsedDt" />
+                      <TableColumn fx:id="colExecCount" maxWidth="200.0" minWidth="-1.0" prefWidth="50.0" text="\%table.execCount" />
                     </columns>
                   </TableView>
                   <GridPane fx:id="descGridPane" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="400.0" HBox.hgrow="ALWAYS">
@@ -201,7 +174,7 @@
                         </Label>
                         <TextField fx:id="descGroupName" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                         <TextField fx:id="descTitle" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                        <TextArea fx:id="descDescription" onKeyPressed="#setEventOnKeyPressedGlobally" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                        <TextArea fx:id="descDescription" onKeyPressed="#globalKeyPressedEvent" GridPane.columnIndex="1" GridPane.rowIndex="3">
                            <opaqueInsets>
                               <Insets />
                            </opaqueInsets>
@@ -235,7 +208,7 @@
                         </HBox>
                         <TextField fx:id="descExecOption" GridPane.columnIndex="1" GridPane.rowIndex="6" />
                         <TextField fx:id="descExecOptionPrefix" GridPane.columnIndex="1" GridPane.rowIndex="7" />
-                        <TextArea fx:id="descCmdPrev" onKeyPressed="#setEventOnKeyPressedGlobally" GridPane.columnIndex="1" GridPane.rowIndex="8">
+                        <TextArea fx:id="descCmdPrev" onKeyPressed="#globalKeyPressedEvent" GridPane.columnIndex="1" GridPane.rowIndex="8">
                            <padding>
                               <Insets bottom="2.0" top="2.0" />
                            </padding>
@@ -243,7 +216,7 @@
                               <Insets bottom="2.0" top="2.0" />
                            </GridPane.margin>
                         </TextArea>
-                        <TextArea fx:id="descCmdNext" onKeyPressed="#setEventOnKeyPressedGlobally" GridPane.columnIndex="1" GridPane.rowIndex="9">
+                        <TextArea fx:id="descCmdNext" onKeyPressed="#globalKeyPressedEvent" GridPane.columnIndex="1" GridPane.rowIndex="9">
                            <padding>
                               <Insets bottom="2.0" top="2.0" />
                            </padding>

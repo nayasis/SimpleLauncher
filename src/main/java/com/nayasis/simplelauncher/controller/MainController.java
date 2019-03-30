@@ -8,10 +8,8 @@ import io.nayasis.common.base.Strings;
 import io.nayasis.common.model.Messages;
 import io.nayasis.common.ui.javafx.control.table.NTable;
 import io.nayasis.common.ui.javafx.dialog.Dialog;
-import io.nayasis.common.ui.javafx.etc.FxNodes;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -23,14 +21,16 @@ import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuBar;
-import javafx.scene.control.SplitPane;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
+import javafx.scene.input.KeyCharacterCombination;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
@@ -57,12 +57,11 @@ public class MainController implements Initializable {
 	@FXML public MenuBar          menubarTop;
     @FXML public CheckMenuItem    menuitemViewDesc;
     @FXML public CheckMenuItem    menuitemViewMenuBar;
+    @FXML public MenuItem         menuItemHelp;
 
     @FXML public TextField        inputKeyword;
     @FXML public TextField        inputGroup;
-    @FXML public CheckBox         checkboxKeywordAnd;
-    @FXML public CheckBox         checkboxIncludeGroup;
-    @FXML public CheckBox         checkboxGroupAnd;
+    @FXML public CheckBox         chkRegexSearch;
 
           public ListView<String> listKeywordHistory = new ListView<>();
 
@@ -117,7 +116,7 @@ public class MainController implements Initializable {
 		dataController.readData();
 		log.debug( ">> readData" );
 
-		setEventForButtonSaveEnable();
+		setPropertyEvent();
 		setKeywordHistoryDropdownList();
 
     }
@@ -294,8 +293,7 @@ public class MainController implements Initializable {
       }
 	}
 
-	@SuppressWarnings( { "rawtypes", "unchecked" } )
-	private void setEventForButtonSaveEnable() {
+	private void setPropertyEvent() {
 
         ChangeListener changeListener = ( observableValue, oldValue, newValue ) -> {
 			buttonSave.setDisable( false );
@@ -314,12 +312,16 @@ public class MainController implements Initializable {
 		// 이미지 변경시 focus가 Image에 귀속되어, 이를 변경해 주지 않으면 다른 이벤트(버튼 fire 이벤트 등)가 발생하지 않는다.
 		descIcon.imageProperty().addListener( changeListener );
 
-
 		// 보여주기 체크메뉴 기능
-		menuitemViewDesc.selectedProperty().addListener( ( observable, oldValue, newValue )
-			-> showDescription( newValue == Boolean.TRUE ) );
-		menuitemViewMenuBar.selectedProperty().addListener( ( observable, oldValue, newValue )
-			-> showMenuBar( newValue == Boolean.TRUE ) );
+		menuitemViewDesc.selectedProperty().addListener( ( observable, oldValue, newValue ) -> {
+			showDescription( newValue == Boolean.TRUE );
+		});
+		menuitemViewMenuBar.selectedProperty().addListener( ( observable, oldValue, newValue ) -> {
+			showMenuBar( newValue == Boolean.TRUE );
+		});
+
+		menuItemHelp.setAccelerator( new KeyCodeCombination(KeyCode.F1) );
+
 
 	}
 
@@ -493,21 +495,22 @@ public class MainController implements Initializable {
 
 	}
 
-	private void showDescription( boolean show ) {
-
+	public void showDescription( boolean show ) {
+		log.debug( ">> show desc : {}", show );
 		HBox parent = (HBox) tableMainRaw.getParent();
 		ObservableList<Node> children = parent.getChildren();
 
 		if( show ) {
-			children.remove( descGridPane );
-		} else {
 			if( ! children.contains( descGridPane ) )
 				children.add( descGridPane );
+		} else {
+			children.remove( descGridPane );
 		}
 
 	}
 
-	private void showMenuBar( boolean show ) {
+	public void showMenuBar( boolean show ) {
+    	log.debug( ">> show menubar: {}", show );
 		ObservableList<Node> children = vboxTop.getChildren();
 		if( show ) {
 			if( ! children.contains( menubarTop ) )
@@ -515,23 +518,6 @@ public class MainController implements Initializable {
 		} else {
 			children.remove( menubarTop );
 		}
-	}
-
-	@FXML
-	public void showInputGroupSearch( ActionEvent event ) {
-
-		boolean show      = checkboxIncludeGroup.isSelected();
-		double  rowHeight = paneSearchCondition.getRowConstraints().get( 0 ).getPrefHeight();
-
-		log.debug( "showInputGroupSearch:{}, height:{}", show, rowHeight );
-
-		for( Node node : paneSearchCondition.getChildren() ) {
-			Integer rowIndex = GridPane.getRowIndex( node );
-			if( rowIndex != null && rowIndex == 1 ) {
-				node.setVisible( show );
-			}
-		}
-
 	}
 
 	@FXML
@@ -595,7 +581,7 @@ public class MainController implements Initializable {
 	 * @param event
 	 */
 	@FXML
-	public void setEventOnKeyPressedGlobally( KeyEvent event ) {
+	public void globalKeyPressedEvent( KeyEvent event ) {
 
 		Object  source  = event.getSource();
 		KeyCode keyCode = event.getCode();
@@ -603,68 +589,70 @@ public class MainController implements Initializable {
 
 		log.debug( "Event id:{}, keyCode:{}, source:{}", nodeId, event.getCode(), source );
 
+		// 한개의 키코드로 단축키가 동작하지 않는 오류 보정로직
+		if( keyCode == KeyCode.F1 ) {
+			showHelp( null );
+			event.consume();
+			return;
+		}
+
+		// 체크박스 메뉴 동작오류 보정로직
+		// (최초로딩시, 메뉴바를 숨김이 아닌 제거로 처리시, 단축키가 동작하지 않아 강제로 이벤트 설정)
+		if( event.isAltDown() ) {
+			switch ( keyCode ) {
+				case E :
+					menuitemViewDesc.setSelected( ! menuitemViewDesc.isSelected() );
+					event.consume();
+					return;
+				case V :
+					menuitemViewMenuBar.setSelected( ! menuitemViewMenuBar.isSelected() );
+					event.consume();
+					return;
+			}
+		}
+
 		if( source == inputKeyword ) {
 
-			if( keyCode == KeyCode.DOWN ) {
-				event.consume();
-				showKeywordHistory();
-			} else if( keyCode == KeyCode.ESCAPE ) {
-				event.consume();
-				tableMain.focus();
+			switch ( keyCode ) {
+				case DOWN :
+					event.consume();
+					showKeywordHistory();
+					return;
+				case ESCAPE :
+					event.consume();
+					tableMain.focus();
+					return;
 			}
 
-		} else if( event.isControlDown() ) {
+		}
+
+		if( event.isControlDown() ) {
 
 			if( event.isShiftDown() ) {
 
 				// bypass to menu
 
-			} else if( keyCode == KeyCode.RIGHT ) {
-
-				if( source == inputKeyword ) {
-					event.consume();
-					checkboxKeywordAnd.requestFocus();
-				} else if( source == checkboxKeywordAnd ) {
-					event.consume();
-					checkboxIncludeGroup.requestFocus();
-				} else if( source == inputGroup ) {
-					event.consume();
-					checkboxGroupAnd.requestFocus();
-				}
-
-			} else if( keyCode == KeyCode.LEFT ) {
-
-				if( source == checkboxKeywordAnd ) {
-					event.consume();
-					inputKeyword.requestFocus();
-				} else if( source == checkboxIncludeGroup ) {
-					event.consume();
-					checkboxKeywordAnd.requestFocus();
-				} else if( source == checkboxGroupAnd ) {
-					event.consume();
-					inputGroup.requestFocus();
-				}
-
 			} else {
 
 				if( isDescriptionShown() ) {
 
-					if( keyCode == KeyCode.S ) {
-						saveLink();
-					} else if( keyCode == KeyCode.D ) {
-						deleteLink( new ActionEvent() );
-					} else if( keyCode == KeyCode.C ) {
-						copyLink( new ActionEvent() );
-					} else if( keyCode == KeyCode.N ) {
-						createNewLink( new ActionEvent() );
-					} else if( keyCode == KeyCode.I ) {
-						changeIcon( new ActionEvent() );
-					} else if( keyCode == KeyCode.O ) {
-						openFolder( new ActionEvent() );
-					} else if( keyCode == KeyCode.F ) {
-						copyFolder( new ActionEvent() );
-					} else {
-						return;
+					switch ( keyCode ) {
+						case S :
+							saveLink(); break;
+						case D :
+							deleteLink( null ); break;
+						case C :
+							copyLink( null );
+						case N :
+							createNewLink( null );
+						case I :
+							changeIcon( new ActionEvent() );
+						case O :
+							openFolder( null );
+						case F :
+							copyFolder( null );
+						default :
+							return;
 					}
 
 					event.consume();
