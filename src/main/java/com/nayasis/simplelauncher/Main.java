@@ -23,6 +23,8 @@ import static com.nayasis.simplelauncher.common.CONSTANT.STAGE.MAIN;
 @Slf4j
 public class Main extends NApplication {
 
+    private final String APPLICATION_NAME = "Simple Launcher";
+
     @Autowired
     private ConfigController configController;
 
@@ -64,17 +66,19 @@ public class Main extends NApplication {
             HELP = new ConfigurableStage( "/view/Help.fxml" );
             MAIN = new ConfigurableStage( "/view/SimpleLauncher.fxml" );
 
+            HELP.setTitle( APPLICATION_NAME );
+            MAIN.setTitle( APPLICATION_NAME );
+
             MAIN.setOnShowing( event -> {
                 configController.restore();
             });
 
-            MAIN.setTitle( "Simple Launcher");
             MAIN.setOnCloseRequest( event -> {
                 HELP.close();
                 configController.save();
             });
 
-            Task task = new Task<Void>() {
+            new Thread( new Task<Void>() {
                 protected Void call() {
                     try {
                         dummyLogic();
@@ -83,9 +87,7 @@ public class Main extends NApplication {
                     }
                     return null;
                 }
-            };
-
-            new Thread( task ).start();
+            }).start();
 
         } catch ( Exception e ) {
             showError( e );
