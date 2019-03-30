@@ -184,7 +184,7 @@ public class MainTableCreator {
 		// Enter는 KEY_RELEASED 이벤트에서 action 이벤트로 계속 전파되 stop propagation 안됨
 		table.addEventHandler( KeyEvent.KEY_PRESSED, event -> {
 
-			log.debug( ">>> table keypress event : {}, source : {}, target : {}", event, event.getSource(), event.getTarget() );
+			log.trace( ">>> table keypress event : {}, source : {}, target : {}", event, event.getSource(), event.getTarget() );
 
 			KeyCode keyCode = event.getCode();
 
@@ -196,8 +196,6 @@ public class MainTableCreator {
 				linkExecutor.execute( table.getFocusedItem() );
 
 			} else if( keyCode == KeyCode.DELETE ) {
-
-				log.debug( "Delete action" );
 
 				event.consume();
 

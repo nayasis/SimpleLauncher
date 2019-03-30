@@ -37,6 +37,7 @@ desc.cmdNext               = Next Command
 desc.description           = description
 desc.relativeYn            = Relative Path
 desc.icon                  = Icon
+desc.showConsole           = Show console
 
 msg.info.001    = Select File to add.
 msg.info.002    = Select Icon File

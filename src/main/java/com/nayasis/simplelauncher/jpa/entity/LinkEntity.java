@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -34,6 +35,8 @@ public class LinkEntity {
     private String path;
     @Column
     private String relativePath;
+    @Column @Type(type="yes_no")
+    private Boolean showConsole;
     @Column
     private String option;
     @Column

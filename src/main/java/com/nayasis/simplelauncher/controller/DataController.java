@@ -47,6 +47,7 @@ public class DataController {
 		entity.setGrp( link.getGroup().get() );
 		entity.setPath( link.getPath() );
 		entity.setRelativePath( link.getRelativePath() );
+		entity.setShowConsole( link.getShowConsole() );
 		entity.setOption( link.getOption() );
 		entity.setOptionPrefix( link.getOptionPrefix() );
 		entity.setCommandNext( link.getCommandNext() );
@@ -158,7 +159,7 @@ public class DataController {
 
     public void readData() {
 		main.tableMain.clear();
-		List<LinkEntity> links = linkRepository.findAll();
+		List<LinkEntity> links = linkRepository.findAllByOrderByGrpAscTitleAsc();
 		log.debug( ">> links : {}", links.size() );
 		links.forEach(entity -> {
             Link link = new Link(entity);

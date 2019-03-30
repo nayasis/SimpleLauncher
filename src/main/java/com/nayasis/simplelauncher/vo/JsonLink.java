@@ -17,6 +17,7 @@ public class JsonLink {
     private String        group;
     private String        path;
     private String        relativePath;
+    private Boolean       showConsole;
     private String        option;
     private String        optionPrefix;
     private String        commandPrev;
@@ -32,6 +33,7 @@ public class JsonLink {
         this.group        = entity.getGrp();
         this.path         = entity.getPath();
         this.relativePath = entity.getRelativePath();
+        this.showConsole  = entity.getShowConsole();
         this.option       = entity.getOption();
         this.optionPrefix = entity.getOptionPrefix();
         this.commandPrev  = entity.getCommandPrev();
@@ -50,6 +52,7 @@ public class JsonLink {
         entity.setGrp( getGroup() );
         entity.setPath( getPath() );
         entity.setRelativePath( getRelativePath() );
+        entity.setShowConsole( getShowConsole() );
         entity.setOption( getOption() );
         entity.setOptionPrefix( getOptionPrefix() );
         entity.setCommandNext( getCommandNext() );

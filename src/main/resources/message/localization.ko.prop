@@ -36,6 +36,7 @@ desc.cmdNext               = 후행 명령어
 desc.description           = 설명
 desc.relativeYn            = 상대경로여부
 desc.icon                  = 아이콘
+desc.showConsole           = 콘솔출력
 
 preloader.loadSpring = 스프링 모듈 로딩
 

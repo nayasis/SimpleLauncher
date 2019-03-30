@@ -74,6 +74,7 @@ public class MainController implements Initializable {
 
     @FXML public GridPane         descGridPane;
     @FXML public TextField        descGroupName;
+    @FXML public CheckBox         descShowConsole;
     @FXML public TextField        descTitle;
     @FXML public TextArea         descDescription;
     @FXML public ImageView        descIcon;
@@ -300,6 +301,7 @@ public class MainController implements Initializable {
 		};
 
         descGroupName.textProperty().addListener( changeListener );
+        descShowConsole.selectedProperty().addListener( changeListener );
         descTitle.textProperty().addListener( changeListener );
         descDescription.textProperty().addListener( changeListener );
         descExecPath.textProperty().addListener( changeListener );
@@ -321,7 +323,6 @@ public class MainController implements Initializable {
 		});
 
 		menuItemHelp.setAccelerator( new KeyCodeCombination(KeyCode.F1) );
-
 
 	}
 
@@ -459,6 +460,7 @@ public class MainController implements Initializable {
 	private void bindLinkToView() {
 
 		descTitle.setText( linkDetail.getTitle().get() );
+		descShowConsole.setSelected( linkDetail.getShowConsole() );
 		descGroupName.setText( linkDetail.getGroup().get() );
 		descDescription.setText( linkDetail.getDescription() );
 		descExecPath.setText( linkDetail.getPath() );
@@ -473,6 +475,7 @@ public class MainController implements Initializable {
 	private void bindViewToLink() {
 
 		linkDetail.setTitle( descTitle.getText() );
+		linkDetail.setShowConsole( descShowConsole.isSelected() );
 		linkDetail.setGroup( descGroupName.getText() );
 		linkDetail.setDescription( descDescription.getText() );
 		linkDetail.setPath( descExecPath.getText() );

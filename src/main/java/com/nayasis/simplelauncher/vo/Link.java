@@ -38,6 +38,7 @@ public class Link {
 	private SimpleStringProperty            group         = new SimpleStringProperty();
 	private String                          path;
 	private String                          relativePath;
+	private Boolean                         showConsole;
 	private String                          option;
 	private String                          optionPrefix;
 	private String                          commandPrev;
@@ -52,16 +53,18 @@ public class Link {
 	public Link( LinkEntity entity ) {
 
 		this.id           = entity.getId();
-		this.title        .set( entity.getTitle() );
-		this.group        .set( entity.getGrp() );
 		this.path         = entity.getPath();
 		this.relativePath = entity.getRelativePath();
+		this.showConsole  = entity.getShowConsole();
 		this.option       = entity.getOption();
 		this.optionPrefix = entity.getOptionPrefix();
 		this.commandPrev  = entity.getCommandPrev();
 		this.commandNext  = entity.getCommandNext();
 		this.description  = entity.getDescription();
-		this.execCount    .set( entity.getExecCount() );
+
+		this.title.set( entity.getTitle() );
+		this.group.set( entity.getGrp() );
+		this.execCount.set( entity.getExecCount() );
 
 		setKeyword( entity.getKeyword() );
 		setLastExecDate( entity.getLastExecDate() );
@@ -114,12 +117,6 @@ public class Link {
 
 	}
 
-	public boolean hasSameId( Link link ) {
-		if( link == null ) return false;
-		if( id == null && link.id == null ) return true;
-		return id.equals( link.id );
-	}
-
 	public void setIcon( byte[] bytes ) {
 		if( Validator.isEmpty(bytes) )
 			bytes = CONSTANT.ICON_NEW;
@@ -165,6 +162,10 @@ public class Link {
 		return path.startsWith( ".." + File.separator );
 	}
 
+	public Boolean getShowConsole() {
+		return Validator.nvl( showConsole, Boolean.FALSE );
+	}
+
 	public Link clone() {
 
 		Link clone = new Link();
@@ -174,6 +175,7 @@ public class Link {
 		clone.group        = group;
 		clone.path         = path;
 		clone.relativePath = relativePath;
+		clone.showConsole  = showConsole;
 		clone.option       = option;
 		clone.optionPrefix = optionPrefix;
 		clone.commandPrev  = commandPrev;
