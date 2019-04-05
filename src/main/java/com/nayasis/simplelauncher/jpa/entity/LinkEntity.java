@@ -11,6 +11,7 @@ import org.hibernate.annotations.Type;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Collection;
+import java.util.Set;
 
 @Entity
 @Table(
@@ -68,7 +69,7 @@ public class LinkEntity {
         this.keyword = keyword;
     }
 
-    public void setKeyword( Collection<String> keyword ) {
+    public void setKeyword( Set<String> keyword ) {
         this.keyword = Reflector.toJson( keyword );
     }
 

@@ -3,6 +3,7 @@ package com.nayasis.simplelauncher.service;
 import com.nayasis.simplelauncher.controller.MainController;
 import com.nayasis.simplelauncher.vo.IconTitle;
 import com.nayasis.simplelauncher.vo.Link;
+import com.sun.org.apache.xalan.internal.xsltc.compiler.util.StringStack;
 import io.nayasis.common.base.Strings;
 import io.nayasis.common.model.NDate;
 import io.nayasis.common.ui.javafx.control.table.NTable;
@@ -29,7 +30,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Queue;
+import java.util.Stack;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 
@@ -164,17 +169,13 @@ public class MainTableCreator {
 		// 데이터 필터 설정
 		table.setFilter( (observable, oldVal, newVal) -> {
 
-			String  keyword  = mainController.inputKeyword.getText();
-			boolean isRegexp = mainController.chkRegexSearch.isSelected();
-			String  group    = mainController.inputGroup.getText();
-
-			Pattern patternGroup   = toPattern( group,   isRegexp );
-			Pattern patternKeyword = toPattern( keyword, isRegexp );
+			List patternGroup   = toPostfix( mainController.inputGroup.getText() );
+			List patternKeyword = toPostfix( mainController.inputKeyword.getText() );
 
 			return link -> {
-				if (patternGroup == null && patternKeyword == null) return true;
-				if (patternGroup != null && ! link.isGroupMatched(patternGroup)) return false;
-				return link.isKeywordMatched( patternKeyword );
+				if( ! isGroupMatched( patternGroup,     link ) ) return false;
+				if( ! isKeywordMatched( patternKeyword, link ) ) return false;
+				return true;
 			};
 		});
 
@@ -225,43 +226,108 @@ public class MainTableCreator {
 		columnExecCount  = table.getColumn( "colExecCount"  );
 	}
 
-	private Pattern toPattern( String text, boolean isRegexp ) {
+	private boolean isKeywordMatched( List postfix, Link link ) {
+		return isMatched( postfix, link, (lnk, word) -> lnk.isKeywordMatched(word) );
+	}
 
-		text = Strings.compressSpace( text ).trim();
+	private boolean isGroupMatched( List postfix, Link link ) {
+		return isMatched( postfix, link, (lnk, word) -> lnk.isGroupMatched(word) );
+	}
 
-		if( Strings.isEmpty(text) ) return null;
+	private boolean isMatched( List postfix, Link link, Matcher matcher ) {
 
-		try {
+		if( postfix.isEmpty() ) return true;
 
-			text = text
-				.replaceAll( "([\\^\\$\\+\\*\\?\\.\\{\\}\\[\\]\\|])", "\\$1" )
-				.replaceAll( "\\*", ".*?" )
-			;
+		Stack<Boolean> stack = new Stack();
 
-			StringBuilder sb = new StringBuilder();
+		for( Object exp : postfix ) {
 
-			sb.append( "(?mis)" );
+			if( exp instanceof Operator ) {
 
-			List<String> split = Strings.tokenize( text, " " );
+				Boolean v1 = stack.pop();
+				Boolean v2 = stack.pop();
 
-//			if( isAnd ) {
-//				sb.append( "(?=.*" );
-//				sb.append( Strings.join( split, ")(?=.*" ) );
-//				sb.append( ")" );
-//			}
+				switch( (Operator) exp ) {
+					case AND :
+						stack.push( v1 && v2 );
+						break;
+					case OR :
+						stack.push( v1 || v2 );
+						break;
+				}
 
-			sb.append( "(" );
-			sb.append( Strings.join( split, "|" ) );
-			sb.append( ")" );
+			} else {
+				stack.push( matcher.isMatched( link, (String) exp ) );
+			}
 
-			return Pattern.compile( sb.toString() );
-
-
-		} catch( PatternSyntaxException e ) {
-			log.error( Strings.format("Error in parsing pattern : {}", text), e );
-			throw e;
 		}
 
+		return stack.pop();
+
+	}
+
+	private List toPostfix( String text ) {
+
+		List postfix = new LinkedList();
+
+		Stack operators = new Stack();
+
+		for( Object exp : toExpression( text ) ) {
+
+			if( exp instanceof Operator ) {
+				operators.push( exp );
+			} else {
+				postfix.add( exp );
+				if( ! operators.isEmpty() ) {
+					postfix.add( operators.pop() );
+				}
+			}
+
+		}
+
+		while( ! operators.isEmpty() ) {
+			postfix.add( operators.pop() );
+		}
+
+		return postfix;
+
+	}
+
+	private List toExpression( String text ) {
+
+		LinkedList expression = new LinkedList();
+
+		for( String token : Strings.tokenize(text, " ,") ) {
+			if( token.equals(",") ) {
+				if( ! expression.isEmpty() ) {
+					if( expression.peek() instanceof Operator ) {
+						expression.push( Operator.OR );
+					}
+				}
+			} else {
+				if( ! expression.isEmpty() ) {
+					if( expression.peek() instanceof Operator ) {
+						expression.push( Operator.AND );
+					}
+				}
+				expression.add( token );
+			}
+		}
+
+		if( expression.peek() instanceof Operator ) {
+			expression.pop();
+		}
+
+		return expression;
+
+	}
+
+	private enum Operator {
+		AND, OR;
+	}
+
+	private interface Matcher {
+		boolean isMatched( Link link, String keyword );
 	}
 
 }

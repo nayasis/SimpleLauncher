@@ -1,13 +1,10 @@
 package com.nayasis.simplelauncher.controller;
 
-import com.nayasis.simplelauncher.common.CONSTANT;
-import com.nayasis.simplelauncher.common.CONSTANT.STAGE;
 import com.nayasis.simplelauncher.jpa.entity.ConfigEntity;
 import com.nayasis.simplelauncher.jpa.repository.ConfigRepository;
 import io.nayasis.common.cache.implement.LruCache;
 import io.nayasis.common.reflection.Reflector;
 import io.nayasis.common.ui.javafx.properties.StageProperties;
-import io.nayasis.common.ui.javafx.stage.ConfigurableStage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

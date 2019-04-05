@@ -1,5 +1,6 @@
 package com.nayasis.simplelauncher;
 
+import com.nayasis.simplelauncher.common.AbstractApplication;
 import com.nayasis.simplelauncher.controller.ConfigController;
 import com.nayasis.simplelauncher.view.preloader.Splash;
 import io.nayasis.common.model.Messages;
@@ -21,16 +22,12 @@ import static com.nayasis.simplelauncher.common.CONSTANT.STAGE.MAIN;
 
 @SpringBootApplication
 @Slf4j
-public class Main extends NApplication {
+public class Main extends AbstractApplication {
 
     private final String APPLICATION_NAME = "Simple Launcher";
 
     @Autowired
     private ConfigController configController;
-
-    private ConfigurableApplicationContext context;
-
-    private Exception initError = null;
 
     public static void main( String... args ) {
         addDefaultIcon( "/image/icon/favicon.png" );
@@ -39,59 +36,35 @@ public class Main extends NApplication {
     }
 
     @Override
-    public void stop() {
-        context.close();
-    }
+    protected void start() {
 
-    @Override
-    public void init() throws Exception {
-        try {
-            context = SpringApplication.run( Main.class, getRawParameters() );
-            context.getAutowireCapableBeanFactory().autowireBean( this );
-            setDefaultControllerFactory( context::getBean );
-        } catch ( Exception e ) {
-            initError = e;
-        }
-    }
+        Messages.load( "message/**.prop" );
 
-    @Override
-    public void start( Stage primaryStage ) throws Exception {
+        HELP = new ConfigurableStage( "/view/Help.fxml" );
+        MAIN = new ConfigurableStage( "/view/SimpleLauncher.fxml" );
 
-        try {
+        MAIN.setTitle( APPLICATION_NAME );
+        HELP.setTitle( APPLICATION_NAME );
 
-            if( initError != null ) throw initError;
+        MAIN.setOnShowing( event -> {
+            configController.restore();
+        });
 
-            Messages.load( "message/**.prop" );
+        MAIN.setOnCloseRequest( event -> {
+            HELP.close();
+            configController.save();
+        });
 
-            HELP = new ConfigurableStage( "/view/Help.fxml" );
-            MAIN = new ConfigurableStage( "/view/SimpleLauncher.fxml" );
-
-            HELP.setTitle( APPLICATION_NAME );
-            MAIN.setTitle( APPLICATION_NAME );
-
-            MAIN.setOnShowing( event -> {
-                configController.restore();
-            });
-
-            MAIN.setOnCloseRequest( event -> {
-                HELP.close();
-                configController.save();
-            });
-
-            new Thread( new Task<Void>() {
-                protected Void call() {
-                    try {
-                        dummyLogic();
-                    } catch ( Exception e ) {
-                        showError( e );
-                    }
-                    return null;
+        new Thread( new Task<Void>() {
+            protected Void call() {
+                try {
+                    dummyLogic();
+                } catch ( Exception e ) {
+                    showError( e );
                 }
-            }).start();
-
-        } catch ( Exception e ) {
-            showError( e );
-        }
+                return null;
+            }
+        }).start();
 
     }
 
@@ -117,12 +90,6 @@ public class Main extends NApplication {
 
     }
 
-    private void showError( Throwable e ) {
-        Platform.runLater( () -> {
-            e.printStackTrace( System.err );
-            Dialog.error( e );
-            closePreloader();
-        });
-    }
+
 
 }

@@ -21,6 +21,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.LocalDateTime;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -211,26 +213,32 @@ public class Link {
 		this.keyword = keyword;
 	}
 
-	public boolean isKeywordMatched( Pattern pattern ) {
-		if( pattern == null || Validator.isEmpty(keyword) ) return true;
+	public boolean isKeywordMatched( String word ) {
+		if( Validator.isEmpty(word) || Validator.isEmpty(keyword) ) return true;
 		for( String k : keyword ) {
-			if( Validator.isFound( k, pattern ) ) return true;
+			if( k.contains( word ) ) return true;
 		}
 		return false;
 	}
 
-	public boolean isGroupMatched( Pattern pattern ) {
-		if( pattern == null || Validator.isEmpty(group.get()) ) return true;
-		return Validator.isFound( group.get(), pattern );
+	public boolean isGroupMatched( String word ) {
+		if( Validator.isEmpty(word) || Validator.isEmpty(group.get()) ) return true;
+		return group.get().toLowerCase().contains( word );
 	}
 
 	public void setKeyword( String keyword ) {
-		List<String> values = Strings.tokenize(keyword, " \t\n");
-		this.keyword = new LinkedHashSet<>( values );
+		if( this.keyword == null ) {
+			this.keyword = new HashSet<>();
+		} else {
+			this.keyword.clear();
+		}
+		for( String val : Strings.tokenize(keyword, " \t\n") ) {
+			this.keyword.add( val.toLowerCase().trim() );
+		}
 	}
 
 	public Link refreshKeyword() {
-		setKeyword( Strings.format("{}\n{}\n{}", title.get(), group.get(), description) );
+		setKeyword( Strings.format("{}\n{}\n{}", title.get(), description) );
 		return this;
 	}
 
@@ -327,6 +335,7 @@ public class Link {
 		String unextName = file.getName().replaceFirst( "\\.[^/.]+$", "" );
 		String path      = file.getPath();
 		String unextPath = file.getPath().replaceFirst( "\\.[^/.]+$", "" );
+		String home      = System.getProperty( "user.home" );
 
 		if( File.separator.equals( "\\" ) ) {
 			cd        = cd.replaceAll( "\\\\", "\\\\\\\\" );
@@ -334,6 +343,7 @@ public class Link {
 			unextName = unextName.replaceAll( "\\\\", "\\\\\\\\" );
 			path      = path.replaceAll( "\\\\", "\\\\\\\\" );
 			unextPath = unextPath.replaceAll( "\\\\", "\\\\\\\\" );
+			home      = home.replaceAll( "\\\\", "\\\\\\\\" );
 		}
 
 		return option
@@ -341,7 +351,8 @@ public class Link {
 			.replaceAll( "(?i)#\\{name\\}", name )
 			.replaceAll( "(?i)#\\{unextName\\}", unextName )
 			.replaceAll( "(?i)#\\{path\\}", path )
-			.replaceAll( "(?i)#\\{unextPath\\}", unextPath );
+			.replaceAll( "(?i)#\\{unextPath\\}", unextPath )
+			.replaceAll( "(?i)#\\{home\\}", home );
 
 	}
 
