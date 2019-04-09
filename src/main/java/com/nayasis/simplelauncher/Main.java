@@ -4,18 +4,15 @@ import com.nayasis.simplelauncher.common.AbstractApplication;
 import com.nayasis.simplelauncher.controller.ConfigController;
 import com.nayasis.simplelauncher.view.preloader.Splash;
 import io.nayasis.common.model.Messages;
-import io.nayasis.common.ui.javafx.application.NApplication;
-import io.nayasis.common.ui.javafx.dialog.Dialog;
 import io.nayasis.common.ui.javafx.stage.ConfigurableStage;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.concurrent.Task;
-import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.ConfigurableApplicationContext;
 
 import static com.nayasis.simplelauncher.common.CONSTANT.STAGE.HELP;
 import static com.nayasis.simplelauncher.common.CONSTANT.STAGE.MAIN;
@@ -36,9 +33,16 @@ public class Main extends AbstractApplication {
     }
 
     @Override
-    protected void start() {
+    protected void start( CommandLine commandLine ) {
 
         Messages.load( "message/**.prop" );
+
+        if( commandLine.hasOption( "h" ) ) {
+            printHelp();
+            return;
+        } else if( commandLine.hasOption( "clear" ) ) {
+            configController.restoreMainStageProperties = false;
+        }
 
         HELP = new ConfigurableStage( "/view/Help.fxml" );
         MAIN = new ConfigurableStage( "/view/SimpleLauncher.fxml" );
@@ -90,6 +94,16 @@ public class Main extends AbstractApplication {
 
     }
 
+    @Override
+    protected void setOptions( Options options ) {
+        options.addOption( "h", false, "print Help." );
+        options.addOption( "clean", false, "clean memorized UI setting." );
+    }
 
+    private void printHelp() {
+        closePreloader();
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp( "Help...", options );
+    }
 
 }
