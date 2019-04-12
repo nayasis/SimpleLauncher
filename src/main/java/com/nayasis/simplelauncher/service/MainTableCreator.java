@@ -31,12 +31,10 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Queue;
 import java.util.Stack;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 @Service
 @Slf4j
@@ -268,11 +266,11 @@ public class MainTableCreator {
 
 	private List toPostfix( String text ) {
 
-		List postfix = new LinkedList();
+		List postfix = new ArrayList();
 
 		Stack operators = new Stack();
 
-		for( Object exp : toExpression( text ) ) {
+		for( Object exp : toExpression(text) ) {
 
 			if( exp instanceof Operator ) {
 				operators.push( exp );
@@ -297,26 +295,29 @@ public class MainTableCreator {
 
 		LinkedList expression = new LinkedList();
 
-		for( String token : Strings.tokenize(text, " ,") ) {
+		for( String token : Strings.tokenize(text, " ,", true) ) {
+		    if( token.equals( " " ) ) continue;
 			if( token.equals(",") ) {
 				if( ! expression.isEmpty() ) {
-					if( expression.peek() instanceof Operator ) {
+					if( ! (expression.peek() instanceof Operator) ) {
 						expression.push( Operator.OR );
 					}
 				}
 			} else {
 				if( ! expression.isEmpty() ) {
-					if( expression.peek() instanceof Operator ) {
+					if( ! (expression.peek() instanceof Operator) ) {
 						expression.push( Operator.AND );
 					}
 				}
-				expression.add( token );
+				expression.push( token );
 			}
 		}
 
 		if( expression.peek() instanceof Operator ) {
 			expression.pop();
 		}
+
+        Collections.reverse( expression );
 
 		return expression;
 
