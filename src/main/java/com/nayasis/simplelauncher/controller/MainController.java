@@ -612,7 +612,6 @@ public class MainController implements Initializable {
 		}
 
 		if( source == inputKeyword ) {
-
 			switch ( keyCode ) {
 				case DOWN :
 					event.consume();
@@ -623,7 +622,15 @@ public class MainController implements Initializable {
 					tableMain.focus();
 					return;
 			}
+		}
 
+		if( source == inputGroup ) {
+			switch ( keyCode ) {
+				case ESCAPE :
+					event.consume();
+					tableMain.focus();
+					return;
+			}
 		}
 
 		if( event.isControlDown() ) {

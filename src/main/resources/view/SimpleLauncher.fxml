@@ -171,6 +171,12 @@
                               <Insets right="3.0" />
                            </GridPane.margin>
                         </Label>
+                        <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="5.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
+                           <children>
+                              <TextField fx:id="descGroupName" />
+                              <CheckBox fx:id="descShowConsole" mnemonicParsing="false" text="\%desc.showConsole" />
+                           </children>
+                        </HBox>
                         <TextField fx:id="descTitle" GridPane.columnIndex="1" GridPane.rowIndex="2" />
                         <TextArea fx:id="descDescription" onKeyPressed="#globalKeyPressedEvent" GridPane.columnIndex="1" GridPane.rowIndex="3">
                            <opaqueInsets>
@@ -253,12 +259,6 @@
                               </HBox>
                            </children>
                         </GridPane>
-                        <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="5.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
-                           <children>
-                              <TextField fx:id="descGroupName" />
-                              <CheckBox fx:id="descShowConsole" mnemonicParsing="false" text="\%desc.showConsole" />
-                           </children>
-                        </HBox>
                      </children>
                      <columnConstraints>
                         <ColumnConstraints halignment="RIGHT" hgrow="ALWAYS" maxWidth="-Infinity" minWidth="70.0" prefWidth="100.0" />
