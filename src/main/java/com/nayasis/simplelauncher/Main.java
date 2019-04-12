@@ -14,6 +14,8 @@ import org.apache.commons.cli.Options;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import java.io.IOException;
+
 import static com.nayasis.simplelauncher.common.CONSTANT.STAGE.HELP;
 import static com.nayasis.simplelauncher.common.CONSTANT.STAGE.MAIN;
 
@@ -74,7 +76,7 @@ public class Main extends AbstractApplication {
 
     }
 
-    private void dummyLogic() throws InterruptedException {
+    private void dummyLogic() throws InterruptedException, IOException {
 
         notifyPreloader( 10. );
         notifyPreloader( "preloader.loadSpring" );
@@ -93,6 +95,8 @@ public class Main extends AbstractApplication {
         closePreloader();
 
         MAIN.showLater();
+
+
 
     }
 

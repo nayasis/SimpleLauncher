@@ -1,5 +1,7 @@
 package com.nayasis.simplelauncher.service;
 
+import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
+import com.googlecode.lanterna.terminal.Terminal;
 import com.nayasis.simplelauncher.controller.DataController;
 import com.nayasis.simplelauncher.controller.MainController;
 import com.nayasis.simplelauncher.vo.Link;
@@ -15,6 +17,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
 
 @Service
 @Slf4j
@@ -47,8 +51,10 @@ public class LinkExecutor {
 
 		CommandExecutor executor = new CommandExecutor();
 
+		boolean showConsole = link.getShowConsole();
+
 		for( String commandLine : Strings.tokenize( link.getCommandPrev(), "\n" ) ) {
-			run( executor, commandLine, null ).waitFor();
+			run( executor, commandLine, null, showConsole );
 		}
 
 		try {
@@ -59,7 +65,7 @@ public class LinkExecutor {
 
 			mainController.labelCmd.setText( cmd );
 
-			run( executor, cmd, execPath );
+			run( executor, cmd, execPath, showConsole );
 
 
 		} catch( Exception e ) {
@@ -77,7 +83,7 @@ public class LinkExecutor {
 				executor.waitFor();
 
 				for( String commandLine : Strings.tokenize( threadLink.getCommandNext(), "\n" ) ) {
-					run( executor, commandLine, null ).waitFor();
+					run( executor, commandLine, null, showConsole );
 				}
 
 			}).start();
@@ -112,11 +118,22 @@ public class LinkExecutor {
 
 	}
 
-	private CommandExecutor run( CommandExecutor executor, String commandLine, String workingDirectory ) {
+	private CommandExecutor run( CommandExecutor executor, String commandLine, String workingDirectory, boolean showConsole ) {
+
 		Command command = new Command();
 		command.setWorkingDirectory( workingDirectory );
 		command.set( commandLine );
-		executor.run( command );
+
+		if( showConsole ) {
+
+			// TODO : 출력 스트림을 lanterna Terminal 로 연동
+
+			StringBuffer out = new StringBuffer();
+
+			executor.run( command ).waitFor();
+
+		}
+
 		return executor;
 	}
 
@@ -157,6 +174,26 @@ public class LinkExecutor {
 			new Desktop().copyToClipboard( link.getPath() );
 
 		}
+
+	}
+
+	private void drawConsole() throws IOException {
+
+		Terminal terminal = new DefaultTerminalFactory( System.out, System.in, Charset.forName( "UTF-8" ) ).createTerminal();
+
+		terminal.enterPrivateMode();
+
+		terminal.setCursorPosition( 10, 5 );
+		terminal.putCharacter( 'H' );
+		terminal.putCharacter( 'e' );
+		terminal.putCharacter( 'l' );
+		terminal.putCharacter( 'l' );
+		terminal.putCharacter( 'o' );
+		terminal.putCharacter( '!' );
+
+		terminal.flush();
+
+//        terminal.exitPrivateMode();
 
 	}
 
