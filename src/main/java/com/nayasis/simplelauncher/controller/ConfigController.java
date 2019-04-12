@@ -25,7 +25,7 @@ public class ConfigController {
 
 	private LruCache<String,String> keywordHistory = new LruCache<>( 20 );
 
-	public boolean restoreMainStageProperties = true;
+	private boolean restoreMainStageProperties = true;
 
 	private enum ConfigKey {
 		MAIN_STAGE, KEYWORD_HISTORY
@@ -38,7 +38,11 @@ public class ConfigController {
 		restoreKeywordHistory();
 	}
 
-	@Transactional
+    public void setRestoreMainStageProperties( boolean restoreMainStageProperties ) {
+        this.restoreMainStageProperties = restoreMainStageProperties;
+    }
+
+    @Transactional
 	public void save() {
 		saveMainStageProperties();
 //		saveKeywordHistory();

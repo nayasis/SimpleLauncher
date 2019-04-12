@@ -50,12 +50,12 @@
                 </Menu>
                 <Menu mnemonicParsing="false" text="\%menu.view">
                   <items>
-                        <CheckMenuItem fx:id="menuitemViewDesc" mnemonicParsing="false" text="\%menu.view.description">
+                        <CheckMenuItem fx:id="menuitemViewDesc" mnemonicParsing="false" selected="true" text="\%menu.view.description">
                            <accelerator>
                               <KeyCodeCombination alt="DOWN" code="E" control="UP" meta="UP" shift="UP" shortcut="UP" />
                            </accelerator>
                         </CheckMenuItem>
-                        <CheckMenuItem fx:id="menuitemViewMenuBar" mnemonicParsing="false" text="\%menu.view.showMenuBar">
+                        <CheckMenuItem fx:id="menuitemViewMenuBar" mnemonicParsing="false" selected="true" text="\%menu.view.showMenuBar">
                            <accelerator>
                               <KeyCodeCombination alt="DOWN" code="V" control="UP" meta="UP" shift="UP" shortcut="UP" />
                            </accelerator>

@@ -41,7 +41,7 @@ public class Main extends AbstractApplication {
             printHelp();
             return;
         } else if( commandLine.hasOption( "clear" ) ) {
-            configController.restoreMainStageProperties = false;
+            configController.setRestoreMainStageProperties( false );
         }
 
         HELP = new ConfigurableStage( "/view/Help.fxml" );
@@ -97,7 +97,7 @@ public class Main extends AbstractApplication {
     @Override
     protected void setOptions( Options options ) {
         options.addOption( "h", false, "print Help." );
-        options.addOption( "clean", false, "clean memorized UI setting." );
+        options.addOption( "clear", false, "clear memorized UI setting." );
     }
 
     private void printHelp() {
