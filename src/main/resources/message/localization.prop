@@ -11,7 +11,6 @@ menu.help                  = Help
 menu.help.about            = About
 search.keyword             = Keyword
 search.group               = Group
-search.regex               = regexp
 btn.search                 = Search
 btn.new                    = (N)ew
 btn.delete                 = (D)elete

@@ -80,7 +80,6 @@
                <children>
                   <Label alignment="CENTER_RIGHT" text="\%search.keyword" />
                   <TextField fx:id="inputKeyword" onKeyPressed="#globalKeyPressedEvent" prefWidth="520.0" HBox.hgrow="ALWAYS" />
-                  <CheckBox fx:id="chkRegexSearch" mnemonicParsing="false" onKeyPressed="#globalKeyPressedEvent" text="\%search.regex" />
                   <Label alignment="CENTER_RIGHT" text="\%search.group">
                      <HBox.margin>
                         <Insets left="5.0" />

@@ -160,7 +160,6 @@ public class MainTableCreator {
 		// filter 트리거 설정
 		mainController.inputKeyword.textProperty().addListener( table.getChangeListener() );
 		mainController.inputGroup.textProperty().addListener( table.getChangeListener() );
-		mainController.chkRegexSearch.selectedProperty().addListener( table.getChangeListener() );
 
 		// 데이터 필터 설정
 		table.setFilter( (observable, oldVal, newVal) -> {
@@ -221,6 +220,5 @@ public class MainTableCreator {
 		columnLastUsedDt = table.getColumn( "colLastUsedDt" );
 		columnExecCount  = table.getColumn( "colExecCount"  );
 	}
-
 
 }

@@ -28,7 +28,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
-import javafx.scene.input.KeyCharacterCombination;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyEvent;
@@ -52,7 +51,6 @@ public class MainController implements Initializable {
 
 	@FXML public AnchorPane       root;
 	@FXML public VBox             vboxTop;
-	@FXML public GridPane         paneSearchCondition;
 
 	@FXML public MenuBar          menubarTop;
     @FXML public CheckMenuItem    menuitemViewDesc;
@@ -61,7 +59,6 @@ public class MainController implements Initializable {
 
     @FXML public TextField        inputKeyword;
     @FXML public TextField        inputGroup;
-    @FXML public CheckBox         chkRegexSearch;
 
           public ListView<String> listKeywordHistory = new ListView<>();
 
