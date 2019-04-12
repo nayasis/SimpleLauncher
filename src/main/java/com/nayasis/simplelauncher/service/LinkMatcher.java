@@ -11,12 +11,16 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Stack;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @Slf4j
 public class LinkMatcher {
 
     private LruCache<String,List> cache = new LruCache<>( 20 );
+
+    private Pattern REGEXP_ASTERISK = Pattern.compile( "(?<!\\\\)(\\\\[\\*\\?])" );
 
     public boolean isKeywordMatched( List postfix, Link link ) {
         return isMatched( postfix, link, (lnk, word) -> lnk.isKeywordMatched(word) );
@@ -26,7 +30,7 @@ public class LinkMatcher {
         return isMatched( postfix, link, (lnk, word) -> lnk.isGroupMatched(word) );
     }
 
-    private boolean isMatched( List postfix, Link link, Matcher matcher ) {
+    private boolean isMatched( List postfix, Link link, Worker matcher ) {
 
         if( postfix.isEmpty() ) return true;
 
@@ -49,7 +53,7 @@ public class LinkMatcher {
                 }
 
             } else {
-                stack.push( matcher.isMatched( link, (String) exp ) );
+                stack.push( matcher.isMatched( link, (Pattern) exp ) );
             }
 
         }
@@ -58,40 +62,34 @@ public class LinkMatcher {
 
     }
 
-    private interface Matcher {
-        boolean isMatched( Link link, String keyword );
-    }
+    public List toPostfix( String searchKeyword ) {
 
-    public List toPostfix( String text ) {
+        searchKeyword = searchKeyword.trim();
 
-        text = text.trim();
-
-        if( ! cache.contains(text) ) {
+        if( ! cache.contains(searchKeyword) ) {
 
             List postfix = new ArrayList();
-
             Stack operators = new Stack();
 
-            for ( Object exp : toExpression( text ) ) {
+            for ( Object exp : toExpression( searchKeyword ) ) {
                 if ( exp instanceof Operator ) {
                     operators.push( exp );
                 } else {
-                    postfix.add( exp );
+                    postfix.add( toSearchPattern((String)exp) );
                     if ( !operators.isEmpty() ) {
                         postfix.add( operators.pop() );
                     }
                 }
             }
 
-            while ( !operators.isEmpty() ) {
+            while ( !operators.isEmpty() )
                 postfix.add( operators.pop() );
-            }
 
-            cache.put( text, postfix );
+            cache.put( searchKeyword, postfix );
 
         }
 
-        return cache.get( text );
+        return cache.get( searchKeyword );
 
     }
 
@@ -113,13 +111,12 @@ public class LinkMatcher {
                         expression.push( Operator.AND );
                     }
                 }
-                expression.push( token );
+                expression.push( token.trim() );
             }
         }
 
-        if( expression.peek() instanceof Operator ) {
+        if( expression.peek() instanceof Operator )
             expression.pop();
-        }
 
         Collections.reverse( expression );
 
@@ -127,8 +124,29 @@ public class LinkMatcher {
 
     }
 
+    private Pattern toSearchPattern( String keyword ) {
+        if( keyword.isEmpty() ) return null;
+        Matcher matcher = REGEXP_ASTERISK.matcher( Strings.escapeRegexKeyword(keyword.toLowerCase()) );
+        StringBuffer sb = new StringBuffer();
+        while( matcher.find() ) {
+            String group = matcher.group( 1 );
+            if( group.equals( "\\*" ) ) {
+                group = ".*";
+            } else {
+                group = ".";
+            }
+            matcher.appendReplacement( sb, group );
+        }
+        matcher.appendTail( sb );
+        return Pattern.compile( sb.toString() );
+    }
+
+    private interface Worker {
+        boolean isMatched( Link link, Pattern keyword );
+    }
+
     private enum Operator {
-        AND, OR;
+        AND, OR
     }
 
 }

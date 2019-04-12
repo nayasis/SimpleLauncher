@@ -6,6 +6,7 @@ import io.nayasis.common.base.Strings;
 import io.nayasis.common.etc.Platform;
 import io.nayasis.common.file.Files;
 import io.nayasis.common.model.NDate;
+import io.nayasis.common.reflection.Reflector;
 import io.nayasis.common.ui.javafx.image.Images;
 import io.nayasis.common.validation.Validator;
 import javafx.beans.property.SimpleObjectProperty;
@@ -21,10 +22,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.LocalDateTime;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -68,7 +67,7 @@ public class Link {
 		this.group.set( entity.getGrp() );
 		this.execCount.set( entity.getExecCount() );
 
-		setKeyword( entity.getKeyword() );
+		setKeyword( new HashSet<>(Reflector.toListFrom(entity.getKeyword())) );
 		setLastExecDate( entity.getLastExecDate() );
 		setIcon( entity.getIcon() );
 
@@ -213,17 +212,17 @@ public class Link {
 		this.keyword = keyword;
 	}
 
-	public boolean isKeywordMatched( String word ) {
-		if( Validator.isEmpty(word) || Validator.isEmpty(keyword) ) return true;
+	public boolean isKeywordMatched( Pattern pattern ) {
+		if( Validator.isEmpty(pattern) || Validator.isEmpty(keyword) ) return true;
 		for( String k : keyword ) {
-			if( k.contains( word ) ) return true;
+			if( Validator.isFound(k, pattern) ) return true;
 		}
 		return false;
 	}
 
-	public boolean isGroupMatched( String word ) {
-		if( Validator.isEmpty(word) || Validator.isEmpty(group.get()) ) return true;
-		return group.get().toLowerCase().contains( word );
+	public boolean isGroupMatched( Pattern pattern ) {
+		if( Validator.isEmpty(pattern) || Validator.isEmpty(group.get()) ) return true;
+		return Validator.isFound( group.get().toLowerCase(), pattern );
 	}
 
 	public void setKeyword( String keyword ) {
@@ -238,7 +237,7 @@ public class Link {
 	}
 
 	public Link refreshKeyword() {
-		setKeyword( Strings.format("{}\n{}\n{}", title.get(), description) );
+		setKeyword( title.get() + " " + description );
 		return this;
 	}
 
