@@ -21,6 +21,8 @@ import static com.nayasis.simplelauncher.common.CONSTANT.STAGE.MAIN;
 @Slf4j
 public class Main extends AbstractApplication {
 
+    public static Main $ = new Main();
+
     private final String APPLICATION_NAME = "Simple Launcher";
 
     @Autowired
