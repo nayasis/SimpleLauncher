@@ -1,7 +1,7 @@
 package com.nayasis.simplelauncher.jpa.entity;
 
-import io.nayasis.common.model.NDate;
-import io.nayasis.common.reflection.Reflector;
+import io.nayasis.common.basica.model.NDate;
+import io.nayasis.common.basica.reflection.Reflector;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,7 +10,6 @@ import org.hibernate.annotations.Type;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.Collection;
 import java.util.Set;
 
 @Entity

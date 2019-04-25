@@ -1,7 +1,7 @@
 package com.nayasis.simplelauncher.vo;
 
 import com.nayasis.simplelauncher.jpa.entity.LinkEntity;
-import io.nayasis.common.base.Strings;
+import io.nayasis.common.basica.base.Strings;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;

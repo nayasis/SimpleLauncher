@@ -1,7 +1,7 @@
 package com.nayasis.simplelauncher.view.preloader;
 
-import io.nayasis.common.ui.javafx.preloader.NPreLoader;
-import io.nayasis.common.ui.javafx.stage.ConfigurableStage;
+import io.nayasis.common.basicafx.javafx.preloader.NPreLoader;
+import io.nayasis.common.basicafx.javafx.stage.ConfigurableStage;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;

@@ -1,7 +1,7 @@
 package com.nayasis.simplelauncher.controller;
 
-import io.nayasis.common.base.Strings;
-import io.nayasis.common.ui.desktop.Desktop;
+import io.nayasis.common.basica.base.Strings;
+import io.nayasis.common.basicafx.desktop.Desktop;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import lombok.extern.slf4j.Slf4j;

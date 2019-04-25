@@ -1,8 +1,8 @@
 package com.nayasis.simplelauncher.service;
 
 import com.nayasis.simplelauncher.vo.Link;
-import io.nayasis.common.base.Strings;
-import io.nayasis.common.cache.implement.LruCache;
+import io.nayasis.common.basica.base.Strings;
+import io.nayasis.common.basica.cache.implement.LruCache;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

@@ -1,23 +1,18 @@
 package pty;
 
 //import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import com.jediterm.pty.PtyProcessTtyConnector;
 import com.jediterm.terminal.LoggingTtyConnector;
 import com.jediterm.terminal.TtyConnector;
 import com.jediterm.terminal.ui.AbstractTerminalFrame;
 import com.pty4j.PtyProcess;
-import io.nayasis.common.etc.Platform;
-import org.apache.log4j.BasicConfigurator;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import io.nayasis.common.basica.etc.Platform;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
