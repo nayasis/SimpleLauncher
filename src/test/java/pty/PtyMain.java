@@ -1,6 +1,6 @@
 package pty;
 
-import com.google.common.collect.Lists;
+//import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.jediterm.pty.PtyProcessTtyConnector;
 import com.jediterm.terminal.LoggingTtyConnector;
@@ -14,7 +14,10 @@ import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
@@ -26,17 +29,22 @@ public class PtyMain extends AbstractTerminalFrame {
   public static void main(final String[] arg) {
 //    BasicConfigurator.configure();
 //    Logger.getRootLogger().setLevel(Level.INFO);
-    new PtyMain();
+    PtyMain pty = new PtyMain();
+
+//    pty.openSession(  )
+
+
   }
 
   @Override
   public TtyConnector createTtyConnector() {
     try {
-      Map<String, String> envs = Maps.newHashMap(System.getenv());
+      Map<String,String> envs = new HashMap<>( System.getenv() );
       String[] command;
 
       if ( Platform.isWindows ) {
         command = new String[]{"cmd.exe"};
+//        command = new String[]{"dir"};
 //        command = new String[]{"cmd", "/c", "c:", "&&", "cd", "\"c:\\Windows\"", "&&", "dir" };
       } else {
         command = new String[]{"/bin/bash", "--login"};
@@ -52,7 +60,7 @@ public class PtyMain extends AbstractTerminalFrame {
   }
 
   public static class LoggingPtyProcessTtyConnector extends PtyProcessTtyConnector implements LoggingTtyConnector {
-    private List<char[]> myDataChunks = Lists.newArrayList();
+    private List<char[]> myDataChunks = new ArrayList<>();
 
     public LoggingPtyProcessTtyConnector(PtyProcess process, Charset charset) {
       super(process, charset);
@@ -69,7 +77,7 @@ public class PtyMain extends AbstractTerminalFrame {
     }
 
     public List<char[]> getChunks() {
-      return Lists.newArrayList(myDataChunks);
+      return new ArrayList<>( myDataChunks );
     }
 
     @Override

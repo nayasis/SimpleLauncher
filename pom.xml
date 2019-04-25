@@ -30,7 +30,8 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    <java.version>1.8</java.version>
+    <java.version>11</java.version>
+    <javafx.version>11</javafx.version>
     <aspectj.version>1.8.13</aspectj.version>
   </properties>
 
@@ -44,7 +45,7 @@
     </dependency>
     <dependency>
       <groupId>io.nayasis.common</groupId>
-      <artifactId>nybatis.ui</artifactId>
+      <artifactId>basicafx</artifactId>
       <version>0.1.0-SNAPSHOT</version>
     </dependency>
     <dependency>
@@ -68,11 +69,48 @@
       <artifactId>lanterna</artifactId>
       <version>3.0.1</version>
     </dependency>
+
+    <!-- javafx -->
     <!--<dependency>-->
       <!--<groupId>org.openjfx</groupId>-->
       <!--<artifactId>javafx</artifactId>-->
-      <!--<version>11</version>-->
+      <!--<version>12</version>-->
     <!--</dependency>-->
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-controls</artifactId>
+      <version>${javafx.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-graphics</artifactId>
+      <version>${javafx.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-base</artifactId>
+      <version>${javafx.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-fxml</artifactId>
+      <version>${javafx.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-web</artifactId>
+      <version>${javafx.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-media</artifactId>
+      <version>${javafx.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.openjfx</groupId>
+      <artifactId>javafx-swing</artifactId>
+      <version>${javafx.version}</version>
+    </dependency>
 
     <!-- Spring Boot -->
     <dependency>
@@ -132,6 +170,12 @@
       <artifactId>spring-aspects</artifactId>
     </dependency>
 
+    <!--<dependency>-->
+      <!--<groupId>org.ow2.asm</groupId>-->
+      <!--<artifactId>asm</artifactId>-->
+      <!--<version>7.1</version>-->
+    <!--</dependency>-->
+
     <!-- test -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -180,8 +224,22 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.0</version>
+        <configuration>
+          <source>${java.version}</source>
+          <target>${java.version}</target>
+        </configuration>
+      </plugin>
+      <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <jvmArguments>
+            --illegal-access=permit
+          </jvmArguments>
+        </configuration>
       </plugin>
     </plugins>
   </build>

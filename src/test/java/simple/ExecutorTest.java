@@ -3,17 +3,26 @@ package simple;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
 import com.googlecode.lanterna.terminal.swing.SwingTerminalFrame;
+import com.jediterm.pty.PtyProcessTtyConnector;
+import com.jediterm.terminal.Questioner;
+import com.jediterm.terminal.TtyConnector;
 import com.jediterm.terminal.ui.JediTermWidget;
 import com.jediterm.terminal.ui.settings.DefaultSettingsProvider;
 import com.jediterm.terminal.ui.settings.SettingsProvider;
+import com.pty4j.PtyProcess;
 import io.nayasis.common.cli.CommandExecutor;
 import io.nayasis.common.etc.Platform;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.Test;
+import pty.PtyMain;
+import pty.PtyMain.LoggingPtyProcessTtyConnector;
 
 import javax.swing.*;
+import java.awt.*;
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 public class ExecutorTest {
@@ -27,17 +36,28 @@ public class ExecutorTest {
         jframe.setSize(1280,720);
         jframe.add(tw);
         jframe.setVisible(true);
+        jframe.setTitle( "merong" );
+        jframe.setFont( new Font( "MALGUN", 10, 10  ) );
 
         tw.setAutoscrolls( true );
+
+//
+
+        Map<String,String> envs = new HashMap<>( System.getenv() );
+        String[] command = new String[] { "dir" };
+
+        PtyProcess process = PtyProcess.exec( command, envs, null );
+
+        LoggingPtyProcessTtyConnector ttyConnector = new LoggingPtyProcessTtyConnector( process, Charset.forName( Platform.osCharset ) );
+
+        tw.setTtyConnector( ttyConnector );
+
 
 //        TeeStream tee_stdout = new TeeStream(System.out, tw.getOutputStream());
 //        TeeStream tee_stderr = new TeeStream(System.err, tw.getOutputErrorStream());
 //
 //        System.setOut(tee_stdout);
 //        System.setErr(tee_stderr);
-
-        System.out.println( "HELLO" );
-
 
 //        final JFrame frame = new JFrame("Test");
 //        frame.setSize(300, 300);

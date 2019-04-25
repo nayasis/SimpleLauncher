@@ -1,4 +1,4 @@
-package pty;
+package pty.notused;
 
 import com.jediterm.terminal.ProcessTtyConnector;
 import com.pty4j.PtyProcess;

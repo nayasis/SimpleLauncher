@@ -1,4 +1,4 @@
-package pty;
+package pty.notused;
 
 import java.io.IOException;
 import java.io.InputStream;
