@@ -33,7 +33,6 @@
     <java.version>12</java.version>
     <aspectj.version>1.8.13</aspectj.version>
   </properties>
-
   <dependencies>
 
     <!-- common -->
@@ -196,6 +195,21 @@
           <jvmArguments>
             --illegal-access=permit
           </jvmArguments>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.1.1</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>com.nayasis.simplelauncher.Main</mainClass>
+              <addClasspath>true</addClasspath>
+              <addExtensions>true</addExtensions>
+              <packageName>simplelauncher</packageName>
+            </manifest>
+          </archive>
         </configuration>
       </plugin>
     </plugins>

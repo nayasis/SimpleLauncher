@@ -33,7 +33,8 @@ logging:
         type:
           descriptor:
             sql.BasicBinder : error
-    com.nayasis.simplelauncher : debug
+    com.nayasis.simplelauncher : trace
+    io.nayasis : trace
   pattern:
     console: "%d{HH:mm:ss.SSS} %clr(%-5level) %50(\\(%F:%L\\)){blue} : %msg%n"
 error:
