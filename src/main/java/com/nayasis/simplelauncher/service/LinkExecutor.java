@@ -1,7 +1,5 @@
 package com.nayasis.simplelauncher.service;
 
-import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
-import com.googlecode.lanterna.terminal.Terminal;
 import com.nayasis.simplelauncher.controller.DataController;
 import com.nayasis.simplelauncher.controller.MainController;
 import com.nayasis.simplelauncher.vo.Link;
@@ -177,20 +175,6 @@ public class LinkExecutor {
 	}
 
 	private void drawConsole() throws IOException {
-
-		Terminal terminal = new DefaultTerminalFactory( System.out, System.in, Charset.forName( "UTF-8" ) ).createTerminal();
-
-		terminal.enterPrivateMode();
-
-		terminal.setCursorPosition( 10, 5 );
-		terminal.putCharacter( 'H' );
-		terminal.putCharacter( 'e' );
-		terminal.putCharacter( 'l' );
-		terminal.putCharacter( 'l' );
-		terminal.putCharacter( 'o' );
-		terminal.putCharacter( '!' );
-
-		terminal.flush();
 
 //        terminal.exitPrivateMode();
 
