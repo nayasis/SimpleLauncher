@@ -7,9 +7,10 @@ import com.kodedu.terminalfx.helper.IOHelper;
 import com.kodedu.terminalfx.helper.ThreadHelper;
 import com.pty4j.PtyProcess;
 import com.pty4j.WinSize;
-import com.sun.jna.Platform;
+import io.nayasis.common.basica.etc.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.scene.paint.Color;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.BufferedReader;
@@ -27,9 +28,8 @@ import java.util.Objects;
 import java.util.concurrent.LinkedBlockingQueue;
 
 @Slf4j
-public class MyTerminal extends TerminalView {
+public class MyTerminal extends MyTerminalView {
 
-    private PtyProcess process;
     private final ObjectProperty<Writer> outputWriterProperty = new SimpleObjectProperty<>();
     private final Path terminalPath;
     private String[] termCommand;
@@ -40,8 +40,25 @@ public class MyTerminal extends TerminalView {
     }
 
     public MyTerminal( TerminalConfig terminalConfig, Path terminalPath ) {
+
+        terminalConfig = new TerminalConfig();
+        terminalConfig.setFontSize( 10 );
+//        terminalConfig.setFontFamily( "NanumGothic" );
+//        terminalConfig.setScrollbarVisible( false );
+
+//        terminalConfig.setCursorColor( Color.AQUA );
+
+        terminalConfig.setCopyOnSelect( true );
+
+        terminalConfig.setEnableClipboardNotice( false );
+
         setTerminalConfig(terminalConfig);
         this.terminalPath = terminalPath;
+    }
+
+    public MyTerminal setCommand( String command ) {
+        termCommand = command.split( " " );
+        return this;
     }
 
     @WebkitCall
@@ -64,46 +81,38 @@ public class MyTerminal extends TerminalView {
 
     @Override
     public void onTerminalReady() {
-        ThreadHelper.start(() -> {
+
+        javafx.application.Platform.runLater( () -> {
             try {
                 initializeProcess();
-            } catch (final Exception e) {
-            }
-        });
+            } catch (final Exception e) {}
+        } );
+
+//        ThreadHelper.start(() -> {
+//            try {
+//                initializeProcess();
+//            } catch (final Exception e) {
+//            }
+//        });
     }
 
     private void initializeProcess() throws Exception {
 
-        final Path dataDir = getDataDir();
+        ProcessBuilder builder = new ProcessBuilder( termCommand );
 
-        IOHelper.copyLibPty(dataDir);
+        Process process = builder.start();
 
-        if ( Platform.isWindows()) {
-            this.termCommand = getTerminalConfig().getWindowsTerminalStarter().split("\\s+");
-        } else {
-            this.termCommand = getTerminalConfig().getUnixTerminalStarter().split("\\s+");
-        }
+        setInputReader(new BufferedReader(new InputStreamReader( process.getInputStream(), Platform.osCharset )));
+        setErrorReader(new BufferedReader(new InputStreamReader( process.getErrorStream(), Platform.osCharset)));
+//        setOutputWriter(new BufferedWriter(new OutputStreamWriter( process.getOutputStream(), Platform.osCharset)));
 
-        final Map<String, String> envs = new HashMap<>( System.getenv() );
-        System.setProperty("PTY_LIB_FOLDER", dataDir.resolve("libpty").toString());
-
-        if ( Objects.nonNull(terminalPath) && Files.exists(terminalPath)) {
-            this.process = PtyProcess.exec( termCommand, envs, terminalPath.toString());
-        } else {
-            this.process = PtyProcess.exec( termCommand, envs);
-        }
-
-        columnsProperty().addListener(evt -> updateWinSize());
-        rowsProperty().addListener(evt -> updateWinSize());
-        updateWinSize();
-        setInputReader(new BufferedReader(new InputStreamReader(process.getInputStream())));
-        setErrorReader(new BufferedReader(new InputStreamReader(process.getErrorStream())));
-        setOutputWriter(new BufferedWriter(new OutputStreamWriter(process.getOutputStream())));
-        focusCursor();
+//        focusCursor();
 
         countDownLatch.countDown();
 
         process.waitFor();
+
+        System.out.println( ">> process end !!" );
 
     }
 
@@ -117,14 +126,6 @@ public class MyTerminal extends TerminalView {
         return terminalPath;
     }
 
-    private void updateWinSize() {
-        try {
-            process.setWinSize(new WinSize(getColumns(), getRows()));
-        } catch (Exception e) {
-            log.error( e.getMessage(), e );
-        }
-    }
-
     public ObjectProperty<Writer> outputWriterProperty() {
         return outputWriterProperty;
     }
@@ -135,10 +136,6 @@ public class MyTerminal extends TerminalView {
 
     public void setOutputWriter(Writer writer) {
         outputWriterProperty.set(writer);
-    }
-
-    public PtyProcess getProcess() {
-        return process;
     }
 
 }
