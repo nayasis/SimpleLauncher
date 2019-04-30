@@ -1,14 +1,15 @@
 package tfx;
 
-import com.kodedu.terminalfx.TerminalBuilder;
-import com.kodedu.terminalfx.TerminalTab;
-import com.kodedu.terminalfx.config.TerminalConfig;
+import com.nayasis.simplelauncher.service.terminal.Terminal;
+import com.nayasis.simplelauncher.service.terminal.TerminalConfig;
+import io.nayasis.common.basica.base.Strings;
 import javafx.application.Application;
 import javafx.scene.Scene;
-import javafx.scene.control.TabPane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class TfxTest extends Application {
 
     @Override
@@ -16,57 +17,36 @@ public class TfxTest extends Application {
 
         stage.setTitle( "TerminalFx test" );
 
-        MyTerminal myTerminal = new MyTerminal().setCommand( "cmd /c c: && cd \"c:\\Windows\" && dir" );
-//        MyTerminal myTerminal = new MyTerminal();
-        stage.setScene( new Scene( myTerminal, 900, 800 ) );
+        TerminalConfig config = new TerminalConfig();
+        config.setBackgroundColor( Color.rgb(16, 16, 16));
+        config.setForegroundColor(Color.rgb(240, 240, 240));
+        config.setCursorColor(Color.rgb(255, 0, 0, 0.5));
+        config.setScrollbarVisible( false );
+        config.setFontSize( 12 );
+        config.setScrollWhellMoveMultiplier( 3 );
+
+        String exec = "d:\\development\\ChdToPbp\\lib\\chdman.exe";
+        String chd  = "d:\\development\\ChdToPbp\\img\\102 Dalmatians - Puppies to the Rescue [NTSC-U] [SLUS-01152].chd";
+        String trg  = "d:\\development\\ChdToPbp\\_temp\\img.";
+
+        String command = Strings.format(
+            "\"{}\" extractcd -f -i \"{}\" -o \"{}\" -ob \"{}\" ",
+            exec, chd, trg + "cue", trg + "bin"
+        );
+
+        log.debug( command );
+
+        Terminal myTerminal = new Terminal( config, null ).setCommand( command );
+        stage.setScene( new Scene( myTerminal, 900, 600 ) );
         stage.show();
 
-        myTerminal.onTerminalFxReady( () -> {
-//            myTerminal.sendCommand( "dir\r" );
+        stage.setOnCloseRequest( event -> {
+            stage.close();
+            System.exit( 0 );
         });
+//        myTerminal.onTerminalFxReady( () -> {
+////            myTerminal.sendCommand( "dir\r" );
+//        });
     }
-
-//    @Override
-//    public void start( Stage stage ) throws Exception {
-//
-//        stage.setTitle( "TerminalFx test" );
-//
-//        TerminalConfig darkConfig = new TerminalConfig();
-//        darkConfig.setBackgroundColor( Color.rgb(16, 16, 16));
-//        darkConfig.setForegroundColor(Color.rgb(240, 240, 240));
-//        darkConfig.setCursorColor(Color.rgb(255, 0, 0, 0.5));
-//
-//        TerminalBuilder terminalBuilder = new TerminalBuilder(darkConfig);
-//        TerminalTab terminal = terminalBuilder.newTerminal();
-//
-//        TabPane tabPane = new TabPane();
-//        tabPane.getTabs().add(terminal);
-//
-//        stage.setScene( new Scene( tabPane, 900, 800 ) );
-//        stage.show();
-//
-//        terminal.onTerminalFxReady( () -> {
-//            terminal.getTerminal().command( "cmd /c c: && cd \"c:\\Windows\" && dir\r" );
-//        });
-//    }
-
-//    @Override
-//    public void start( Stage stage ) throws Exception {
-//
-//        stage.setTitle( "TerminalFx test" );
-//
-//        TerminalBuilder builder = new TerminalBuilder();
-//        TerminalTab terminalTab = builder.newTerminal();
-//
-//        TabPane tabPane = new TabPane();
-//        tabPane.getTabs().add(terminalTab);
-//
-//        stage.setScene( new Scene( tabPane, 900, 800 ) );
-//        stage.show();
-//
-//        terminalTab.onTerminalFxReady( () -> {
-//            terminalTab.getTerminal().command( "cmd /c c: && cd \"c:\\Windows\" && dir\r" );
-//        });
-//    }
 
 }

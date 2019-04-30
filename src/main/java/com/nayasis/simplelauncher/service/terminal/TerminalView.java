@@ -1,9 +1,8 @@
-package tfx;
+package com.nayasis.simplelauncher.service.terminal;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kodedu.terminalfx.annotation.WebkitCall;
-import com.kodedu.terminalfx.config.TerminalConfig;
-import com.kodedu.terminalfx.helper.ThreadHelper;
+import com.nayasis.simplelauncher.service.terminal.helper.WebkitCall;
+import io.nayasis.common.basicafx.javafx.etc.FxThread;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.ReadOnlyIntegerWrapper;
@@ -19,42 +18,31 @@ import java.io.Reader;
 import java.util.Objects;
 import java.util.concurrent.CountDownLatch;
 
-public class MyTerminalView extends Pane {
+/**
+ * @see <a>https://github.com/javaterminal/TerminalFX</a>
+ */
+public class TerminalView extends Pane {
 
-    private final WebView webView;
-    private final ReadOnlyIntegerWrapper columnsProperty;
-    private final ReadOnlyIntegerWrapper rowsProperty;
-    private final ObjectProperty<Reader> inputReaderProperty;
-    private final ObjectProperty<Reader> errorReaderProperty;
-    private TerminalConfig terminalConfig = new TerminalConfig();
-    protected final CountDownLatch countDownLatch = new CountDownLatch(1);
+    private   final WebView                webView             = new WebView();
+    private   final ReadOnlyIntegerWrapper columnsProperty     = new ReadOnlyIntegerWrapper(2000 );
+    private   final ReadOnlyIntegerWrapper rowsProperty        = new ReadOnlyIntegerWrapper(1000 );
+    private   final ObjectProperty<Reader> inputReaderProperty = new SimpleObjectProperty<>();
+    private   final ObjectProperty<Reader> errorReaderProperty = new SimpleObjectProperty<>();
+    protected final CountDownLatch         countDownLatch      = new CountDownLatch(1);
+    private         TerminalConfig         terminalConfig      = new TerminalConfig();
 
-    public MyTerminalView() {
-        webView = new WebView();
-        columnsProperty = new ReadOnlyIntegerWrapper(400);
-        rowsProperty = new ReadOnlyIntegerWrapper(100);
-        inputReaderProperty = new SimpleObjectProperty<>();
-        errorReaderProperty = new SimpleObjectProperty<>();
+    public TerminalView() {
 
-        inputReaderProperty.addListener((observable, oldValue, newValue) -> {
-            ThreadHelper.start(() -> {
-                printReader(newValue);
-            });
-        });
-
-        errorReaderProperty.addListener((observable, oldValue, newValue) -> {
-            ThreadHelper.start(() -> {
-                printReader(newValue);
-            });
-        });
+        inputReaderProperty.addListener((observable, oldValue, newValue) -> FxThread.start(() -> printReader(newValue) ) );
+        errorReaderProperty.addListener((observable, oldValue, newValue) -> FxThread.start(() -> printReader(newValue) ) );
 
         webView.getEngine().getLoadWorker().stateProperty().addListener((observable, oldValue, newValue) -> {
-            getWindow().setMember("app", this);
+            getWindow().setMember("app", this );
         });
         webView.prefHeightProperty().bind(heightProperty());
         webView.prefWidthProperty().bind(widthProperty());
 
-        webEngine().load( MyTerminalView.class.getResource("/view/hterm/hterm.html").toExternalForm());
+        webEngine().load( TerminalView.class.getResource("/view/hterm/hterm.html").toExternalForm());
     }
 
     @WebkitCall(from = "hterm")
@@ -74,7 +62,7 @@ public class MyTerminalView extends Pane {
         setTerminalConfig(terminalConfig);
         final String prefs = getPrefs();
 
-        ThreadHelper.runActionLater(() -> {
+        FxThread.runLater(() -> {
             try {
                 getWindow().call("updatePrefs", prefs);
             } catch(final Exception e) {
@@ -91,17 +79,14 @@ public class MyTerminalView extends Pane {
 
     @WebkitCall
     public void onTerminalInit() {
-        ThreadHelper.runActionLater(() -> {
+        FxThread.runLater(() -> {
             getChildren().add(webView);
         }, true);
     }
 
     @WebkitCall
-    /**
-     * Internal use only
-     */
     public void onTerminalReady() {
-        ThreadHelper.start(() -> {
+        FxThread.start(() -> {
             try {
                 focusCursor();
                 countDownLatch.countDown();
@@ -135,25 +120,22 @@ public class MyTerminalView extends Pane {
     }
 
     public void onTerminalFxReady(Runnable onReadyAction) {
-        ThreadHelper.start(() -> {
-            ThreadHelper.awaitLatch(countDownLatch);
-
+        FxThread.start(() -> {
+            FxThread.await( countDownLatch );
             if( Objects.nonNull(onReadyAction)) {
-                ThreadHelper.start(onReadyAction);
+                FxThread.start(onReadyAction);
             }
         });
     }
 
     protected void print(String text) {
-//        ThreadHelper.awaitLatch(countDownLatch);
-        ThreadHelper.runActionLater(() -> {
+        FxThread.runLater(() -> {
             getTerminalIO().call("print", text);
         });
-
     }
 
     public void focusCursor() {
-        ThreadHelper.runActionLater(() -> {
+        FxThread.runLater(() -> {
             webView.requestFocus();
             getTerminal().call("focus");
         }, true);
@@ -182,7 +164,7 @@ public class MyTerminalView extends Pane {
         return terminalConfig;
     }
 
-    public void setTerminalConfig(TerminalConfig terminalConfig) {
+    public void setTerminalConfig( TerminalConfig terminalConfig ) {
         this.terminalConfig = terminalConfig;
     }
 
@@ -222,7 +204,7 @@ public class MyTerminalView extends Pane {
         return errorReaderProperty.get();
     }
 
-    public void setErrorReader(Reader reader) {
+    public void setErrorReader( Reader reader ) {
         errorReaderProperty.set(reader);
     }
 

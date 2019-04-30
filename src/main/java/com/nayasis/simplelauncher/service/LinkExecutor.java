@@ -174,7 +174,7 @@ public class LinkExecutor {
 
 	}
 
-	private void drawConsole() throws IOException {
+	private void drawTerminal() throws IOException {
 
 //        terminal.exitPrivateMode();
 
