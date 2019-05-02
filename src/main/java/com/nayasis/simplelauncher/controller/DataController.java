@@ -6,6 +6,7 @@ import com.nayasis.simplelauncher.vo.JsonLink;
 import com.nayasis.simplelauncher.vo.Link;
 import io.nayasis.common.basica.exception.unchecked.UncheckedIOException;
 import io.nayasis.common.basica.file.Files;
+import io.nayasis.common.basica.model.NDate;
 import io.nayasis.common.basica.reflection.Reflector;
 import io.nayasis.common.basicafx.javafx.dialog.Dialog;
 import javafx.application.Platform;
@@ -92,6 +93,7 @@ public class DataController {
 		LinkEntity entity = getEntity( link.getId() );
 		if( entity == null ) return;
 		link.addExecCount();
+		link.setLastExecDate( new NDate() );
 		entity.setLastExecDate( link.getLastExecDate().get() );
 		entity.setExecCount( link.getExecCount().get() );
 		linkRepository.save( entity );

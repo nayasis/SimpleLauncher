@@ -14,6 +14,8 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
@@ -144,15 +146,15 @@ public class MainTableCreator {
 	}
 
 	private void drawDetailView() {
-		table.focusedProperty().addListener( ( observable, oldValue, newValue ) -> {
-            if( newValue == true && table.getSelectionModel().getFocusedIndex() <= 0 ) { // focus gained
-                table.getSelectionModel().selectFirst();
-                mainController.drawDetailViewFromTable();
-            }
-        });
-		table.getSelectionModel().getSelectedItems().addListener( (ListChangeListener<Link>) change -> {
-            mainController.drawDetailViewFromTable();
-        });
+//		table.focusedProperty().addListener( ( observable, oldValue, newValue ) -> {
+//            if( newValue == true && table.getSelectionModel().getFocusedIndex() <= 0 ) { // focus gained
+//                table.getSelectionModel().selectFirst();
+//                mainController.drawDetailViewFromTable();
+//            }
+//        });
+//		table.getSelectionModel().getSelectedItems().addListener( (ListChangeListener<Link>) change -> {
+//            mainController.drawDetailViewFromTable();
+//        });
 	}
 
 	private void setFilter() {
@@ -206,12 +208,51 @@ public class MainTableCreator {
 	}
 
 	private void setMouseEvent() {
+
+		TableColumn column = table.getColumn( 0 ).getRaw();
+
+//		NDate[] lastClickTime = new NDate[1];
+//
+//		table.getColumn( 0 ).getRaw().addEventHandler( MouseEvent.MOUSE_CLICKED, event -> {
+//			log.debug( "click count : {}", event.getClickCount() );
+//			log.debug( "\t {}", event );
+//			mainController.drawDetailViewFromTable();
+//			if( event.getClickCount() > 1 ) {
+//				linkExecutor.execute( table.getFocusedItem() );
+//			}
+//		});
+
+//		table.getRaw().setRowFactory( tv -> {
+//			TableRow row = new TableRow<>();
+//			row.setOnMouseClicked(e -> {
+//				if (e.getClickCount() == 2 && (!row.isEmpty()) ) {
+//					System.out.println( table.getRaw().getSelectionModel().getSelectedItem());
+//				}
+//			});
+//			return row;
+//		});
+
 		table.addEventHandler( MouseEvent.MOUSE_CLICKED, event -> {
-			mainController.drawDetailViewFromTable();
+			log.debug( "click count : {}", event.getClickCount() );
+			log.debug( "\t {}", event );
+//			mainController.drawDetailViewFromTable();
+			NDate now = new NDate();
 			if( event.getClickCount() > 1 ) {
 				linkExecutor.execute( table.getFocusedItem() );
 			}
 		});
+
+//		table.getRaw().setOnMouseClicked( event -> {
+//			log.debug( "click count : {}", event.getClickCount() );
+//			log.debug( "\t {}", event );
+//			if( event.getClickCount() > 1 ) {
+//				linkExecutor.execute( table.getFocusedItem() );
+//				mainController.drawDetailViewFromTable();
+//			} else {
+//				mainController.drawDetailViewFromTable();
+//			}
+//		});
+
 	}
 
 	private void assignColumns() {

@@ -36,7 +36,7 @@ public class TfxTest extends Application {
 
         log.debug( command );
 
-        Terminal myTerminal = new Terminal( config, null ).setCommand( command );
+        Terminal myTerminal = new Terminal( config ).setCommand( command );
         stage.setScene( new Scene( myTerminal, 900, 600 ) );
         stage.show();
 

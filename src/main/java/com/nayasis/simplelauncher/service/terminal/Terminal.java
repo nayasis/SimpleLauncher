@@ -2,6 +2,7 @@ package com.nayasis.simplelauncher.service.terminal;
 
 import com.nayasis.simplelauncher.service.terminal.helper.WebkitCall;
 import io.nayasis.common.basica.base.Strings;
+import io.nayasis.common.basica.cli.Command;
 import io.nayasis.common.basica.etc.Platform;
 import io.nayasis.common.basicafx.javafx.etc.FxThread;
 import javafx.beans.property.ObjectProperty;
@@ -52,6 +53,15 @@ public class Terminal extends TerminalView {
     public Terminal setCommand( String command, String workingDirectory ) {
         this.command          = Strings.nvl(command).split( " " );
         this.workingDirectory = workingDirectory;
+        return this;
+    }
+
+    public Terminal setCommand( Command command ) {
+        this.command = command.get().toArray( new String[0] );
+        File workingDirectory = command.getWorkingDirectory();
+        if( workingDirectory != null ) {
+            this.workingDirectory = workingDirectory.getAbsolutePath();
+        }
         return this;
     }
 

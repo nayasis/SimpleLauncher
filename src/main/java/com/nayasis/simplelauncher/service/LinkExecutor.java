@@ -2,6 +2,8 @@ package com.nayasis.simplelauncher.service;
 
 import com.nayasis.simplelauncher.controller.DataController;
 import com.nayasis.simplelauncher.controller.MainController;
+import com.nayasis.simplelauncher.service.terminal.Terminal;
+import com.nayasis.simplelauncher.service.terminal.TerminalConfig;
 import com.nayasis.simplelauncher.vo.Link;
 import io.nayasis.common.basica.base.Strings;
 import io.nayasis.common.basica.cli.Command;
@@ -9,7 +11,11 @@ import io.nayasis.common.basica.cli.CommandExecutor;
 import io.nayasis.common.basica.file.Files;
 import io.nayasis.common.basicafx.desktop.Desktop;
 import io.nayasis.common.basicafx.javafx.dialog.Dialog;
+import javafx.scene.Scene;
+import javafx.scene.paint.Color;
+import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -46,15 +52,15 @@ public class LinkExecutor {
         link = link.clone();
         link.clearBindOptions();
 
-		CommandExecutor executor = new CommandExecutor();
-
+		String  title       = link.getTitle().get();
 		boolean showConsole = link.getShowConsole();
 
-		for( String commandLine : Strings.tokenize( link.getCommandPrev(), "\n" ) ) {
-			run( executor, commandLine, null, showConsole );
-		}
-
 		try {
+
+
+			for( String commandLine : Strings.tokenize( link.getCommandPrev(), "\n" ) ) {
+				run( title, commandLine, null, false );
+			}
 
 			String execPath = getExecPathFrom( link );
 
@@ -62,29 +68,16 @@ public class LinkExecutor {
 
 			mainController.labelCmd.setText( cmd );
 
-			run( executor, cmd, execPath, showConsole );
+			run( title, cmd, execPath, showConsole );
 
+			for( String commandLine : Strings.tokenize( link.getCommandNext(), "\n" ) ) {
+				run( title, commandLine, null, false );
+			}
 
 		} catch( Exception e ) {
 			Throwable throwable = e.getCause() == null ? e : e.getCause();
 			log.error( throwable.getMessage(), throwable );
 			Dialog.error( throwable, "msg.error.003", throwable.getMessage() );
-		}
-
-		if( ! Strings.isEmpty( link.getCommandNext() ) ) {
-
-            final Link threadLink = link;
-
-			new Thread( () -> {
-
-				executor.waitFor();
-
-				for( String commandLine : Strings.tokenize( threadLink.getCommandNext(), "\n" ) ) {
-					run( executor, commandLine, null, showConsole );
-				}
-
-			}).start();
-
 		}
 
 	}
@@ -115,23 +108,18 @@ public class LinkExecutor {
 
 	}
 
-	private CommandExecutor run( CommandExecutor executor, String commandLine, String workingDirectory, boolean showConsole ) {
+	private void run( String title, String commandLine, String workingDirectory, boolean showConsole ) {
 
 		Command command = new Command();
 		command.setWorkingDirectory( workingDirectory );
 		command.set( commandLine );
 
 		if( showConsole ) {
-
-			// TODO : 출력 스트림을 lanterna Terminal 로 연동
-
-			StringBuffer out = new StringBuffer();
-
-			executor.run( command ).waitFor();
-
+			drawTerminal( title, command );
+		} else {
+			new CommandExecutor().run( command ).waitFor();
 		}
 
-		return executor;
 	}
 
 	public void openFolder( Link link ) {
@@ -174,10 +162,27 @@ public class LinkExecutor {
 
 	}
 
-	private void drawTerminal() throws IOException {
+	private void drawTerminal( String title, Command command ) {
 
-//        terminal.exitPrivateMode();
+		Terminal myTerminal = new Terminal( getTerminalConfig() ).setCommand( command );
 
+		Stage stage = new Stage();
+		stage.setTitle( title );
+		stage.setScene( new Scene( myTerminal, 900, 600) );
+		stage.show();
+
+	}
+
+	@NotNull
+	private TerminalConfig getTerminalConfig() {
+		TerminalConfig config = new TerminalConfig();
+		config.setBackgroundColor( Color.rgb(16, 16, 16));
+		config.setForegroundColor(Color.rgb(240, 240, 240));
+		config.setCursorColor(Color.rgb(255, 0, 0, 0.5));
+		config.setScrollbarVisible( false );
+		config.setFontSize( 12 );
+		config.setScrollWhellMoveMultiplier( 3 );
+		return config;
 	}
 
 }
