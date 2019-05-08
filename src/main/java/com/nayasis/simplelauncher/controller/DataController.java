@@ -4,6 +4,7 @@ import com.nayasis.simplelauncher.jpa.entity.LinkEntity;
 import com.nayasis.simplelauncher.jpa.repository.LinkRepository;
 import com.nayasis.simplelauncher.vo.JsonLink;
 import com.nayasis.simplelauncher.vo.Link;
+import com.nayasis.simplelauncher.vo.OldJsonLink;
 import io.nayasis.common.basica.exception.unchecked.UncheckedIOException;
 import io.nayasis.common.basica.file.Files;
 import io.nayasis.common.basica.model.NDate;
@@ -137,7 +138,18 @@ public class DataController {
 
 			List<LinkEntity> entities = new ArrayList<>();
 
-			Reflector.toListFrom( json, JsonLink.class ).forEach( e -> entities.add( e.toLinkEntity() ) );
+			boolean importOldLink = false;
+			try {
+				List<OldJsonLink> oldLinks = Reflector.toListFrom( json, OldJsonLink.class );
+				if( ! oldLinks.isEmpty() && ! oldLinks.get(0).getId().isEmpty() ) {
+					oldLinks.forEach( e -> entities.add( e.toLinkEntity() ) );
+					importOldLink = true;
+				}
+			} catch ( Exception e ) {}
+
+			if( ! importOldLink ) {
+				Reflector.toListFrom( json, JsonLink.class ).forEach( e -> entities.add( e.toLinkEntity() ) );
+			}
 
 			linkRepository.saveAll( entities );
 
@@ -145,7 +157,7 @@ public class DataController {
 
 			Dialog.alert( "msg.info.009", file );
 
-		} catch( UncheckedIOException e ) {
+		} catch( Exception e ) {
 			log.error( e.getMessage(), e );
 			Dialog.error( e, "msg.error.003", e.getMessage() );
         }
@@ -157,6 +169,7 @@ public class DataController {
 		if( ! Dialog.confirm( "msg.confirm.003" ) ) return;
 		linkRepository.deleteAll();
 		main.tableMain.clear();
+		main.clearDetailView();
 	}
 
     public void readData() {

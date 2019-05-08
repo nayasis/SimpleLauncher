@@ -24,6 +24,7 @@ import java.io.UncheckedIOException;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -67,7 +68,7 @@ public class Link {
 		this.group.set( entity.getGrp() );
 		this.execCount.set( entity.getExecCount() );
 
-		setKeyword( new HashSet<>(Reflector.toListFrom(entity.getKeyword())) );
+		setKeyword( new HashSet<>(Reflector.toListFrom( entity.getKeyword(), String.class )) );
 		setLastExecDate( entity.getLastExecDate() );
 		setIcon( entity.getIcon() );
 

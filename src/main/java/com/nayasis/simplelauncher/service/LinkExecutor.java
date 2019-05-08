@@ -57,7 +57,6 @@ public class LinkExecutor {
 
 		try {
 
-
 			for( String commandLine : Strings.tokenize( link.getCommandPrev(), "\n" ) ) {
 				run( title, commandLine, null, false );
 			}
@@ -74,7 +73,7 @@ public class LinkExecutor {
 				run( title, commandLine, null, false );
 			}
 
-		} catch( Exception e ) {
+		} catch( Throwable e ) {
 			Throwable throwable = e.getCause() == null ? e : e.getCause();
 			log.error( throwable.getMessage(), throwable );
 			Dialog.error( throwable, "msg.error.003", throwable.getMessage() );

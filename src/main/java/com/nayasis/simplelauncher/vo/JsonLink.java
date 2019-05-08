@@ -48,6 +48,7 @@ public class JsonLink {
     public LinkEntity toLinkEntity() {
 
         LinkEntity entity = new LinkEntity();
+
         entity.setTitle( getTitle() );
         entity.setGrp( getGroup() );
         entity.setPath( getPath() );
@@ -58,15 +59,24 @@ public class JsonLink {
         entity.setCommandNext( getCommandNext() );
         entity.setCommandPrev( getCommandPrev() );
         entity.setDescription( getDescription() );
+        entity.setKeyword( getKeyword() );
         entity.setExecCount( getExecCount() );
         entity.setLastExecDate( getLastExecDate() );
 
-        try {
-            entity.setIcon( (byte[]) Strings.decode( getIcon() ) );
-        } catch( ClassCastException e ) {}
+        setIcon( entity );
 
         return entity;
 
+    }
+
+    public void setIcon( String icon ) {
+        this.icon = icon;
+    }
+
+    private void setIcon( LinkEntity entity ) {
+        try {
+            entity.setIcon( (byte[]) Strings.decode( icon ) );
+        } catch( ClassCastException e ) {}
     }
 
 }
