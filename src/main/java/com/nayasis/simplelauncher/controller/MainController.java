@@ -45,6 +45,8 @@ import java.io.File;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import static javafx.scene.input.KeyCode.UNDEFINED;
+
 @Component
 @Slf4j
 public class MainController implements Initializable {
@@ -488,9 +490,9 @@ public class MainController implements Initializable {
 
 		labelCmd.setText( "" );
 
-		Link data = tableMain.getFocusedItem();
-		if( data != null ) {
-			setDetailView( data );
+		linkDetail = tableMain.getFocusedItem();
+		if( linkDetail != null ) {
+			setDetailView( linkDetail );
 		}
 
 	}
@@ -589,6 +591,8 @@ public class MainController implements Initializable {
 
 		log.debug( "Event id:{}, keyCode:{}, source:{}", nodeId, event.getCode(), source );
 
+		if( keyCode == UNDEFINED ) return;
+
 		// 한개의 키코드로 단축키가 동작하지 않는 오류 보정로직
 		if( keyCode == KeyCode.F1 ) {
 			showHelp( null );
@@ -609,6 +613,7 @@ public class MainController implements Initializable {
 					event.consume();
 					return;
 			}
+			return;
 		}
 
 		if( source == inputKeyword ) {
@@ -621,7 +626,22 @@ public class MainController implements Initializable {
 					event.consume();
 					tableMain.focus();
 					return;
+				case ENTER :
+					try {
+						if( tableMain.getVisibleRowSize() == 1 ) {
+							event.consume();
+							ObservableList<Link> links = tableMain.getDataOnView();
+							if( links.size() == 1 ) {
+								Link link = links.get( 0 );
+								executor.execute( link );
+							}
+							return;
+						}
+					} catch ( Throwable e ) {
+						log.error( e.getMessage(), e );
+					}
 			}
+			return;
 		}
 
 		if( source == inputGroup ) {
@@ -631,6 +651,7 @@ public class MainController implements Initializable {
 					tableMain.focus();
 					return;
 			}
+			return;
 		}
 
 		if( event.isControlDown() ) {

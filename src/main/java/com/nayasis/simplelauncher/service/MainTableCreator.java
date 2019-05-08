@@ -33,6 +33,9 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 import java.util.List;
 
+import static javafx.scene.input.KeyCode.ENTER;
+import static javafx.scene.input.KeyCode.UNDEFINED;
+
 @Service
 @Slf4j
 public class MainTableCreator {
@@ -171,6 +174,7 @@ public class MainTableCreator {
 
 			return link -> {
 				if( ! matcher.isGroupMatched( patternGroup,     link ) ) return false;
+
 				if( ! matcher.isKeywordMatched( patternKeyword, link ) ) return false;
 				return true;
 			};
@@ -180,23 +184,23 @@ public class MainTableCreator {
 
 	private void setKeyEvent() {
 		// Enter는 KEY_RELEASED 이벤트에서 action 이벤트로 계속 전파되 stop propagation 안됨
-		table.addEventHandler( KeyEvent.KEY_PRESSED, event -> {
+		table.addEventHandler( KeyEvent.KEY_RELEASED, event -> {
 
 			log.trace( ">>> table keypress event : {}, source : {}, target : {}", event, event.getSource(), event.getTarget() );
 
 			KeyCode keyCode = event.getCode();
 
-			if( keyCode == KeyCode.ENTER ) {
+			if( keyCode == UNDEFINED ) return;
 
-				event.consume();
+			if( keyCode == ENTER ) {
 
+                event.consume();
 				mainController.labelCmd.setText( "" );
 				linkExecutor.execute( table.getFocusedItem() );
 
 			} else if( keyCode == KeyCode.DELETE ) {
 
 				event.consume();
-
 				mainController.labelCmd.setText( "" );
 				mainController.deleteLink( null );
 

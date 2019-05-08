@@ -58,7 +58,7 @@ public class LinkExecutor {
 		try {
 
 			for( String commandLine : Strings.tokenize( link.getCommandPrev(), "\n" ) ) {
-				run( title, commandLine, null, false );
+				run( title, commandLine, null, false, true );
 			}
 
 			String execPath = getExecPathFrom( link );
@@ -67,11 +67,15 @@ public class LinkExecutor {
 
 			mainController.labelCmd.setText( cmd );
 
-			run( title, cmd, execPath, showConsole );
+            boolean wait = Strings.isNotEmpty( link.getCommandNext() );
 
-			for( String commandLine : Strings.tokenize( link.getCommandNext(), "\n" ) ) {
-				run( title, commandLine, null, false );
-			}
+            run( title, cmd, execPath, showConsole, wait );
+
+            if( wait ) {
+                for( String commandLine : Strings.tokenize( link.getCommandNext(), "\n" ) ) {
+                    run( title, commandLine, null, false, true );
+                }
+            }
 
 		} catch( Throwable e ) {
 			Throwable throwable = e.getCause() == null ? e : e.getCause();
@@ -107,7 +111,7 @@ public class LinkExecutor {
 
 	}
 
-	private void run( String title, String commandLine, String workingDirectory, boolean showConsole ) {
+	private void run( String title, String commandLine, String workingDirectory, boolean showConsole, boolean wait ) {
 
 		Command command = new Command();
 		command.setWorkingDirectory( workingDirectory );
@@ -116,7 +120,10 @@ public class LinkExecutor {
 		if( showConsole ) {
 			drawTerminal( title, command );
 		} else {
-			new CommandExecutor().run( command ).waitFor();
+            CommandExecutor executor = new CommandExecutor().run( command );
+            if( wait ) {
+                executor.waitFor();
+            }
 		}
 
 	}
