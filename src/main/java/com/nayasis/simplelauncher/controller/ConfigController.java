@@ -2,9 +2,8 @@ package com.nayasis.simplelauncher.controller;
 
 import com.nayasis.simplelauncher.jpa.entity.ConfigEntity;
 import com.nayasis.simplelauncher.jpa.repository.ConfigRepository;
+import com.nayasis.simplelauncher.vo.RestoreConfig;
 import io.nayasis.common.basica.cache.implement.LruCache;
-import io.nayasis.common.basica.reflection.Reflector;
-import io.nayasis.common.basicafx.javafx.properties.StageProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -27,15 +26,11 @@ public class ConfigController {
 
 	private boolean restoreMainStageProperties = true;
 
-	private enum ConfigKey {
-		MAIN_STAGE, KEYWORD_HISTORY
-	}
+	private final String CONFIG_MAIN = "CONFIG_MAIN";
 
 	public void restore() {
-		if( restoreMainStageProperties ) {
-			restoreMainStageProperties();
-		}
-		restoreKeywordHistory();
+		if( ! restoreMainStageProperties ) return;
+		restoreMainStageProperties();
 	}
 
     public void setRestoreMainStageProperties( boolean restoreMainStageProperties ) {
@@ -44,65 +39,45 @@ public class ConfigController {
 
     @Transactional
 	public void save() {
-		saveMainStageProperties();
-//		saveKeywordHistory();
+
+		RestoreConfig config = new RestoreConfig();
+
+		config.setMainStageProperties( MAIN.getConfigureProperties() );
+		config.setKeywordHistory( keywordHistory );
+		config.setFocusedRow( mainController.tableMain.getFocusedIndex() );
+
+		ConfigEntity entity = configRepository.findByKey( CONFIG_MAIN );
+		if( entity == null ) {
+			entity = new ConfigEntity( CONFIG_MAIN );
+		}
+
+		entity.setValue( config.serialize() );
+
+		configRepository.save( entity );
+
 	}
 
 	private void restoreMainStageProperties() {
 
-		ConfigEntity config = getConfig( ConfigKey.MAIN_STAGE );
-		if( config == null ) return;
+		ConfigEntity entity = configRepository.findByKey( CONFIG_MAIN );
+		if( entity == null ) return;
 
-		StageProperties properties = Reflector.toBeanFrom( config.getValue(), StageProperties.class );
+		try {
 
-		log.debug( ">> bind stage property");
+			RestoreConfig config = new RestoreConfig( entity.getValue() );
 
-		MAIN.setConfigureProperties( properties );
+			log.trace( ">> bind stage property");
 
-		mainController.showDescription( mainController.menuitemViewDesc.isSelected() );
-		mainController.showMenuBar( mainController.menuitemViewMenuBar.isSelected() );
+			MAIN.setConfigureProperties( config.getMainStageProperties() );
+			mainController.showDescription( mainController.menuitemViewDesc.isSelected() );
+			mainController.showMenuBar( mainController.menuitemViewMenuBar.isSelected() );
 
-	}
+			keywordHistory = config.getKeywordHistory();
 
-	private void saveMainStageProperties() {
-
-		StageProperties properties = MAIN.getConfigureProperties();
-
-		ConfigEntity config = getConfig( ConfigKey.MAIN_STAGE );
-		if( config == null ) {
-			config = new ConfigEntity( ConfigKey.MAIN_STAGE.name() );
+		} catch ( Exception e ) {
+			log.error( e.getMessage(), e );
 		}
 
-		config.setValue( Reflector.toJson(properties) );
-
-		configRepository.save( config );
-
-	}
-
-	private void restoreKeywordHistory() {
-
-		ConfigEntity config = getConfig( ConfigKey.KEYWORD_HISTORY );
-		if( config == null ) return;
-
-		keywordHistory.putAll( Reflector.toBeanFrom( config.getValue(), LruCache.class ) );
-
-	}
-
-	private void saveKeywordHistory() {
-
-		ConfigEntity config = getConfig( ConfigKey.KEYWORD_HISTORY );
-		if( config == null ) {
-			config = new ConfigEntity( ConfigKey.KEYWORD_HISTORY.name() );
-		}
-
-		config.setValue( Reflector.toJson( keywordHistory ) );
-
-		configRepository.save( config );
-
-	}
-
-	private ConfigEntity getConfig( ConfigKey key ) {
-		return configRepository.findByKey( key.name() );
 	}
 
 	public LruCache<String, String> getKeywordHistory() {

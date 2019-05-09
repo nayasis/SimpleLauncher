@@ -119,6 +119,10 @@ public class MainController implements Initializable {
 		setPropertyEvent();
 		setKeywordHistoryDropdownList();
 
+		root.setOnKeyReleased( event -> {
+			globalKeyEvent( event );
+		});
+
     }
 
 	private void setKeywordHistoryDropdownList() {
@@ -169,21 +173,6 @@ public class MainController implements Initializable {
 	}
 
 	@FXML
-	public void loadFromFile( ActionEvent event ) {
-
-		int prevIndex = tableMain.getSelectionModel().getSelectedIndex();
-
-		dataController.readData();
-
-		tableMain.getSelectionModel().select( prevIndex );
-
-		setDetailView( tableMain.getFocusedItem() );
-
-		Dialog.alert( "msg.info.008" );
-
-	}
-
-	@FXML
 	public void importData( ActionEvent event ) {
 		dataController.importData();
 	}
@@ -214,11 +203,8 @@ public class MainController implements Initializable {
 
 	@FXML
 	public void saveLink( ActionEvent event ) {
-
 		Platform.runLater( () -> buttonSave.requestFocus() );
-
 		saveLink();
-
 	}
 
 	private void saveLink() {
@@ -340,9 +326,7 @@ public class MainController implements Initializable {
 			success = true;
 
 			if( db.getFiles().size() > 1 ) {
-
 				Dialog.alert( "msg.warn.001" );
-
 			} else {
 				File file = db.getFiles().get( 0 );
 				Platform.runLater(() -> runnable.run( file ));
@@ -583,7 +567,7 @@ public class MainController implements Initializable {
 	 * @param event
 	 */
 	@FXML
-	public void globalKeyPressedEvent( KeyEvent event ) {
+	public void globalKeyEvent( KeyEvent event ) {
 
 		Object  source  = event.getSource();
 		KeyCode keyCode = event.getCode();
