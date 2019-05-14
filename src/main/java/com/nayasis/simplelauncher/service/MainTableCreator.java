@@ -1,5 +1,6 @@
 package com.nayasis.simplelauncher.service;
 
+import com.nayasis.simplelauncher.Main;
 import com.nayasis.simplelauncher.controller.MainController;
 import com.nayasis.simplelauncher.vo.IconTitle;
 import com.nayasis.simplelauncher.vo.Link;
@@ -8,6 +9,7 @@ import io.nayasis.common.basica.model.NDate;
 import io.nayasis.common.basicafx.javafx.control.table.NTable;
 import io.nayasis.common.basicafx.javafx.control.table.NTableColumn;
 import io.nayasis.common.basicafx.javafx.control.table.byfunction.CellFormatter;
+import io.nayasis.common.basicafx.javafx.etc.FxThread;
 import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
@@ -186,11 +188,14 @@ public class MainTableCreator {
 		// Enter는 KEY_RELEASED 이벤트에서 action 이벤트로 계속 전파되 stop propagation 안됨
 		table.addEventHandler( KeyEvent.KEY_RELEASED, event -> {
 
-			log.trace( ">>> table keypress event : {}, source : {}, target : {}", event, event.getSource(), event.getTarget() );
-
 			KeyCode keyCode = event.getCode();
 
-			if( keyCode == UNDEFINED ) return;
+			if( keyCode == UNDEFINED ) {
+				event.consume();
+				return;
+			}
+
+			log.trace( ">> table keypress event : {}, source : {}, target : {}", event, event.getSource(), event.getTarget() );
 
 			if( keyCode == ENTER ) {
 

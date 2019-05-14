@@ -12,6 +12,8 @@ import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
+import javafx.event.EventHandler;
+import javafx.event.EventTarget;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Node;
@@ -22,9 +24,11 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.SkinBase;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.skin.TextAreaSkin;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
@@ -45,6 +49,7 @@ import java.io.File;
 import java.net.URL;
 import java.util.ResourceBundle;
 
+import static javafx.scene.input.KeyCode.ESCAPE;
 import static javafx.scene.input.KeyCode.UNDEFINED;
 
 @Component
@@ -118,10 +123,7 @@ public class MainController implements Initializable {
 
 		setPropertyEvent();
 		setKeywordHistoryDropdownList();
-
-		root.setOnKeyReleased( event -> {
-			globalKeyEvent( event );
-		});
+		setKeyPressEvent();
 
     }
 
@@ -165,6 +167,17 @@ public class MainController implements Initializable {
 		inputKeyword.widthProperty().addListener(( observable, oldValue, newValue ) -> listKeywordHistory.setPrefWidth( newValue.doubleValue() ));
 
 		root.getChildren().add( listKeywordHistory );
+
+	}
+
+	private void setKeyPressEvent() {
+
+		root.setOnKeyReleased( this::onKeyReleased );
+		root.setOnKeyPressed( this::onKeyPressed );
+
+		setEventTabPressed( descDescription );
+		setEventTabPressed( descCmdNext );
+		setEventTabPressed( descCmdPrev );
 
 	}
 
@@ -561,21 +574,86 @@ public class MainController implements Initializable {
     }
 
 
-	/**
-	 * UI 에서 입력하는 모든 단축키 Event를 설정한다.
-	 *
-	 * @param event
-	 */
-	@FXML
-	public void globalKeyEvent( KeyEvent event ) {
+	private void onKeyReleased( KeyEvent event ) {
 
-		Object  source  = event.getSource();
-		KeyCode keyCode = event.getCode();
-		String  nodeId  = ( (Node) source ).getId();
+		KeyCode     keyCode = event.getCode();
+		EventTarget target  = event.getTarget();
 
-		log.debug( "Event id:{}, keyCode:{}, source:{}", nodeId, event.getCode(), source );
+		if( keyCode == UNDEFINED ) {
+			event.consume();
+			return;
+		}
 
-		if( keyCode == UNDEFINED ) return;
+		log.trace( ">> Event {}", event );
+
+		if( keyCode == ESCAPE ) {
+
+			if( target == inputKeyword ) {
+				event.consume();
+				tableMain.focus();
+			} else if ( target == inputGroup ) {
+				event.consume();
+				tableMain.focus();
+			} else if (
+				target == descGroupName        ||
+				target == descShowConsole      ||
+				target == descTitle            ||
+				target == descDescription      ||
+				target == descExecPath         ||
+				target == descExecOption       ||
+				target == descExecOptionPrefix ||
+				target == descCmdNext          ||
+				target == descCmdPrev
+			) {
+				event.consume();
+				inputKeyword.requestFocus();
+			}
+
+			return;
+
+		}
+
+		if( target == inputKeyword ) {
+
+			switch ( keyCode ) {
+				case DOWN :
+					event.consume();
+					showKeywordHistory();
+					return;
+				case ENTER :
+					try {
+						if( tableMain.getVisibleRowSize() == 1 ) {
+							event.consume();
+							ObservableList<Link> links = tableMain.getDataOnView();
+							if( links.size() == 1 ) {
+								Link link = links.get( 0 );
+								executor.execute( link );
+							}
+							return;
+						}
+					} catch ( Throwable e ) {
+						log.error( e.getMessage(), e );
+					}
+					return;
+			}
+			return;
+
+		}
+
+	}
+
+	private void onKeyPressed( KeyEvent event ) {
+
+		KeyCode     keyCode = event.getCode();
+		Object      source  = event.getSource();
+		EventTarget target  = event.getTarget();
+
+		if( keyCode == UNDEFINED ) {
+			event.consume();
+			return;
+		}
+
+		log.trace( ">> Event {}", event );
 
 		// 한개의 키코드로 단축키가 동작하지 않는 오류 보정로직
 		if( keyCode == KeyCode.F1 ) {
@@ -600,101 +678,42 @@ public class MainController implements Initializable {
 			return;
 		}
 
-		if( source == inputKeyword ) {
-			switch ( keyCode ) {
-				case DOWN :
-					event.consume();
-					showKeywordHistory();
-					return;
-				case ESCAPE :
-					event.consume();
-					tableMain.focus();
-					return;
-				case ENTER :
-					try {
-						if( tableMain.getVisibleRowSize() == 1 ) {
-							event.consume();
-							ObservableList<Link> links = tableMain.getDataOnView();
-							if( links.size() == 1 ) {
-								Link link = links.get( 0 );
-								executor.execute( link );
-							}
-							return;
-						}
-					} catch ( Throwable e ) {
-						log.error( e.getMessage(), e );
-					}
-			}
-			return;
-		}
-
-		if( source == inputGroup ) {
-			switch ( keyCode ) {
-				case ESCAPE :
-					event.consume();
-					tableMain.focus();
-					return;
-			}
-			return;
-		}
-
 		if( event.isControlDown() ) {
 
-			if( event.isShiftDown() ) {
+			if( ! event.isShiftDown() && isDescriptionShown() ) {
 
-				// bypass to menu
-
-			} else {
-
-				if( isDescriptionShown() ) {
-
-					switch ( keyCode ) {
-						case S :
-							saveLink(); break;
-						case D :
-							deleteLink( null ); break;
-						case C :
-							copyLink( null );
-						case N :
-							createNewLink( null );
-						case I :
-							changeIcon( new ActionEvent() );
-						case O :
-							openFolder( null );
-						case F :
-							copyFolder( null );
-						default :
-							return;
-					}
-
-					event.consume();
-
+				switch ( keyCode ) {
+					case S :
+						saveLink(); break;
+					case D :
+						deleteLink( null ); break;
+					case C :
+						copyLink( null ); break;
+					case N :
+						createNewLink( null ); break;
+					case I :
+						changeIcon( new ActionEvent() ); break;
+					case O :
+						openFolder( null ); break;
+					case F :
+						copyFolder( null ); break;
+					default :
+						return;
 				}
+
+				event.consume();
 
 			}
 
 		} else if( event.getCode() == KeyCode.TAB ) {
 
-			if( ! event.isShiftDown() ) {
-
-				if( source == descDescription ) {
-					event.consume();
-					descExecPath.requestFocus();
-				} else if( source == descCmdPrev ) {
-					event.consume();
-					descCmdNext.requestFocus();
-				} else if( source == descCmdNext ) {
-					event.consume();
-					inputKeyword.requestFocus();
-				}
-
-			} else if( event.isShiftDown() ) {
+			if( event.isShiftDown() ) {
 
 				// KeywordHistory Dropdown List : Shift + Tab
-				if( source == root ) {
-					event.consume();
-					inputKeyword.requestFocus();
-				}
+//				if( source == root ) {
+//					event.consume();
+//					inputKeyword.requestFocus();
+//				}
 
 			}
 
@@ -704,6 +723,36 @@ public class MainController implements Initializable {
 
 	private boolean isDescriptionShown() {
 		return menuitemViewDesc.isSelected();
+	}
+
+	private void setEventTabPressed( TextArea textArea ) {
+
+		EventHandler<KeyEvent> eventHandler = event -> {
+
+			if ( event.getCode() != KeyCode.TAB || event.isShiftDown() || event.isControlDown() ) return;
+
+			event.consume();
+
+			KeyEvent newEvent = new KeyEvent(
+				event.getSource(),
+				event.getTarget(),
+				event.getEventType(),
+				event.getCharacter(),
+				event.getText(),
+				event.getCode(),
+				event.isShiftDown(),
+				true,
+				event.isAltDown(),
+				event.isMetaDown()
+			);
+
+			Node node = (Node) event.getSource();
+			node.fireEvent( newEvent );
+
+		};
+
+		textArea.addEventFilter( KeyEvent.KEY_PRESSED, eventHandler );
+
 	}
 
 }
