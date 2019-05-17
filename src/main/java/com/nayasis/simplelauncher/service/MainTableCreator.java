@@ -1,6 +1,5 @@
 package com.nayasis.simplelauncher.service;
 
-import com.nayasis.simplelauncher.Main;
 import com.nayasis.simplelauncher.controller.MainController;
 import com.nayasis.simplelauncher.vo.IconTitle;
 import com.nayasis.simplelauncher.vo.Link;
@@ -14,10 +13,9 @@ import javafx.application.Platform;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableRow;
 import javafx.scene.control.TableView;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
@@ -35,6 +33,7 @@ import org.springframework.stereotype.Service;
 import java.io.File;
 import java.util.List;
 
+import static com.nayasis.simplelauncher.common.CONSTANT.KEYPRESS_BLOCK_WAIT_MILISEC;
 import static javafx.scene.input.KeyCode.ENTER;
 import static javafx.scene.input.KeyCode.UNDEFINED;
 
@@ -57,6 +56,11 @@ public class MainTableCreator {
 
     @Autowired
 	private LinkMatcher matcher;
+
+    private Control incomedControl;
+
+	// 다른 프로세스에서 keypress 이벤트를 일으키는 것을 방지하기 위한 장치
+	private boolean onBlock = false;
 
 	public NTable<Link> init( TableView<Link> tableView ) {
 
@@ -89,7 +93,6 @@ public class MainTableCreator {
 		setFilter();
 
 		drawDetailView();
-
 
 		return table;
 
@@ -164,6 +167,10 @@ public class MainTableCreator {
 
 	private void setFilter() {
 
+		table.setPostChangeAction( ( observable, oldValue, newValue ) -> {
+			mainController.clearDetailView();
+		});
+
 		// filter 트리거 설정
 		mainController.inputKeyword.textProperty().addListener( table.getChangeListener() );
 		mainController.inputGroup.textProperty().addListener( table.getChangeListener() );
@@ -176,7 +183,6 @@ public class MainTableCreator {
 
 			return link -> {
 				if( ! matcher.isGroupMatched( patternGroup,     link ) ) return false;
-
 				if( ! matcher.isKeywordMatched( patternKeyword, link ) ) return false;
 				return true;
 			};
@@ -186,22 +192,39 @@ public class MainTableCreator {
 
 	private void setKeyEvent() {
 		// Enter는 KEY_RELEASED 이벤트에서 action 이벤트로 계속 전파되 stop propagation 안됨
-		table.addEventHandler( KeyEvent.KEY_RELEASED, event -> {
+		table.addEventHandler( KeyEvent.KEY_PRESSED, event -> {
 
 			KeyCode keyCode = event.getCode();
 
-			if( keyCode == UNDEFINED ) {
+			if( keyCode == UNDEFINED || onBlock ) {
 				event.consume();
 				return;
 			}
 
 			log.trace( ">> table keypress event : {}, source : {}, target : {}", event, event.getSource(), event.getTarget() );
 
+			switch ( keyCode ) {
+				case ENTER :
+					event.consume();
+					mainController.labelCmd.setText( "" );
+					onBlock = true;
+					linkExecutor.execute( table.getFocusedItem() );
+
+					FxThread.start( () -> {
+						FxThread.sleep( KEYPRESS_BLOCK_WAIT_MILISEC );
+						onBlock = false;
+					});
+					return;
+				case DELETE :
+					event.consume();
+					mainController.labelCmd.setText( "" );
+					mainController.deleteLink( null );
+					return;
+
+			}
+
 			if( keyCode == ENTER ) {
 
-                event.consume();
-				mainController.labelCmd.setText( "" );
-				linkExecutor.execute( table.getFocusedItem() );
 
 			} else if( keyCode == KeyCode.DELETE ) {
 
@@ -210,7 +233,27 @@ public class MainTableCreator {
 				mainController.deleteLink( null );
 
 			} else if( keyCode == KeyCode.ESCAPE ) {
-				mainController.inputKeyword.requestFocus();
+
+				Control prevControl = mainController.prevControlSearch;
+				if( prevControl == null ) {
+					prevControl = mainController.inputKeyword;
+				}
+
+				event.consume();
+				prevControl.requestFocus();
+
+				mainController.descGroupName = null;
+
+			} else if( keyCode == KeyCode.TAB ) {
+
+				Control prevControl = mainController.prevControlDetail;
+				if( prevControl == null ) {
+					prevControl = mainController.descGroupName;
+				}
+
+				event.consume();
+				prevControl.requestFocus();
+
 			}
 
 		});

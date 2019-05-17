@@ -8,6 +8,7 @@ import io.nayasis.common.basica.base.Strings;
 import io.nayasis.common.basica.model.Messages;
 import io.nayasis.common.basicafx.javafx.control.table.NTable;
 import io.nayasis.common.basicafx.javafx.dialog.Dialog;
+import io.nayasis.common.basicafx.javafx.etc.FxThread;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ObservableList;
@@ -20,15 +21,13 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.CheckMenuItem;
+import javafx.scene.control.Control;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.SkinBase;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
-import javafx.scene.control.skin.TextAreaSkin;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
@@ -48,8 +47,12 @@ import org.springframework.stereotype.Component;
 import java.io.File;
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
+import static com.nayasis.simplelauncher.common.CONSTANT.KEYPRESS_BLOCK_WAIT_MILISEC;
 import static javafx.scene.input.KeyCode.ESCAPE;
+import static javafx.scene.input.KeyCode.TAB;
 import static javafx.scene.input.KeyCode.UNDEFINED;
 
 @Component
@@ -66,8 +69,6 @@ public class MainController implements Initializable {
 
     @FXML public TextField        inputKeyword;
     @FXML public TextField        inputGroup;
-
-          public ListView<String> listKeywordHistory = new ListView<>();
 
     @FXML public Button           buttonNew;
     @FXML public Button           buttonCopy;
@@ -105,8 +106,12 @@ public class MainController implements Initializable {
     @Autowired
     private LinkExecutor executor;
 
-    @Autowired
-    private ConfigController configController;
+    // 다른 프로세스에서 keypress 이벤트를 일으키는 것을 방지하기 위한 장치
+    private Set<TextField> onBlock = new ConcurrentHashMap<TextField,Void>().newKeySet();
+
+    // 테이블로 focus를 이동시키기 이전의 Control
+	public Control prevControlSearch = null;
+	public Control prevControlDetail = null;
 
     @Override
 	public void initialize( URL url, ResourceBundle resourceBundle ) {
@@ -122,62 +127,30 @@ public class MainController implements Initializable {
 		log.debug( ">> readData" );
 
 		setPropertyEvent();
-		setKeywordHistoryDropdownList();
 		setKeyPressEvent();
 
     }
 
-	private void setKeywordHistoryDropdownList() {
-
-		inputKeyword.focusedProperty().addListener(( observable, focusedOut, focusedIn ) -> {
-            if( focusedOut == true ) {
-                String keyword = inputKeyword.getText();
-                if( Strings.isEmpty(keyword) ) return;
-                configController.getKeywordHistory().put( keyword, null );
-            }
-        });
-
-		listKeywordHistory.setVisible( false );
-		listKeywordHistory.focusedProperty().addListener(( observable, focusedOut, focusedIn ) -> {
-            if( focusedIn == true ) {
-                listKeywordHistory.getSelectionModel().selectFirst();
-            } else if( focusedOut == true ) {
-                listKeywordHistory.setVisible( false );
-            }
-            log.debug( "focusedOut:{}, focusedIn:{}", focusedOut, focusedIn );
-        });
-
-		listKeywordHistory.addEventHandler( KeyEvent.KEY_RELEASED, event -> {
-
-            KeyCode keyCode = event.getCode();
-
-            if( keyCode == KeyCode.ENTER ) {
-                event.consume();
-                String selectedValue = listKeywordHistory.getSelectionModel().getSelectedItem();
-                inputKeyword.setText( Strings.nvl(selectedValue) );
-                inputKeyword.requestFocus();
-
-            } else if( keyCode == KeyCode.ESCAPE ) {
-                event.consume();
-                inputKeyword.requestFocus();
-            }
-
-        });
-
-		inputKeyword.widthProperty().addListener(( observable, oldValue, newValue ) -> listKeywordHistory.setPrefWidth( newValue.doubleValue() ));
-
-		root.getChildren().add( listKeywordHistory );
-
-	}
-
 	private void setKeyPressEvent() {
 
-		root.setOnKeyReleased( this::onKeyReleased );
 		root.setOnKeyPressed( this::onKeyPressed );
 
-		setEventTabPressed( descDescription );
-		setEventTabPressed( descCmdNext );
-		setEventTabPressed( descCmdPrev );
+		tabPressed( descDescription );
+		tabPressed( descCmdNext );
+		tabPressed( descCmdPrev );
+
+        keyPressedOnSearchInput( inputKeyword );
+        keyPressedOnSearchInput( inputGroup );
+
+        escPressedOnDescription( descGroupName        );
+        escPressedOnDescription( descShowConsole      );
+        escPressedOnDescription( descTitle            );
+        escPressedOnDescription( descDescription      );
+        escPressedOnDescription( descExecPath         );
+        escPressedOnDescription( descExecOption       );
+        escPressedOnDescription( descExecOptionPrefix );
+        escPressedOnDescription( descCmdNext          );
+        escPressedOnDescription( descCmdPrev          );
 
 	}
 
@@ -211,6 +184,8 @@ public class MainController implements Initializable {
 
 		buttonDelete.setDisable( true );
 		buttonCopy.setDisable( true );
+
+		Platform.runLater( () -> descGroupName.requestFocus() );
 
 	}
 
@@ -266,7 +241,6 @@ public class MainController implements Initializable {
 		if( linkDetail.getId() == null ) return;
 
 		linkDetail = linkDetail.clone();
-
 		linkDetail.clearId();
 
 		bindLinkToView();
@@ -302,15 +276,12 @@ public class MainController implements Initializable {
         descShowConsole.selectedProperty().addListener( changeListener );
         descTitle.textProperty().addListener( changeListener );
         descDescription.textProperty().addListener( changeListener );
+		descIcon.imageProperty().addListener( changeListener );
         descExecPath.textProperty().addListener( changeListener );
         descExecOption.textProperty().addListener( changeListener );
         descExecOptionPrefix.textProperty().addListener( changeListener );
         descCmdNext.textProperty().addListener( changeListener );
         descCmdPrev.textProperty().addListener( changeListener );
-		descTitle.textProperty().addListener( changeListener );
-
-		// 이미지 변경시 focus가 Image에 귀속되어, 이를 변경해 주지 않으면 다른 이벤트(버튼 fire 이벤트 등)가 발생하지 않는다.
-		descIcon.imageProperty().addListener( changeListener );
 
 		// 보여주기 체크메뉴 기능
 		menuitemViewDesc.selectedProperty().addListener( ( observable, oldValue, newValue ) -> {
@@ -394,7 +365,7 @@ public class MainController implements Initializable {
 	}
 
 	private void changeIcon( File iconFile ) {
-		if( linkDetail.setIcon( iconFile ) ) {
+		if( iconFile != null && linkDetail.setIcon( iconFile ) ) {
 			bindLinkToView();
 		}
 	}
@@ -431,6 +402,13 @@ public class MainController implements Initializable {
 			link = new Link();
 		}
 
+		// ID가 같을 경우, 다시 그리지 않는다.
+		if( linkDetail.getId() == null ) {
+			if( link.getId() == null ) return;
+		} else {
+			if( link.getId() != null && linkDetail.getId() == link.getId() ) return;
+		}
+
 		linkDetail = link;
 
 		bindLinkToView();
@@ -442,8 +420,6 @@ public class MainController implements Initializable {
 	}
 
 	public void clearDetailView() {
-
-		log.debug( "ClearDetailView is Called !!!" );
 
 		setDetailView( null );
 
@@ -487,10 +463,7 @@ public class MainController implements Initializable {
 
 		labelCmd.setText( "" );
 
-		linkDetail = tableMain.getFocusedItem();
-		if( linkDetail != null ) {
-			setDetailView( linkDetail );
-		}
+		setDetailView( tableMain.getFocusedItem() );
 
 	}
 
@@ -534,126 +507,17 @@ public class MainController implements Initializable {
     	CONSTANT.STAGE.HELP.showLater();
 	}
 
-    private void showKeywordHistory() {
-
-    	listKeywordHistory.getItems().clear();
-
-    	String currentKeyword = inputKeyword.getText();
-
-    	for( String keyword : configController.getKeywordHistory().keySet() ) {
-    		if( currentKeyword.equals( keyword ) ) continue;
-    		listKeywordHistory.getItems().add( keyword );
-    	}
-
-    	int rowSize    = listKeywordHistory.getItems().size();
-    	int maxRowSize = 8;
-    	int ROW_HEIGHT = 22;
-
-    	log.debug( "rowSize : {}", rowSize );
-
-    	if( rowSize == 0 ) return;
-
-    	listKeywordHistory.setPrefHeight( ROW_HEIGHT * Math.min( rowSize, maxRowSize ) );
-
-    	double marginTop  = 5.;
-    	double marginLeft = 4.;
-
-    	double x      = inputKeyword.getLayoutX();
-		double y      = inputKeyword.getLayoutY();
-		double height = inputKeyword.getHeight();
-
-		listKeywordHistory.setLayoutX( x + marginLeft );
-		listKeywordHistory.setLayoutY( y + marginTop + height );
-		listKeywordHistory.setVisible( true );
-
-
-    	log.debug( "listKeywordHistory.getPrefHeight() : {}", listKeywordHistory.getPrefHeight() );
-
-		listKeywordHistory.requestFocus();
-
-    }
-
-
-	private void onKeyReleased( KeyEvent event ) {
+    private void onKeyPressed( KeyEvent event ) {
 
 		KeyCode     keyCode = event.getCode();
 		EventTarget target  = event.getTarget();
+
+		log.trace( ">> Event {}", event );
 
 		if( keyCode == UNDEFINED ) {
 			event.consume();
 			return;
 		}
-
-		log.trace( ">> Event {}", event );
-
-		if( keyCode == ESCAPE ) {
-
-			if( target == inputKeyword ) {
-				event.consume();
-				tableMain.focus();
-			} else if ( target == inputGroup ) {
-				event.consume();
-				tableMain.focus();
-			} else if (
-				target == descGroupName        ||
-				target == descShowConsole      ||
-				target == descTitle            ||
-				target == descDescription      ||
-				target == descExecPath         ||
-				target == descExecOption       ||
-				target == descExecOptionPrefix ||
-				target == descCmdNext          ||
-				target == descCmdPrev
-			) {
-				event.consume();
-				inputKeyword.requestFocus();
-			}
-
-			return;
-
-		}
-
-		if( target == inputKeyword ) {
-
-			switch ( keyCode ) {
-				case DOWN :
-					event.consume();
-					showKeywordHistory();
-					return;
-				case ENTER :
-					try {
-						if( tableMain.getVisibleRowSize() == 1 ) {
-							event.consume();
-							ObservableList<Link> links = tableMain.getDataOnView();
-							if( links.size() == 1 ) {
-								Link link = links.get( 0 );
-								executor.execute( link );
-							}
-							return;
-						}
-					} catch ( Throwable e ) {
-						log.error( e.getMessage(), e );
-					}
-					return;
-			}
-			return;
-
-		}
-
-	}
-
-	private void onKeyPressed( KeyEvent event ) {
-
-		KeyCode     keyCode = event.getCode();
-		Object      source  = event.getSource();
-		EventTarget target  = event.getTarget();
-
-		if( keyCode == UNDEFINED ) {
-			event.consume();
-			return;
-		}
-
-		log.trace( ">> Event {}", event );
 
 		// 한개의 키코드로 단축키가 동작하지 않는 오류 보정로직
 		if( keyCode == KeyCode.F1 ) {
@@ -681,7 +545,6 @@ public class MainController implements Initializable {
 		if( event.isControlDown() ) {
 
 			if( ! event.isShiftDown() && isDescriptionShown() ) {
-
 				switch ( keyCode ) {
 					case S :
 						saveLink(); break;
@@ -700,21 +563,7 @@ public class MainController implements Initializable {
 					default :
 						return;
 				}
-
 				event.consume();
-
-			}
-
-		} else if( event.getCode() == KeyCode.TAB ) {
-
-			if( event.isShiftDown() ) {
-
-				// KeywordHistory Dropdown List : Shift + Tab
-//				if( source == root ) {
-//					event.consume();
-//					inputKeyword.requestFocus();
-//				}
-
 			}
 
 		}
@@ -725,11 +574,20 @@ public class MainController implements Initializable {
 		return menuitemViewDesc.isSelected();
 	}
 
-	private void setEventTabPressed( TextArea textArea ) {
+	private void tabPressed( TextArea textArea ) {
 
 		EventHandler<KeyEvent> eventHandler = event -> {
 
-			if ( event.getCode() != KeyCode.TAB || event.isShiftDown() || event.isControlDown() ) return;
+            KeyCode  keyCode = event.getCode();
+
+            if( keyCode == UNDEFINED ) {
+                event.consume();
+                return;
+            }
+
+            log.trace( ">> Event {}", event );
+
+			if ( event.getCode() != TAB || event.isShiftDown() || event.isControlDown() ) return;
 
 			event.consume();
 
@@ -754,5 +612,79 @@ public class MainController implements Initializable {
 		textArea.addEventFilter( KeyEvent.KEY_PRESSED, eventHandler );
 
 	}
+
+    private void keyPressedOnSearchInput( TextField textField ) {
+
+        EventHandler<KeyEvent> eventHandler = event -> {
+
+            KeyCode keyCode = event.getCode();
+
+            if( keyCode == UNDEFINED || onBlock.contains(textField) ) {
+                event.consume();
+                return;
+            }
+
+            log.trace( ">> Event {}", event );
+
+            switch ( keyCode ) {
+
+                case ESCAPE :
+                    event.consume();
+                    tableMain.focus();
+					prevControlSearch = textField;
+                    return;
+
+                case ENTER :
+
+                    try {
+                        if( tableMain.getVisibleRowSize() == 1 ) {
+                            event.consume();
+                            ObservableList<Link> links = tableMain.getDataOnView();
+                            if( links.size() == 1 ) {
+                                Link link = links.get( 0 );
+
+                                onBlock.add( textField );
+
+                                setDetailView( link );
+                                executor.execute( link );
+
+                                FxThread.start( () -> {
+                                    FxThread.sleep( KEYPRESS_BLOCK_WAIT_MILISEC );
+                                    onBlock.remove( textField );
+
+                                });
+
+                            }
+                            return;
+                        }
+                    } catch ( Throwable e ) {
+                        Dialog.error( e );
+                    }
+                    return;
+            }
+
+        };
+
+        textField.addEventFilter( KeyEvent.KEY_PRESSED, eventHandler );
+
+        // prevent key typed event by other process (like Rufus)
+        textField.addEventHandler( KeyEvent.KEY_TYPED, event -> {
+            if( onBlock.contains( textField ) ) {
+                event.consume();
+                return;
+            }
+        });
+
+    }
+
+    private void escPressedOnDescription( Control control ) {
+        control.addEventHandler( KeyEvent.KEY_PRESSED, event -> {
+            if( event.getCode() == ESCAPE ) {
+                event.consume();
+                tableMain.focus();
+				prevControlDetail = control;
+            }
+        });
+    }
 
 }

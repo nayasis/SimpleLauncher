@@ -3,7 +3,6 @@ package com.nayasis.simplelauncher.controller;
 import com.nayasis.simplelauncher.jpa.entity.ConfigEntity;
 import com.nayasis.simplelauncher.jpa.repository.ConfigRepository;
 import com.nayasis.simplelauncher.vo.RestoreConfig;
-import io.nayasis.common.basica.cache.implement.LruCache;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -21,8 +20,6 @@ public class ConfigController {
 
 	@Autowired
 	private ConfigRepository configRepository;
-
-	private LruCache<String,String> keywordHistory = new LruCache<>( 20 );
 
 	private boolean restoreMainStageProperties = true;
 
@@ -43,7 +40,6 @@ public class ConfigController {
 		RestoreConfig config = new RestoreConfig();
 
 		config.setMainStageProperties( MAIN.getConfigureProperties() );
-		config.setKeywordHistory( keywordHistory );
 		config.setFocusedRow( mainController.tableMain.getFocusedIndex() );
 
 		ConfigEntity entity = configRepository.findByKey( CONFIG_MAIN );
@@ -72,16 +68,10 @@ public class ConfigController {
 			mainController.showDescription( mainController.menuitemViewDesc.isSelected() );
 			mainController.showMenuBar( mainController.menuitemViewMenuBar.isSelected() );
 
-			keywordHistory = config.getKeywordHistory();
-
 		} catch ( Exception e ) {
 			log.error( e.getMessage(), e );
 		}
 
-	}
-
-	public LruCache<String, String> getKeywordHistory() {
-		return keywordHistory;
 	}
 
 }
