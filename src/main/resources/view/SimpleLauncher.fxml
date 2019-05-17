@@ -178,7 +178,7 @@
                            </children>
                         </HBox>
                         <TextField fx:id="descTitle" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                        <TextArea fx:id="descDescription" GridPane.columnIndex="1" GridPane.rowIndex="3">
+                        <TextArea fx:id="descDescription" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="3">
                            <opaqueInsets>
                               <Insets />
                            </opaqueInsets>
@@ -212,7 +212,7 @@
                         </HBox>
                         <TextField fx:id="descExecOption" GridPane.columnIndex="1" GridPane.rowIndex="6" />
                         <TextField fx:id="descExecOptionPrefix" GridPane.columnIndex="1" GridPane.rowIndex="7" />
-                        <TextArea fx:id="descCmdPrev" GridPane.columnIndex="1" GridPane.rowIndex="8">
+                        <TextArea fx:id="descCmdPrev" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="8">
                            <padding>
                               <Insets bottom="2.0" top="2.0" />
                            </padding>
@@ -220,7 +220,7 @@
                               <Insets bottom="2.0" top="2.0" />
                            </GridPane.margin>
                         </TextArea>
-                        <TextArea fx:id="descCmdNext" GridPane.columnIndex="1" GridPane.rowIndex="9">
+                        <TextArea fx:id="descCmdNext" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="9">
                            <padding>
                               <Insets bottom="2.0" top="2.0" />
                            </padding>
