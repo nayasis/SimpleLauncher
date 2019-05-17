@@ -3,7 +3,7 @@ package com.nayasis.simplelauncher.vo;
 import com.nayasis.simplelauncher.common.CONSTANT;
 import com.nayasis.simplelauncher.jpa.entity.LinkEntity;
 import io.nayasis.common.basica.base.Strings;
-import io.nayasis.common.basica.etc.Platform;
+import io.nayasis.common.basica.etc.Platforms;
 import io.nayasis.common.basica.file.Files;
 import io.nayasis.common.basica.model.NDate;
 import io.nayasis.common.basica.reflection.Reflector;
@@ -24,7 +24,6 @@ import java.io.UncheckedIOException;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -81,7 +80,7 @@ public class Link {
 		setIcon( file );
 
 		if( file.isDirectory() ) {
-			if( Platform.isWindows ) setOptionPrefix( "cmd /c explorer" );
+			if( Platforms.isWindows ) setOptionPrefix( "cmd /c explorer" );
 		} else {
 			switch( Files.getExtension(file) ) {
 				case "lnk" :
@@ -98,7 +97,7 @@ public class Link {
 
 	private void setMicrosoftLnkFile( File file ) {
 
-		if( ! Platform.isWindows ) return;
+		if( ! Platforms.isWindows ) return;
 
 		try {
 

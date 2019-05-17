@@ -3,6 +3,7 @@ package tfx;
 import com.nayasis.simplelauncher.service.terminal.Terminal;
 import com.nayasis.simplelauncher.service.terminal.TerminalConfig;
 import io.nayasis.common.basica.base.Strings;
+import io.nayasis.common.basica.cli.Command;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
@@ -24,19 +25,24 @@ public class TfxTest extends Application {
         config.setScrollbarVisible( false );
         config.setFontSize( 12 );
         config.setScrollWhellMoveMultiplier( 3 );
+        config.setEnableClipboardNotice( false );
 
-        String exec = "d:\\development\\ChdToPbp\\lib\\chdman.exe";
-        String chd  = "d:\\development\\ChdToPbp\\img\\102 Dalmatians - Puppies to the Rescue [NTSC-U] [SLUS-01152].chd";
-        String trg  = "d:\\development\\ChdToPbp\\_temp\\img.";
+//        String exec = "d:\\development\\ChdToPbp\\lib\\chdman.exe";
+//        String chd  = "d:\\development\\ChdToPbp\\img\\102 Dalmatians - Puppies to the Rescue [NTSC-U] [SLUS-01152].chd";
+//        String trg  = "d:\\development\\ChdToPbp\\_temp\\img.";
+//
+//        String command = Strings.format(
+//            "\"{}\" extractcd -f -i \"{}\" -o \"{}\" -ob \"{}\" ",
+//            exec, chd, trg + "cue", trg + "bin"
+//        );
 
-        String command = Strings.format(
-            "\"{}\" extractcd -f -i \"{}\" -o \"{}\" -ob \"{}\" ",
-            exec, chd, trg + "cue", trg + "bin"
-        );
+//        String command = "cmd /c c: && cd \"c:\\Windows\" && dir";
 
-        log.debug( command );
+        Command command = new Command( "cmd /c c: && cd \"c:\\Windows\" && dir" );
 
-        Terminal myTerminal = new Terminal( config ).setCommand( command );
+        log.debug( command.toString() );
+
+        Terminal myTerminal = new Terminal( config ).setCommand( command ).setStage( stage );
         stage.setScene( new Scene( myTerminal, 900, 600 ) );
         stage.show();
 

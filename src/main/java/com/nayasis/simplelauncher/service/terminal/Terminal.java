@@ -3,10 +3,13 @@ package com.nayasis.simplelauncher.service.terminal;
 import com.nayasis.simplelauncher.service.terminal.helper.WebkitCall;
 import io.nayasis.common.basica.base.Strings;
 import io.nayasis.common.basica.cli.Command;
-import io.nayasis.common.basica.etc.Platform;
+import io.nayasis.common.basica.etc.Platforms;
+import io.nayasis.common.basicafx.javafx.dialog.Dialog;
 import io.nayasis.common.basicafx.javafx.etc.FxThread;
+import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.BufferedReader;
@@ -26,8 +29,9 @@ public class Terminal extends TerminalView {
 
     private final ObjectProperty<Writer>      outputWriterProperty = new SimpleObjectProperty<>();
     private final LinkedBlockingQueue<String> commandQueue         = new LinkedBlockingQueue<>();
-    private       String[] command;
-    private       String   workingDirectory;
+    private       String[]                    command;
+    private       String                      workingDirectory;
+    private       Stage                       stage;
 
     public Terminal() {
         this(null);
@@ -47,10 +51,6 @@ public class Terminal extends TerminalView {
     }
 
     public Terminal setCommand( String command ) {
-        return setCommand( command, null );
-    }
-
-    public Terminal setCommand( String command, String workingDirectory ) {
         this.command          = Strings.nvl(command).split( " " );
         this.workingDirectory = workingDirectory;
         return this;
@@ -62,6 +62,24 @@ public class Terminal extends TerminalView {
         if( workingDirectory != null ) {
             this.workingDirectory = workingDirectory.getAbsolutePath();
         }
+        return this;
+    }
+
+    public String getWorkingDirectory() {
+        return workingDirectory;
+    }
+
+    public Terminal setWorkingDirectory( String workingDirectory ) {
+        this.workingDirectory = workingDirectory;
+        return this;
+    }
+
+    public Stage getStage() {
+        return stage;
+    }
+
+    public Terminal setStage( Stage stage ) {
+        this.stage = stage;
         return this;
     }
 
@@ -83,12 +101,26 @@ public class Terminal extends TerminalView {
         });
     }
 
+    @WebkitCall
     @Override
     public void onTerminalReady() {
+
         FxThread.start(() -> {
             try {
                 runProcess();
-            } catch ( final Exception e ) {}
+
+                if( stage != null ) {
+                    Platform.runLater( () -> {
+                        stage.setTitle( Strings.format( "{} (done)", stage.getTitle()) );
+                    });
+                }
+
+            } catch ( final Exception e ) {
+                log.error( e.getMessage(), e );
+                Platform.runLater( () -> {
+                    Dialog.error( "msg.error.003", e );
+                });
+            }
         });
     }
 
@@ -102,9 +134,9 @@ public class Terminal extends TerminalView {
 
         Process process = builder.start();
 
-        setInputReader(  new BufferedReader(new InputStreamReader(  process.getInputStream(),  Platform.osCharset)) );
-        setErrorReader(  new BufferedReader(new InputStreamReader(  process.getErrorStream(),  Platform.osCharset)) );
-        setOutputWriter( new BufferedWriter(new OutputStreamWriter( process.getOutputStream(), Platform.osCharset)) );
+        setInputReader(  new BufferedReader(new InputStreamReader(  process.getInputStream(),  Platforms.osCharset)) );
+        setErrorReader(  new BufferedReader(new InputStreamReader(  process.getErrorStream(),  Platforms.osCharset)) );
+        setOutputWriter( new BufferedWriter(new OutputStreamWriter( process.getOutputStream(), Platforms.osCharset)) );
 
         focusCursor();
 

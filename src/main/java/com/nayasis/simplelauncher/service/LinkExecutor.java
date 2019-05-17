@@ -11,6 +11,7 @@ import io.nayasis.common.basica.cli.CommandExecutor;
 import io.nayasis.common.basica.file.Files;
 import io.nayasis.common.basicafx.desktop.Desktop;
 import io.nayasis.common.basicafx.javafx.dialog.Dialog;
+import io.nayasis.common.basicafx.javafx.stage.ConfigurableStage;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
@@ -93,7 +94,6 @@ public class LinkExecutor {
 		} else {
 
 			newLink = link.clone();
-
 			newLink.setbindOptions( file );
 
 			if( file != null && file.exists() ) {
@@ -168,11 +168,12 @@ public class LinkExecutor {
 
 	private void drawTerminal( String title, Command command ) {
 
-		Terminal myTerminal = new Terminal( getTerminalConfig() ).setCommand( command );
+		Stage stage = new ConfigurableStage();
 
-		Stage stage = new Stage();
+		Terminal terminal = new Terminal( getTerminalConfig() ).setCommand( command ).setStage( stage );
+
 		stage.setTitle( title );
-		stage.setScene( new Scene( myTerminal, 900, 600) );
+		stage.setScene( new Scene( terminal, 900, 600) );
 		stage.show();
 
 	}
