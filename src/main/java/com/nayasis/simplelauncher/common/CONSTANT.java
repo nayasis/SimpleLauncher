@@ -22,6 +22,8 @@ public abstract class CONSTANT {
 
 	public static final String ICON_IMAGE_TYPE = "png";
 
+	public static final int KEYPRESS_BLOCK_WAIT_MILISEC = 200;
+
 	public static abstract class STAGE {
 
 		public static ConfigurableStage MAIN = null;
