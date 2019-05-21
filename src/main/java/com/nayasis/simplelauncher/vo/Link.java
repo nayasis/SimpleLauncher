@@ -167,6 +167,10 @@ public class Link {
 		return Validator.nvl( showConsole, Boolean.FALSE );
 	}
 
+	public boolean isShowConsole() {
+		return getShowConsole();
+	}
+
 	public Link clone() {
 
 		Link clone = new Link();

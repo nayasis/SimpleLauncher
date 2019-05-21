@@ -12,11 +12,13 @@ import io.nayasis.common.basica.file.Files;
 import io.nayasis.common.basicafx.desktop.Desktop;
 import io.nayasis.common.basicafx.javafx.dialog.Dialog;
 import io.nayasis.common.basicafx.javafx.stage.ConfigurableStage;
+import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -33,13 +35,54 @@ public class LinkExecutor {
 	private DataController dataController;
 
 	private String getExecPathFrom( Link link ) {
-		if( Files.notExists( link.getPath() ) ) {
-			String newPath = Files.getRootPath() + "/" + link.getRelativePath();
-			if( Files.exists( newPath) ) {
-				link.setPath( newPath );
-			}
+
+		String path = link.getPath();
+
+		if( Files.exists(path) )
+			return wrapDoubleQuotation( path );
+
+		path = Files.getRootPath() + "/" + link.getPath();
+
+		if( Files.exists(path) )
+			return wrapDoubleQuotation( path );
+
+		path = Files.getRootPath() + "/" + link.getRelativePath();
+
+		if( Files.exists(path) ) {
+			link.setPath( path );
+			dataController.updateExecPath( link );
+			return wrapDoubleQuotation( path );
 		}
+
 		return link.getPath();
+
+	}
+
+	private String wrapDoubleQuotation( String path ) {
+		return Strings.format( "\"{}\"", path );
+	}
+
+	public void execute( Link link, File file ) {
+
+		Link execLink;
+
+		if( file == null || ! file.exists() ) {
+			execLink = link;
+
+		} else {
+
+			execLink = link.clone();
+			execLink.setbindOptions( file );
+
+			// if option not changed after binding, just add file path as parameter.
+			if( link.getOption().equals(execLink.getOption()) ) {
+				execLink.setOption( Strings.format( "{} \"{}\"", execLink.getOption(), file.getPath() ) );
+			}
+
+		}
+
+		execute( execLink );
+
 	}
 
 	public void execute( Link link ) {
@@ -48,33 +91,29 @@ public class LinkExecutor {
 
 		dataController.increaseUsedCount( link );
 
-        link = link.clone();
-        link.clearBindOptions();
-
-		String  title       = link.getTitle().get();
-		boolean showConsole = link.getShowConsole();
-
 		try {
 
-			for( String commandLine : Strings.tokenize( link.getCommandPrev(), "\n" ) ) {
-				run( title, commandLine, null, false, true );
+			run( link.getCommandPrev() );
+
+			String cmd = getLinkCommand( link );
+			Command command = new Command();
+			command.set( cmd );
+
+			mainController.printCommand( cmd );
+
+			if( Files.isFile(cmd) ) {
+				command.setWorkingDirectory( Files.getDirectory(cmd) );
 			}
 
-			String execPath = getExecPathFrom( link );
-
-			String cmd = String.format( "%s \"%s\" %s", link.getOptionPrefix(), execPath, link.getOption() );
-
-			mainController.labelCmd.setText( cmd );
-
-            boolean wait = Strings.isNotEmpty( link.getCommandNext() );
-
-            run( title, cmd, execPath, showConsole, wait );
-
-            if( wait ) {
-                for( String commandLine : Strings.tokenize( link.getCommandNext(), "\n" ) ) {
-                    run( title, commandLine, null, false, true );
-                }
-            }
+			if( link.isShowConsole() ) {
+				drawTerminal( link.getTitle().get(), command, getPostAction(link) );
+			} else {
+				CommandExecutor executor = new CommandExecutor().run( command );
+				if( Strings.isNotEmpty(link.getCommandNext()) ) {
+					executor.waitFor();
+					run( link.getCommandNext() );
+				}
+			}
 
 		} catch( Throwable e ) {
 			Throwable throwable = e.getCause() == null ? e : e.getCause();
@@ -84,45 +123,63 @@ public class LinkExecutor {
 
 	}
 
-	public void execute( Link link, File file ) {
+	private void run( String commandLines ) {
+		for( String commandLine : Strings.tokenize( commandLines, "\n" ) ) {
+			run( commandLine,  true );
+		}
+	}
 
-		Link newLink;
-
-		if( file == null  && ! file.exists() ) {
-			newLink = link;
-
-		} else {
-
-			newLink = link.clone();
-			newLink.setbindOptions( file );
-
-			if( file != null && file.exists() ) {
-				if( link.getOption().equals(newLink.getOption()) ) {
-					String newOption = newLink.getOption() + String.format( "\"%s\"", file.getPath() );
-					newLink.setOption( newOption );
+	@Nullable
+	private Runnable getPostAction( Link link ) {
+		Runnable postAction = null;
+		String commandNext = link.getCommandNext();
+		if( Strings.isNotEmpty(commandNext) ) {
+			postAction = () -> {
+				try {
+					run( link.getCommandNext() );
+				} catch ( Throwable e ) {
+					Platform.runLater( () -> {
+						Dialog.error( e, e.getMessage() );
+					});
 				}
-			}
+			};
+		}
+		return postAction;
+	}
 
+	private String getLinkCommand( Link link ) {
+
+		StringBuilder cmd = new StringBuilder();
+
+		String execPath = getExecPathFrom( link );
+
+		if( Strings.isNotEmpty( link.getOptionPrefix() ) )
+			cmd.append( link.getOptionPrefix() ).append( " " );
+
+		if( Files.isFile(execPath) ) {
+			cmd.append( wrapDoubleQuotation( execPath ) );
+		} else {
+			cmd.append( execPath );
 		}
 
-		execute( newLink );
+		if( Strings.isNotEmpty( link.getOption() ) )
+			cmd.append( " " ).append( link.getOption() );
+
+		return cmd.toString();
 
 	}
 
-	private void run( String title, String commandLine, String workingDirectory, boolean showConsole, boolean wait ) {
+	private void run( String commandLine, boolean wait ) {
 
 		Command command = new Command();
-		command.setWorkingDirectory( workingDirectory );
 		command.set( commandLine );
 
-		if( showConsole ) {
-			drawTerminal( title, command );
-		} else {
-            CommandExecutor executor = new CommandExecutor().run( command );
-            if( wait ) {
-                executor.waitFor();
-            }
-		}
+		if( Files.isFile(commandLine) )
+			command.setWorkingDirectory( Files.getDirectory(commandLine) );
+
+		CommandExecutor executor = new CommandExecutor().run( command );
+		if( wait )
+			executor.waitFor();
 
 	}
 
@@ -158,23 +215,23 @@ public class LinkExecutor {
 
 		if( file.isDirectory() ) {
 			new Desktop().copyToClipboard( file.getPath() );
-
 		} else {
 			new Desktop().copyToClipboard( link.getPath() );
-
 		}
 
 	}
 
-	private void drawTerminal( String title, Command command ) {
+	private Terminal drawTerminal( String title, Command command, Runnable runnable ) {
 
 		Stage stage = new ConfigurableStage();
 
-		Terminal terminal = new Terminal( getTerminalConfig() ).setCommand( command ).setStage( stage );
+		Terminal terminal = new Terminal( getTerminalConfig() ).setCommand( command ).setStage( stage ).setPostAction( runnable );
 
 		stage.setTitle( title );
 		stage.setScene( new Scene( terminal, 900, 600) );
 		stage.show();
+
+		return terminal;
 
 	}
 

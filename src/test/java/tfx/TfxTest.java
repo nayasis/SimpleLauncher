@@ -42,16 +42,16 @@ public class TfxTest extends Application {
 
         log.debug( command.toString() );
 
-        Terminal myTerminal = new Terminal( config ).setCommand( command ).setStage( stage );
-        stage.setScene( new Scene( myTerminal, 900, 600 ) );
+        Terminal terminal = new Terminal( config ).setCommand( command ).setStage( stage );
+        stage.setScene( new Scene( terminal, 900, 600 ) );
         stage.show();
 
         stage.setOnCloseRequest( event -> {
             stage.close();
             System.exit( 0 );
         });
-//        myTerminal.onTerminalFxReady( () -> {
-////            myTerminal.sendCommand( "dir\r" );
+//        terminal.onTerminalFxReady( () -> {
+////            terminal.sendCommand( "dir\r" );
 //        });
     }
 

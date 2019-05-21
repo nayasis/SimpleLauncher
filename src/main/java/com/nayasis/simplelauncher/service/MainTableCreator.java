@@ -206,7 +206,7 @@ public class MainTableCreator {
 			switch ( keyCode ) {
 				case ENTER :
 					event.consume();
-					mainController.labelCmd.setText( "" );
+					mainController.printCommand( "" );
 					onBlock = true;
 					linkExecutor.execute( table.getFocusedItem() );
 
@@ -217,7 +217,7 @@ public class MainTableCreator {
 					return;
 				case DELETE :
 					event.consume();
-					mainController.labelCmd.setText( "" );
+					mainController.printCommand( "" );
 					mainController.deleteLink( null );
 					return;
 
@@ -229,7 +229,7 @@ public class MainTableCreator {
 			} else if( keyCode == KeyCode.DELETE ) {
 
 				event.consume();
-				mainController.labelCmd.setText( "" );
+				mainController.printCommand( "" );
 				mainController.deleteLink( null );
 
 			} else if( keyCode == KeyCode.ESCAPE ) {
@@ -242,7 +242,7 @@ public class MainTableCreator {
 				event.consume();
 				prevControl.requestFocus();
 
-				mainController.descGroupName = null;
+				mainController.prevControlDetail = null;
 
 			} else if( keyCode == KeyCode.TAB ) {
 

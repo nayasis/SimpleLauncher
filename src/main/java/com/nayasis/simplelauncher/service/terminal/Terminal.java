@@ -32,6 +32,7 @@ public class Terminal extends TerminalView {
     private       String[]                    command;
     private       String                      workingDirectory;
     private       Stage                       stage;
+    private       Runnable                    postAction;
 
     public Terminal() {
         this(null);
@@ -74,6 +75,15 @@ public class Terminal extends TerminalView {
         return this;
     }
 
+    public Runnable getPostAction() {
+        return postAction;
+    }
+
+    public Terminal setPostAction( Runnable postAction ) {
+        this.postAction = postAction;
+        return this;
+    }
+
     public Stage getStage() {
         return stage;
     }
@@ -104,15 +114,19 @@ public class Terminal extends TerminalView {
     @WebkitCall
     @Override
     public void onTerminalReady() {
-
         FxThread.start(() -> {
             try {
+
                 runProcess();
 
                 if( stage != null ) {
                     Platform.runLater( () -> {
                         stage.setTitle( Strings.format( "{} (done)", stage.getTitle()) );
                     });
+                }
+
+                if( postAction != null ) {
+                    postAction.run();
                 }
 
             } catch ( final Exception e ) {

@@ -6,6 +6,7 @@ import com.nayasis.simplelauncher.service.MainTableCreator;
 import com.nayasis.simplelauncher.vo.Link;
 import io.nayasis.common.basica.base.Strings;
 import io.nayasis.common.basica.model.Messages;
+import io.nayasis.common.basicafx.desktop.Desktop;
 import io.nayasis.common.basicafx.javafx.control.table.NTable;
 import io.nayasis.common.basicafx.javafx.dialog.Dialog;
 import io.nayasis.common.basicafx.javafx.etc.FxThread;
@@ -158,6 +159,10 @@ public class MainController implements Initializable {
 		labelStatus.setText( Messages.get( value, param ) );
 	}
 
+	public void printCommand( String command ) {
+    	labelCmd.setText( Strings.nvl(command) );
+	}
+
 	@FXML
 	public void importData( ActionEvent event ) {
 		dataController.importData();
@@ -293,6 +298,12 @@ public class MainController implements Initializable {
 
 		menuItemHelp.setAccelerator( new KeyCodeCombination(KeyCode.F1) );
 
+		labelCmd.setOnMouseClicked( event -> {
+			if( event.getClickCount() > 1 ) {
+				Desktop.copyToClipboard( labelCmd.getText() );
+			}
+		});
+
 	}
 
 	private interface EventRunner {
@@ -417,6 +428,8 @@ public class MainController implements Initializable {
 		buttonCopy.setDisable( false );
 		buttonSave.setDisable( true );
 
+		printCommand( "" );
+
 	}
 
 	public void clearDetailView() {
@@ -460,11 +473,7 @@ public class MainController implements Initializable {
 	}
 
 	public void drawDetailViewFromTable() {
-
-		labelCmd.setText( "" );
-
 		setDetailView( tableMain.getFocusedItem() );
-
 	}
 
 	public void showDescription( boolean show ) {

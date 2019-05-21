@@ -100,6 +100,17 @@ public class DataController {
 		linkRepository.save( entity );
 	}
 
+	@Transactional
+	public void updateExecPath( Link link ) {
+
+		LinkEntity entity = getEntity( link.getId() );
+		if( entity == null ) return;
+
+		entity.setPath( link.getPath() );
+		linkRepository.save( entity );
+
+	}
+
 	public void exportData() {
 
 		File file = Dialog.filePicker( "msg.info.003", FILE_EXT_DESC, FILE_EXT ).showSaveDialog( MAIN );
