@@ -66,6 +66,7 @@ public class MainController implements Initializable {
 	@FXML public MenuBar          menubarTop;
     @FXML public CheckMenuItem    menuitemViewDesc;
     @FXML public CheckMenuItem    menuitemViewMenuBar;
+    @FXML public CheckMenuItem    menuitemAlwaysOnTop;
     @FXML public MenuItem         menuItemHelp;
 
     @FXML public TextField        inputKeyword;
@@ -295,6 +296,9 @@ public class MainController implements Initializable {
 		menuitemViewMenuBar.selectedProperty().addListener( ( observable, oldValue, newValue ) -> {
 			showMenuBar( newValue == Boolean.TRUE );
 		});
+		menuitemAlwaysOnTop.selectedProperty().addListener( ( observable, oldValue, newValue ) -> {
+			alwaysOnTop( newValue == Boolean.TRUE );
+		});
 
 		menuItemHelp.setAccelerator( new KeyCodeCombination(KeyCode.F1) );
 
@@ -477,7 +481,6 @@ public class MainController implements Initializable {
 	}
 
 	public void showDescription( boolean show ) {
-		log.debug( ">> show desc : {}", show );
 		HBox parent = (HBox) tableMainRaw.getParent();
 		ObservableList<Node> children = parent.getChildren();
 
@@ -491,7 +494,6 @@ public class MainController implements Initializable {
 	}
 
 	public void showMenuBar( boolean show ) {
-    	log.debug( ">> show menubar: {}", show );
 		ObservableList<Node> children = vboxTop.getChildren();
 		if( show ) {
 			if( ! children.contains( menubarTop ) )
@@ -499,6 +501,10 @@ public class MainController implements Initializable {
 		} else {
 			children.remove( menubarTop );
 		}
+	}
+
+	public void alwaysOnTop( boolean yes ) {
+		CONSTANT.STAGE.MAIN.setAlwaysOnTop( yes );
 	}
 
 	@FXML

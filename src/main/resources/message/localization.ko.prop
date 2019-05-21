@@ -6,6 +6,7 @@ menu.file.clear            = 초기화
 menu.view                  = 보기
 menu.view.showMenuBar      = 메뉴
 menu.view.description      = 상세
+menu.view.alwaysOnTop      = 창 항상 위로 고정
 menu.help                  = 도움말
 menu.help.about            = 정보
 search.keyword             = 검색어

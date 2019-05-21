@@ -67,6 +67,7 @@ public class ConfigController {
 			MAIN.setConfigureProperties( config.getMainStageProperties() );
 			mainController.showDescription( mainController.menuitemViewDesc.isSelected() );
 			mainController.showMenuBar( mainController.menuitemViewMenuBar.isSelected() );
+			mainController.alwaysOnTop( mainController.menuitemAlwaysOnTop.isSelected() );
 
 		} catch ( Exception e ) {
 			log.error( e.getMessage(), e );

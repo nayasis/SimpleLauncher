@@ -60,6 +60,11 @@
                               <KeyCodeCombination alt="DOWN" code="V" control="UP" meta="UP" shift="UP" shortcut="UP" />
                            </accelerator>
                         </CheckMenuItem>
+                        <CheckMenuItem fx:id="menuitemAlwaysOnTop" mnemonicParsing="false" text="\%menu.view.alwaysOnTop">
+                           <accelerator>
+                              <KeyCodeCombination alt="UP" code="F" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
+                           </accelerator>
+                        </CheckMenuItem>
                   </items>
                 </Menu>
                 <Menu mnemonicParsing="false" text="\%menu.help">
