@@ -42,7 +42,7 @@ public class Main extends AbstractApplication {
 
         Messages.load( "message/**.prop" );
 
-        if( commandLine.hasOption( "h" ) ) {
+        if( commandLine.hasOption("help") || commandLine.hasOption("h") ) {
             printHelp();
             return;
         } else if( commandLine.hasOption( "clear" ) ) {
