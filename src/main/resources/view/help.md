@@ -2,26 +2,47 @@
 
 ## Introduction
 
+***Simple Launcher*** is designed to launch all of your application simply and to search easily.
+
 ## Command Arguments
+
+| argument       | description                                         |
+| -------------- | --------------------------------------------------- |
+| help           | show help                                           |
+| h              | show help                                           |
+| clear          | clear memorized last window position and properties |
+
+
+## Shortcuts
+
+| shortcut     | description      |
+|--------------|------------------|
+| \#{filepath} | file's full path |
+| \#{path}     | path             |
+| \#{filename} | file name        |
+| \#{name}     | base name        |
+| \#{ext}      | extension        |
 
 ## Binding parameters
 
-Item's ***option***(or prefix option) could have parameter and it would replace to file(or directory) path parameter
+Item's ***option***(or prefix option) could have parameter and it would replace to file(or directory) path
 being injected when runs by file(or directory) dragging.
 
-| parameter | description       | example      |
-|-----------|-------------------|--------------|
-| \#{cd}    | path only         | /user/home   |
-| \#{name}  | name only         | readme.md    |
-| \#{pname} | name only without extention | readme |
-| \#{path}  | file's full path            | /usr/home/readme.md |
+| parameter      | description         | example               |
+| -------------- | ------------------  | --------------------- |
+| \#{filepath}   | file's full path    | /usr/home/readme.md   |
+| \#{path}       | path                | /user/home            |
+| \#{filename}   | file name           | readme.md             |
+| \#{name}       | base name           | readme                |
+| \#{ext}        | extension           | md                    |
+| \#{home}       | user home directory | /user/***yours**      |
 
-1. ParameterKey is case-insensitive. ( #{cd}, #{Cd}.. anything possible)
-2. Example
-   ape2wav.exe \"#{path}\" \"#{unextpath}\"  
+### Example
+
+   ape2wav.exe "#{filepath}" "#{path}\#{name}.wav"  
 
 ## Contact
 
-nayasis@gmail.com
+FAQs  : https://github.com/nayasis/SimpleLauncher2/issues
 
-
+email : [nayasis@gmail.com](mailto:nayasis@gmail.com)
