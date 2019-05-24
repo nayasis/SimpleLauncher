@@ -3,12 +3,14 @@ package com.nayasis.simplelauncher.vo;
 import com.nayasis.simplelauncher.common.CONSTANT;
 import com.nayasis.simplelauncher.jpa.entity.LinkEntity;
 import io.nayasis.common.basica.base.Strings;
+import io.nayasis.common.basica.base.format.Formatter;
 import io.nayasis.common.basica.etc.Platforms;
 import io.nayasis.common.basica.file.Files;
 import io.nayasis.common.basica.model.NDate;
+import io.nayasis.common.basica.model.NMap;
 import io.nayasis.common.basica.reflection.Reflector;
-import io.nayasis.common.basicafx.javafx.image.Images;
 import io.nayasis.common.basica.validation.Validator;
+import io.nayasis.common.basicafx.javafx.image.Images;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.image.Image;
@@ -17,6 +19,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import mslinks.ShellLink;
 import mslinks.ShellLinkException;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
 import java.io.IOException;
@@ -24,6 +27,7 @@ import java.io.UncheckedIOException;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -316,54 +320,44 @@ public class Link {
 	}
 
 	public void setbindOptions( File file ) {
-		commandNext  = setBindOptions( commandNext , file );
-		commandPrev  = setBindOptions( commandPrev , file );
-		option       = setBindOptions( option      , file );
-		optionPrefix = setBindOptions( optionPrefix, file );
+
+		Map<String,String> param = getBindingParameter( file );
+
+		commandNext  = bindOption( commandNext , param );
+		commandPrev  = bindOption( commandPrev , param );
+		option       = bindOption( option      , param );
+		optionPrefix = bindOption( optionPrefix, param );
+
 	}
 
-	public void clearBindOptions() {
-		commandNext  = clearBindOptions( commandNext  );
-		commandPrev  = clearBindOptions( commandPrev  );
-		option       = clearBindOptions( option       );
-		optionPrefix = clearBindOptions( optionPrefix );
+	private String bindOption( String option, Map<String,String> param ) {
+		if( Strings.isEmpty(option) ) return option;
+		return new Formatter().bindParam( Formatter.PATTERN_SHARP, option, param,
+			( key, format, parameter ) -> Strings.nvl( parameter.get(key) ), false );
 	}
 
-	private String setBindOptions( String option, File file ) {
+	@NotNull
+	private Map<String, String> getBindingParameter( File file ) {
 
-		if( option == null || file == null || ! file.exists() ) return option;
+		Map<String,String> param = new NMap();
 
-		String cd        = file.isDirectory() ? file.getPath() : file.getParent();
-		String name      = file.getName();
-		String unextName = file.getName().replaceFirst( "\\.[^/.]+$", "" );
-		String path      = file.getPath();
-		String unextPath = file.getPath().replaceFirst( "\\.[^/.]+$", "" );
-		String home      = System.getProperty( "user.home" );
+		if( Files.notExists(file) ) return param;
+
+		param.put( "filepath",  file.getAbsolutePath()  );
+		param.put( "path",      file.isDirectory() ? file.getPath() : file.getParent() );
+		param.put( "filename",  file.getName() );
+		param.put( "name",      Files.removeExtension( file.getName() )      );
+		param.put( "extension", Files.getExtension( file.getName() ) );
+		param.put( "home",      System.getProperty("user.home") );
 
 		if( File.separator.equals( "\\" ) ) {
-			cd        = cd.replaceAll( "\\\\", "\\\\\\\\" );
-			name      = name.replaceAll( "\\\\", "\\\\\\\\" );
-			unextName = unextName.replaceAll( "\\\\", "\\\\\\\\" );
-			path      = path.replaceAll( "\\\\", "\\\\\\\\" );
-			unextPath = unextPath.replaceAll( "\\\\", "\\\\\\\\" );
-			home      = home.replaceAll( "\\\\", "\\\\\\\\" );
+			for( String key : param.keySet() ) {
+				param.put( key, param.get(key).replaceAll( "\\\\","\\\\\\\\" ) );
+			}
 		}
 
-		return option
-			.replaceAll( "(?i)#\\{cd\\}", cd )
-			.replaceAll( "(?i)#\\{name\\}", name )
-			.replaceAll( "(?i)#\\{unextName\\}", unextName )
-			.replaceAll( "(?i)#\\{path\\}", path )
-			.replaceAll( "(?i)#\\{unextPath\\}", unextPath )
-			.replaceAll( "(?i)#\\{home\\}", home );
+		return param;
 
-	}
-
-	private String clearBindOptions( String option ) {
-		if( option == null ) return option;
-		return option
-			.replaceAll( "#\\{.+?\\}", "" )
-			.replaceAll( "\"\"", "" );
 	}
 
 }
