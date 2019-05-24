@@ -39,19 +39,19 @@ public class LinkExecutor {
 		String path = link.getPath();
 
 		if( Files.exists(path) )
-			return wrapDoubleQuotation( path );
+			return path;
 
 		path = Files.getRootPath() + "/" + link.getPath();
 
 		if( Files.exists(path) )
-			return wrapDoubleQuotation( path );
+			return path;
 
 		path = Files.getRootPath() + "/" + link.getRelativePath();
 
 		if( Files.exists(path) ) {
 			link.setPath( path );
 			dataController.updateExecPath( link );
-			return wrapDoubleQuotation( path );
+			return path;
 		}
 
 		return link.getPath();
@@ -95,14 +95,16 @@ public class LinkExecutor {
 
 			run( link.getCommandPrev() );
 
-			String cmd = getLinkCommand( link );
+			String execPath = getExecPathFrom( link );
+			String cmd      = getLinkCommand( execPath, link );
+
 			Command command = new Command();
 			command.set( cmd );
 
 			mainController.printCommand( cmd );
 
-			if( Files.isFile(cmd) ) {
-				command.setWorkingDirectory( Files.getDirectory(cmd) );
+			if( Files.isFile(execPath) ) {
+				command.setWorkingDirectory( Files.getDirectory(execPath) );
 			}
 
 			if( link.isShowConsole() ) {
@@ -147,11 +149,9 @@ public class LinkExecutor {
 		return postAction;
 	}
 
-	private String getLinkCommand( Link link ) {
+	private String getLinkCommand( String execPath, Link link ) {
 
 		StringBuilder cmd = new StringBuilder();
-
-		String execPath = getExecPathFrom( link );
 
 		if( Strings.isNotEmpty( link.getOptionPrefix() ) )
 			cmd.append( link.getOptionPrefix() ).append( " " );
