@@ -58,19 +58,22 @@ public class ConfigController {
 		ConfigEntity entity = configRepository.findByKey( CONFIG_MAIN );
 		if( entity == null ) return;
 
+		RestoreConfig config = new RestoreConfig( entity.getValue() );
+
+		log.trace( ">> bind stage property");
+
 		try {
-
-			RestoreConfig config = new RestoreConfig( entity.getValue() );
-
-			log.trace( ">> bind stage property");
-
 			MAIN.setConfigureProperties( config.getMainStageProperties() );
-			mainController.showDescription( mainController.menuitemViewDesc.isSelected() );
-			mainController.showMenuBar( mainController.menuitemViewMenuBar.isSelected() );
-			mainController.alwaysOnTop( mainController.menuitemAlwaysOnTop.isSelected() );
-
 		} catch ( Exception e ) {
 			log.error( e.getMessage(), e );
+		}
+
+		mainController.showDescription( mainController.menuitemViewDesc.isSelected() );
+		mainController.showMenuBar( mainController.menuitemViewMenuBar.isSelected() );
+		mainController.alwaysOnTop( mainController.menuitemAlwaysOnTop.isSelected() );
+
+		if( config.getFocusedRow() != 0 ) {
+			mainController.tableMain.focus( config.getFocusedRow() );
 		}
 
 	}
