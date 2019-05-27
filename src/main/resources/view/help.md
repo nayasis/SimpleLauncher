@@ -4,24 +4,63 @@
 
 ***Simple Launcher*** is designed to launch all of your application simply and to search easily.
 
-## Command Arguments
+It accepts executable command or relative path to run so you could customize your own application launcher independent with OS.
+
+![screenshot](./doc/screenshot.jpg)
+
+## Requirements
+
+- Java 11 above
+- JavaFX 12 above
+
+## CommandLine Arguments
 
 | argument       | description                                         |
 | -------------- | --------------------------------------------------- |
-| help           | show help                                           |
-| h              | show help                                           |
-| clear          | clear memorized last window position and properties |
+| help (or h)    | show help                                           |
+| clear          | clear memorized application configuration           |
+|                | (for example, last window position)                 |
+
+### example
+
+    java -jar SimpleLauncher.jar clear
 
 
 ## Shortcuts
 
-| shortcut     | description      |
-|--------------|------------------|
-| \#{filepath} | file's full path |
-| \#{path}     | path             |
-| \#{filename} | file name        |
-| \#{name}     | base name        |
-| \#{ext}      | extension        |
+### Menu
+
+| shortcut             | description                   |
+| --------------       | ------------------            |
+| Ctrl + Shift + **I** | import application catalog    |
+| Ctrl + Shift + **X** | export application catalog    |
+| Ctrl + Shift + **D** | clear  application catalog    |
+| ALT + **E**          | toggle detail launcher editor |
+| ALT + **V**          | toggle menu bar               |
+| Ctrl + Shift + **F** | set windows on top always     |
+| **F1**               | show help                     |
+
+### Main catalog
+
+| shortcut       | description        |
+| -------------- | ------------------ |
+| Enter          | execute item       |
+| Delete         | delete item        |
+
+### Launcher editor
+
+only works when Launcher editor is opened.
+
+| shortcut       | description             |
+| -------------- | ------------------      |
+| Ctrl + **N**   | new item                |
+| Ctrl + **D**   | delete item             |
+| Ctrl + **C**   | copy item               |
+| Ctrl + **S**   | save item               |
+| Ctrl + **F**   | copy item's folder path |
+| Ctrl + **O**   | open item's folder      |
+| Ctrl + **I**   | change item icon        |
+
 
 ## Binding parameters
 
@@ -30,12 +69,12 @@ being injected when runs by file(or directory) dragging.
 
 | parameter      | description         | example               |
 | -------------- | ------------------  | --------------------- |
-| \#{filepath}   | file's full path    | /usr/home/readme.md   |
-| \#{path}       | path                | /user/home            |
+| \#{filepath}   | file's full path    | /usr/path/readme.md   |
+| \#{path}       | path                | /user/path            |
 | \#{filename}   | file name           | readme.md             |
 | \#{name}       | base name           | readme                |
 | \#{ext}        | extension           | md                    |
-| \#{home}       | user home directory | /user/***yours**      |
+| \#{home}       | user home directory | /home/***user***      |
 
 ### Example
 
