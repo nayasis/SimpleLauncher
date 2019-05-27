@@ -20,5 +20,5 @@ target/
 .idea
 
 # LocalDb
-SimpleLauncher.mv.db
+*.mv.db
 
