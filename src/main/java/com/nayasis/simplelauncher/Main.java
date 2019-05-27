@@ -97,8 +97,6 @@ public class Main extends AbstractApplication {
 
         MAIN.showLater();
 
-
-
     }
 
     @Override
