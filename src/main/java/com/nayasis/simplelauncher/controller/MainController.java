@@ -3,6 +3,7 @@ package com.nayasis.simplelauncher.controller;
 import com.nayasis.simplelauncher.common.CONSTANT;
 import com.nayasis.simplelauncher.service.LinkExecutor;
 import com.nayasis.simplelauncher.service.MainTableCreator;
+import com.nayasis.simplelauncher.view.help.StageHelp;
 import com.nayasis.simplelauncher.vo.Link;
 import io.nayasis.common.basica.base.Strings;
 import io.nayasis.common.basica.model.Messages;
@@ -52,6 +53,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static com.nayasis.simplelauncher.common.CONSTANT.KEYPRESS_BLOCK_WAIT_MILISEC;
+import static com.nayasis.simplelauncher.common.CONSTANT.STAGE.HELP;
 import static javafx.scene.input.KeyCode.ESCAPE;
 import static javafx.scene.input.KeyCode.TAB;
 import static javafx.scene.input.KeyCode.UNDEFINED;
@@ -519,7 +521,12 @@ public class MainController implements Initializable {
 
 	@FXML
 	public void showHelp( ActionEvent event ) {
-    	CONSTANT.STAGE.HELP.showLater();
+
+    	if( HELP == null ) {
+			HELP = new StageHelp().getStage();
+		}
+
+    	HELP.showLater();
 	}
 
     private void onKeyPressed( KeyEvent event ) {

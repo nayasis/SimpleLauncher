@@ -2,6 +2,7 @@ package com.nayasis.simplelauncher;
 
 import com.nayasis.simplelauncher.common.AbstractApplication;
 import com.nayasis.simplelauncher.controller.ConfigController;
+import com.nayasis.simplelauncher.view.help.StageHelp;
 import io.nayasis.common.basica.model.Messages;
 import io.nayasis.common.basicafx.javafx.stage.ConfigurableStage;
 import javafx.application.Application;
@@ -24,7 +25,7 @@ public class Main extends AbstractApplication {
 
     public static Main $ = new Main();
 
-    private final String APPLICATION_NAME = "Simple Launcher";
+    public static final String APPLICATION_NAME = "Simple Launcher";
 
     @Autowired
     private ConfigController configController;
@@ -49,12 +50,9 @@ public class Main extends AbstractApplication {
             configController.setRestoreMainStageProperties( false );
         }
 
-        HELP = new ConfigurableStage( "/view/Help.fxml" );
         MAIN = new ConfigurableStage( "/view/SimpleLauncher.fxml" );
 
         MAIN.setTitle( APPLICATION_NAME );
-        HELP.setTitle( APPLICATION_NAME );
-
         MAIN.setOnShowing( event -> {
             configController.restore();
         });
