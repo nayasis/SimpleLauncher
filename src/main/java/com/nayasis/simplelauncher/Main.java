@@ -3,6 +3,7 @@ package com.nayasis.simplelauncher;
 import com.nayasis.simplelauncher.common.AbstractApplication;
 import com.nayasis.simplelauncher.controller.ConfigController;
 import com.nayasis.simplelauncher.view.help.StageHelp;
+import com.nayasis.simplelauncher.view.preloader.Splash;
 import io.nayasis.common.basica.model.Messages;
 import io.nayasis.common.basicafx.javafx.stage.ConfigurableStage;
 import javafx.application.Application;
@@ -33,7 +34,7 @@ public class Main extends AbstractApplication {
     public static void main( String... args ) {
 
         addDefaultIcon( "/image/icon/favicon.png" );
-//        setPreloader( Splash.class );
+        setPreloader( Splash.class );
         Application.launch( Main.class, args );
 
     }
