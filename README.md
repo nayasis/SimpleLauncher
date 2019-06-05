@@ -8,7 +8,7 @@ It accepts executable command or relative path to run so you could customize you
 
 ![screenshot](./doc/screenshot.jpg)
 
-## Requirements
+## Requirements.
 
 - Java 12 above
 - JavaFX 12 above
