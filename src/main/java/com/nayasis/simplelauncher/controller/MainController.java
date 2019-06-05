@@ -521,11 +521,6 @@ public class MainController implements Initializable {
 
 	@FXML
 	public void showHelp( ActionEvent event ) {
-
-    	if( HELP == null ) {
-			HELP = new StageHelp().getStage();
-		}
-
     	HELP.showLater();
 	}
 

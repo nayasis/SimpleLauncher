@@ -10,13 +10,13 @@ It accepts executable command or relative path to run so you could customize you
 
 ## Requirements
 
-- Java 11 above
+- Java 12 above
 - JavaFX 12 above
 
 ## CommandLine Arguments
 
 | argument       | description                                         |
-| -------------- | --------------------------------------------------- |
+|----------------|-----------------------------------------------------|
 | help (or h)    | show help                                           |
 | clear          | clear memorized application configuration           |
 |                | (for example, last window position)                 |

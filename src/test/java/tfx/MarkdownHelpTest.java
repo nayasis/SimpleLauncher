@@ -1,5 +1,16 @@
 package tfx;
 
+import com.vladsch.flexmark.ext.abbreviation.AbbreviationExtension;
+import com.vladsch.flexmark.ext.autolink.AutolinkExtension;
+import com.vladsch.flexmark.ext.definition.DefinitionExtension;
+import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughExtension;
+import com.vladsch.flexmark.ext.jekyll.tag.JekyllTagExtension;
+import com.vladsch.flexmark.ext.tables.TablesExtension;
+import com.vladsch.flexmark.ext.typographic.TypographicExtension;
+import com.vladsch.flexmark.html.HtmlRenderer;
+import com.vladsch.flexmark.parser.Parser;
+import com.vladsch.flexmark.util.ast.Node;
+import com.vladsch.flexmark.util.options.MutableDataSet;
 import io.nayasis.common.basica.file.Files;
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -8,10 +19,9 @@ import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
-import org.commonmark.node.Node;
-import org.commonmark.parser.Parser;
-import org.commonmark.renderer.html.HtmlRenderer;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Arrays;
 
 
 @Slf4j
@@ -20,7 +30,7 @@ public class MarkdownHelpTest extends Application {
     @Override
     public void start( Stage stage ) throws Exception {
 
-        String html = parseMarkdown( "/view/markdown/sample.md" );
+        String html = parseMarkdown( "/view/help/help.md" );
 
         WebView browser = getBrowser( html );
 
@@ -53,11 +63,22 @@ public class MarkdownHelpTest extends Application {
 
         String markdownContent = Files.readFrom( filePath );
 
-        Parser parser = Parser.builder().build();
-        Node document = parser.parse( markdownContent );
-        HtmlRenderer renderer = HtmlRenderer.builder().build();
+        MutableDataSet options = new MutableDataSet();
+        options.set(Parser.EXTENSIONS, Arrays.asList(
+            TablesExtension.create(),
+            StrikethroughExtension.create(),
+            AbbreviationExtension.create(),
+            DefinitionExtension.create(),
+            TypographicExtension.create(),
+            AutolinkExtension.create(),
+            JekyllTagExtension.create()
+        ));
 
-        String html = renderer.render( document );
+        Parser parser = Parser.builder( options ).build();
+        Node document = parser.parse( markdownContent );
+        HtmlRenderer renderer = HtmlRenderer.builder( options ).build();
+
+        String html = "<html><body class='markdown-body'>" + renderer.render( document ) + "</body></html>";
 
         log.debug( html );
 

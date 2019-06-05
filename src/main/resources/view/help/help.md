@@ -6,11 +6,11 @@
 
 It accepts executable command or relative path to run so you could customize your own application launcher independent with OS.
 
-![screenshot](./doc/screenshot.jpg)
+![screenshot](./view/help/screenshot.jpg)
 
 ## Requirements
 
-- Java 11 above
+- Java 12 above
 - JavaFX 12 above
 
 ## CommandLine Arguments

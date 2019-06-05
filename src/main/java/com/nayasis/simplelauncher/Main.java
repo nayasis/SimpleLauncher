@@ -50,6 +50,7 @@ public class Main extends AbstractApplication {
             configController.setRestoreMainStageProperties( false );
         }
 
+        HELP = new StageHelp();
         MAIN = new ConfigurableStage( "/view/SimpleLauncher.fxml" );
 
         MAIN.setTitle( APPLICATION_NAME );

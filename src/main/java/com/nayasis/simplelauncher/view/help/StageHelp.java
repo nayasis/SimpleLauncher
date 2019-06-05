@@ -1,5 +1,16 @@
 package com.nayasis.simplelauncher.view.help;
 
+import com.vladsch.flexmark.ext.abbreviation.AbbreviationExtension;
+import com.vladsch.flexmark.ext.autolink.AutolinkExtension;
+import com.vladsch.flexmark.ext.definition.DefinitionExtension;
+import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughExtension;
+import com.vladsch.flexmark.ext.jekyll.tag.JekyllTagExtension;
+import com.vladsch.flexmark.ext.tables.TablesExtension;
+import com.vladsch.flexmark.ext.typographic.TypographicExtension;
+import com.vladsch.flexmark.html.HtmlRenderer;
+import com.vladsch.flexmark.parser.Parser;
+import com.vladsch.flexmark.util.ast.Node;
+import com.vladsch.flexmark.util.options.MutableDataSet;
 import io.nayasis.common.basica.file.Files;
 import io.nayasis.common.basica.model.Messages;
 import io.nayasis.common.basicafx.javafx.stage.ConfigurableStage;
@@ -7,45 +18,48 @@ import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
-import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
-import org.commonmark.node.Node;
-import org.commonmark.parser.Parser;
-import org.commonmark.renderer.html.HtmlRenderer;
 import org.jetbrains.annotations.NotNull;
-import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
 
 @Slf4j
-public class StageHelp {
+public class StageHelp extends ConfigurableStage {
 
-    private static final String CSS_MARKDOWN = "/view/markdown/github-markdown.css";
+    private final String CSS_MARKDOWN = "/view/markdown/github-markdown.css";
 
-    private ConfigurableStage stage = new ConfigurableStage();
-
-    public StageHelp() {
-        init();
-    }
+    private boolean initialized = false;
 
     private void init() {
 
-        String html = parseMarkdown( "/view/help.md" );
+        String html = parseMarkdown( "/view/help/help.md" );
 
         WebView browser = getBrowser( html );
 
         StackPane pane = new StackPane();
         pane.getChildren().add( browser );
 
-        stage.setTitle( Messages.get("menu.help") );
-        stage.setWidth( 500 );
-        stage.setHeight( 500 );
+        this.setTitle( Messages.get("menu.help") );
+        this.setWidth( 700 );
+        this.setHeight( 600 );
 
         Scene scene = new Scene( pane );
-        stage.setScene( scene );
+        this.setScene( scene );
+
+        initialized = true;
 
     }
 
-    public ConfigurableStage getStage() {
-        return stage;
+    @Override
+    public ConfigurableStage showLater() {
+        if( ! initialized ) init();
+        return super.showLater();
+    }
+
+    @Override
+    public void showAndWait() {
+        if( ! initialized ) init();
+        super.showAndWait();
     }
 
     @NotNull
@@ -63,21 +77,32 @@ public class StageHelp {
 
         String markdownContent = Files.readFrom( filePath );
 
-        Parser parser = Parser.builder().build();
+        MutableDataSet option = getOption();
+
+        Parser parser = Parser.builder( option ).build();
         Node document = parser.parse( markdownContent );
-        HtmlRenderer renderer = HtmlRenderer.builder().build();
+        HtmlRenderer renderer = HtmlRenderer.builder( option ).build();
 
-        String html = renderer.render( document );
+        String html = "<html><body class='markdown-body'>" + renderer.render( document ) + "</body></html>";
 
-        log.debug( html );
+        log.trace( html );
 
         return html;
 
     }
 
-
-
-
-
+    private MutableDataSet getOption() {
+        MutableDataSet options = new MutableDataSet();
+        options.set( Parser.EXTENSIONS, Arrays.asList(
+            TablesExtension.create(),
+            StrikethroughExtension.create(),
+            AbbreviationExtension.create(),
+            DefinitionExtension.create(),
+            TypographicExtension.create(),
+            AutolinkExtension.create(),
+            JekyllTagExtension.create()
+        ));
+        return options;
+    }
 
 }
