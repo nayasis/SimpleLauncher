@@ -10,7 +10,7 @@ It accepts executable command or relative path to run so you could customize you
 
 ## Requirements
 
-- Java 11 above
+- Java 12 above
 - JavaFX 12 above
 
 ## CommandLine Arguments
