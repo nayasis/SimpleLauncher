@@ -6,7 +6,7 @@
 
 It accepts executable command or relative path to run so you could customize your own application launcher independent with OS.
 
-![screenshot](./view/help/screenshot.jpg)
+![screenshot](https://github.com/nayasis/SimpleLauncher/blob/master/doc/screenshot.jpg)
 
 ## Requirements
 
