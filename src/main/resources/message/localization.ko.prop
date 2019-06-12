@@ -38,7 +38,9 @@ desc.relativeYn            = 상대경로여부
 desc.icon                  = 아이콘
 desc.showConsole           = 콘솔출력
 
-preloader.loadSpring = 스프링 모듈 로딩
+preloader.spring-core.loaded = Spring 코어 적재
+preloader.ui.made            = UI 구성
+preloader.link-data.loaded   = Link 데이터 적재
 
 msg.info.001    = 추가할 파일
 msg.info.002    = 아이콘 파일

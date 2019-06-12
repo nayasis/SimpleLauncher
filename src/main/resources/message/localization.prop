@@ -39,6 +39,10 @@ desc.relativeYn            = Relative Path
 desc.icon                  = Icon
 desc.showConsole           = Show console
 
+preloader.spring-core.loaded = load Spring core
+preloader.ui.made            = compose UI
+preloader.link-data.loaded   = load Links
+
 msg.info.001    = Select File to add.
 msg.info.002    = Select Icon File
 msg.info.003    = Select File to export
