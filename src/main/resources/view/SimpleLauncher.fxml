@@ -83,7 +83,10 @@
             </MenuBar>
             <HBox alignment="CENTER_LEFT" prefHeight="30.0" spacing="5.0">
                <children>
-                  <Label alignment="CENTER_RIGHT" text="\%search.keyword" />
+                  <Label alignment="CENTER_RIGHT" text="\%search.keyword">
+                     <HBox.margin>
+                        <Insets left="2.0" />
+                     </HBox.margin></Label>
                   <TextField fx:id="inputKeyword" prefWidth="520.0" HBox.hgrow="ALWAYS" />
                   <Label alignment="CENTER_RIGHT" text="\%search.group">
                      <HBox.margin>
@@ -296,7 +299,7 @@
                 <RowConstraints vgrow="SOMETIMES" />
               </rowConstraints>
                <children>
-                  <Label fx:id="labelStatus" text="status" />
+                  <Label fx:id="labelStatus" />
                   <Label fx:id="labelCmd" alignment="CENTER_RIGHT" contentDisplay="RIGHT" textAlignment="RIGHT" GridPane.columnIndex="1" GridPane.halignment="RIGHT" />
                </children>
                <VBox.margin>
