@@ -7,15 +7,12 @@ import com.nayasis.simplelauncher.view.preloader.Splash;
 import io.nayasis.common.basica.model.Messages;
 import io.nayasis.common.basicafx.javafx.stage.ConfigurableStage;
 import javafx.application.Application;
-import javafx.concurrent.Task;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-import java.io.IOException;
 
 import static com.nayasis.simplelauncher.common.CONSTANT.STAGE.HELP;
 import static com.nayasis.simplelauncher.common.CONSTANT.STAGE.MAIN;
@@ -42,6 +39,9 @@ public class Main extends AbstractApplication {
     @Override
     protected void start( CommandLine commandLine ) {
 
+        notifyPreloader( 10. );
+        notifyPreloader( "preloader.spring-core.loaded" );
+
         Messages.load( "message/**.prop" );
 
         if( commandLine.hasOption("help") || commandLine.hasOption("h") ) {
@@ -63,35 +63,6 @@ public class Main extends AbstractApplication {
             HELP.close();
             configController.save();
         });
-
-        new Thread( new Task<Void>() {
-            protected Void call() {
-                try {
-                    dummyLogic();
-                } catch ( Exception e ) {
-                    showError( e );
-                }
-                return null;
-            }
-        }).start();
-
-    }
-
-    private void dummyLogic() throws InterruptedException, IOException {
-
-        notifyPreloader( 10. );
-        notifyPreloader( "preloader.loadSpring" );
-
-        notifyPreloader( 20. );
-        notifyPreloader( "Load View" );
-
-        notifyPreloader( 20. );
-        notifyPreloader( "20 percent" );
-
-        Thread.sleep( 600 );
-
-        notifyPreloader( "Merong" );
-        Thread.sleep( 600 );
 
         closePreloader();
 

@@ -57,8 +57,6 @@ public class MainTableCreator {
     @Autowired
 	private LinkMatcher matcher;
 
-    private Control incomedControl;
-
 	// 다른 프로세스에서 keypress 이벤트를 일으키는 것을 방지하기 위한 장치
 	private boolean onBlock = false;
 
@@ -167,8 +165,10 @@ public class MainTableCreator {
 
 	private void setFilter() {
 
+		// filter 후처리 로직
 		table.setPostChangeAction( ( observable, oldValue, newValue ) -> {
 			mainController.clearDetailView();
+			mainController.printSearchResult();
 		});
 
 		// filter 트리거 설정

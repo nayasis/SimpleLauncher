@@ -1,9 +1,9 @@
 package com.nayasis.simplelauncher.controller;
 
+import com.nayasis.simplelauncher.Main;
 import com.nayasis.simplelauncher.common.CONSTANT;
 import com.nayasis.simplelauncher.service.LinkExecutor;
 import com.nayasis.simplelauncher.service.MainTableCreator;
-import com.nayasis.simplelauncher.view.help.StageHelp;
 import com.nayasis.simplelauncher.vo.Link;
 import io.nayasis.common.basica.base.Strings;
 import io.nayasis.common.basica.model.Messages;
@@ -123,12 +123,12 @@ public class MainController implements Initializable {
     	log.debug( ">> start initialize" );
 
     	tableMain = tableController.init( tableMainRaw );
-		log.debug( ">> initTable" );
-
-		log.debug( ">> bindConfigUi" );
+    	Main.$.notifyPreloader( 20., "preloader.ui.made" );
 
 		dataController.readData();
-		log.debug( ">> readData" );
+		Main.$.notifyPreloader( 80., "preloader.link-data.loaded" );
+
+		printSearchResult();
 
 		setPropertyEvent();
 		setKeyPressEvent();
@@ -160,6 +160,10 @@ public class MainController implements Initializable {
 
 	public void printStatus( Object value, Object... param ) {
 		labelStatus.setText( Messages.get( value, param ) );
+	}
+
+	public void printSearchResult() {
+		printStatus( "msg.info.005", tableMain.getDataOnView().size(), tableMain.getData().size() );
 	}
 
 	public void printCommand( String command ) {
