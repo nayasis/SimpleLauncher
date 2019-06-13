@@ -33,6 +33,7 @@ public class Terminal extends TerminalView {
     private       String                      workingDirectory;
     private       Stage                       stage;
     private       Runnable                    postAction;
+    private       Process                     process;
 
     public Terminal() {
         this(null);
@@ -90,6 +91,10 @@ public class Terminal extends TerminalView {
 
     public Terminal setStage( Stage stage ) {
         this.stage = stage;
+        this.stage.setOnCloseRequest( event -> {
+            postAction = null;
+            close();
+        });
         return this;
     }
 
@@ -146,7 +151,7 @@ public class Terminal extends TerminalView {
             builder.directory( new File(workingDirectory) );
         }
 
-        Process process = builder.start();
+        process = builder.start();
 
         setInputReader(  new BufferedReader(new InputStreamReader(  process.getInputStream(),  Platforms.osCharset)) );
         setErrorReader(  new BufferedReader(new InputStreamReader(  process.getErrorStream(),  Platforms.osCharset)) );
@@ -158,10 +163,14 @@ public class Terminal extends TerminalView {
 
         process.waitFor();
 
-        getInputReader().close();
-        getErrorReader().close();
-        getOutputWriter().close();
+        closeStream();
 
+    }
+
+    private void closeStream() {
+        try { getInputReader().close();  } catch ( Exception e ) {}
+        try { getErrorReader().close();  } catch ( Exception e ) {}
+        try { getOutputWriter().close(); } catch ( Exception e ) {}
     }
 
     public ObjectProperty<Writer> outputWriterProperty() {
@@ -174,6 +183,11 @@ public class Terminal extends TerminalView {
 
     public void setOutputWriter(Writer writer) {
         outputWriterProperty.set(writer);
+    }
+
+    public void close() {
+        process.destroyForcibly();
+        closeStream();
     }
 
 }
