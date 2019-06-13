@@ -30,7 +30,7 @@ public class Main extends AbstractApplication {
 
     public static void main( String... args ) {
 
-        addDefaultIcon( "/image/icon/favicon.png" );
+        addDefaultIcon( "/image/icon/favicon.ico" );
         setPreloader( Splash.class );
         Application.launch( Main.class, args );
 
