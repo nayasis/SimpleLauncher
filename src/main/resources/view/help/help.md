@@ -6,7 +6,7 @@
 
 It accepts executable command or relative path to run so you could customize your own application launcher independent with OS.
 
-![screenshot](https://github.com/nayasis/SimpleLauncher/blob/master/doc/screenshot.jpg)
+![screenshot](https://github.com/nayasis/SimpleLauncher/blob/master/doc/screenshot.jpg?raw=true)
 
 ## Requirements
 
@@ -70,7 +70,7 @@ being injected when runs by file(or directory) dragging.
 | parameter      | description         | example               |
 | -------------- | ------------------  | --------------------- |
 | \#{filepath}   | file's full path    | /usr/path/readme.md   |
-| \#{path}       | path                | /user/path            |
+| \#{dir}        | file's directory    | /user/path            |
 | \#{filename}   | file name           | readme.md             |
 | \#{name}       | base name           | readme                |
 | \#{ext}        | extension           | md                    |
