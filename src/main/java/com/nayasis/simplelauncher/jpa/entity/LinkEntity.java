@@ -45,7 +45,7 @@ public class LinkEntity {
     private String commandPrev;
     @Column
     private String commandNext;
-    @Column
+    @Column(name="desc", columnDefinition="CLOB")
     private String description;
     @Column(columnDefinition="CLOB")
     private String keyword;
