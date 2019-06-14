@@ -78,7 +78,7 @@ being injected when runs by file(or directory) dragging.
 
 ### Example
 
-   ape2wav.exe "#{filepath}" "#{path}\#{name}.wav"  
+   ape2wav.exe "#{filepath}" "#{dir}\\#{name}.wav"
 
 ## Contact
 
