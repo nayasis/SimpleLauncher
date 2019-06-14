@@ -125,6 +125,10 @@
         <configuration>
           <source>${java.version}</source>
           <target>${java.version}</target>
+          <compilerArgs>
+            <arg>--add-exports</arg>
+            <arg>javafx.web/com.sun.javafx.scene.web=ALL-UNNAMED</arg>
+          </compilerArgs>
         </configuration>
       </plugin>
       <plugin>
