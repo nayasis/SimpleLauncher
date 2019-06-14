@@ -44,20 +44,27 @@ public class Main extends AbstractApplication {
 
         Messages.load( "message/**.prop" );
 
+        boolean restoreConfig = true;
+
         if( commandLine.hasOption("help") || commandLine.hasOption("h") ) {
             printHelp();
             return;
         } else if( commandLine.hasOption( "clear" ) ) {
-            configController.setRestoreMainStageProperties( false );
+            restoreConfig = false;
         }
 
         HELP = new StageHelp();
         MAIN = new ConfigurableStage( "/view/SimpleLauncher.fxml" );
 
         MAIN.setTitle( APPLICATION_NAME );
-        MAIN.setOnShowing( event -> {
-            configController.restore();
-        });
+
+        if( restoreConfig ) {
+            notifyPreloader( 90., "merong" );
+            MAIN.setOnShowing( event -> {
+                configController.restoreMainStageProperties();
+                configController.restoreMainTableFocus();
+            });
+        }
 
         MAIN.setOnCloseRequest( event -> {
             HELP.close();

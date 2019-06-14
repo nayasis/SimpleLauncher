@@ -108,6 +108,9 @@ public class MainController implements Initializable {
     private MainTableCreator tableController;
 
     @Autowired
+    private ConfigController configController;
+
+    @Autowired
     private LinkExecutor executor;
 
     // 다른 프로세스에서 keypress 이벤트를 일으키는 것을 방지하기 위한 장치
@@ -241,8 +244,8 @@ public class MainController implements Initializable {
 		dataController.delete( link );
 
     	Platform.runLater( () -> {
-    		tableMain.getSelectionModel().select( focusedIndex );
 			clearDetailView();
+    		tableMain.getSelectionModel().select( focusedIndex );
     	});
 
 	}
@@ -419,28 +422,32 @@ public class MainController implements Initializable {
 
 	public void setDetailView( Link link ) {
 
-		if( link == null ) {
+		if( link == null )
 			link = new Link();
+
+		try {
+
+            // ID가 같을 경우, 다시 그리지 않는다.
+            if( linkDetail.getId() == null ) {
+                if( link.getId() == null ) return;
+            } else {
+                if( link.getId() != null && linkDetail.getId() == link.getId() ) return;
+            }
+
+            linkDetail = link;
+
+            bindLinkToView();
+
+        } finally {
+
+            buttonDelete.setDisable( false );
+            buttonCopy.setDisable( false );
+            buttonSave.setDisable( true );
+            printCommand( "" );
+
 		}
 
-		// ID가 같을 경우, 다시 그리지 않는다.
-		if( linkDetail.getId() == null ) {
-			if( link.getId() == null ) return;
-		} else {
-			if( link.getId() != null && linkDetail.getId() == link.getId() ) return;
-		}
-
-		linkDetail = link;
-
-		bindLinkToView();
-
-		buttonDelete.setDisable( false );
-		buttonCopy.setDisable( false );
-		buttonSave.setDisable( true );
-
-		printCommand( "" );
-
-	}
+    }
 
 	public void clearDetailView() {
 
@@ -482,10 +489,6 @@ public class MainController implements Initializable {
 
 	}
 
-	public void drawDetailViewFromTable() {
-		setDetailView( tableMain.getFocusedItem() );
-	}
-
 	public void showDescription( boolean show ) {
 		HBox parent = (HBox) tableMainRaw.getParent();
 		ObservableList<Node> children = parent.getChildren();
@@ -496,7 +499,6 @@ public class MainController implements Initializable {
 		} else {
 			children.remove( descGridPane );
 		}
-
 	}
 
 	public void showMenuBar( boolean show ) {

@@ -4,6 +4,7 @@ import com.nayasis.simplelauncher.jpa.entity.ConfigEntity;
 import com.nayasis.simplelauncher.jpa.repository.ConfigRepository;
 import com.nayasis.simplelauncher.vo.RestoreConfig;
 import lombok.extern.slf4j.Slf4j;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -21,18 +22,7 @@ public class ConfigController {
 	@Autowired
 	private ConfigRepository configRepository;
 
-	private boolean restoreMainStageProperties = true;
-
 	private final String CONFIG_MAIN = "CONFIG_MAIN";
-
-	public void restore() {
-		if( ! restoreMainStageProperties ) return;
-		restoreMainStageProperties();
-	}
-
-    public void setRestoreMainStageProperties( boolean restoreMainStageProperties ) {
-        this.restoreMainStageProperties = restoreMainStageProperties;
-    }
 
     @Transactional
 	public void save() {
@@ -53,12 +43,10 @@ public class ConfigController {
 
 	}
 
-	private void restoreMainStageProperties() {
+	public void restoreMainStageProperties() {
 
-		ConfigEntity entity = configRepository.findByKey( CONFIG_MAIN );
-		if( entity == null ) return;
-
-		RestoreConfig config = new RestoreConfig( entity.getValue() );
+		RestoreConfig config = getConfig();
+		if ( config == null ) return;
 
 		log.trace( ">> bind stage property");
 
@@ -72,10 +60,23 @@ public class ConfigController {
 		mainController.showMenuBar( mainController.menuitemViewMenuBar.isSelected() );
 		mainController.alwaysOnTop( mainController.menuitemAlwaysOnTop.isSelected() );
 
+	}
+
+	public void restoreMainTableFocus() {
+
+		RestoreConfig config = getConfig();
+		if ( config == null ) return;
+
 		if( config.getFocusedRow() != 0 ) {
-			mainController.tableMain.focus( config.getFocusedRow() );
+			mainController.tableMain.getSelectionModel().select( config.getFocusedRow() );
 		}
 
+	}
+
+	@Nullable
+	public RestoreConfig getConfig() {
+		ConfigEntity entity = configRepository.findByKey( CONFIG_MAIN );
+		return ( entity == null ) ? null : new RestoreConfig( entity.getValue() );
 	}
 
 }

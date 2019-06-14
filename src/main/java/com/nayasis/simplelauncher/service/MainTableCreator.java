@@ -151,11 +151,11 @@ public class MainTableCreator {
 		table.focusedProperty().addListener( ( observable, oldValue, newValue ) -> {
             if( newValue == true && table.getSelectionModel().getFocusedIndex() <= 0 ) { // focus gained
                 table.getSelectionModel().selectFirst();
-                mainController.drawDetailViewFromTable();
             }
         });
 		table.getSelectionModel().getSelectedItems().addListener( (ListChangeListener<Link>) change -> {
-            mainController.drawDetailViewFromTable();
+			if( change.getList().isEmpty() ) return;
+			mainController.setDetailView( change.getList().get( 0 ) );
         });
 	}
 
@@ -219,10 +219,7 @@ public class MainTableCreator {
 
 			}
 
-			if( keyCode == ENTER ) {
-
-
-			} else if( keyCode == KeyCode.DELETE ) {
+			if( keyCode == KeyCode.DELETE ) {
 
 				event.consume();
 				mainController.printCommand( "" );
