@@ -186,8 +186,11 @@ public class Terminal extends TerminalView {
     }
 
     public void close() {
-        process.destroyForcibly();
+        if( process != null ) {
+            process.destroyForcibly();
+        }
         closeStream();
+        webView.getEngine().load( null );
     }
 
 }
