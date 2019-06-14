@@ -21,6 +21,7 @@ import javafx.scene.web.WebView;
 import lombok.extern.slf4j.Slf4j;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.InputStream;
 import java.util.Arrays;
 
 @Slf4j
@@ -73,9 +74,9 @@ public class StageHelp extends ConfigurableStage {
 
     private String parseMarkdown( String resourcePath ) {
 
-        String filePath = getClass().getResource( resourcePath ).getPath();
+        InputStream resource = Files.getResource( resourcePath );
 
-        String markdownContent = Files.readFrom( filePath );
+        String markdownContent = Files.readFrom( resource );
 
         MutableDataSet option = getOption();
 
