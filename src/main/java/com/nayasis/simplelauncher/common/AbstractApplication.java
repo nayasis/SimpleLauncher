@@ -36,6 +36,7 @@ public abstract class AbstractApplication extends NApplication {
     @Override
     public void stop() {
         context.close();
+        System.exit( 0 );
     }
 
     @Override
