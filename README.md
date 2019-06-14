@@ -70,7 +70,7 @@ being injected when runs by file(or directory) dragging.
 | parameter      | description         | example               |
 | -------------- | ------------------  | --------------------- |
 | \#{filepath}   | file's full path    | /usr/path/readme.md   |
-| \#{path}       | path                | /user/path            |
+| \#{dir}        | file's directory    | /user/path            |
 | \#{filename}   | file name           | readme.md             |
 | \#{name}       | base name           | readme                |
 | \#{ext}        | extension           | md                    |

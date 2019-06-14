@@ -3,6 +3,7 @@ package com.nayasis.simplelauncher.vo;
 import com.nayasis.simplelauncher.common.CONSTANT;
 import com.nayasis.simplelauncher.jpa.entity.LinkEntity;
 import io.nayasis.common.basica.base.Strings;
+import io.nayasis.common.basica.base.format.ExtractPattern;
 import io.nayasis.common.basica.base.format.Formatter;
 import io.nayasis.common.basica.etc.Platforms;
 import io.nayasis.common.basica.file.Files;
@@ -37,6 +38,8 @@ import java.util.regex.Pattern;
 public class Link {
 
     private static final long serialVersionUID = 4803934592882695337L;
+
+	private static final ExtractPattern PATTERN_SHARP  = new ExtractPattern( "#\\{(|.+?[^\\\\])\\}",   1, "\\\\(#|\\{|\\})",   "$1" );
 
 	private Long                            id;
 	private SimpleStringProperty            title         = new SimpleStringProperty();
@@ -332,29 +335,22 @@ public class Link {
 
 	private String bindOption( String option, Map<String,String> param ) {
 		if( Strings.isEmpty(option) ) return option;
-		return new Formatter().bindParam( Formatter.PATTERN_SHARP, option, param,
-			( key, format, parameter ) -> Strings.nvl( parameter.get(key) ), false );
+		return new Formatter().bindParam( PATTERN_SHARP, option, param, ( key, format, parameter ) -> Strings.nvl(parameter.get(key)) );
 	}
 
 	@NotNull
-	private Map<String, String> getBindingParameter( File file ) {
+	private Map<String,String> getBindingParameter( File file ) {
 
 		Map<String,String> param = new NMap();
 
 		if( Files.notExists(file) ) return param;
 
-		param.put( "filepath",  file.getAbsolutePath()  );
-		param.put( "path",      file.isDirectory() ? file.getPath() : file.getParent() );
-		param.put( "filename",  file.getName() );
-		param.put( "name",      Files.removeExtension( file.getName() )      );
-		param.put( "extension", Files.getExtension( file.getName() ) );
-		param.put( "home",      System.getProperty("user.home") );
-
-		if( File.separator.equals( "\\" ) ) {
-			for( String key : param.keySet() ) {
-				param.put( key, param.get(key).replaceAll( "\\\\","\\\\\\\\" ) );
-			}
-		}
+		param.put( "filepath", file.getAbsolutePath()  );
+		param.put( "dir",      file.isDirectory() ? file.getPath() : file.getParent() );
+		param.put( "filename", file.getName() );
+		param.put( "name",     Files.removeExtension( file.getName() ) );
+		param.put( "ext",      Files.getExtension( file.getName() ) );
+		param.put( "home",     System.getProperty("user.home") );
 
 		return param;
 

@@ -119,33 +119,29 @@ public class MainTableCreator {
 
 			cell.setGraphic( hbox );
 
-			cell.addEventHandler( DragEvent.DRAG_OVER, event -> {
+			cell.setOnDragOver( event -> {
 				Dragboard db = event.getDragboard();
 				if ( db.hasFiles() ) {
-					event.acceptTransferModes( TransferMode.COPY );
-				} else {
-					event.consume();
+					event.acceptTransferModes( TransferMode.LINK );
 				}
 			});
 
-			cell.addEventHandler( DragEvent.DRAG_DROPPED, event -> {
+			cell.setOnDragDropped( event -> {
 
 				Dragboard db = event.getDragboard();
 
-				boolean success = false;
-
 				if ( db.hasFiles() ) {
-					success = true;
 					for( File fileDragged : db.getFiles() ) {
 						Platform.runLater( () -> {
-							Link link = (Link) cell.getTableRow().getItem();
+							Link link = cell.getTableRow().getItem();
 							linkExecutor.execute( link, fileDragged );
 						});
 					}
 				}
 
-				event.setDropCompleted( success );
+				event.setDropCompleted( true );
 				event.consume();
+
 			});
 
 		};
