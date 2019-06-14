@@ -132,6 +132,7 @@ public class MainController implements Initializable {
 		Main.$.notifyPreloader( 80., "preloader.link-data.loaded" );
 
 		printSearchResult();
+		clearDetailView();
 
 		setPropertyEvent();
 		setKeyPressEvent();
@@ -176,11 +177,14 @@ public class MainController implements Initializable {
 	@FXML
 	public void importData( ActionEvent event ) {
 		dataController.importData();
+		printSearchResult();
 	}
 
 	@FXML
 	public void clearData( ActionEvent event ) {
 		dataController.clearData();
+		printStatus( "" );
+		clearDetailView();
 	}
 
 	@FXML
@@ -246,6 +250,7 @@ public class MainController implements Initializable {
     	Platform.runLater( () -> {
 			clearDetailView();
     		tableMain.getSelectionModel().select( focusedIndex );
+    		printSearchResult();
     	});
 
 	}
@@ -486,6 +491,7 @@ public class MainController implements Initializable {
 		linkDetail.setCommandPrev( descCmdPrev.getText() );
 		linkDetail.setCommandNext( descCmdNext.getText() );
 		linkDetail.setIcon( descIcon.getImage() );
+		linkDetail.refreshKeyword();
 
 	}
 

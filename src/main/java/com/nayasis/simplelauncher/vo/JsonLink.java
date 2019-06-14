@@ -1,5 +1,8 @@
 package com.nayasis.simplelauncher.vo;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.nayasis.simplelauncher.common.Commons;
 import com.nayasis.simplelauncher.jpa.entity.LinkEntity;
 import io.nayasis.common.basica.base.Strings;
 import lombok.Data;
@@ -7,6 +10,8 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
+
+import static com.fasterxml.jackson.annotation.JsonCreator.Mode.DISABLED;
 
 @Data
 @ToString
@@ -28,6 +33,7 @@ public class JsonLink {
     private Integer       execCount;
     private LocalDateTime lastExecDate;
 
+    @JsonCreator( mode = DISABLED )
     public JsonLink( LinkEntity entity ) {
         this.title        = entity.getTitle();
         this.group        = entity.getGrp();
@@ -62,6 +68,7 @@ public class JsonLink {
         entity.setKeyword( getKeyword() );
         entity.setExecCount( getExecCount() );
         entity.setLastExecDate( getLastExecDate() );
+        entity.setKeyword( Commons.getKeyword(group, keyword, description) );
 
         setIcon( entity );
 
@@ -79,4 +86,7 @@ public class JsonLink {
         } catch( ClassCastException e ) {}
     }
 
+    public void setLastExecDate( LocalDateTime lastExecDate ) {
+        this.lastExecDate = lastExecDate;
+    }
 }

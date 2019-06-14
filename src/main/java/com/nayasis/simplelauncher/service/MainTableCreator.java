@@ -8,8 +8,10 @@ import io.nayasis.common.basica.model.NDate;
 import io.nayasis.common.basicafx.javafx.control.table.NTable;
 import io.nayasis.common.basicafx.javafx.control.table.NTableColumn;
 import io.nayasis.common.basicafx.javafx.control.table.byfunction.CellFormatter;
+import io.nayasis.common.basicafx.javafx.control.table.byfunction.TableViewDataFilter;
 import io.nayasis.common.basicafx.javafx.etc.FxThread;
 import javafx.application.Platform;
+import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -18,7 +20,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableView;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -32,9 +33,9 @@ import org.springframework.stereotype.Service;
 
 import java.io.File;
 import java.util.List;
+import java.util.function.Predicate;
 
 import static com.nayasis.simplelauncher.common.CONSTANT.KEYPRESS_BLOCK_WAIT_MILISEC;
-import static javafx.scene.input.KeyCode.ENTER;
 import static javafx.scene.input.KeyCode.UNDEFINED;
 
 @Service
@@ -161,27 +162,37 @@ public class MainTableCreator {
 
 	private void setFilter() {
 
-		// filter 후처리 로직
-		table.setPostChangeAction( ( observable, oldValue, newValue ) -> {
-			mainController.clearDetailView();
-			mainController.printSearchResult();
-		});
-
 		// filter 트리거 설정
 		mainController.inputKeyword.textProperty().addListener( table.getChangeListener() );
 		mainController.inputGroup.textProperty().addListener( table.getChangeListener() );
 
 		// 데이터 필터 설정
-		table.setFilter( (observable, oldVal, newVal) -> {
+		table.setFilter( new TableViewDataFilter<>() {
 
-			List patternGroup   = matcher.toPostfix( mainController.inputGroup.getText() );
-			List patternKeyword = matcher.toPostfix( mainController.inputKeyword.getText() );
+			private List patternGroup;
+			private List patternKeyword;
 
-			return link -> {
-				if( ! matcher.isGroupMatched( patternGroup,     link ) ) return false;
-				if( ! matcher.isKeywordMatched( patternKeyword, link ) ) return false;
-				return true;
-			};
+			@Override
+			public void before( ObservableValue observable, Object oldValue, Object newValue ) {
+				patternGroup = matcher.toPostfix( mainController.inputGroup.getText() );
+				patternKeyword = matcher.toPostfix( mainController.inputKeyword.getText() );
+			}
+
+			@Override
+			public Predicate<Link> test( ObservableValue observable, Object oldVal, Object newVal ) {
+				return link -> {
+					if ( !matcher.isGroupMatched( patternGroup, link ) ) return false;
+					if ( !matcher.isKeywordMatched( patternKeyword, link ) ) return false;
+					return true;
+				};
+			}
+
+			@Override
+			public void after( ObservableValue observable, Object oldValue, Object newValue ) {
+				mainController.clearDetailView();
+				mainController.printSearchResult();
+			}
+
 		});
 
 	}
@@ -261,10 +272,14 @@ public class MainTableCreator {
 	}
 
 	private void assignColumns() {
+
         columnGroup      = table.getColumn( "colGroup"      );
 		columnTitle      = table.getColumn( "colTitle"      );
 		columnLastUsedDt = table.getColumn( "colLastUsedDt" );
 		columnExecCount  = table.getColumn( "colExecCount"  );
+
+        columnExecCount.setStyle( "-fx-padding: 0 5 0 0" );
+
 	}
 
 }

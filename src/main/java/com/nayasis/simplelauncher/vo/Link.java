@@ -1,6 +1,7 @@
 package com.nayasis.simplelauncher.vo;
 
 import com.nayasis.simplelauncher.common.CONSTANT;
+import com.nayasis.simplelauncher.common.Commons;
 import com.nayasis.simplelauncher.jpa.entity.LinkEntity;
 import io.nayasis.common.basica.base.Strings;
 import io.nayasis.common.basica.base.format.ExtractPattern;
@@ -196,19 +197,17 @@ public class Link {
 		clone.keyword      = new LinkedHashSet<>( keyword );
 		clone.icon         = Images.copy( icon );
 
-		return clone.refreshKeyword();
+		return clone;
 
 	}
 
 	public void setTitle( String title ) {
 		this.title.set( Strings.trim( title ) );
 		refreshIconTitle();
-		refreshKeyword();
 	}
 
 	public void setGroup( String group ) {
 		this.group.set( Strings.trim( group ) );
-		refreshKeyword();
 	}
 
 	public void setLastExecDate( NDate lastExecDate ) {
@@ -242,13 +241,11 @@ public class Link {
 		} else {
 			this.keyword.clear();
 		}
-		for( String val : Strings.tokenize(keyword, " \t\n") ) {
-			this.keyword.add( val.toLowerCase().trim() );
-		}
+		this.keyword.addAll( Commons.getKeyword(keyword) );
 	}
 
 	public Link refreshKeyword() {
-		setKeyword( title.get() + " " + description );
+		setKeyword( Strings.format("{} {} {}", group.get(), title.get(), description) );
 		return this;
 	}
 
@@ -298,7 +295,6 @@ public class Link {
 
 	public void setDescription( String description ) {
 		this.description = Strings.trim( description );
-		refreshKeyword();
 	}
 
 	public void setRelativePath( String relativePath ) {

@@ -1,5 +1,6 @@
 package com.nayasis.simplelauncher.vo;
 
+import com.nayasis.simplelauncher.common.Commons;
 import com.nayasis.simplelauncher.jpa.entity.LinkEntity;
 import io.nayasis.common.basica.base.Strings;
 import io.nayasis.common.basica.model.NDate;
@@ -59,11 +60,7 @@ public class OldJsonLink {
     }
 
     private void setKeyword( LinkEntity entity ) {
-        Set<String> keywords = new LinkedHashSet<>();
-        for( String val : Strings.tokenize(keyword, " \t\n:") ) {
-            keywords.add( val.toLowerCase().trim() );
-        }
-        entity.setKeyword( keywords );
+        entity.setKeyword( Commons.getKeyword(groupName, keyword, description) );
     }
 
     public void setIconString( String iconString ) {

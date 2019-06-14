@@ -159,7 +159,8 @@ public class DataController {
 			} catch ( Exception e ) {}
 
 			if( ! importOldLink ) {
-				Reflector.toListFrom( json, JsonLink.class ).forEach( e -> entities.add( e.toLinkEntity() ) );
+				List<JsonLink> jsonLinks = Reflector.toListFrom( json, JsonLink.class );
+				jsonLinks.forEach( e -> entities.add( e.toLinkEntity() ) );
 			}
 
 			linkRepository.saveAll( entities );

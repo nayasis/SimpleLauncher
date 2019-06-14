@@ -1,5 +1,6 @@
 package com.nayasis.simplelauncher.jpa.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.nayasis.common.basica.model.NDate;
 import io.nayasis.common.basica.reflection.Reflector;
 import lombok.AllArgsConstructor;
@@ -8,7 +9,12 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import org.hibernate.annotations.Type;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.Id;
+import javax.persistence.Index;
+import javax.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.Set;
 
@@ -60,6 +66,7 @@ public class LinkEntity {
         this.lastExecDate = lastExecDate;
     }
 
+    @JsonIgnore
     public void setLastExecDate( NDate lastExecDate ) {
         this.lastExecDate = lastExecDate == null ? null : lastExecDate.toLocalDateTime();
     }
