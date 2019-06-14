@@ -11006,7 +11006,8 @@ hterm.ScrollPort.prototype.decorate = function(div) {
   doc.head.appendChild(style);
 
   this.userCssLink_ = doc.createElement('link');
-  this.userCssLink_.setAttribute('rel', 'stylesheet');
+  //// TODO : fix bug (cause crash in Webview on executable jar)
+  // this.userCssLink_.setAttribute('rel', 'stylesheet');
 
   this.userCssText_ = doc.createElement('style');
   doc.head.appendChild(this.userCssText_);
@@ -15758,6 +15759,7 @@ hterm.Terminal.prototype.copySelectionToClipboard = function() {
 };
 
 hterm.Terminal.prototype.overlaySize = function() {
+  //// hide window size change notification
   // this.showOverlay(this.screenSize.width + 'x' + this.screenSize.height);
 };
 
