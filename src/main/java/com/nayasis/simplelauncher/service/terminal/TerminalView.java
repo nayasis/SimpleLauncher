@@ -2,6 +2,7 @@ package com.nayasis.simplelauncher.service.terminal;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nayasis.simplelauncher.service.terminal.helper.WebkitCall;
+import io.nayasis.common.basica.file.Files;
 import io.nayasis.common.basicafx.javafx.etc.FxThread;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyIntegerProperty;
@@ -12,6 +13,7 @@ import javafx.scene.input.ClipboardContent;
 import javafx.scene.layout.Pane;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
+import lombok.extern.slf4j.Slf4j;
 import netscape.javascript.JSObject;
 
 import java.io.Reader;
@@ -21,9 +23,10 @@ import java.util.concurrent.CountDownLatch;
 /**
  * @see <a>https://github.com/javaterminal/TerminalFX</a>
  */
+@Slf4j
 public class TerminalView extends Pane {
 
-    private   final WebView                webView             = new WebView();
+    protected final WebView                webView             = new WebView();
     private   final ReadOnlyIntegerWrapper columnsProperty     = new ReadOnlyIntegerWrapper(2000 );
     private   final ReadOnlyIntegerWrapper rowsProperty        = new ReadOnlyIntegerWrapper(1000 );
     private   final ObjectProperty<Reader> inputReaderProperty = new SimpleObjectProperty<>();
@@ -42,11 +45,34 @@ public class TerminalView extends Pane {
         webView.prefHeightProperty().bind(heightProperty());
         webView.prefWidthProperty().bind(widthProperty());
 
-        webEngine().load( TerminalView.class.getResource("/view/hterm/hterm.html").toExternalForm());
+        WebEngine webEngine = webEngine();
+        webEngine.loadContent( getContents() );
+
     }
 
-    @WebkitCall(from = "hterm")
+    private String getContents() {
+
+        String script = Files.readResourceFrom("/view/hterm/hterm_all.js");
+
+        StringBuilder sb = new StringBuilder();
+
+        Files.readResourceFrom("/view/hterm/hterm.html", readline -> {
+            if( "<script src=\"hterm_all.js\"></script>".equals(readline) ) {
+                sb.append( "<script>" );
+                sb.append( script );
+                sb.append( "</script>" );
+            } else {
+                sb.append( readline );
+            }
+        });
+
+        return sb.toString();
+
+    }
+
+    @WebkitCall
     public String getPrefs() {
+        log.debug( "in here ??");
         try {
             return new ObjectMapper().writeValueAsString(getTerminalConfig());
         } catch(final Exception e) {
@@ -54,6 +80,7 @@ public class TerminalView extends Pane {
         }
     }
 
+    @WebkitCall
     public void updatePrefs(TerminalConfig terminalConfig) {
         if(getTerminalConfig().equals(terminalConfig)) {
             return;
@@ -71,7 +98,7 @@ public class TerminalView extends Pane {
         }, true);
     }
 
-    @WebkitCall(from = "hterm")
+    @WebkitCall
     public void resizeTerminal(int columns, int rows) {
         columnsProperty.set(columns);
         rowsProperty.set(rows);
@@ -81,6 +108,7 @@ public class TerminalView extends Pane {
     public void onTerminalInit() {
         FxThread.runLater(() -> {
             getChildren().add(webView);
+            log.debug( "add webview" );
         }, true);
     }
 
@@ -91,6 +119,7 @@ public class TerminalView extends Pane {
                 focusCursor();
                 countDownLatch.countDown();
             } catch(final Exception e) {
+                log.error( e.getMessage(), e );
             }
         });
     }
@@ -111,7 +140,7 @@ public class TerminalView extends Pane {
         }
     }
 
-    @WebkitCall(from = "hterm")
+    @WebkitCall
     public void copy(String text) {
         final Clipboard clipboard = Clipboard.getSystemClipboard();
         final ClipboardContent clipboardContent = new ClipboardContent();
