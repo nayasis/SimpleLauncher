@@ -427,17 +427,12 @@ public class MainController implements Initializable {
 
 	public void setDetailView( Link link ) {
 
-		if( link == null )
-			link = new Link();
+		if( link == null ) return;
 
 		try {
 
             // ID가 같을 경우, 다시 그리지 않는다.
-            if( linkDetail.getId() == null ) {
-                if( link.getId() == null ) return;
-            } else {
-                if( link.getId() != null && linkDetail.getId() == link.getId() ) return;
-            }
+			if( link.getId() != null && linkDetail.getId() == link.getId() ) return;
 
             linkDetail = link;
 
@@ -456,7 +451,7 @@ public class MainController implements Initializable {
 
 	public void clearDetailView() {
 
-		setDetailView( null );
+		setDetailView( new Link() );
 
 		buttonDelete.setDisable( true );
 		buttonCopy.setDisable( true );
