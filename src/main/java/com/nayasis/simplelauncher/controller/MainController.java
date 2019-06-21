@@ -664,27 +664,23 @@ public class MainController implements Initializable {
                     return;
 
                 case ENTER :
-
                     try {
-                        if( tableMain.getVisibleRowSize() == 1 ) {
+						Integer visibleLinkCount = tableMain.getVisibleRowSize();
+						if( 0 < visibleLinkCount && visibleLinkCount <= 10 ) {
+
                             event.consume();
-                            ObservableList<Link> links = tableMain.getDataOnView();
-                            if( links.size() == 1 ) {
-                                Link link = links.get( 0 );
+                            onBlock.add( textField );
 
-                                onBlock.add( textField );
+                            tableMain.focus( 0 );
 
-                                setDetailView( link );
-                                executor.execute( link );
+                            Link link = tableMain.getDataOnView().get( 0 );
+                            executor.execute( link );
 
-                                FxThread.start( () -> {
-                                    FxThread.sleep( KEYPRESS_BLOCK_WAIT_MILISEC );
-                                    onBlock.remove( textField );
+							FxThread.start( () -> {
+								FxThread.sleep( KEYPRESS_BLOCK_WAIT_MILISEC );
+								onBlock.remove( textField );
+							});
 
-                                });
-
-                            }
-                            return;
                         }
                     } catch ( Throwable e ) {
                         Dialog.error( e );
