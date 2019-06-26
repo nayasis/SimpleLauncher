@@ -598,6 +598,14 @@ public class MainController implements Initializable {
 		return menuitemViewDesc.isSelected();
 	}
 
+	private void toggleSearchGroupEditable() {
+    	boolean disable = ! inputGroup.isDisable();
+    	inputGroup.setDisable( disable );
+    	if( disable ) {
+    		inputGroup.setText( "" );
+		}
+	}
+
 	private void tabPressed( TextArea textArea ) {
 
 		EventHandler<KeyEvent> eventHandler = event -> {
@@ -641,14 +649,29 @@ public class MainController implements Initializable {
 
         EventHandler<KeyEvent> eventHandler = event -> {
 
+			if( onBlock.contains(textField) ) {
+				event.consume();
+				return;
+			}
+
             KeyCode keyCode = event.getCode();
 
-            if( keyCode == UNDEFINED || onBlock.contains(textField) ) {
-                event.consume();
-                return;
-            }
-
             log.trace( ">> Event {}", event );
+
+            if( keyCode == UNDEFINED  ) {
+				if( event.getSource() == inputKeyword && "".equals(event.getText()) && event.isControlDown() ) {
+
+					event.consume();
+					onBlock.add( textField );
+					toggleSearchGroupEditable();
+
+					FxThread.start( () -> {
+						FxThread.sleep( KEYPRESS_BLOCK_WAIT_MILISEC );
+						onBlock.remove( textField );
+					});
+				}
+				return;
+			}
 
             switch ( keyCode ) {
 
