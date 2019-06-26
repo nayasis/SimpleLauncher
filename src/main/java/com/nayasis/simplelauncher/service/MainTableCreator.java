@@ -250,13 +250,17 @@ public class MainTableCreator {
 
 			} else if( keyCode == KeyCode.TAB ) {
 
-				Control prevControl = mainController.prevControlDetail;
-				if( prevControl == null ) {
-					prevControl = mainController.descGroupName;
-				}
+				if( ! event.isShiftDown() ) {
 
-				event.consume();
-				prevControl.requestFocus();
+					Control prevControl = mainController.prevControlDetail;
+					if( prevControl == null ) {
+						prevControl = mainController.descGroupName;
+					}
+
+					event.consume();
+					prevControl.requestFocus();
+
+				}
 
 			}
 
