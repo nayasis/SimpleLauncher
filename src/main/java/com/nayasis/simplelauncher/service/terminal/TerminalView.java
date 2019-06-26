@@ -72,7 +72,6 @@ public class TerminalView extends Pane {
 
     @WebkitCall
     public String getPrefs() {
-        log.debug( "in here ??");
         try {
             return new ObjectMapper().writeValueAsString(getTerminalConfig());
         } catch(final Exception e) {
@@ -108,7 +107,6 @@ public class TerminalView extends Pane {
     public void onTerminalInit() {
         FxThread.runLater(() -> {
             getChildren().add(webView);
-            log.debug( "add webview" );
         }, true);
     }
 
