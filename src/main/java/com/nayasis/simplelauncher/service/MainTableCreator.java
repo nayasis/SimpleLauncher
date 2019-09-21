@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import static com.nayasis.simplelauncher.common.CONSTANT.KEYPRESS_BLOCK_WAIT_MILISEC;
+import static javafx.geometry.Pos.CENTER;
+import static javafx.geometry.Pos.CENTER_RIGHT;
 import static javafx.scene.input.KeyCode.UNDEFINED;
 
 @Service
@@ -79,11 +81,11 @@ public class MainTableCreator {
 
         columnLastUsedDt.bindShape( ( cell, item, empty ) -> {
 			cell.setText( empty ? null : Strings.nvl(item) );
-        }).setAlignment( Pos.CENTER );
+        }).setAlign( CENTER );
 
 		columnExecCount.bindShape( ( cell, item, empty ) -> {
 			cell.setText( empty ? null : Strings.nvl(item) );
-		}).setAlignment( Pos.CENTER_RIGHT );
+		}).setAlign( CENTER_RIGHT );
 
 		columnTitle.setComparator( ( iconTitlePrev, iconTitleNext ) -> iconTitlePrev.getTitle().compareToIgnoreCase( iconTitleNext.getTitle() ) );
 
@@ -173,13 +175,13 @@ public class MainTableCreator {
 			private List patternKeyword;
 
 			@Override
-			public void before( ObservableValue observable, Object oldValue, Object newValue ) {
+			public void before() {
 				patternGroup = matcher.toPostfix( mainController.inputGroup.getText() );
 				patternKeyword = matcher.toPostfix( mainController.inputKeyword.getText() );
 			}
 
 			@Override
-			public Predicate<Link> test( ObservableValue observable, Object oldVal, Object newVal ) {
+			public Predicate<Link> test() {
 				return link -> {
 					if ( !matcher.isGroupMatched( patternGroup, link ) ) return false;
 					if ( !matcher.isKeywordMatched( patternKeyword, link ) ) return false;
@@ -188,7 +190,7 @@ public class MainTableCreator {
 			}
 
 			@Override
-			public void after( ObservableValue observable, Object oldValue, Object newValue ) {
+			public void after() {
 				mainController.clearDetailView();
 				mainController.printSearchResult();
 			}
