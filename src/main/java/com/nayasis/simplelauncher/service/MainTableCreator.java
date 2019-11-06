@@ -3,15 +3,15 @@ package com.nayasis.simplelauncher.service;
 import com.nayasis.simplelauncher.controller.MainController;
 import com.nayasis.simplelauncher.vo.IconTitle;
 import com.nayasis.simplelauncher.vo.Link;
-import io.nayasis.common.basica.base.Strings;
-import io.nayasis.common.basica.model.NDate;
-import io.nayasis.common.basicafx.javafx.control.table.NTable;
-import io.nayasis.common.basicafx.javafx.control.table.NTableColumn;
-import io.nayasis.common.basicafx.javafx.control.table.byfunction.CellFormatter;
-import io.nayasis.common.basicafx.javafx.control.table.byfunction.TableViewDataFilter;
-import io.nayasis.common.basicafx.javafx.etc.FxThread;
+import io.nayasis.basica.base.Strings;
+import io.nayasis.basica.model.NDate;
+import io.nayasis.basicafx.javafx.control.table.NTable;
+import io.nayasis.basicafx.javafx.control.table.NTableColumn;
+import io.nayasis.basicafx.javafx.control.table.byfunction.CellFormatter;
+import io.nayasis.basicafx.javafx.control.table.byfunction.TableViewDataFilter;
+import io.nayasis.basicafx.javafx.etc.FxThreads;
+import io.nayasis.basicafx.javafx.etc.Threads;
 import javafx.application.Platform;
-import javafx.beans.value.ObservableValue;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -219,8 +219,8 @@ public class MainTableCreator {
 					onBlock = true;
 					linkExecutor.execute( table.getFocusedItem() );
 
-					FxThread.start( () -> {
-						FxThread.sleep( KEYPRESS_BLOCK_WAIT_MILISEC );
+					FxThreads.run( () -> {
+						Threads.sleep( KEYPRESS_BLOCK_WAIT_MILISEC );
 						onBlock = false;
 					});
 					return;

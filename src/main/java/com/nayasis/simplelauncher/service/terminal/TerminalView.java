@@ -2,8 +2,10 @@ package com.nayasis.simplelauncher.service.terminal;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.nayasis.simplelauncher.service.terminal.helper.WebkitCall;
-import io.nayasis.common.basica.file.Files;
-import io.nayasis.common.basicafx.javafx.etc.FxThread;
+import io.nayasis.basica.file.Files;
+import io.nayasis.basicafx.javafx.etc.FxThreads;
+import io.nayasis.basicafx.javafx.etc.Threads;
+import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.ReadOnlyIntegerProperty;
 import javafx.beans.property.ReadOnlyIntegerWrapper;
@@ -36,8 +38,8 @@ public class TerminalView extends Pane {
 
     public TerminalView() {
 
-        inputReaderProperty.addListener((observable, oldValue, newValue) -> FxThread.start(() -> printReader(newValue) ) );
-        errorReaderProperty.addListener((observable, oldValue, newValue) -> FxThread.start(() -> printReader(newValue) ) );
+        inputReaderProperty.addListener((observable, oldValue, newValue) -> FxThreads.run(() -> printReader(newValue) ) );
+        errorReaderProperty.addListener((observable, oldValue, newValue) -> FxThreads.run(() -> printReader(newValue) ) );
 
         webView.getEngine().getLoadWorker().stateProperty().addListener((observable, oldValue, newValue) -> {
             getWindow().setMember("app", this );
@@ -88,13 +90,13 @@ public class TerminalView extends Pane {
         setTerminalConfig(terminalConfig);
         final String prefs = getPrefs();
 
-        FxThread.runLater(() -> {
+        Platform.runLater(() -> {
             try {
                 getWindow().call("updatePrefs", prefs);
             } catch(final Exception e) {
                 e.printStackTrace();
             }
-        }, true);
+        });
     }
 
     @WebkitCall
@@ -105,14 +107,14 @@ public class TerminalView extends Pane {
 
     @WebkitCall
     public void onTerminalInit() {
-        FxThread.runLater(() -> {
+        Platform.runLater(() -> {
             getChildren().add(webView);
-        }, true);
+        });
     }
 
     @WebkitCall
     public void onTerminalReady() {
-        FxThread.start(() -> {
+        FxThreads.run(() -> {
             try {
                 focusCursor();
                 countDownLatch.countDown();
@@ -147,25 +149,25 @@ public class TerminalView extends Pane {
     }
 
     public void onTerminalFxReady(Runnable onReadyAction) {
-        FxThread.start(() -> {
-            FxThread.await( countDownLatch );
+        FxThreads.run(() -> {
+            Threads.await( countDownLatch );
             if( Objects.nonNull(onReadyAction)) {
-                FxThread.start(onReadyAction);
+                FxThreads.run(onReadyAction);
             }
         });
     }
 
     protected void print(String text) {
-        FxThread.runLater(() -> {
+        Platform.runLater(() -> {
             getTerminalIO().call("print", text);
         });
     }
 
     public void focusCursor() {
-        FxThread.runLater(() -> {
+        FxThreads.runLater(() -> {
             webView.requestFocus();
             getTerminal().call("focus");
-        }, true);
+        });
     }
 
     private JSObject getTerminal() {

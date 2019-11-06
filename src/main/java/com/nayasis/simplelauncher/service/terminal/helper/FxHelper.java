@@ -1,6 +1,6 @@
 package com.nayasis.simplelauncher.service.terminal.helper;
 
-import io.nayasis.common.basicafx.javafx.etc.FxThread;
+import io.nayasis.basicafx.javafx.etc.FxThreads;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.TextInputDialog;
@@ -24,7 +24,7 @@ public class FxHelper {
 
     public static boolean askQuestion(String message) {
         CompletableFuture<Boolean> completableFuture = new CompletableFuture<Boolean>();
-        completableFuture.runAsync(() -> FxThread.runLater(() -> {
+        completableFuture.runAsync(() -> FxThreads.runLater(() -> {
             Alert alert = new Alert(Alert.AlertType.INFORMATION, message, ButtonType.YES, ButtonType.NO);
             ButtonType buttonType = alert.showAndWait().orElse(ButtonType.NO);
             completableFuture.complete(buttonType == ButtonType.YES);
@@ -36,7 +36,7 @@ public class FxHelper {
     public static String askInput(String message) {
         CompletableFuture<String> completableFuture = new CompletableFuture<>();
         completableFuture.runAsync(() -> {
-            FxThread.runLater(() -> {
+            FxThreads.runLater(() -> {
                 TextInputDialog inputDialog = new TextInputDialog();
                 inputDialog.setContentText(message);
                 Optional<String> optional = inputDialog.showAndWait();

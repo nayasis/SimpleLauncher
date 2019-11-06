@@ -1,8 +1,8 @@
 package com.nayasis.simplelauncher.common;
 
 import com.nayasis.simplelauncher.Main;
-import io.nayasis.common.basicafx.javafx.application.NApplication;
-import io.nayasis.common.basicafx.javafx.dialog.Dialog;
+import io.nayasis.basicafx.javafx.application.NApplication;
+import io.nayasis.basicafx.javafx.dialog.Dialog;
 import javafx.application.Platform;
 import javafx.stage.Stage;
 import org.apache.commons.cli.CommandLine;

@@ -5,12 +5,13 @@ import com.nayasis.simplelauncher.common.CONSTANT;
 import com.nayasis.simplelauncher.service.LinkExecutor;
 import com.nayasis.simplelauncher.service.MainTableCreator;
 import com.nayasis.simplelauncher.vo.Link;
-import io.nayasis.common.basica.base.Strings;
-import io.nayasis.common.basica.model.Messages;
-import io.nayasis.common.basicafx.desktop.Desktop;
-import io.nayasis.common.basicafx.javafx.control.table.NTable;
-import io.nayasis.common.basicafx.javafx.dialog.Dialog;
-import io.nayasis.common.basicafx.javafx.etc.FxThread;
+import io.nayasis.basica.base.Strings;
+import io.nayasis.basica.model.Messages;
+import io.nayasis.basicafx.desktop.Desktop;
+import io.nayasis.basicafx.javafx.control.table.NTable;
+import io.nayasis.basicafx.javafx.dialog.Dialog;
+import io.nayasis.basicafx.javafx.etc.FxThreads;
+import io.nayasis.basicafx.javafx.etc.Threads;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.collections.ObservableList;
@@ -167,7 +168,7 @@ public class MainController implements Initializable {
 	}
 
 	public void printSearchResult() {
-		printStatus( "msg.info.005", tableMain.getDataOnView().size(), tableMain.getData().size() );
+		printStatus( "msg.info.005", tableMain.dataOnView().size(), tableMain.data().size() );
 	}
 
 	public void printCommand( String command ) {
@@ -665,8 +666,8 @@ public class MainController implements Initializable {
 					onBlock.add( textField );
 					toggleSearchGroupEditable();
 
-					FxThread.start( () -> {
-						FxThread.sleep( KEYPRESS_BLOCK_WAIT_MILISEC );
+					FxThreads.run( () -> {
+						Threads.sleep( KEYPRESS_BLOCK_WAIT_MILISEC );
 						onBlock.remove( textField );
 					});
 				}
@@ -691,11 +692,11 @@ public class MainController implements Initializable {
 
                             tableMain.focus( 0 );
 
-                            Link link = tableMain.getDataOnView().get( 0 );
+                            Link link = tableMain.dataOnView().get( 0 );
                             executor.execute( link );
 
-							FxThread.start( () -> {
-								FxThread.sleep( KEYPRESS_BLOCK_WAIT_MILISEC );
+							FxThreads.run( () -> {
+								Threads.sleep( KEYPRESS_BLOCK_WAIT_MILISEC );
 								onBlock.remove( textField );
 							});
 

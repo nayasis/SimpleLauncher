@@ -1,8 +1,8 @@
 package com.nayasis.simplelauncher.jpa.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import io.nayasis.common.basica.model.NDate;
-import io.nayasis.common.basica.reflection.Reflector;
+import io.nayasis.basica.model.NDate;
+import io.nayasis.basica.reflection.Reflector;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

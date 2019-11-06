@@ -1,11 +1,11 @@
 package com.nayasis.simplelauncher.service.terminal;
 
 import com.nayasis.simplelauncher.service.terminal.helper.WebkitCall;
-import io.nayasis.common.basica.base.Strings;
-import io.nayasis.common.basica.cli.Command;
-import io.nayasis.common.basica.etc.Platforms;
-import io.nayasis.common.basicafx.javafx.dialog.Dialog;
-import io.nayasis.common.basicafx.javafx.etc.FxThread;
+import io.nayasis.basica.base.Strings;
+import io.nayasis.basica.cli.Command;
+import io.nayasis.basica.etc.Platforms;
+import io.nayasis.basicafx.javafx.dialog.Dialog;
+import io.nayasis.basicafx.javafx.etc.FxThreads;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
@@ -105,7 +105,7 @@ public class Terminal extends TerminalView {
         } catch (final InterruptedException e) {
             throw new RuntimeException(e);
         }
-        FxThread.start(() -> {
+        FxThreads.run(() -> {
             try {
                 final String commandToExecute = commandQueue.poll();
                 getOutputWriter().write(commandToExecute);
@@ -119,7 +119,7 @@ public class Terminal extends TerminalView {
     @WebkitCall
     @Override
     public void onTerminalReady() {
-        FxThread.start(() -> {
+        FxThreads.run(() -> {
             try {
 
                 runProcess();

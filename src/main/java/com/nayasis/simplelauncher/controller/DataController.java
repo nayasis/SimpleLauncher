@@ -5,11 +5,11 @@ import com.nayasis.simplelauncher.jpa.repository.LinkRepository;
 import com.nayasis.simplelauncher.vo.JsonLink;
 import com.nayasis.simplelauncher.vo.Link;
 import com.nayasis.simplelauncher.vo.OldJsonLink;
-import io.nayasis.common.basica.exception.unchecked.UncheckedIOException;
-import io.nayasis.common.basica.file.Files;
-import io.nayasis.common.basica.model.NDate;
-import io.nayasis.common.basica.reflection.Reflector;
-import io.nayasis.common.basicafx.javafx.dialog.Dialog;
+import io.nayasis.basica.exception.unchecked.UncheckedIOException;
+import io.nayasis.basica.file.Files;
+import io.nayasis.basica.model.NDate;
+import io.nayasis.basica.reflection.Reflector;
+import io.nayasis.basicafx.javafx.dialog.Dialog;
 import javafx.application.Platform;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -190,7 +190,7 @@ public class DataController {
 		log.debug( ">> links : {}", links.size() );
 		links.forEach(entity -> {
             Link link = new Link(entity);
-			main.tableMain.getData().add(link);
+			main.tableMain.dataOnView().add(link);
 		});
 	}
 

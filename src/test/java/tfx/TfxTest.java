@@ -2,8 +2,8 @@ package tfx;
 
 import com.nayasis.simplelauncher.service.terminal.Terminal;
 import com.nayasis.simplelauncher.service.terminal.TerminalConfig;
-import io.nayasis.common.basica.base.Strings;
-import io.nayasis.common.basica.cli.Command;
+import io.nayasis.basica.base.Strings;
+import io.nayasis.basica.cli.Command;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;

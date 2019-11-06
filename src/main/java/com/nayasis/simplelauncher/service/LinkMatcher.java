@@ -1,8 +1,8 @@
 package com.nayasis.simplelauncher.service;
 
 import com.nayasis.simplelauncher.vo.Link;
-import io.nayasis.common.basica.base.Strings;
-import io.nayasis.common.basica.cache.implement.LruCache;
+import io.nayasis.basica.base.Strings;
+import io.nayasis.basica.cache.implement.LruCache;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -126,7 +126,7 @@ public class LinkMatcher {
 
     private Pattern toSearchPattern( String keyword ) {
         if( keyword.isEmpty() ) return null;
-        Matcher matcher = REGEXP_ASTERISK.matcher( Strings.escapeRegexKeyword(keyword.toLowerCase()) );
+        Matcher matcher = REGEXP_ASTERISK.matcher( Strings.escapeRegexp(keyword.toLowerCase()) );
         StringBuffer sb = new StringBuffer();
         while( matcher.find() ) {
             String group = matcher.group( 1 );
