@@ -74,9 +74,7 @@ public class StageHelp extends ConfigurableStage {
 
     private String parseMarkdown( String resourcePath ) {
 
-        InputStream resource = Files.getResource( resourcePath );
-
-        String markdownContent = Files.readFrom( resource );
+        String markdownContent = Files.readResourceFrom( resourcePath );
 
         MutableDataSet option = getOption();
 

@@ -4,7 +4,6 @@ import com.nayasis.simplelauncher.common.AbstractApplication;
 import com.nayasis.simplelauncher.controller.ConfigController;
 import com.nayasis.simplelauncher.view.help.StageHelp;
 import com.nayasis.simplelauncher.view.preloader.Splash;
-import io.nayasis.basica.model.Messages;
 import io.nayasis.basicafx.javafx.stage.ConfigurableStage;
 import javafx.application.Application;
 import lombok.extern.slf4j.Slf4j;
@@ -29,11 +28,10 @@ public class Main extends AbstractApplication {
     private ConfigController configController;
 
     public static void main( String... args ) {
-
+        loadMessages( "/message/**.prop" );
         addDefaultIcon( "/image/icon/favicon.ico" );
         setPreloader( Splash.class );
-        Application.launch( Main.class, args );
-
+        launch( Main.class, args );
     }
 
     @Override
@@ -41,8 +39,6 @@ public class Main extends AbstractApplication {
 
         notifyPreloader( 10. );
         notifyPreloader( "preloader.spring-core.loaded" );
-
-        Messages.load( "message/**.prop" );
 
         boolean restoreConfig = true;
 

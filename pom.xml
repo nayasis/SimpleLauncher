@@ -17,13 +17,12 @@
 
   <repositories>
     <repository>
-      <id>central</id>
-      <name>Central Repository</name>
-      <url>http://jcenter.bintray.com</url>
+      <id>github-private</id>
+      <url>https://github.com/nayasis/UnofficialMavenRepository/raw/master/</url>
     </repository>
     <repository>
-      <id>UnofficialNybatisMavenRepository</id>
-      <url>https://github.com/nayasis/UnofficialMavenRepository/raw/master/</url>
+      <id>central</id>
+      <url>https://repo1.maven.org/maven2</url>
     </repository>
   </repositories>
 
@@ -38,14 +37,9 @@
 
     <!-- common -->
     <dependency>
-      <groupId>io.nayasis.common</groupId>
-      <artifactId>basica</artifactId>
-      <version>0.2.1-SNAPSHOT</version>
-    </dependency>
-    <dependency>
-      <groupId>io.nayasis.common</groupId>
+      <groupId>io.nayasis</groupId>
       <artifactId>basicafx</artifactId>
-      <version>0.2.1-SNAPSHOT</version>
+      <version>0.2.2-SNAPSHOT</version>
     </dependency>
     <dependency>
       <groupId>org.projectlombok</groupId>

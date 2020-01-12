@@ -20,6 +20,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.TableView;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.DataFormat;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
@@ -110,7 +111,6 @@ public class MainTableCreator {
 			HBox hbox = new HBox();
 
 			hbox.setAlignment(Pos.CENTER_LEFT);
-
 			ImageView imageIcon = new ImageView(item.getIcon());
 			Label labelTitle = new Label(item.getTitle());
 

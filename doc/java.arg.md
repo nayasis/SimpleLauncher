@@ -33,4 +33,5 @@
 --add-exports javafx.graphics/com.sun.scenario.effect.impl.prism=ALL-UNNAMED \
 --add-exports javafx.graphics/com.sun.javafx.iio=ALL-UNNAMED \
 --add-exports javafx.graphics/com.sun.javafx.css=ALL-UNNAMED \
---add-exports javafx.graphics/com.sun.glass.ui=ALL-UNNAMED
+--add-exports javafx.graphics/com.sun.glass.ui=ALL-UNNAMED \
+--add-exports javafx.web/com.sun.javafx.scene.web=ALL-UNNAMED

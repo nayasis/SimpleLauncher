@@ -185,13 +185,17 @@ public class DataController {
 	}
 
     public void readData() {
-		main.tableMain.clear();
-		List<LinkEntity> links = linkRepository.findAllByOrderByGrpAscTitleAsc();
-		log.debug( ">> links : {}", links.size() );
-		links.forEach(entity -> {
-            Link link = new Link(entity);
-			main.tableMain.dataOnView().add(link);
+
+		List<Link> links = new ArrayList<>();
+		linkRepository.findAllByOrderByGrpAscTitleAsc().forEach( link -> {
+			links.add( new Link(link) );
 		});
+
+		log.debug( ">> links : {}", links.size() );
+
+		main.tableMain.clear();
+		main.tableMain.data( links );
+
 	}
 
 }
