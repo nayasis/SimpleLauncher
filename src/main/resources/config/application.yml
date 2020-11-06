@@ -4,6 +4,8 @@ spring:
   output:
     ansi:
       enabled: always
+  main:
+    web-application-type: none
   datasource:
     url: jdbc:h2:file:./localdb/SimpleLauncher;DB_CLOSE_ON_EXIT=TRUE;CACHE_SIZE=20480
     driver-class-name: org.h2.Driver

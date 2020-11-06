@@ -29,7 +29,7 @@ public class ConfigController {
 
 		RestoreConfig config = new RestoreConfig();
 
-		config.setMainStageProperties( MAIN.getConfigureProperties() );
+		config.setMainStageProperties( MAIN.getStageProperties() );
 		config.setFocusedRow( mainController.tableMain.getFocusedIndex() );
 
 		ConfigEntity entity = configRepository.findByKey( CONFIG_MAIN );
@@ -51,7 +51,7 @@ public class ConfigController {
 		log.trace( ">> bind stage property");
 
 		try {
-			MAIN.setConfigureProperties( config.getMainStageProperties() );
+			MAIN.setStageProperties( config.getMainStageProperties() );
 		} catch ( Exception e ) {
 			log.error( e.getMessage(), e );
 		}

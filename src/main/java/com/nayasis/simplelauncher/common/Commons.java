@@ -1,7 +1,7 @@
 package com.nayasis.simplelauncher.common;
 
-import io.nayasis.basica.base.Strings;
-import io.nayasis.basica.base.Types;
+import com.github.nayasis.basica.base.Strings;
+import com.github.nayasis.basica.base.Types;
 
 import java.util.LinkedHashSet;
 import java.util.Set;

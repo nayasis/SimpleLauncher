@@ -1,7 +1,7 @@
 package com.nayasis.simplelauncher.vo;
 
-import io.nayasis.basica.base.Strings;
-import io.nayasis.basicafx.javafx.properties.StageProperties;
+import com.github.nayasis.basica.base.Strings;
+import com.github.nayasis.basicafx.javafx.properties.StageProperties;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 

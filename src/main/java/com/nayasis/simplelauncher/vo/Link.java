@@ -1,18 +1,17 @@
 package com.nayasis.simplelauncher.vo;
 
+import com.github.nayasis.basica.base.Strings;
+import com.github.nayasis.basica.base.format.Formatter;
+import com.github.nayasis.basica.etc.Platforms;
+import com.github.nayasis.basica.file.Files;
+import com.github.nayasis.basica.model.NDate;
+import com.github.nayasis.basica.model.NMap;
+import com.github.nayasis.basica.reflection.Reflector;
+import com.github.nayasis.basica.validation.Validator;
+import com.github.nayasis.basicafx.javafx.image.Images;
 import com.nayasis.simplelauncher.common.CONSTANT;
 import com.nayasis.simplelauncher.common.Commons;
 import com.nayasis.simplelauncher.jpa.entity.LinkEntity;
-import io.nayasis.basica.base.Strings;
-import io.nayasis.basica.base.format.ExtractPattern;
-import io.nayasis.basica.base.format.Formatter;
-import io.nayasis.basica.etc.Platforms;
-import io.nayasis.basica.file.Files;
-import io.nayasis.basica.model.NDate;
-import io.nayasis.basica.model.NMap;
-import io.nayasis.basica.reflection.Reflector;
-import io.nayasis.basica.validation.Validator;
-import io.nayasis.basicafx.javafx.image.Images;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.scene.image.Image;
@@ -33,14 +32,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import static com.github.nayasis.basica.base.format.Formatter.PATTERN_SHARP;
+
 @Data
 @NoArgsConstructor
 @Slf4j
 public class Link {
 
     private static final long serialVersionUID = 4803934592882695337L;
-
-	private static final ExtractPattern PATTERN_SHARP  = new ExtractPattern( "#\\{(|.+?[^\\\\])\\}",  new int[] {1}, "\\\\(#|\\{|\\})",   "$1" );
 
 	private Long                            id;
 	private SimpleStringProperty            title         = new SimpleStringProperty();
@@ -90,7 +89,7 @@ public class Link {
 		if( file.isDirectory() ) {
 			if( Platforms.isWindows ) setOptionPrefix( "cmd /c explorer" );
 		} else {
-			switch( Files.getExtension(file) ) {
+			switch( Files.extension(file) ) {
 				case "lnk" :
 					setMicrosoftLnkFile( file );
 					return;
@@ -260,7 +259,7 @@ public class Link {
 
 		if( isRelativePath(path) ) {
 			try {
-				this.path = Files.toAbsolutePath( Files.getRootPath(), path );
+				this.path = Files.resolvePath( Files.rootPath(), path );
 			} catch( Exception e ) {
 				log.error( e.getMessage(), e );
 			}
@@ -305,7 +304,7 @@ public class Link {
 			this.relativePath = relativePath;
 		} else {
 			try {
-				this.relativePath = Files.toRelativePath( Files.getRootPath(), relativePath );
+				this.relativePath = Files.relativePath( Files.rootPath(), relativePath );
 			} catch( Exception e ) {
 				this.relativePath = relativePath;
 			}
@@ -345,7 +344,7 @@ public class Link {
 		param.put( "dir",      file.isDirectory() ? file.getPath() : file.getParent() );
 		param.put( "filename", file.getName() );
 		param.put( "name",     Files.removeExtension( file.getName() ) );
-		param.put( "ext",      Files.getExtension( file.getName() ) );
+		param.put( "ext",      Files.extension( file.getName() ) );
 		param.put( "home",     System.getProperty("user.home") );
 
 		return param;

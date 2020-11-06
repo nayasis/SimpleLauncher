@@ -1,15 +1,15 @@
 package com.nayasis.simplelauncher.controller;
 
+import com.github.nayasis.basica.exception.unchecked.UncheckedIOException;
+import com.github.nayasis.basica.file.Files;
+import com.github.nayasis.basica.model.NDate;
+import com.github.nayasis.basica.reflection.Reflector;
+import com.github.nayasis.basicafx.javafx.dialog.Dialog;
 import com.nayasis.simplelauncher.jpa.entity.LinkEntity;
 import com.nayasis.simplelauncher.jpa.repository.LinkRepository;
 import com.nayasis.simplelauncher.vo.JsonLink;
 import com.nayasis.simplelauncher.vo.Link;
 import com.nayasis.simplelauncher.vo.OldJsonLink;
-import io.nayasis.basica.exception.unchecked.UncheckedIOException;
-import io.nayasis.basica.file.Files;
-import io.nayasis.basica.model.NDate;
-import io.nayasis.basica.reflection.Reflector;
-import io.nayasis.basicafx.javafx.dialog.Dialog;
 import javafx.application.Platform;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -125,7 +125,7 @@ public class DataController {
 				links.add( new JsonLink( link ) );
 			} );
 
-			Files.writeTo( file, Reflector.toJson( links, true ) );
+			Files.write( file, Reflector.toJson( links, true ) );
 
 			Dialog.alert( "msg.info.010", file );
 
@@ -145,7 +145,7 @@ public class DataController {
 
 		try {
 
-			String json = Files.readFrom( file );
+			String json = Files.read( file );
 
 			List<LinkEntity> entities = new ArrayList<>();
 

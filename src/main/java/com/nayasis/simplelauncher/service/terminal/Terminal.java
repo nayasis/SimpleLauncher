@@ -1,11 +1,11 @@
 package com.nayasis.simplelauncher.service.terminal;
 
+import com.github.nayasis.basica.base.Strings;
+import com.github.nayasis.basica.cli.Command;
+import com.github.nayasis.basica.etc.Platforms;
+import com.github.nayasis.basicafx.javafx.dialog.Dialog;
+import com.github.nayasis.basicafx.javafx.etc.FxThreads;
 import com.nayasis.simplelauncher.service.terminal.helper.WebkitCall;
-import io.nayasis.basica.base.Strings;
-import io.nayasis.basica.cli.Command;
-import io.nayasis.basica.etc.Platforms;
-import io.nayasis.basicafx.javafx.dialog.Dialog;
-import io.nayasis.basicafx.javafx.etc.FxThreads;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;

@@ -1,6 +1,6 @@
 package com.nayasis.simplelauncher.common;
 
-import io.nayasis.basicafx.javafx.dialog.Dialog;
+import com.github.nayasis.basicafx.javafx.dialog.Dialog;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Aspect;

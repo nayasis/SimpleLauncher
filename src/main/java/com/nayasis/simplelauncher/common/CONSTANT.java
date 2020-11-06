@@ -1,7 +1,6 @@
 package com.nayasis.simplelauncher.common;
 
-
-import io.nayasis.basicafx.javafx.stage.ConfigurableStage;
+import com.github.nayasis.basicafx.javafx.stage.ConfigurableStage;
 
 /**
  * Constants

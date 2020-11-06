@@ -1,17 +1,17 @@
 package com.nayasis.simplelauncher.service;
 
+import com.github.nayasis.basica.base.Strings;
+import com.github.nayasis.basica.cli.Command;
+import com.github.nayasis.basica.cli.CommandExecutor;
+import com.github.nayasis.basica.file.Files;
+import com.github.nayasis.basicafx.desktop.Desktop;
+import com.github.nayasis.basicafx.javafx.dialog.Dialog;
+import com.github.nayasis.basicafx.javafx.stage.ConfigurableStage;
 import com.nayasis.simplelauncher.controller.DataController;
 import com.nayasis.simplelauncher.controller.MainController;
 import com.nayasis.simplelauncher.service.terminal.Terminal;
 import com.nayasis.simplelauncher.service.terminal.TerminalConfig;
 import com.nayasis.simplelauncher.vo.Link;
-import io.nayasis.basica.base.Strings;
-import io.nayasis.basica.cli.Command;
-import io.nayasis.basica.cli.CommandExecutor;
-import io.nayasis.basica.file.Files;
-import io.nayasis.basicafx.desktop.Desktop;
-import io.nayasis.basicafx.javafx.dialog.Dialog;
-import io.nayasis.basicafx.javafx.stage.ConfigurableStage;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
@@ -41,12 +41,12 @@ public class LinkExecutor {
 		if( Files.exists(path) )
 			return path;
 
-		path = Files.getRootPath() + "/" + link.getPath();
+		path = Files.rootPath() + "/" + link.getPath();
 
 		if( Files.exists(path) )
 			return path;
 
-		path = Files.getRootPath() + "/" + link.getRelativePath();
+		path = Files.rootPath() + "/" + link.getRelativePath();
 
 		if( Files.exists(path) ) {
 			link.setPath( path );
@@ -104,7 +104,7 @@ public class LinkExecutor {
 			mainController.printCommand( cmd );
 
 			if( Files.isFile(execPath) ) {
-				command.setWorkingDirectory( Files.getDirectory(execPath) );
+				command.setWorkingDirectory( Files.directory(execPath).toFile() );
 			}
 
 			if( link.isShowConsole() ) {
@@ -175,7 +175,7 @@ public class LinkExecutor {
 		command.set( commandLine );
 
 		if( Files.isFile(commandLine) )
-			command.setWorkingDirectory( Files.getDirectory(commandLine) );
+			command.setWorkingDirectory( Files.directory(commandLine).toFile() );
 
 		CommandExecutor executor = new CommandExecutor().run( command );
 		if( wait )

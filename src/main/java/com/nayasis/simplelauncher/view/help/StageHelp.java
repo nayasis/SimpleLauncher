@@ -1,5 +1,8 @@
 package com.nayasis.simplelauncher.view.help;
 
+import com.github.nayasis.basica.file.Files;
+import com.github.nayasis.basica.model.Messages;
+import com.github.nayasis.basicafx.javafx.stage.ConfigurableStage;
 import com.vladsch.flexmark.ext.abbreviation.AbbreviationExtension;
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension;
 import com.vladsch.flexmark.ext.definition.DefinitionExtension;
@@ -11,9 +14,6 @@ import com.vladsch.flexmark.html.HtmlRenderer;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Node;
 import com.vladsch.flexmark.util.options.MutableDataSet;
-import io.nayasis.basica.file.Files;
-import io.nayasis.basica.model.Messages;
-import io.nayasis.basicafx.javafx.stage.ConfigurableStage;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
 import javafx.scene.web.WebEngine;
@@ -74,7 +74,7 @@ public class StageHelp extends ConfigurableStage {
 
     private String parseMarkdown( String resourcePath ) {
 
-        String markdownContent = Files.readResourceFrom( resourcePath );
+        String markdownContent = Files.readResource( resourcePath );
 
         MutableDataSet option = getOption();
 

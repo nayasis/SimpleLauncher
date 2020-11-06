@@ -1,11 +1,10 @@
 package com.nayasis.simplelauncher;
 
+import com.github.nayasis.basicafx.javafx.stage.ConfigurableStage;
 import com.nayasis.simplelauncher.common.AbstractApplication;
 import com.nayasis.simplelauncher.controller.ConfigController;
 import com.nayasis.simplelauncher.view.help.StageHelp;
 import com.nayasis.simplelauncher.view.preloader.Splash;
-import io.nayasis.basicafx.javafx.stage.ConfigurableStage;
-import javafx.application.Application;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;

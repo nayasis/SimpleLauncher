@@ -1,9 +1,9 @@
 package com.nayasis.simplelauncher.vo;
 
+import com.github.nayasis.basica.base.Strings;
+import com.github.nayasis.basica.model.NDate;
 import com.nayasis.simplelauncher.common.Commons;
 import com.nayasis.simplelauncher.jpa.entity.LinkEntity;
-import io.nayasis.basica.base.Strings;
-import io.nayasis.basica.model.NDate;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
