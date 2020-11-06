@@ -1,0 +1,52 @@
+spring:
+  profiles:
+    active: local
+---
+spring:
+  output:
+    ansi:
+      enabled: always
+  datasource:
+    url: jdbc:h2:file:./localdb/SimpleLauncher;DB_CLOSE_ON_EXIT=TRUE;CACHE_SIZE=20480
+    driver-class-name: org.h2.Driver
+    type: com.zaxxer.hikari.HikariDataSource
+    username: simple
+    password: launcher
+    hikari:
+      auto-commit: false
+      minimum-idle: 1
+      maximum-pool-size: 3
+      connection-timeout: 600000
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    database: H2
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: false
+        show_sql: false
+logging:
+  level:
+    org:
+      hibernate:
+        SQL: error
+        type:
+          descriptor:
+            sql.BasicBinder : error
+    com.nayasis.simplelauncher : trace
+    io.nayasis : trace
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %clr(%-5level) %50(\\(%F:%L\\)){blue} : %msg%n"
+error:
+  filter : |-
+    org\.springframework\.
+    org\.apache\.
+    java\.lang\.reflect\.Method\.invoke
+    java\.util\.concurrent\.ThreadPoolExecutor(\.runWorker|\$Worker\.run)
+    java\.lang\.Thread\.run
+    javax\.servlet
+    oracle\.jdbc\.driver\.
+    reactor\.core\.scheduler\.SchedulerTask\.call
+    sun\.reflect\.
