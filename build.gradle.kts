@@ -5,8 +5,8 @@ plugins {
 //	id("org.springframework.boot") version "2.3.5.RELEASE"
 //	id("io.spring.dependency-management") version "1.0.10.RELEASE"
 	kotlin("jvm") version "1.4.10"
-	application
-	id("org.openjfx.javafxplugin") version "0.0.8"
+//	application
+//	id("org.openjfx.javafxplugin") version "0.0.1"
 //	kotlin("plugin.serialization") version "1.4.10"
 //	kotlin("plugin.spring") version "1.4.10"
 //	kotlin("plugin.allopen") version "1.4.10"
@@ -14,13 +14,13 @@ plugins {
 //	kotlin("plugin.jpa") version "1.4.10"
 }
 
-application {
-	mainClassName = "com.github.nayasis.helloworld.HelloWorldApp"
-}
-
-javafx {
-	modules = listOf("javafx.controls", "javafx.fxml")
-}
+//application {
+//	mainClassName = "com.github.nayasis.helloworld.HelloWorldApp"
+//}
+//
+//javafx {
+//	modules = listOf("javafx.controls", "javafx.fxml")
+//}
 
 //allOpen {
 //	annotation("javax.persistence.Entity")
@@ -48,7 +48,8 @@ configurations.all {
 repositories {
 	mavenCentral()
 	jcenter()
-	maven { url = uri("https://github.com/nayasis/UnofficialMavenRepository/raw/master") }
+	mavenLocal()
+	maven { url = uri("https://github.com/nayasis/UnofficialMavenRepository") }
 }
 
 dependencies {
