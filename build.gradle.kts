@@ -4,7 +4,7 @@ plugins {
 //	id( "org.openjfx.javafxplugin" ) version "0.0.8"
 //	id("org.springframework.boot") version "2.3.5.RELEASE"
 //	id("io.spring.dependency-management") version "1.0.10.RELEASE"
-	kotlin("jvm") version "1.4.10"
+	kotlin("jvm") version "1.4.20"
 //	application
 //	id("org.openjfx.javafxplugin") version "0.0.1"
 //	kotlin("plugin.serialization") version "1.4.10"
