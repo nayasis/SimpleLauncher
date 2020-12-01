@@ -1,25 +1,20 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-//	id( "org.openjfx.javafxplugin" ) version "0.0.8"
 //	id("org.springframework.boot") version "2.3.5.RELEASE"
 //	id("io.spring.dependency-management") version "1.0.10.RELEASE"
 	kotlin("jvm") version "1.4.20"
 //	application
-//	id("org.openjfx.javafxplugin") version "0.0.1"
-//	kotlin("plugin.serialization") version "1.4.10"
-//	kotlin("plugin.spring") version "1.4.10"
-//	kotlin("plugin.allopen") version "1.4.10"
-//	kotlin("plugin.noarg") version "1.4.10"
-//	kotlin("plugin.jpa") version "1.4.10"
+	kotlin("plugin.serialization") version "1.4.20"
+//	kotlin("plugin.spring") version "1.4.20"
+//	kotlin("plugin.allopen") version "1.4.20"
+//	kotlin("plugin.noarg") version "1.4.20"
+//	kotlin("plugin.jpa") version "1.4.20"
 }
 
 //application {
-//	mainClassName = "com.github.nayasis.helloworld.HelloWorldApp"
-//}
-//
-//javafx {
-//	modules = listOf("javafx.controls", "javafx.fxml")
+////	mainClassName = "com.github.nayasis.helloworld.HelloWorldApp"
+//	mainClassName = "com.github.nayasis.example.Squeeze"
 //}
 
 //allOpen {
@@ -56,9 +51,9 @@ dependencies {
 
 	// common
 	implementation( "com.github.nayasis:basica:0.3.5-SNAPSHOT" ){ isChanging = true }
-	implementation( "commons-io:commons-io:2.4" )
-	implementation( "commons-cli:commons-cli:1.4" )
-	implementation( "commons-codec:commons-codec:1.13" )
+//	implementation( "commons-io:commons-io:2.4" )
+//	implementation( "commons-cli:commons-cli:1.4" )
+//	implementation( "commons-codec:commons-codec:1.13" )
 
 	// application
 	implementation( "no.tornado:tornadofx:1.7.20" )
