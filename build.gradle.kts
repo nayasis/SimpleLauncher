@@ -36,15 +36,15 @@ version = "0.0.1-SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_1_8
 
 configurations.all {
-	resolutionStrategy.cacheChangingModulesFor( 10, "seconds" )
+	resolutionStrategy.cacheChangingModulesFor(  0, "seconds" )
 	resolutionStrategy.cacheDynamicVersionsFor(  5, "minutes" )
 }
 
 repositories {
+	mavenLocal()
 	mavenCentral()
 	jcenter()
-	mavenLocal()
-	maven { url = uri("https://github.com/nayasis/UnofficialMavenRepository") }
+	maven { url = uri("https://jitpack.io") }
 }
 
 dependencies {
@@ -57,7 +57,7 @@ dependencies {
 
 	// application
 	implementation( "no.tornado:tornadofx:1.7.20" )
-//	implementation( "com.github.vatbub:mslinks:1.0.6" )
+	implementation( "com.github.vatbub:mslinks:1.0.6" )
 
 //	// spring
 //	implementation("org.springframework.boot:spring-boot-starter")
@@ -70,6 +70,9 @@ dependencies {
 //		exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
 //		exclude(group="com.vaadin.external.google",module="android-json")
 //	}
+
+	implementation("de.jensd:fontawesomefx:8.9")
+	implementation("org.controlsfx:controlsfx:8.40.10")
 
 	// kotlin
 	implementation("org.jetbrains.kotlin:kotlin-reflect")

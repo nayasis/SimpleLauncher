@@ -1,21 +1,20 @@
-package com.github.nayasis.helloworld
+package com.github.nayasis.sample
 
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.scene.text.FontWeight
 import tornadofx.*
 
-class HelloWorldApp : App( HelloWorld::class, Styles::class )
-
 fun main( args:Array<String> ) {
-    launch<HelloWorldApp>( args )
+    launch<HelloWorld>( args )
 }
 
+class HelloWorld: App( MainView::class, Styles::class )
 
-class HelloWorld : View() {
+class MainView: View("Hello world!") {
 
     var count = SimpleIntegerProperty(0)
 
-    override val root = vbox {
+    override val root = vbox() {
         button( "click" ) {
             action {
                 count.set( count.get() + 1 )
@@ -32,10 +31,10 @@ class Styles : Stylesheet() {
     init {
         root {
             fontSize = 9.pt
-            fontFamily = "SanSerif"
+            fontFamily = "Arial"
         }
         label {
-//            fontSize = 20.px
+            fontSize = 20.px
             padding = box( 5.px )
             fontWeight = FontWeight.BOLD
             backgroundColor += c("#cecece")

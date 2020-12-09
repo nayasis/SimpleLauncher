@@ -1,4 +1,4 @@
-package com.github.nayasis.example
+package com.github.nayasis.sample.basic
 
 import tornadofx.*
 
