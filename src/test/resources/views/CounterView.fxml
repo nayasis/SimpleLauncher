@@ -1,0 +1,21 @@
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.text.Font?>
+<BorderPane xmlns="http://javafx.com/javafx/null" xmlns:fx="http://javafx.com/fxml/1">
+    <padding>
+        <Insets top="20" right="20" bottom="20" left="20"/>
+    </padding>
+    <center>
+        <VBox alignment="CENTER" spacing="10">
+            <Label text="0" fx:id="counterLabel">
+                <font>
+                    <Font size="20"/>
+                </font>
+            </Label>
+            <Button text="%clickToIncrement" onAction="#increment" />
+        </VBox>
+    </center>
+</BorderPane>
