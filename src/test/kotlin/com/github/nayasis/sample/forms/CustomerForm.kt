@@ -4,6 +4,7 @@ import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon.HOME
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon.USER
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
+import org.controlsfx.control.Notifications
 import tornadofx.*
 import javax.management.NotificationBroadcasterSupport
 
@@ -34,9 +35,16 @@ class CustomerForm: View("Register Customer") {
         }
         button("Save") {
             action {
-                val customer = model.item
-                Notifications.create()
+                model.commit{
+                    val customer = model.item
+                    Notifications.create()
+                        .title("Customer saved!")
+                        .text("${customer.name} was born ${customer.birthday}\nand lives in\n${customer.street}, ${customer.zip} ${customer.city}")
+                        .owner(this)
+                        .showInformation()
+                }
             }
+            enableWhen(model.valid)
         }
     }
 }
