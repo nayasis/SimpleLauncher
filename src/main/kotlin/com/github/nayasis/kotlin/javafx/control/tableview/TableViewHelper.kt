@@ -5,8 +5,8 @@ import javafx.scene.control.TableColumn
 import javafx.scene.control.TableView
 
 
-fun <S> TableView<S>.findColumnBy(fxId: String ): TableColumn<S, *>? {
+fun <S,T:Any> TableView<S>.findColumnBy(fxId: String): TableColumn<S,T>? {
     for( col in columns )
-        return col.findBy(fxId) ?: continue
+        return (col.findBy(fxId) ?: continue) as TableColumn<S,T>
     return null
 }

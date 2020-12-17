@@ -35,6 +35,4 @@ class CheckBoxTableCell<S,T> : TableCell<S,T>() {
         }
     }
 
-
-
 }

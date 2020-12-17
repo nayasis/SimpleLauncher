@@ -5,16 +5,16 @@ import javafx.util.Callback
 import tornadofx.*
 import kotlin.reflect.KProperty1
 
-fun <S> TableColumn<S,*>.bindVal(prop: KProperty1<S,*>): TableColumn<S,*> {
+inline fun <S,T> TableColumn<S,T>.bindVal(prop: KProperty1<S,T?>, noinline option: TableColumn<S,T>.() -> Unit = {}): TableColumn<S,T> {
     this.cellValueFactory = Callback { observable(it.value, prop) }
-    return this
+    return this.apply(option)
 }
 
 
-fun <S> TableColumn<S,*>.findBy(fxId: String): TableColumn<S,*>? {
+fun <S,T:Any> TableColumn<S,T>.findBy(fxId: String): TableColumn<S,T>? {
     if( id == fxId ) return this
     for( col in columns )
-        return col.findBy(fxId) ?: continue
+        return (col.findBy(fxId) ?: continue) as TableColumn<S,T>
     return null
 }
 
