@@ -10,11 +10,9 @@ inline fun <S,T> TableColumn<S,T>.bindVal(prop: KProperty1<S,T?>, noinline optio
     return this.apply(option)
 }
 
-
 fun <S,T:Any> TableColumn<S,T>.findBy(fxId: String): TableColumn<S,T>? {
     if( id == fxId ) return this
     for( col in columns )
         return (col.findBy(fxId) ?: continue) as TableColumn<S,T>
     return null
 }
-
