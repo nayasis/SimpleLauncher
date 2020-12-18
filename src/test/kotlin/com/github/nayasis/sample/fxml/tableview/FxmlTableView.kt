@@ -23,19 +23,18 @@ class DemoTableView: View() {
         Person("suuny", null),
     ).asObservable())
 
-    val main: TableView<Person> by fxid()
-
-    val colName: TableColumn<Person,String> by fxid()
-    val colAge: TableColumn<Person,Int> by fxid()
+    private val main: TableView<Person> by fxid()
+    private val colName: TableColumn<Person,String> by fxid()
+    private val colAge: TableColumn<Person,Int> by fxid()
 
     init {
         initTable()
     }
 
-    fun initTable() {
+    private fun initTable() {
 
-//        val colName = main.findColumnBy<Person,String>("colName")!!
-//        val colAge = main.findColumnBy<Person,Int>("colAge")!!
+//        val colName = main.findColumnBy<Person,String>("colName")
+//        val colAge = main.findColumnBy<Person,Int>("colAge")
 
         main.columnResizePolicy = CONSTRAINED_RESIZE_POLICY
 
