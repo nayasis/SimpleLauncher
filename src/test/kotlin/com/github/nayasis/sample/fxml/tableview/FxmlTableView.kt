@@ -40,14 +40,11 @@ class DemoTableView: View() {
 
         colName.bindVal(Person::name)
         colAge.bindVal(Person::age).cellFormat {
-
             style {
                 backgroundColor += if( it > 10 ) Color.RED else Color.GREEN
                 textFill = Color.LIGHTCYAN
             }
-
             text = it.toString()
-
         }
 
         data.bindTo( main )
