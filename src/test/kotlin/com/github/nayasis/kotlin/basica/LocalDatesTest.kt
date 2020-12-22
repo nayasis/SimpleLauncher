@@ -3,13 +3,10 @@ package com.github.nayasis.kotlin.basica
 import mu.KotlinLogging
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.time.format.ResolverStyle
 
 private val log = KotlinLogging.logger {}
 
-internal class StringDateTest {
+internal class LocalDatesTest {
 
     @Test
     fun atStartOfMonth() {
