@@ -81,6 +81,10 @@ dependencies {
 	implementation( "io.github.microutils:kotlin-logging:1.8.3" )
 	implementation("au.com.console:kassava:2.1.0-rc.1")
 
+	testImplementation("org.junit.jupiter:junit-jupiter-api:5.3.1")
+	testImplementation("org.junit.jupiter:junit-jupiter-engine:5.3.1")
+	testImplementation("ch.qos.logback:logback-classic:1.2.3")
+
 }
 
 tasks.withType<Test> {
