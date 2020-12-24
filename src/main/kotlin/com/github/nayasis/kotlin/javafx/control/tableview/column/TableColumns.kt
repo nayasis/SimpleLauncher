@@ -16,3 +16,11 @@ fun <S,T:Any> TableColumn<S,T>.findBy(fxId: String): TableColumn<S,T>? {
         return (col.findBy(fxId) ?: continue) as TableColumn<S,T>
     return null
 }
+
+fun <S,T:Any> TableColumn<S,T>.children(recursive: Boolean = false): List<TableColumn<S,T>> {
+    return ArrayList<TableColumn<S,T>>().apply {
+        addAll( this@children.columns as Collection<TableColumn<S,T>> )
+        if( recursive )
+            forEach{ addAll(it.children(recursive) as List<TableColumn<S,T>>) }
+    }
+}

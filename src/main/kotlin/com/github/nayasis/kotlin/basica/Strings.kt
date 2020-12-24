@@ -1,11 +1,6 @@
 package com.github.nayasis.kotlin.basica
 
 import com.github.nayasis.basica.model.Messages
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
+import java.util.*
 
-fun String.message(): String = Messages.get(this)
-
-
-
+fun String.message(locale: Locale? = null): String = Messages.get(locale, this)
