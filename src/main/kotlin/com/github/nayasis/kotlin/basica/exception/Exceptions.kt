@@ -1,4 +1,4 @@
-package com.github.nayasis.kotlin.javafx.exception
+package com.github.nayasis.kotlin.basica.exception
 
 open class NotFound : Exception {
     constructor(): super()

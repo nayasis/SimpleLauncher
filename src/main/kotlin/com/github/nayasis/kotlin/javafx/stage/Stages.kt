@@ -5,12 +5,6 @@ import javafx.scene.image.Image
 import javafx.stage.Stage
 import javafx.stage.Window
 
-
-private const val DEFAULT_WIDTH  = 400
-private const val DEFAULT_HEIGHT = 300
-
-val DEFAULT_ICONS = ArrayList<Image>()
-
 fun focusedWindow(): Window? {
     for( window in windows())
         if( window.isFocused ) return window
@@ -26,3 +20,4 @@ fun Stage.loadDefaultIcon() {
         this.icons.addAll(DEFAULT_ICONS)
     }
 }
+
