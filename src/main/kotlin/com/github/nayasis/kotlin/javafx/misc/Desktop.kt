@@ -13,7 +13,7 @@ import java.io.File
 import java.net.URI
 import java.awt.Desktop as AwtDesktop
 
-val Desktop = object {
+object Desktop {
 
     init {
         if (Platforms.isMac())
@@ -84,7 +84,7 @@ val Desktop = object {
 
     fun graphics(): GraphicsEnvironment = GraphicsEnvironment.getLocalGraphicsEnvironment()
 
-    fun getAllFonts(): List<Font> = graphics().allFonts.toList()
+    fun allFonts(): List<Font> = graphics().allFonts.toList()
 
 }
 
