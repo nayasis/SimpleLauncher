@@ -5,15 +5,15 @@ import javafx.scene.control.TableColumn
 import javafx.scene.control.TableView
 import java.io.Serializable
 
-class TableColumnOrderProperty(
+data class TableColumnOrderProperty(
     var columns: ArrayList<String> = ArrayList()
 ): Serializable {
 
-    constructor(tableview: TableView<Any>): this() {
+    constructor(tableview: TableView<*>): this() {
         read(tableview)
     }
 
-    fun read(tableview: TableView<Any>) {
+    fun read(tableview: TableView<*>) {
         for ((i, column) in tableview.sortOrder.withIndex()) {
             this.columns.add(if (column.id.isNullOrEmpty()) i.toString() else column.id)
         }

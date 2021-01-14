@@ -3,7 +3,7 @@ package com.github.nayasis.kotlin.javafx.property
 import javafx.stage.Stage
 import java.io.Serializable
 
-class SizeProperty(
+data class SizeProperty(
     var width: Int = 400,
     var height: Int = 300,
 ): Serializable {

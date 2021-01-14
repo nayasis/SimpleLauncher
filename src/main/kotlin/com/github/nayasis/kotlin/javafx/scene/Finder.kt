@@ -11,13 +11,3 @@ fun Node.root(): Node {
     }
 }
 
-fun Node.children( predicate: (Node) -> Boolean ): List<out Node> {
-    val children = mutableListOf<Node>()
-    getChildList()?.forEach{
-        if( predicate(it) )
-            children.add(it)
-        children.addAll( it.children(predicate) )
-    }
-    return children
-}
-

@@ -6,11 +6,16 @@ import com.github.nayasis.kotlin.basica.exception.NotFound
 import com.github.nayasis.kotlin.basica.nvl
 import com.sun.javafx.scene.control.skin.TableViewSkin
 import com.sun.javafx.scene.control.skin.VirtualFlow
+import javafx.collections.transformation.FilteredList
+import javafx.collections.transformation.SortedList
 import javafx.scene.control.IndexedCell
 import javafx.scene.control.TableColumn
 import javafx.scene.control.TablePosition
 import javafx.scene.control.TableView
+import tornadofx.field
 import java.lang.Integer.min
+import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.math.max
 
 fun <S,T:Any> TableView<S>.findColumnBy(fxId: String): TableColumn<S,T> {
@@ -28,10 +33,11 @@ fun <S> TableView<S>.allColumns(): List<TableColumn<S,*>> {
     }
 }
 
-fun <S> TableView<S>.fillFxId() {
+fun <S> TableView<S>.fillFxId(): TableView<S> {
     this.allColumns().withIndex().forEach {
         it.value.id = nvl( it.value.id, it.index.toString() )
     }
+    return this
 }
 
 fun <S> TableView<S>.focused(): Position {
@@ -108,4 +114,8 @@ fun <S> TableView<S>.virtualFlow(): VirtualFlow<*>? {
     return (skin as TableViewSkin<S>)?.children?.firstOrNull { it is VirtualFlow<*> } as VirtualFlow<*>
 }
 
-
+fun <S> TableView<S>.setItems( list: FilteredList<S> ) {
+    val sortedList = SortedList(list)
+    sortedList.comparatorProperty().bind( this.comparatorProperty() )
+    this.items = sortedList
+}
