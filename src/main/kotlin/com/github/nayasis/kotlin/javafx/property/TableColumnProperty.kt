@@ -3,7 +3,7 @@ package com.github.nayasis.kotlin.javafx.property
 import javafx.scene.control.TableColumn
 import java.io.Serializable
 
-class TableColumnProperty(
+data class TableColumnProperty(
     var fxid: String? = null,
     var width: Double? = null,
     var show: Boolean? = null,
@@ -11,11 +11,11 @@ class TableColumnProperty(
     var children: List<TableColumnProperty>? = null
 ): Serializable {
 
-    constructor(column: TableColumn<Any,*>) : this() {
+    constructor(column: TableColumn<*,*>) : this() {
         read(column)
     }
 
-    fun read(column: TableColumn<Any,*> ) {
+    fun read(column: TableColumn<*,*> ) {
         fxid = column.id
         width = column.width
         show = column.isVisible

@@ -3,7 +3,7 @@ package com.github.nayasis.kotlin.javafx.property
 import javafx.stage.Stage
 import java.io.Serializable
 
-class PositionProperty(
+data class PositionProperty(
     var x: Int = 0,
     var y: Int = 0,
 ): Serializable {

@@ -5,6 +5,7 @@ import com.github.nayasis.kotlin.javafx.model.Point
 import javafx.stage.Stage
 import mu.KotlinLogging
 import java.awt.GraphicsConfiguration
+import java.io.Serializable
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -71,7 +72,7 @@ private data class Inset (
     val left: Int,
     val right: Int,
     val bottom: Int,
-) {
+): Serializable {
 
     constructor(stage: Stage): this(
         stage.y.toInt(),

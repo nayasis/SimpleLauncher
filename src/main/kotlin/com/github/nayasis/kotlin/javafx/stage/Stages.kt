@@ -1,8 +1,13 @@
 package com.github.nayasis.kotlin.javafx.stage
 
+import com.github.nayasis.kotlin.basica.FieldProperty
 import com.github.nayasis.kotlin.basica.toList
 import com.github.nayasis.kotlin.javafx.model.Point
+import com.github.nayasis.kotlin.javafx.property.InsetProperty
+import javafx.beans.property.ReadOnlyBooleanProperty
+import javafx.beans.property.ReadOnlyBooleanWrapper
 import javafx.event.EventHandler
+import javafx.geometry.Rectangle2D
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Button
@@ -10,10 +15,14 @@ import javafx.scene.image.Image
 import javafx.scene.input.MouseEvent
 import javafx.scene.layout.Pane
 import javafx.scene.paint.Color
+import javafx.stage.Screen
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.stage.Window
 import javafx.stage.WindowEvent
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.reflect.KProperty
 
 val DEFAULT_ICONS = ArrayList<Image>()
 
@@ -109,4 +118,27 @@ fun Stage.addMaximized(button: Button) {
     button.setOnAction {
         isMaximized = ! isMaximized
     }
+}
+
+var Stage.isZoomed: ReadOnlyBooleanWrapper by FieldProperty{ ReadOnlyBooleanWrapper(it,"zoomed") }
+
+var Stage.previousZoomSize: InsetProperty? by FieldProperty{ null }
+
+fun Stage.setZoom( enable: Boolean ) {
+    isZoomed.set(enable)
+    if( enable ) {
+        if( maximizedProperty() != null ) {
+            previousZoomSize = InsetProperty(this)
+            Screen.getScreensForRectangle(Rectangle2D(x,y,width,height)).get(0)?.visualBounds?.let {
+                this.x      = it.minX
+                this.y      = it.minY
+                this.width  = it.width
+                this.height = it.height
+            }
+        }
+    } else {
+        previousZoomSize?.apply(this)
+        previousZoomSize = null
+    }
+
 }
