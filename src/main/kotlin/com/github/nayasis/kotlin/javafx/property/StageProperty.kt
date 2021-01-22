@@ -12,13 +12,14 @@ import javafx.stage.Stage
 import org.controlsfx.control.CheckComboBox
 import tornadofx.getChildList
 import java.io.Serializable
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.reflect.KClass
 import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.isSuperclassOf
 
 private const val PREFIX_ID = "_tmp_id"
 private var seq = 0
-
 
 data class StageProperty(
     val inset: InsetProperty = InsetProperty(),
@@ -62,7 +63,6 @@ data class StageProperty(
                 is Control -> {
                     visibles[fxid] = it.isVisible
                     disables[fxid] = it.isDisable
-
                     if (it is TextInputControl) {
                         editables[fxid] = it.isEditable
                     }
@@ -85,24 +85,27 @@ data class StageProperty(
             val fxid = getFxId(it)
             when(it) {
                 is TableView<*> -> tables[fxid]?.apply(it as TableView<Any>)
-                is CheckMenuItem -> checks[fxid]?.let{ check -> it.isSelected = check }
-                is CheckBox -> checks[fxid]?.let{ check -> it.isSelected = check }
+                is CheckMenuItem -> checks[fxid]?.let{ value -> it.isSelected = value }
+                is CheckBox -> checks[fxid]?.let{ value -> it.isSelected = value }
                 is TextField -> values[fxid]?.let{ value -> it.text = value }
                 is TextArea -> values[fxid]?.let{ value -> it.text = value }
-
-                is ComboBox<*> -> indices[fxid] = it.selectionModel.selectedIndex
-
-                is CheckComboBox<*> -> lists[fxid] = it.checkModel.checkedIndices.toList()
+                is ComboBox<*> -> indices[fxid]?.let{ value -> it.selectionModel.select(min(max(value,0),it.items.size-1)) }
+                is ChoiceBox<*> -> indices[fxid]?.let{ value -> it.selectionModel.select(min(max(value,0),it.items.size-1)) }
+                is CheckComboBox<*> -> lists[fxid]?.let{ value ->
+                    it.checkModel.clearChecks()
+                    it.checkModel.checkedIndices.addAll(value)
+                }
 
             }
-            when(it) {
-                is Pane -> visibles[fxid] = it.isVisible
-                is Control -> {
-                    visibles[fxid] = it.isVisible
-                    disables[fxid] = it.isDisable
-
-                    if (it is TextInputControl) {
-                        editables[fxid] = it.isEditable
+            if( visibility ) {
+                when(it) {
+                    is Pane -> visibles[fxid]?.let { value -> it.isVisible = value }
+                    is Control -> {
+                        visibles[fxid]?.let { value -> it.isVisible = value }
+                        disables[fxid]?.let { value -> it.isDisable = value }
+                        if (it is TextInputControl) {
+                            editables[fxid]?.let { value -> it.isEditable = value }
+                        }
                     }
                 }
             }
@@ -125,7 +128,6 @@ data class StageProperty(
         if( excludes.isNotEmpty() && excludes.any { it::class.isSuperclassOf(node::class) } ) return false
         if( includes.isNotEmpty() && ! includes.any { it::class.isSuperclassOf(node::class) } ) return false
         return true
-
     }
 
 }
