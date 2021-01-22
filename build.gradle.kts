@@ -50,7 +50,8 @@ repositories {
 dependencies {
 
 	// common
-	implementation( "com.github.nayasis:basica:0.3.5-SNAPSHOT" ){ isChanging = true }
+	implementation( "com.github.nayasis:basica:0.3.6-SNAPSHOT" ){ isChanging = true }
+	implementation( "org.apache.httpcomponents:httpclient:4.4" )
 //	implementation( "commons-io:commons-io:2.4" )
 //	implementation( "commons-cli:commons-cli:1.4" )
 //	implementation( "commons-codec:commons-codec:1.13" )
