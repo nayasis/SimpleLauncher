@@ -1,20 +1,26 @@
 package com.github.nayasis.kotlin.javafx.stage
 
 import com.github.nayasis.kotlin.basica.exception.Caller
+import com.github.nayasis.kotlin.basica.exists
 import com.github.nayasis.kotlin.basica.message
+import com.github.nayasis.kotlin.basica.nvl
+import com.github.nayasis.kotlin.basica.toFile
+import com.github.nayasis.kotlin.basica.toPath
 import javafx.scene.control.*
 import javafx.scene.control.Alert.AlertType
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.Priority.ALWAYS
+import javafx.stage.DirectoryChooser
+import javafx.stage.FileChooser
 import javafx.stage.Modality.WINDOW_MODAL
 import javafx.stage.Stage
 import mu.KotlinLogging
 import tornadofx.*
 import kotlin.Double.Companion.MAX_VALUE
 
-private val logger = KotlinLogging.logger {  }
+private val logger = KotlinLogging.logger {}
 
 fun dialog(type: AlertType, message: String): Alert {
     return Alert(type).apply {
@@ -34,7 +40,7 @@ fun alert(message: String) {
     dialog(AlertType.INFORMATION, message).showAndWait()
 }
 
-@Suppress("MoveLambdaOutsideParentheses")
+
 fun confirm(message: String): Boolean {
 
     val yes  = ButtonType("Yes".message())
@@ -43,10 +49,11 @@ fun confirm(message: String): Boolean {
     return dialog(AlertType.CONFIRMATION, message).apply {
         buttonTypes.addAll(yes,no)
         listOf(yes,no).map{ dialogPane.lookupButton(it) }.forEach {
-            it.addEventHandler(KeyEvent.KEY_PRESSED, { e ->
-                if( e.code == KeyCode.ENTER && e.target is Button )
+            it.addEventHandler(KeyEvent.KEY_PRESSED) { e ->
+                if (e.code == KeyCode.ENTER && e.target is Button)
                     (e.target as Button).fire()
-            })}
+            }
+        }
     }.showAndWait().get() == yes
 
 }
@@ -84,6 +91,20 @@ fun prompt(message: String): String {
     }.showAndWait().get()
 }
 
-fun filePicker(title: String, extensions: String) {
+fun filePicker(title: String = "", extensions: String = "", extensionDescription: String = "", initialDirectory: String = ""): FileChooser {
+    return FileChooser().apply {
+        this.title = title
+        this.extensionFilters.add( FileChooser.ExtensionFilter(nvl(extensionDescription,extensions), extensions.split(",")) )
+        if( initialDirectory.isNotEmpty() )
+            this.initialDirectory = initialDirectory.toFile()
+    }
+}
 
+fun dirPicker(title: String = "", initialDirectory: String = ""): DirectoryChooser {
+    return DirectoryChooser().apply {
+        this.title = title
+        if( initialDirectory.isNotEmpty() && initialDirectory.toPath().exists() ) {
+            this.initialDirectory = initialDirectory.toFile()
+        }
+    }
 }

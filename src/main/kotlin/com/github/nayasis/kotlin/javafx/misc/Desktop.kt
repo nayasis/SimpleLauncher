@@ -9,6 +9,7 @@ import javafx.scene.input.ClipboardContent
 import java.awt.Font
 import java.awt.GraphicsEnvironment
 import java.awt.Toolkit
+import java.awt.datatransfer.DataFlavor
 import java.io.File
 import java.net.URI
 import java.awt.Desktop as AwtDesktop
@@ -88,10 +89,20 @@ object Desktop {
 
 }
 
+private fun clipboard(): Clipboard = Clipboard.getSystemClipboard()
+
 fun Clipboard.set(text: String?) {
-    setContent(ClipboardContent().apply { putString(text) })
+    text?.let{ clipboard().setContent(ClipboardContent().apply {putString(it)}) }
 }
 
 fun Clipboard.set(image: Image?) {
-    image.let { setContent(ClipboardContent().apply { putImage(it) }) }
+    image?.let { clipboard().setContent(ClipboardContent().apply {putImage(it)}) }
+}
+
+fun Clipboard.getText(): String {
+    return clipboard().string
+}
+
+fun Clipboard.getImage(): Image? {
+    return Images.toImage(clipboard())
 }

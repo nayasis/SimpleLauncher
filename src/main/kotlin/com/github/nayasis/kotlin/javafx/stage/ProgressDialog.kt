@@ -4,6 +4,7 @@ import com.github.nayasis.basica.model.Messages
 import javafx.application.Platform
 import javafx.beans.value.ChangeListener
 import javafx.beans.value.ObservableValue
+import javafx.concurrent.Task
 import javafx.concurrent.Worker
 import javafx.concurrent.Worker.State.*
 import javafx.geometry.Insets
@@ -18,6 +19,7 @@ import javafx.scene.paint.Color
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.Callback
+import java.util.concurrent.Executors
 
 class ProgressDialog: Dialog<Void> {
 
@@ -62,6 +64,17 @@ class ProgressDialog: Dialog<Void> {
         return when (worker?.state) {
             CANCELLED, FAILED, SUCCEEDED -> false
             else -> true
+        }
+    }
+
+    companion object {
+        fun run(title:String?, task: Task<*>) {
+            if( ! Platform.isFxApplicationThread() ) return
+            val dialog = ProgressDialog(task).apply {
+                this.title = title
+            }
+            dialog.show()
+            Executors.newSingleThreadExecutor().execute(task)
         }
     }
 
