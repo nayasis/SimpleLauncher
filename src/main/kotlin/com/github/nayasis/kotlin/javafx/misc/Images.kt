@@ -3,11 +3,17 @@ package com.github.nayasis.kotlin.javafx.misc
 import com.github.nayasis.basica.base.Strings
 import com.github.nayasis.basica.file.Files
 import com.github.nayasis.basica.validation.Validator
+import com.github.nayasis.kotlin.basica.extension
+import com.github.nayasis.kotlin.basica.isFile
+import com.github.nayasis.kotlin.basica.decodeToBase64
+import com.github.nayasis.kotlin.basica.found
+import com.github.nayasis.kotlin.basica.toDir
+import com.github.nayasis.kotlin.basica.toFile
+import com.github.nayasis.kotlin.basica.toUrl
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import javafx.scene.input.Clipboard
-import javafx.scene.input.ClipboardContent
 import javafx.scene.input.DragEvent
 import javafx.scene.input.Dragboard
 import javafx.scene.layout.BackgroundImage
@@ -22,27 +28,26 @@ import org.apache.http.conn.ssl.SSLConnectionSocketFactory
 import org.apache.http.impl.client.CloseableHttpClient
 import org.apache.http.impl.client.HttpClients
 import org.apache.http.ssl.SSLContexts
-import tornadofx.HttpClientEngine
 import java.awt.AlphaComposite
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.IOException
-import java.io.UncheckedIOException
-import java.net.MalformedURLException
+import java.lang.Math.toRadians
 import java.net.URL
 import java.nio.file.Path
 import java.security.KeyManagementException
 import java.security.KeyStoreException
 import java.security.NoSuchAlgorithmException
-import java.security.cert.X509Certificate
 import java.util.*
 import javax.imageio.ImageIO
 import javax.net.ssl.SSLContext
 import javax.swing.ImageIcon
 import javax.swing.filechooser.FileSystemView
 import kotlin.collections.HashMap
+import kotlin.math.abs
+import kotlin.math.floor
+import kotlin.math.sin
 
 private val log = KotlinLogging.logger {}
 
@@ -64,9 +69,9 @@ object Images {
      * @return buffered image
      */
     fun toBufferedImage(binary: ByteArray?): BufferedImage? {
-        val stream = ByteArrayInputStream(binary)
+        if( binary == null ) return null
         return try {
-            ImageIO.read(stream)
+            ImageIO.read(ByteArrayInputStream(binary))
         } catch (e: Exception) {
             log.error(e.message, e)
             null
@@ -173,26 +178,21 @@ object Images {
      * @param file image file
      * @return binary data
      */
-    fun toJpgBinary(file: Path): ByteArray {
+    fun toJpgBinary(file: Path?): ByteArray {
         return toJpgBinary(toImage(file))
     }
 
     fun toImage(event: DragEvent?): Image? {
         if (event == null) return null
-        val dragboard = event.dragboard
-        var image: Image? = null
-        if (hasHtmlImgTag(dragboard)) {
-            image = toImage(getSrcFromImageTag(dragboard.html))
-        } else if (hasFile(dragboard)) {
-            image = toImage(getRegularFile(dragboard.files))
-        } else if (dragboard.hasUrl()) {
-            image = toImage(dragboard.url)
-        } else if (dragboard.hasString()) {
-            image = toImage(dragboard.string)
-        } else if (dragboard.hasImage()) {
-            image = dragboard.image
+        val src = event.dragboard
+        return when {
+            hasHtmlImgTag(src) -> toImage(getSrcFromImageTag(src.html))
+            hasFile(src) -> toImage(getRegularFile(src.files))
+            src.hasUrl() -> toImage(src.url)
+            src.hasString() -> toImage(src.string)
+            src.hasImage() -> src.image
+            else -> null
         }
-        return image
     }
 
     private fun getSrcFromImageTag(imgTag: String): String? {
@@ -261,7 +261,7 @@ object Images {
     private fun getHttpClient(): CloseableHttpClient {
         return try {
             val sslContext: SSLContext = SSLContexts.custom()
-                .loadTrustMaterial(null, { _, _ -> true } )
+                .loadTrustMaterial(null) { _, _ -> true }
                 .build()
             val sslSocket = SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE)
             HttpClients.custom().setSSLSocketFactory(sslSocket).build()
@@ -274,38 +274,39 @@ object Images {
         }
     }
 
-    fun toImage(path: Path): Image? {
-        return if (Files.notExists(path)) null else toImage(path.toFile())
+    fun toImage(path: Path?): Image? {
+        return when {
+            path == null -> null
+            path.isFile() -> toImage(path.toFile())
+            else -> null
+        }
     }
 
     fun toImage(file: File?): Image? {
-        return if (Files.notExists(file)) null else Image(file!!.toURI().toString())
+        return when {
+            file == null -> null
+            file.isFile -> Image(file.toURI().toString())
+            else -> null
+        }
     }
 
     fun toIconImage(file: File?): Image? {
-        if (Files.notExists(file)) return null
-        val readIcon = FileSystemView.getFileSystemView().getSystemIcon(file) as ImageIcon
-        return try {
-            toImage(readIcon.image as BufferedImage)
-        } catch (e: UncheckedIOException) {
-            throw com.github.nayasis.basica.exception.unchecked.UncheckedIOException(e)
-        } catch (e: ClassCastException) {
-            throw com.github.nayasis.basica.exception.unchecked.UncheckedIOException(e)
-        }
+        if( file == null || ! file.isFile ) return null
+        val icon = FileSystemView.getFileSystemView().getSystemIcon(file) as ImageIcon?
+        return if( icon == null ) null else toImage(icon.image as BufferedImage)
     }
 
     fun toImage(url: String?): Image? {
-        if (url == null) return null
-        if (Validator.isFound(url, "^http(s?)://")) {
-            return toImage(toURL(url))
-        } else if (Validator.isFound(url, "^data:.*?;base64,")) {
-            val encodedText = url.replaceFirst("^data:.*?;base64,".toRegex(), "")
-            val binary = Base64.getDecoder().decode(encodedText)
-            return toImage(binary)
-        } else if (Files.isFile(url)) {
-            return toImage(File(url))
+        return when {
+            url == null -> null
+            url.found("^http(s?)://".toRegex()) -> toImage(url.toUrl())
+            url.found("^data:.*?;base64,".toRegex()) -> {
+                val encoded = url.replaceFirst("^data:.*?;base64,".toRegex(), "")
+                toImage(encoded.decodeToBase64())
+            }
+            url.toFile().exists() -> toImage(url.toFile())
+            else -> null
         }
-        return null
     }
 
     /**
@@ -320,15 +321,6 @@ object Images {
         image = toBufferedImage(toJpgBinary(image))
         ImageIO.write(image, "jpg", output)
         return "data:image/jpeg;base64," + Base64.getMimeEncoder().encodeToString(output.toByteArray()).replace("[\n\r]".toRegex(), "")
-    }
-
-    private fun toURL(uri: String): URL? {
-        return try {
-            URL(uri)
-        } catch (e: MalformedURLException) {
-            log.trace(e.message, e)
-            null
-        }
     }
 
     fun isAcceptable(event: DragEvent?): Boolean {
@@ -430,49 +422,41 @@ object Images {
 
     fun resize(image: ByteArray?, maxPixel: Double): ByteArray? {
         if (image == null) return image
-        val originalImage = toBufferedImage(image)
-        val resizedImage = resize(originalImage, maxPixel)
-        return toJpgBinary(resizedImage)
+        val original = toBufferedImage(image)
+        val resized = resize(original, maxPixel)
+        return toJpgBinary(resized)
     }
 
     fun rotate(image: Image?, angle: Double): Image? {
+
         if (image == null) return image
-        val radian = Math.toRadians(angle)
-        val sin = Math.abs(Math.sin(radian))
-        val cos = Math.abs(Math.cos(radian))
+
+        val radian = toRadians(angle)
+        val sin = abs(sin(radian))
+        val cos = abs(Math.cos(radian))
         val width = image.width
         val height = image.height
-        val canvasWidth = Math.floor(width * cos + height * sin).toInt()
-        val canvasHeight = Math.floor(height * cos + width * sin).toInt()
-        log.trace("rotate image\n\t- src : {} x {}\n\t- trg : {} x {}", width, height, canvasWidth, canvasHeight)
+        val canvasWidth = floor(width * cos + height * sin).toInt()
+        val canvasHeight = floor(height * cos + width * sin).toInt()
+
+        log.trace { "rotate image\n\t- src : ${width} x ${height}\n\t- trg : ${canvasWidth} x ${canvasHeight}" }
+
         val originalImage = toBufferedImage(image)
         val bufferedImage = BufferedImage(canvasWidth.toInt(), canvasHeight.toInt(), getType(originalImage))
-        val canvas = bufferedImage.createGraphics()
-        canvas.translate((canvasWidth - width) / 2.0, (canvasHeight - height) / 2.0)
-        canvas.rotate(radian, width / 2, height / 2)
-        canvas.drawRenderedImage(originalImage, null)
-        canvas.dispose()
-        return toImage(bufferedImage)
-    }
 
-    fun setImageToClipboard(image: Image?) {
-        val clipboard = Clipboard.getSystemClipboard()
-        val content = ClipboardContent()
-        content.putImage(image)
-        clipboard.setContent(content)
-    }
-
-    fun getImageFromClipboard(): Image? {
-        val clipboard = Clipboard.getSystemClipboard()
-        val contentTypes = clipboard.contentTypes
-        for (format in contentTypes) {
-            log.debug(format.toString())
+        with(bufferedImage.createGraphics()) {
+            translate((canvasWidth - width) / 2.0, (canvasHeight - height) / 2.0)
+            rotate(radian, width / 2, height / 2)
+            drawRenderedImage(originalImage, null)
+            dispose()
         }
-        log.trace("clipboard content types : {}", contentTypes)
-        return toImage(clipboard)
+
+        return toImage(bufferedImage)
+
     }
 
     fun toBackgroundImage(image: Image?): BackgroundImage? {
+        if( image == null ) return image
         val sizeProperty = BackgroundSize(BackgroundSize.AUTO, BackgroundSize.AUTO, true, true, true, false)
         return BackgroundImage(image,
             BackgroundRepeat.ROUND,
@@ -483,21 +467,22 @@ object Images {
     }
 
     fun toBackgroundImage(uri: String?): BackgroundImage? {
-        val image = Image(uri, 0.0, 0.0, false, true, true)
-        return toBackgroundImage(image)
+        return uri?.let {
+            val image = Image(uri, 0.0, 0.0, false, true, true)
+            toBackgroundImage(image)
+        }
     }
 
-    fun toFile(image: Image?, filePath: String?): File? {
-        if (Validator.isEmpty(filePath)) return null
-        Files.makeDir(Files.directory(filePath))
+    fun toFile(image: Image?, path: String?): File? {
+        if( image == null || path.isNullOrEmpty() ) return null
+        Files.makeDir(path.toDir())
+        val output = path.toFile()
+        val extension = output.extension("jpg")
         var bufferedImage = toBufferedImage(image)
-        val fileExtention = Validator.nvl(Files.extension(filePath), "jpg")
-        val outputFile = File(filePath)
-        if ("jpg".equals(fileExtention,true)) {
+        if ("jpg" == extension )
             bufferedImage = toBufferedImage(toJpgBinary(bufferedImage))
-        }
-        ImageIO.write(bufferedImage, fileExtention, outputFile)
-        return outputFile
+        ImageIO.write(bufferedImage, extension, output)
+        return output
     }
 
 }
