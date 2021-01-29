@@ -27,3 +27,7 @@ fun <T> nvl(value: T?, other: T?, another: T ): T {
     if (isNotEmpty(other)) return other!!
     return another
 }
+
+fun nvl(value: String?): String {
+    return value ?: ""
+}
