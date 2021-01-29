@@ -4,25 +4,29 @@ import com.github.nayasis.kotlin.basica.FieldProperty
 import com.github.nayasis.kotlin.basica.toList
 import com.github.nayasis.kotlin.javafx.model.Point
 import com.github.nayasis.kotlin.javafx.property.InsetProperty
-import javafx.beans.property.ReadOnlyBooleanProperty
 import javafx.beans.property.ReadOnlyBooleanWrapper
 import javafx.event.EventHandler
 import javafx.geometry.Rectangle2D
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Button
+import javafx.scene.control.Tooltip
 import javafx.scene.image.Image
 import javafx.scene.input.MouseEvent
+import javafx.scene.input.MouseEvent.*
+import javafx.scene.layout.HBox
 import javafx.scene.layout.Pane
-import javafx.scene.paint.Color
 import javafx.stage.Screen
 import javafx.stage.Stage
-import javafx.stage.StageStyle
 import javafx.stage.Window
 import javafx.stage.WindowEvent
+import tornadofx.Stylesheet.Companion.button
+import tornadofx.add
+import tornadofx.button
+import tornadofx.getChildList
 import java.util.*
+import java.util.function.UnaryOperator
 import kotlin.collections.ArrayList
-import kotlin.reflect.KProperty
 
 val DEFAULT_ICONS = ArrayList<Image>()
 
@@ -43,15 +47,15 @@ fun Stage.loadDefaultIcon() {
 }
 
 fun Stage.setBorderless(option:Stage.() -> Unit = {}) {
-    initStyle(StageStyle.TRANSPARENT)
-    scene.fill = Color.TRANSPARENT
+//    initStyle(StageStyle.TRANSPARENT)
+//    scene?.fill = Color.TRANSPARENT
     addConstraintRetainer()
     addResizeHandler()
     this.apply(option)
 }
 
 fun Stage.addConstraintRetainer() {
-    scene.root.let {
+    scene?.root.let {
         if( it is Pane ) {
             scene.widthProperty().addListener  { _,_,new -> it.prefWidth  = new.toDouble() }
             scene.heightProperty().addListener { _,_,new -> it.prefHeight = new.toDouble() }
@@ -59,31 +63,48 @@ fun Stage.addConstraintRetainer() {
     }
 }
 
+private var Stage.resizeListener: ResizeListener? by FieldProperty{null}
+
 fun Stage.addResizeHandler() {
-    val listener = ResizeListener(this)
-    with(this.scene) {
-        addEventHandler(MouseEvent.MOUSE_MOVED, listener)
-        addEventHandler(MouseEvent.MOUSE_PRESSED, listener)
-        addEventHandler(MouseEvent.MOUSE_DRAGGED, listener)
-        addEventHandler(MouseEvent.MOUSE_EXITED, listener)
-        addEventHandler(MouseEvent.MOUSE_EXITED_TARGET, listener)
-        root.childrenUnmodifiable.forEach{ addResizeListener(it,listener) }
+    if( resizeListener == null )
+        resizeListener = ResizeListener(this)
+    scene?.let{
+        listOf(MOUSE_MOVED,MOUSE_PRESSED,MOUSE_DRAGGED,MOUSE_EXITED,MOUSE_EXITED_TARGET).forEach { event -> addEventHandler(event, resizeListener) }
+        it.root.childrenUnmodifiable.forEach{ node -> addResizeListener(node,resizeListener!!) }
     }
 }
 
 private fun addResizeListener(node: Node, listener: EventHandler<MouseEvent>) {
     with(node) {
-        addEventHandler(MouseEvent.MOUSE_MOVED, listener)
-        addEventHandler(MouseEvent.MOUSE_PRESSED, listener)
-        addEventHandler(MouseEvent.MOUSE_DRAGGED, listener)
-        addEventHandler(MouseEvent.MOUSE_EXITED, listener)
-        addEventHandler(MouseEvent.MOUSE_EXITED_TARGET, listener)
+        listOf(MOUSE_MOVED,MOUSE_PRESSED,MOUSE_DRAGGED,MOUSE_EXITED,MOUSE_EXITED_TARGET).forEach { event -> addEventHandler(event, listener) }
         if (this is Parent)
             childrenUnmodifiable.forEach{ addResizeListener(it,listener) }
     }
 }
 
-fun Stage.addMoveHandler( handler: Node ) {
+fun Stage.addMoveHandler(node: Node, drawButtons: Boolean = true) {
+
+    var handler = if(drawButtons) {
+
+        val children = node.parent.getChildList()
+        if( children != null ) {
+            var idx = children?.indexOf(node)
+            val hbox = HBox().apply {
+                add(node)
+                add(Button("close").also{this@addMoveHandler.addClose(it)})
+                add(Button("hide").also{this@addMoveHandler.addIconified(it)})
+                add(Button("zoom").also{this@addMoveHandler.addMaximized(it)})
+            }
+            children.remove(hbox)
+            children.add(idx,hbox)
+            hbox
+        } else {
+            node
+        }
+
+    } else {
+        node
+    }
 
     val offset = Point()
 
@@ -97,6 +118,7 @@ fun Stage.addMoveHandler( handler: Node ) {
             offset.y = e.sceneY
         }
         setOnMouseDragged { e ->
+            if(resizeListener == null || resizeListener!!.onDragged()) return@setOnMouseDragged
             if( isMaximized )
                 isMaximized = false
             x = e.screenX - offset.x
