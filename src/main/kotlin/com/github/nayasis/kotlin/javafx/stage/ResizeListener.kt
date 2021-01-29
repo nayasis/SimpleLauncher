@@ -6,15 +6,21 @@ import javafx.scene.Cursor
 import javafx.scene.input.MouseEvent
 import javafx.scene.input.MouseEvent.*
 import javafx.stage.Stage
+import mu.KotlinLogging
+
+private val log = KotlinLogging.logger{}
 
 class ResizeListener(
-    val stage: Stage,
+    private val stage: Stage,
+    private val margin: Int = 5
 ): EventHandler<MouseEvent> {
 
-    var border: Int = 5
-    val position: Point = Point()
-
+    private val position: Point = Point()
     private var cursor: Cursor = Cursor.DEFAULT
+
+    fun onDragged(): Boolean {
+        return cursor != Cursor.DEFAULT
+    }
 
     override fun handle(event: MouseEvent) {
 
@@ -26,14 +32,14 @@ class ResizeListener(
         when {
             MOUSE_MOVED == eventType -> {
                 cursor = when {
-                    pointer.x <= border && pointer.y <= border                              -> Cursor.NW_RESIZE
-                    pointer.x <= border && pointer.y >= scene.height - border               -> Cursor.SW_RESIZE
-                    pointer.x >= scene.width - border && pointer.y <= border                -> Cursor.NE_RESIZE
-                    pointer.x >= scene.width - border && pointer.y >= scene.height - border -> Cursor.SE_RESIZE
-                    pointer.x <= border                                                     -> Cursor.W_RESIZE
-                    pointer.x >= scene.width - border                                       -> Cursor.E_RESIZE
-                    pointer.y <= border                                                     -> Cursor.N_RESIZE
-                    pointer.y >= scene.height - border                                      -> Cursor.S_RESIZE
+                    pointer.x <= margin && pointer.y <= margin                              -> Cursor.NW_RESIZE
+                    pointer.x <= margin && pointer.y >= scene.height - margin               -> Cursor.SW_RESIZE
+                    pointer.x >= scene.width - margin && pointer.y <= margin                -> Cursor.NE_RESIZE
+                    pointer.x >= scene.width - margin && pointer.y >= scene.height - margin -> Cursor.SE_RESIZE
+                    pointer.x <= margin                                                     -> Cursor.W_RESIZE
+                    pointer.x >= scene.width - margin                                       -> Cursor.E_RESIZE
+                    pointer.y <= margin                                                     -> Cursor.N_RESIZE
+                    pointer.y >= scene.height - margin                                      -> Cursor.S_RESIZE
                     else                                                                    -> Cursor.DEFAULT
                 }
                 scene.cursor = cursor
@@ -48,7 +54,7 @@ class ResizeListener(
             eventType == MOUSE_DRAGGED -> {
                 if ( cursor == Cursor.DEFAULT ) return
                 if ( cursor !in listOf(Cursor.W_RESIZE,Cursor.E_RESIZE) ) {
-                    val minHeight = if (stage.minHeight > border * 2) stage.minHeight else (border * 2).toDouble()
+                    val minHeight = if (stage.minHeight > margin * 2) stage.minHeight else (margin * 2).toDouble()
                     if ( cursor in listOf(Cursor.NW_RESIZE,Cursor.N_RESIZE,Cursor.NE_RESIZE) ) {
                         if (stage.height > minHeight || pointer.y < 0) {
                             stage.height = stage.y - event.screenY + stage.height
@@ -61,7 +67,7 @@ class ResizeListener(
                     }
                 }
                 if ( cursor !in listOf(Cursor.N_RESIZE,Cursor.S_RESIZE) ) {
-                    val minWidth = if (stage.minWidth > border * 2) stage.minWidth else (border * 2).toDouble()
+                    val minWidth = if (stage.minWidth > margin * 2) stage.minWidth else (margin * 2).toDouble()
                     if ( cursor in listOf(Cursor.NW_RESIZE,Cursor.W_RESIZE,Cursor.SW_RESIZE) ) {
                         if (stage.width > minWidth || pointer.x < 0) {
                             stage.width = stage.x - event.screenX + stage.width
