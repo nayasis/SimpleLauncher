@@ -37,7 +37,9 @@ fun String.toUrl(raiseException: Boolean = false): URL? {
     }
 }
 
-fun String.decodeToBase64(): ByteArray = Base64.getDecoder().decode(this)
+fun String.decodeBase64(): ByteArray = Base64.getDecoder().decode(this)
+
+fun ByteArray.encodeBase64(): String = Base64.getMimeEncoder().encodeToString(this)
 
 fun String.found(pattern: Pattern?): Boolean {
     return pattern?.matcher(this)?.find() ?: false

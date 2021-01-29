@@ -1,11 +1,12 @@
+@file:Suppress("MemberVisibilityCanBePrivate")
+
 package com.github.nayasis.kotlin.javafx.misc
 
-import com.github.nayasis.basica.base.Strings
 import com.github.nayasis.basica.file.Files
-import com.github.nayasis.basica.validation.Validator
 import com.github.nayasis.kotlin.basica.extension
 import com.github.nayasis.kotlin.basica.isFile
-import com.github.nayasis.kotlin.basica.decodeToBase64
+import com.github.nayasis.kotlin.basica.decodeBase64
+import com.github.nayasis.kotlin.basica.encodeBase64
 import com.github.nayasis.kotlin.basica.found
 import com.github.nayasis.kotlin.basica.toDir
 import com.github.nayasis.kotlin.basica.toFile
@@ -21,6 +22,7 @@ import javafx.scene.layout.BackgroundPosition
 import javafx.scene.layout.BackgroundRepeat
 import javafx.scene.layout.BackgroundSize
 import mu.KotlinLogging
+import org.apache.http.HttpEntity
 import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.conn.ssl.NoopHostnameVerifier
@@ -33,12 +35,10 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.lang.Math.round
 import java.lang.Math.toRadians
 import java.net.URL
 import java.nio.file.Path
-import java.security.KeyManagementException
-import java.security.KeyStoreException
-import java.security.NoSuchAlgorithmException
 import java.util.*
 import javax.imageio.ImageIO
 import javax.net.ssl.SSLContext
@@ -47,6 +47,7 @@ import javax.swing.filechooser.FileSystemView
 import kotlin.collections.HashMap
 import kotlin.math.abs
 import kotlin.math.floor
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 private val log = KotlinLogging.logger {}
@@ -186,8 +187,8 @@ object Images {
         if (event == null) return null
         val src = event.dragboard
         return when {
-            hasHtmlImgTag(src) -> toImage(getSrcFromImageTag(src.html))
-            hasFile(src) -> toImage(getRegularFile(src.files))
+            src.hasHtmlImgTag() -> toImage(getSrcFromImageTag(src.html))
+            src.hasRegularFile() -> toImage(getRegularFile(src.files))
             src.hasUrl() -> toImage(src.url)
             src.hasString() -> toImage(src.string)
             src.hasImage() -> src.image
@@ -196,31 +197,32 @@ object Images {
     }
 
     private fun getSrcFromImageTag(imgTag: String): String? {
-        val info = imgTag.replaceFirst("(?i)^<img\\W.*?(src|srcset)=[\"|'](.*?)[\"|'].*?>".toRegex(),
-            "$1 :: $2").split(" :: ".toRegex()).toTypedArray()
-        val type = Strings.toLowerCase(info[0])
-        val url = Strings.nvl(info[1]).replace("(?i)&amp;".toRegex(), "&")
-        log.trace("html : {}\ntype : {}\nurl  : {}", imgTag, type, url)
-        if ("srcset" == type) {
-            val urls: MutableMap<String?, String> = HashMap()
-            var tmpKey = 0
-            for (line in Strings.split(url, ",")) {
-                val values = Strings.split(line, " ")
-                if (values.size == 2) {
-                    urls[values[1]] = values[0]
-                } else if (values.size == 1) {
-                    urls[tmpKey++.toString()] = values[0]
+
+        val regex = "(?i)^<img\\W.*?(src|srcset)=[\"|'](.*?)[\"|'].*?>".toRegex()
+        val info = imgTag.replaceFirst(regex, "$1 :: $2").split(" :: ")
+        val type = info[0].toLowerCase()
+        val url  = info[1].replace("(?i)&amp;".toRegex(), "&")
+
+        log.trace { "html : ${imgTag}\ntype : ${type}\nurl  : ${url}" }
+
+        return when(type) {
+            "src" -> url
+            "srcset" -> {
+                val urls = HashMap<String,String>()
+                var tmpKey = 0
+                for (line in url.split(",")) {
+                    val values = line.split(" ")
+                    if (values.size == 2) {
+                        urls[values[1]] = values[0]
+                    } else if (values.size == 1) {
+                        urls[tmpKey++.toString()] = values[0]
+                    }
                 }
+                if(urls.isNotEmpty()) urls[ ArrayList(urls.keys).apply{reverse()}[0] ] else null
             }
-            if (!urls.isEmpty()) {
-                val keyset: List<String?> = ArrayList(urls.keys)
-                Collections.reverse(keyset)
-                return urls[keyset[0]]
-            }
-        } else if ("src" == type) {
-            return url
+            else -> null
         }
-        return null
+
     }
 
     fun toImage(image: BufferedImage?): Image? {
@@ -234,44 +236,31 @@ object Images {
     }
 
     fun toImage(url: URL?): Image? {
-        val httpClient: CloseableHttpClient = getHttpClient()
+
+        val httpClient = getHttpClient()
         val request = HttpGet(url.toString())
         var response: CloseableHttpResponse? = null
-        try {
+
+        return try {
             response = httpClient.execute(request)
-            val entity: org.apache.http.HttpEntity = response.getEntity()
-            if (entity != null) {
-                entity.getContent().use { inputStream ->
-                    val image: BufferedImage = ImageIO.read(inputStream)
-                    return toImage(image)
-                }
-            } else {
-                return null
-            }
+            val image: BufferedImage = ImageIO.read(response.getEntity().content)
+            toImage(image)
+        } catch (e: Exception) {
+            log.error(e.message,e)
+            null
         } finally {
-            try {
-                response?.close()
-            } catch (ignored: Exception) {}
-            try {
-                httpClient.close()
-            } catch (ignored: Exception) {}
+            try { response?.close()  } catch (ignored: Exception) {}
+            try { httpClient.close() } catch (ignored: Exception) {}
         }
+
     }
 
     private fun getHttpClient(): CloseableHttpClient {
-        return try {
-            val sslContext: SSLContext = SSLContexts.custom()
-                .loadTrustMaterial(null) { _, _ -> true }
-                .build()
-            val sslSocket = SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE)
-            HttpClients.custom().setSSLSocketFactory(sslSocket).build()
-        } catch (e: NoSuchAlgorithmException) {
-            throw RuntimeException(e)
-        } catch (e: KeyStoreException) {
-            throw RuntimeException(e)
-        } catch (e: KeyManagementException) {
-            throw RuntimeException(e)
-        }
+        val sslContext: SSLContext = SSLContexts.custom()
+            .loadTrustMaterial(null) { _, _ -> true }
+            .build()
+        val sslSocket = SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE)
+        return HttpClients.custom().setSSLSocketFactory(sslSocket).build()
     }
 
     fun toImage(path: Path?): Image? {
@@ -302,7 +291,7 @@ object Images {
             url.found("^http(s?)://".toRegex()) -> toImage(url.toUrl())
             url.found("^data:.*?;base64,".toRegex()) -> {
                 val encoded = url.replaceFirst("^data:.*?;base64,".toRegex(), "")
-                toImage(encoded.decodeToBase64())
+                toImage(encoded.decodeBase64())
             }
             url.toFile().exists() -> toImage(url.toFile())
             else -> null
@@ -320,72 +309,40 @@ object Images {
         var image = toBufferedImage(toImage(url))
         image = toBufferedImage(toJpgBinary(image))
         ImageIO.write(image, "jpg", output)
-        return "data:image/jpeg;base64," + Base64.getMimeEncoder().encodeToString(output.toByteArray()).replace("[\n\r]".toRegex(), "")
+        return "data:image/jpeg;base64," + output.toByteArray().encodeBase64().replace("[\n\r]".toRegex(), "")
     }
 
     fun isAcceptable(event: DragEvent?): Boolean {
-        if (event == null) return false
-        val dragboard = event.dragboard
-        if (hasHtmlImgTag(dragboard)) return true
-        if (dragboard.hasImage()) return true
-        if (dragboard.hasUrl()) return true
-        return if (dragboard.hasString()) true else hasFile(dragboard)
-    }
-
-    private fun hasFile(dragboard: Dragboard): Boolean {
-        return dragboard.hasFiles() && hasRegularFile(dragboard.files)
-    }
-
-    private fun hasHtmlImgTag(dragboard: Dragboard): Boolean {
-        return dragboard.hasHtml() && Validator.isFound(dragboard.html, "(?i)^<img\\W")
+        with(event) {
+            return when {
+                this == null -> false
+                dragboard.hasHtmlImgTag() -> true
+                dragboard.hasImage() -> true
+                dragboard.hasUrl() -> true
+                dragboard.hasRegularFile() -> true
+                dragboard.hasString() -> true
+                else -> false
+            }
+        }
     }
 
     fun toImage(clipboard: Clipboard?): Image? {
-        if (clipboard == null) return null
-        var image: Image? = null
-        if (clipboard.hasImage()) {
-            image = clipboard.image
-            val bytes = toJpgBinary(image)
-            image = toImage(bytes)
-        } else if (clipboard.hasFiles()) {
-            val file = getRegularFile(clipboard.files)
-            image = toImage(file)
-        } else if (clipboard.hasUrl()) {
-            image = toImage(clipboard.url)
-        } else if (clipboard.hasString()) {
-            image = toImage(clipboard.string)
+        with(clipboard) {
+            if (this == null) return null
+            return when {
+                hasImage()  -> toImage(toJpgBinary(image))
+                hasFiles()  -> toImage(getRegularFile(files))
+                hasUrl()    -> toImage(url)
+                hasString() -> toImage(string)
+                else -> null
+            }
         }
-        return image
-    }
-
-
-    private fun hasRegularFile(files: List<File>): Boolean {
-        return getRegularFile(files) != null
-    }
-
-    private fun getRegularFile(files: List<File>): File? {
-        if (Validator.isEmpty(files)) return null
-        for (file in files) {
-            if (!file.isDirectory) return file
-        }
-        return null
-    }
-
-    fun isNotValid(image: Image?): Boolean {
-        if (image == null) return true
-        val width = image.width
-        val height = image.height
-        return width == 0.0 && height == 0.0
-    }
-
-    fun isValid(image: Image?): Boolean {
-        return !isNotValid(image)
     }
 
     fun resize(image: BufferedImage?, width: Double, height: Double): BufferedImage? {
         if (image == null) return image
-        val imgWidth = Math.round(width).toInt()
-        val imgHeight = Math.round(height).toInt()
+        val imgWidth = width.roundToInt()
+        val imgHeight = height.roundToInt()
         val type = getType(image)
         val resizedImage = BufferedImage(imgWidth, imgHeight, type)
         val canvas = resizedImage.createGraphics()
@@ -396,8 +353,8 @@ object Images {
 
     fun resize(image: BufferedImage?, maxPixel: Double): BufferedImage? {
         if (image == null) return image
-        var width = Math.max(image.width, 1).toDouble()
-        var height = Math.max(image.height, 1).toDouble()
+        var width = image.width.coerceAtLeast(1).toDouble()
+        var height = image.height.coerceAtLeast(1).toDouble()
         if (width < maxPixel && height < maxPixel) return image
         if (width > height) {
             height = height * maxPixel / width
@@ -486,3 +443,20 @@ object Images {
     }
 
 }
+
+private fun Dragboard.hasRegularFile(): Boolean {
+    return this.hasFiles() && getRegularFile(this.files) != null
+}
+
+private fun Dragboard.hasHtmlImgTag(): Boolean {
+    return this.hasHtml() && this.html.found("(?i)^<img\\W".toPattern())
+}
+
+private fun Image?.isValid(): Boolean {
+    return (this?.width ?: 0.0) * (this?.height ?: 0.0) > 0
+}
+
+private fun getRegularFile(files: List<File>?): File? {
+    return files?.firstOrNull { it.isFile } ?: null
+}
+
