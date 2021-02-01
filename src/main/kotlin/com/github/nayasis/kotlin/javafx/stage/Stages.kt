@@ -10,7 +10,6 @@ import javafx.geometry.Rectangle2D
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Button
-import javafx.scene.control.Tooltip
 import javafx.scene.image.Image
 import javafx.scene.input.MouseEvent
 import javafx.scene.input.MouseEvent.*
@@ -20,12 +19,9 @@ import javafx.stage.Screen
 import javafx.stage.Stage
 import javafx.stage.Window
 import javafx.stage.WindowEvent
-import tornadofx.Stylesheet.Companion.button
 import tornadofx.add
-import tornadofx.button
 import tornadofx.getChildList
 import java.util.*
-import java.util.function.UnaryOperator
 import kotlin.collections.ArrayList
 
 val DEFAULT_ICONS = ArrayList<Image>()
@@ -93,7 +89,7 @@ fun Stage.addMoveHandler(node: Node, drawButtons: Boolean = true) {
                 add(node)
                 add(Button("close").also{this@addMoveHandler.addClose(it)})
                 add(Button("hide").also{this@addMoveHandler.addIconified(it)})
-                add(Button("zoom").also{this@addMoveHandler.addMaximized(it)})
+                add(Button("zoom").also{this@addMoveHandler.addZoomed(it)})
             }
             children.remove(hbox)
             children.add(idx,hbox)
@@ -111,7 +107,7 @@ fun Stage.addMoveHandler(node: Node, drawButtons: Boolean = true) {
     with(handler) {
         setOnMouseClicked { e ->
             if( e.clickCount <= 1 ) return@setOnMouseClicked
-            isMaximized = true
+            setZoom(true)
         }
         setOnMousePressed { e ->
             offset.x = e.sceneX
@@ -119,8 +115,8 @@ fun Stage.addMoveHandler(node: Node, drawButtons: Boolean = true) {
         }
         setOnMouseDragged { e ->
             if(resizeListener == null || resizeListener!!.onDragged()) return@setOnMouseDragged
-            if( isMaximized )
-                isMaximized = false
+            if( isZoomed() )
+                setZoom(false)
             x = e.screenX - offset.x
             y = e.screenY - offset.y
         }
@@ -136,18 +132,22 @@ fun Stage.addIconified(button: Button) {
     button.setOnAction { this.isIconified = true }
 }
 
-fun Stage.addMaximized(button: Button) {
+fun Stage.addZoomed(button: Button) {
     button.setOnAction {
-        isMaximized = ! isMaximized
+        setZoom( ! isZoomed() )
     }
 }
 
-var Stage.isZoomed: ReadOnlyBooleanWrapper by FieldProperty{ ReadOnlyBooleanWrapper(it,"zoomed") }
+var Stage.zoomed: ReadOnlyBooleanWrapper by FieldProperty{ ReadOnlyBooleanWrapper(it,"zoomed") }
+
+fun Stage.isZoomed(): Boolean {
+    return zoomed.get()
+}
 
 var Stage.previousZoomSize: InsetProperty? by FieldProperty{ null }
 
 fun Stage.setZoom( enable: Boolean ) {
-    isZoomed.set(enable)
+    zoomed.set(enable)
     if( enable ) {
         if( maximizedProperty() != null ) {
             previousZoomSize = InsetProperty(this)
