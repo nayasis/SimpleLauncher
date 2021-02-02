@@ -45,6 +45,7 @@ repositories {
 	mavenCentral()
 	jcenter()
 	maven { url = uri("https://jitpack.io") }
+	maven { url = uri("https://raw.github.com/nayasis/maven-repo/mvn-repo") }
 }
 
 dependencies {
