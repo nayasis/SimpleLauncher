@@ -198,10 +198,10 @@ object Images {
 
     private fun getSrcFromImageTag(imgTag: String): String? {
 
-        val regex = "(?i)^<img\\W.*?(src|srcset)=[\"|'](.*?)[\"|'].*?>".toRegex()
+        val regex = "(?is)^<img\\W.*?(src|srcset)=[\"|'](.*?)[\"|'].*?>".toRegex()
         val info = imgTag.replaceFirst(regex, "$1 :: $2").split(" :: ")
         val type = info[0].toLowerCase()
-        val url  = info[1].replace("(?i)&amp;".toRegex(), "&")
+        val url  = info[1].replace("(?is)&amp;".toRegex(), "&")
 
         log.trace { "html : ${imgTag}\ntype : ${type}\nurl  : ${url}" }
 
@@ -449,7 +449,7 @@ private fun Dragboard.hasRegularFile(): Boolean {
 }
 
 private fun Dragboard.hasHtmlImgTag(): Boolean {
-    return this.hasHtml() && this.html.found("(?i)^<img\\W".toPattern())
+    return this.hasHtml() && this.html.found("(?is)^<img\\W".toPattern())
 }
 
 private fun Image?.isValid(): Boolean {
