@@ -6,6 +6,7 @@ import com.github.nayasis.kotlin.javafx.model.Point
 import com.github.nayasis.kotlin.javafx.property.InsetProperty
 import javafx.beans.property.ReadOnlyBooleanWrapper
 import javafx.event.EventHandler
+import javafx.geometry.Point2D
 import javafx.geometry.Rectangle2D
 import javafx.scene.Node
 import javafx.scene.Parent
@@ -149,18 +150,24 @@ var Stage.previousZoomSize: InsetProperty? by FieldProperty{ null }
 fun Stage.setZoom( enable: Boolean ) {
     zoomed.set(enable)
     if( enable ) {
-        if( maximizedProperty() != null ) {
-            previousZoomSize = InsetProperty(this)
-            Screen.getScreensForRectangle(Rectangle2D(x,y,width,height)).get(0)?.visualBounds?.let {
-                this.x      = it.minX
-                this.y      = it.minY
-                this.width  = it.width
-                this.height = it.height
-            }
+        previousZoomSize = InsetProperty(this)
+        BoundaryChecker.getMajorScreen(this).visualBounds.let {
+            this.x      = it.minX
+            this.y      = it.minY
+            this.width  = it.width
+            this.height = it.height
         }
     } else {
         previousZoomSize?.apply(this)
         previousZoomSize = null
     }
 
+}
+
+fun Stage.boundary(): Rectangle2D {
+    return Rectangle2D(this.x, this.y, this.width, this.height)
+}
+
+fun Stage.startPoint(): Point2D {
+    return Point2D(x,y)
 }
