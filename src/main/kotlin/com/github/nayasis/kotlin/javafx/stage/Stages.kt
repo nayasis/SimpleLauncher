@@ -88,22 +88,19 @@ private fun addResizeListener(node: Node, listener: EventHandler<MouseEvent>) {
     }
 }
 
-fun buttonClose(): Button = button("close")
-fun buttonZoom(): Button = button("zoom")
-fun buttonHide(): Button = button("hide")
-fun button(type: String): Button {
+private fun button(type: String): Button {
     return Button().apply {
         tooltip = Tooltip(type.message())
         stylesheets.add("basicafx/css/button.css")
-        addClass("btn-window-$type")
+        isFocusTraversable = false
+        addClass("btn-window","btn-window-$type")
     }
 }
-
-fun functionButtons(stage: Stage): HBox {
+private fun buttonsWindow(stage: Stage): HBox {
     return HBox().apply {
-        add(buttonHide().also{stage.addIconified(it)})
-        add(buttonZoom().also{stage.addZoomed(it)})
-        add(buttonClose().also{stage.addClose(it)})
+        add(button("hide").also{stage.addIconified(it)})
+        add(button("zoom").also{stage.addZoomed(it)})
+        add(button("close").also{stage.addClose(it)})
         spacing = 2.0
         padding = Insets(0.0,5.0,0.0,0.0)
     }
@@ -111,28 +108,21 @@ fun functionButtons(stage: Stage): HBox {
 
 fun Stage.addMoveHandler(node: Node, buttons: Boolean = false) {
 
-    val self = this
-
+    val stage = this
     var handler = if(buttons) {
-
         val children = node.parent.getChildList()
         if( children != null ) {
-            var idx = children?.indexOf(node)
+            var idx = children.indexOf(node)
             val hbox = HBox().apply {
                 add(node)
                 add(Region().apply {HBox.setHgrow(this,Priority.ALWAYS)})
-                add(functionButtons(self))
+                add(buttonsWindow(stage))
             }
             children.remove(hbox)
             children.add(idx,hbox)
             hbox
-        } else {
-            node
-        }
-
-    } else {
-        node
-    }
+        } else node
+    } else node
 
     val offset = Point()
 
