@@ -16,14 +16,17 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.input.MouseEvent.*
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Pane
-import javafx.stage.Screen
 import javafx.stage.Stage
 import javafx.stage.Window
 import javafx.stage.WindowEvent
+import mu.KotlinLogging
 import tornadofx.add
 import tornadofx.getChildList
 import java.util.*
 import kotlin.collections.ArrayList
+import kotlin.math.abs
+
+private val log = KotlinLogging.logger {}
 
 val DEFAULT_ICONS = ArrayList<Image>()
 
@@ -116,10 +119,27 @@ fun Stage.addMoveHandler(node: Node, drawButtons: Boolean = true) {
         }
         setOnMouseDragged { e ->
             if(resizeListener == null || resizeListener!!.onDragged()) return@setOnMouseDragged
-            if( isZoomed() )
+            if( isZoomed() ) {
                 setZoom(false)
-            x = e.screenX - offset.x
-            y = e.screenY - offset.y
+                val margin = width / 2
+                val screen = BoundaryChecker.getScreenContains(x,y)?.visualBounds
+                val sub = if( screen?.contains(boundary()) == true ) {
+                    if( ! screen.contains(e.screenX - margin, y) ) {
+                        + abs(screen.minX - e.screenX)
+                    } else if( ! screen.contains(e.screenX + margin, y) ) {
+                        - abs(screen.maxX - e.screenX)
+                    } else {
+                        0.0
+                    }
+                } else {
+                    0.0
+                }
+                x = e.screenX + margin + sub
+                offset.x = margin - sub
+            } else {
+                x = e.screenX - offset.x
+                y = e.screenY - offset.y
+            }
         }
     }
 
