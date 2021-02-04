@@ -8,7 +8,6 @@ import com.github.nayasis.kotlin.javafx.property.InsetProperty
 import javafx.beans.property.ReadOnlyBooleanWrapper
 import javafx.event.EventHandler
 import javafx.geometry.Insets
-import javafx.geometry.Point2D
 import javafx.geometry.Rectangle2D
 import javafx.scene.Node
 import javafx.scene.Parent
@@ -21,6 +20,7 @@ import javafx.scene.layout.HBox
 import javafx.scene.layout.Pane
 import javafx.scene.layout.Priority
 import javafx.scene.layout.Region
+import javafx.scene.paint.Color
 import javafx.stage.Stage
 import javafx.stage.Window
 import javafx.stage.WindowEvent
@@ -52,19 +52,28 @@ fun Stage.loadDefaultIcon() {
     }
 }
 
-fun Stage.setBorderless(option:Stage.() -> Unit = {}) {
+fun Stage.setBorderless(option: Stage.() -> Unit = {}, defaultCss: Boolean = true) {
+
 //    initStyle(StageStyle.TRANSPARENT)
-//    scene?.fill = Color.TRANSPARENT
+
+    // for applying css freely
+    scene?.fill = Color.TRANSPARENT
+
     addConstraintRetainer()
     addResizeHandler()
+
+    if(defaultCss) {
+       scene?.stylesheets?.add("basicafx/css/borderless/root.css")
+    }
+
     this.apply(option)
 }
 
 fun Stage.addConstraintRetainer() {
     scene?.root.let {
         if( it is Pane ) {
-            scene.widthProperty().addListener  { _,_,new -> it.prefWidth  = new.toDouble() }
-            scene.heightProperty().addListener { _,_,new -> it.prefHeight = new.toDouble() }
+            scene.widthProperty().addListener  { _, _, new -> it.prefWidth  = new.toDouble() }
+            scene.heightProperty().addListener { _, _, new -> it.prefHeight = new.toDouble() }
         }
     }
 }
@@ -75,34 +84,40 @@ fun Stage.addResizeHandler() {
     if( resizeListener == null )
         resizeListener = ResizeListener(this)
     scene?.let{
-        listOf(MOUSE_MOVED,MOUSE_PRESSED,MOUSE_DRAGGED,MOUSE_EXITED,MOUSE_EXITED_TARGET).forEach { event -> addEventHandler(event, resizeListener) }
-        it.root.childrenUnmodifiable.forEach{ node -> addResizeListener(node,resizeListener!!) }
+        listOf(MOUSE_MOVED, MOUSE_PRESSED, MOUSE_DRAGGED, MOUSE_EXITED, MOUSE_EXITED_TARGET).forEach { event -> addEventHandler(event, resizeListener) }
+        it.root.childrenUnmodifiable.forEach{ node -> addResizeListener(node, resizeListener!!) }
     }
 }
 
 private fun addResizeListener(node: Node, listener: EventHandler<MouseEvent>) {
     with(node) {
-        listOf(MOUSE_MOVED,MOUSE_PRESSED,MOUSE_DRAGGED,MOUSE_EXITED,MOUSE_EXITED_TARGET).forEach { event -> addEventHandler(event, listener) }
+        listOf(MOUSE_MOVED, MOUSE_PRESSED, MOUSE_DRAGGED, MOUSE_EXITED, MOUSE_EXITED_TARGET).forEach { event -> addEventHandler(event, listener) }
         if (this is Parent)
-            childrenUnmodifiable.forEach{ addResizeListener(it,listener) }
+            childrenUnmodifiable.forEach{ addResizeListener(it, listener) }
     }
 }
 
 private fun button(type: String): Button {
     return Button().apply {
         tooltip = Tooltip(type.message())
-        stylesheets.add("basicafx/css/button.css")
+        stylesheets.add("basicafx/css/borderless/button.css")
         isFocusTraversable = false
-        addClass("btn-window","btn-window-$type")
+        addClass("btn-window", "btn-window-$type")
+
+        // set size
+        prefWidth = 13.0
+        prefHeight = 25.0
+        minWidth = prefWidth
+        minHeight = prefHeight
     }
 }
 private fun buttonsWindow(stage: Stage): HBox {
     return HBox().apply {
-        add(button("hide").also{stage.addIconified(it)})
-        add(button("zoom").also{stage.addZoomed(it)})
-        add(button("close").also{stage.addClose(it)})
-        spacing = 2.0
-        padding = Insets(0.0,5.0,0.0,0.0)
+        add(button("hide").also { stage.addIconified(it) })
+        add(button("zoom").also { stage.addZoomed(it) })
+        add(button("close").also { stage.addClose(it) })
+        spacing = 3.0
+        padding = Insets(0.0, 5.0, 0.0, 0.0)
     }
 }
 
@@ -115,11 +130,11 @@ fun Stage.addMoveHandler(node: Node, buttons: Boolean = false) {
             var idx = children.indexOf(node)
             val hbox = HBox().apply {
                 add(node)
-                add(Region().apply {HBox.setHgrow(this,Priority.ALWAYS)})
+                add(Region().apply { HBox.setHgrow(this, Priority.ALWAYS) })
                 add(buttonsWindow(stage))
             }
             children.remove(hbox)
-            children.add(idx,hbox)
+            children.add(idx, hbox)
             hbox
         } else node
     } else node
@@ -129,7 +144,7 @@ fun Stage.addMoveHandler(node: Node, buttons: Boolean = false) {
     with(handler) {
         setOnMouseClicked { e ->
             if( e.clickCount <= 1 ) return@setOnMouseClicked
-            setZoom(true)
+            setZoom( ! isZoomed() )
         }
         setOnMousePressed { e ->
             offset.x = e.sceneX
@@ -140,7 +155,7 @@ fun Stage.addMoveHandler(node: Node, buttons: Boolean = false) {
             if( isZoomed() ) {
                 setZoom(false)
                 val half = width / 2
-                val screen = BoundaryChecker.getScreenContains(x,y)!!.visualBounds
+                val screen = BoundaryChecker.getScreenContains(x, y)!!.visualBounds
                 when {
                     // out over left
                     ! screen.contains(e.screenX - half, y) -> {
@@ -177,11 +192,11 @@ fun Stage.addIconified(button: Button) {
 
 fun Stage.addZoomed(button: Button) {
     button.setOnAction {
-        setZoom( ! isZoomed() )
+        setZoom(!isZoomed())
     }
 }
 
-var Stage.zoomed: ReadOnlyBooleanWrapper by FieldProperty{ ReadOnlyBooleanWrapper(it,"zoomed") }
+var Stage.zoomed: ReadOnlyBooleanWrapper by FieldProperty{ ReadOnlyBooleanWrapper(it, "zoomed") }
 
 fun Stage.isZoomed(): Boolean {
     return zoomed.get()
@@ -189,7 +204,7 @@ fun Stage.isZoomed(): Boolean {
 
 var Stage.previousZoomSize: InsetProperty? by FieldProperty{ null }
 
-fun Stage.setZoom( enable: Boolean ) {
+fun Stage.setZoom(enable: Boolean) {
     zoomed.set(enable)
     if( enable ) {
         previousZoomSize = InsetProperty(this)
@@ -208,8 +223,4 @@ fun Stage.setZoom( enable: Boolean ) {
 
 fun Stage.boundary(): Rectangle2D {
     return Rectangle2D(this.x, this.y, this.width, this.height)
-}
-
-fun Stage.startPoint(): Point2D {
-    return Point2D(x,y)
 }
