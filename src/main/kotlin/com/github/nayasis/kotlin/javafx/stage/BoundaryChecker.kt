@@ -18,7 +18,7 @@ object BoundaryChecker {
      * @param stage Stage
      */
     fun reset(stage: Stage) {
-        if( screenStarted(stage) == null ) {
+        if( getScreenContains(stage.x,stage.y) == null ) {
             Screen.getPrimary().visualBounds.let {
                 stage.x = it.minX
                 stage.y = it.minY
@@ -29,11 +29,10 @@ object BoundaryChecker {
     }
 
     /**
-     * get screen which contains stage's start point(x,y)
+     * get screen which contains start point(x,y)
      */
-    private fun screenStarted(stage: Stage): Screen? {
-        val start = stage.startPoint()
-        return Screen.getScreens().firstOrNull{ it.bounds.contains(start) }
+    fun getScreenContains(x: Double, y: Double): Screen? {
+        return Screen.getScreens().firstOrNull{ it.bounds.contains(x,y) }
     }
 
     /**
