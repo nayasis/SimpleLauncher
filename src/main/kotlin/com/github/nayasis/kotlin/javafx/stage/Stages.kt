@@ -118,27 +118,21 @@ fun Stage.addMoveHandler(node: Node, drawButtons: Boolean = true) {
             offset.y = e.sceneY
         }
         setOnMouseDragged { e ->
-
             if(resizeListener == null || resizeListener!!.onDragged()) return@setOnMouseDragged
             if( isZoomed() ) {
                 setZoom(false)
                 var margin = width / 2
-                val screen = BoundaryChecker.getScreenContains(x,y)?.visualBounds
-                if( screen?.contains(boundary()) == true ) {
-                    if( ! screen.contains(e.screenX - margin, y) ) {
-                        log.debug { "adjust over left" }
-                        margin = abs(e.screenX - screen.minX)
-                        x = screen.minX
-                        offset.x = margin
-                    } else if( ! screen.contains(e.screenX + margin, y) ) {
-                        log.debug { "adjust over right" }
-                        margin += abs((e.screenX + margin) - screen.maxX)
-                        x = e.screenX - margin
-                        offset.x = margin
-                    } else {
-                        x = e.screenX + margin
-                        offset.x = + margin
-                    }
+                val screen = BoundaryChecker.getScreenContains(x,y)!!.visualBounds
+                if( ! screen.contains(e.screenX - margin, y) ) {
+                    log.debug { "adjust over left" }
+                    margin = abs(e.screenX - screen.minX)
+                    x = screen.minX
+                    offset.x = margin
+                } else if( ! screen.contains(e.screenX + margin, y) ) {
+                    log.debug { "adjust over right" }
+                    margin += abs((e.screenX + margin) - screen.maxX)
+                    x = e.screenX - margin
+                    offset.x = margin
                 } else {
                     x = e.screenX + margin
                     offset.x = + margin
