@@ -1,38 +1,31 @@
-.btn-window-close {
+.btn-window {
   -fx-border-color        : transparent;
   -fx-background-color    : transparent;
-  -fx-background-image    : url("images/close.png");
   -fx-background-repeat   : no-repeat;
   -fx-background-size     : contain;
   -fx-background-position : center;
 }
 
-.btn-window-close:hover, .btn-window-close:focused {
-  -fx-background-image  : url("images/close-hover.png");
+.btn-window-close {
+  -fx-background-image : url("images/close.png");
+}
+
+.btn-window-close:hover {
+  -fx-background-image : url("images/close-hover.png");
 }
 
 .btn-window-hide {
-  -fx-border-color        : transparent;
-  -fx-background-color    : transparent;
-  -fx-background-image    : url("images/hide.png");
-  -fx-background-repeat   : no-repeat;
-  -fx-background-size     : contain;
-  -fx-background-position : center;
+  -fx-background-image : url("images/hide.png");
 }
 
-.btn-window-hide:hover, .btn-window-hide:focused {
-  -fx-background-image  : url("images/hide-hover.png");
+.btn-window-hide:hover {
+  -fx-background-image : url("images/hide-hover.png");
 }
 
 .btn-window-zoom {
-  -fx-border-color        : transparent;
-  -fx-background-color    : transparent;
-  -fx-background-image    : url("images/zoom.png");
-  -fx-background-repeat   : no-repeat;
-  -fx-background-size     : contain;
-  -fx-background-position : center;
+  -fx-background-image : url("images/zoom.png");
 }
 
-.btn-window-zoom:hover, .btn-window-zoom:focused {
-  -fx-background-image  : url("images/zoom-hover.png");
+.btn-window-zoom:hover {
+  -fx-background-image : url("images/zoom-hover.png");
 }
