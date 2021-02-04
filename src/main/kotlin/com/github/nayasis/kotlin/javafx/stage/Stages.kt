@@ -1,26 +1,32 @@
 package com.github.nayasis.kotlin.javafx.stage
 
 import com.github.nayasis.kotlin.basica.FieldProperty
+import com.github.nayasis.kotlin.basica.message
 import com.github.nayasis.kotlin.basica.toList
 import com.github.nayasis.kotlin.javafx.model.Point
 import com.github.nayasis.kotlin.javafx.property.InsetProperty
 import javafx.beans.property.ReadOnlyBooleanWrapper
 import javafx.event.EventHandler
+import javafx.geometry.Insets
 import javafx.geometry.Point2D
 import javafx.geometry.Rectangle2D
 import javafx.scene.Node
 import javafx.scene.Parent
 import javafx.scene.control.Button
+import javafx.scene.control.Tooltip
 import javafx.scene.image.Image
 import javafx.scene.input.MouseEvent
 import javafx.scene.input.MouseEvent.*
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Pane
+import javafx.scene.layout.Priority
+import javafx.scene.layout.Region
 import javafx.stage.Stage
 import javafx.stage.Window
 import javafx.stage.WindowEvent
 import mu.KotlinLogging
 import tornadofx.add
+import tornadofx.addClass
 import tornadofx.getChildList
 import java.util.*
 import kotlin.collections.ArrayList
@@ -82,18 +88,40 @@ private fun addResizeListener(node: Node, listener: EventHandler<MouseEvent>) {
     }
 }
 
-fun Stage.addMoveHandler(node: Node, drawButtons: Boolean = true) {
+fun buttonClose(): Button = button("close")
+fun buttonZoom(): Button = button("zoom")
+fun buttonHide(): Button = button("hide")
+fun button(type: String): Button {
+    return Button().apply {
+        tooltip = Tooltip(type.message())
+        stylesheets.add("basicafx/css/button.css")
+        addClass("btn-window-$type")
+    }
+}
 
-    var handler = if(drawButtons) {
+fun functionButtons(stage: Stage): HBox {
+    return HBox().apply {
+        add(buttonHide().also{stage.addIconified(it)})
+        add(buttonZoom().also{stage.addZoomed(it)})
+        add(buttonClose().also{stage.addClose(it)})
+        spacing = 2.0
+        padding = Insets(0.0,5.0,0.0,0.0)
+    }
+}
+
+fun Stage.addMoveHandler(node: Node, buttons: Boolean = false) {
+
+    val self = this
+
+    var handler = if(buttons) {
 
         val children = node.parent.getChildList()
         if( children != null ) {
             var idx = children?.indexOf(node)
             val hbox = HBox().apply {
                 add(node)
-                add(Button("close").also{this@addMoveHandler.addClose(it)})
-                add(Button("hide").also{this@addMoveHandler.addIconified(it)})
-                add(Button("zoom").also{this@addMoveHandler.addZoomed(it)})
+                add(Region().apply {HBox.setHgrow(this,Priority.ALWAYS)})
+                add(functionButtons(self))
             }
             children.remove(hbox)
             children.add(idx,hbox)
