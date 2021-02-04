@@ -51,7 +51,7 @@ class BorderlessView: View() {
 
         with(currentStage!!) {
             setBorderless()
-            addMoveHandler(scene.lookup("#mainmenu"))
+            addMoveHandler(scene.lookup("#mainmenu"), buttons = true)
         }
     }
 
