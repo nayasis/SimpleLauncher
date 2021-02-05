@@ -25,21 +25,23 @@ class BorderlessView: View() {
     override val root = vbox {
         prefWidth = 400.0
         prefHeight = 300.0
-        menubar {
+        hbox {
             id = "mainmenu"
-            menu("File") {
-                menu("Connect") {
-                    item("Facebook")
-                    item("Twitter")
+            menubar {
+                menu("File") {
+                    menu("Connect") {
+                        item("Facebook")
+                        item("Twitter")
+                    }
+                    item("Save")
+                    item("Quit") {
+                        action { close() }
+                    }
                 }
-                item("Save")
-                item("Quit") {
-                    action { close() }
+                menu("Edit") {
+                    item("Copy")
+                    item("Paste")
                 }
-            }
-            menu("Edit") {
-                item("Copy")
-                item("Paste")
             }
         }
         textarea("content")
@@ -51,10 +53,8 @@ class BorderlessView: View() {
 
         with(currentStage!!) {
             setBorderless()
-            addMoveHandler(scene.lookup("#mainmenu"), buttons = true)
-
-            scene.stylesheets.add("")
-
+//            addMoveHandler(scene.lookup("#mainmenu"), buttons = true)
+            addMoveHandler(scene.lookup("#mainmenu"), closeButton = true)
         }
     }
 
