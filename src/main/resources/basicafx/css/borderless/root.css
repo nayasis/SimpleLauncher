@@ -1,22 +1,11 @@
-/*.root {*/
-/*  -fx-border-color : red;*/
-/*  -fx-border-width: 1;*/
-/*  -fx-font: 11px Arial;*/
-/*}*/
-
-/*.root:focused {*/
-/*  -fx-border-color : blue;*/
-/*}*/
-
 .root {
-  -fx-background-radius: 8 8 0 0;
+  -fx-background-radius: 5 5 0 0;
   -fx-border-radius: 5 5 0 0;
-  -fx-border-width: 5px;
-  /*-fx-border-color: -fx-box-border;*/
-  -fx-border-color: black;
-  -fx-font: 11px Arial;
+  -fx-background-insets: 0, 1, 2;
+  -fx-border-width: 1px;
+  -fx-border-color: -fx-box-border;
 }
 
-.base:focused {
-  -fx-border-color: red;
+.root-unfocused {
+  -fx-border-color: derive(-fx-box-border,60%) !important;
 }

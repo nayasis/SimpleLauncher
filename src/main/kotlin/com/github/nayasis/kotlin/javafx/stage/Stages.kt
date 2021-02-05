@@ -28,6 +28,7 @@ import mu.KotlinLogging
 import tornadofx.add
 import tornadofx.addClass
 import tornadofx.getChildList
+import tornadofx.removeClass
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.abs
@@ -54,19 +55,26 @@ fun Stage.loadDefaultIcon() {
 
 fun Stage.setBorderless(option: Stage.() -> Unit = {}, defaultCss: Boolean = true) {
 
-//    initStyle(StageStyle.TRANSPARENT)
-
-    // for applying css freely
-    scene?.fill = Color.TRANSPARENT
+    if( scene != null ) {
+        scene.fill = Color.TRANSPARENT // for applying css freely
+        if( defaultCss ) {
+            scene.root.stylesheets.add("basicafx/css/borderless/root.css")
+            this.focusedProperty().addListener { _, _, focused ->
+                "root-unfocused".let{
+                    when {
+                        focused -> scene.root.removeClass(it)
+                        else    -> scene.root.addClass(it)
+                    }
+                }
+            }
+        }
+    }
 
     addConstraintRetainer()
     addResizeHandler()
 
-    if(defaultCss) {
-       scene?.stylesheets?.add("basicafx/css/borderless/root.css")
-    }
-
     this.apply(option)
+
 }
 
 fun Stage.addConstraintRetainer() {
@@ -111,17 +119,10 @@ private fun button(type: String): Button {
         minHeight = prefHeight
     }
 }
-private fun buttonsWindow(stage: Stage): HBox {
-    return HBox().apply {
-        add(button("hide").also { stage.addIconified(it) })
-        add(button("zoom").also { stage.addZoomed(it) })
-        add(button("close").also { stage.addClose(it) })
-        spacing = 3.0
-        padding = Insets(0.0, 5.0, 0.0, 0.0)
-    }
-}
 
-fun Stage.addMoveHandler(node: Node, buttons: Boolean = false) {
+fun Stage.addMoveHandler(node: Node, buttons: Boolean = false, closeButton: Boolean = false) {
+
+    val buttons = buttons || closeButton
 
     val stage = this
     var handler = if(buttons) {
@@ -129,9 +130,18 @@ fun Stage.addMoveHandler(node: Node, buttons: Boolean = false) {
         if( children != null ) {
             var idx = children.indexOf(node)
             val hbox = HBox().apply {
+                styleClass.add("menu-bar")
                 add(node)
                 add(Region().apply { HBox.setHgrow(this, Priority.ALWAYS) })
-                add(buttonsWindow(stage))
+                add(HBox().apply {
+                    add(button("close").also { stage.addClose(it) })
+                    if( ! closeButton ) {
+                        add(button("hide").also { stage.addIconified(it) })
+                        add(button("zoom").also { stage.addZoomed(it) })
+                    }
+                    spacing = 3.0
+                    padding = Insets(0.0, 5.0, 0.0, 0.0)
+                })
             }
             children.remove(hbox)
             children.add(idx, hbox)
