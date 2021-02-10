@@ -120,12 +120,12 @@ private fun button(type: String): Button {
     }
 }
 
-fun Stage.addMoveHandler(node: Node, buttons: Boolean = false, closeButton: Boolean = false) {
+fun Stage.addMoveHandler(node: Node, buttonClose: Boolean = false, buttonHide: Boolean = false, buttonZoom: Boolean = false, buttonAll: Boolean = false) {
 
-    val buttons = buttons || closeButton
+    val drawButton = buttonAll || buttonClose || buttonHide || buttonZoom
 
     val stage = this
-    var handler = if(buttons) {
+    var handler = if(drawButton) {
         val children = node.parent.getChildList()
         if( children != null ) {
             var idx = children.indexOf(node)
@@ -134,11 +134,9 @@ fun Stage.addMoveHandler(node: Node, buttons: Boolean = false, closeButton: Bool
                 add(node)
                 add(Region().apply { HBox.setHgrow(this, Priority.ALWAYS) })
                 add(HBox().apply {
-                    add(button("close").also { stage.addClose(it) })
-                    if( ! closeButton ) {
-                        add(button("hide").also { stage.addIconified(it) })
-                        add(button("zoom").also { stage.addZoomed(it) })
-                    }
+                    if( buttonAll || buttonClose ) add(button("close").also { stage.addClose(it) })
+                    if( buttonAll || buttonHide  ) add(button("hide").also { stage.addIconified(it) })
+                    if( buttonAll || buttonZoom  ) add(button("zoom").also { stage.addZoomed(it) })
                     spacing = 3.0
                     padding = Insets(0.0, 5.0, 0.0, 0.0)
                 })
