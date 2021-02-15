@@ -45,7 +45,7 @@ class ProgressDialog: Dialog<Void> {
         val progressMessage = Label()
 
         val content = WorkerProgressPane(this)
-        content.setMaxWidth(Double.MAX_VALUE)
+        content.maxWidth = Double.MAX_VALUE
         content.setWorker(worker)
 
         val vbox = VBox(10.0, progressMessage, content)
