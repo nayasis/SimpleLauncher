@@ -83,6 +83,10 @@ dependencies {
 	implementation( "io.github.microutils:kotlin-logging:1.8.3" )
 	implementation("au.com.console:kassava:2.1.0-rc.1")
 
+	testImplementation("org.apache.pdfbox:pdfbox:2.0.16")
+	testImplementation("com.levigo.jbig2:levigo-jbig2-imageio:2.0")
+	testImplementation("org.apache.httpcomponents:httpclient:4.5.3")
+
 	testImplementation("org.junit.jupiter:junit-jupiter-api:5.3.1")
 	testImplementation("org.junit.jupiter:junit-jupiter-engine:5.3.1")
 	testImplementation("ch.qos.logback:logback-classic:1.2.3")
