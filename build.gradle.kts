@@ -1,16 +1,33 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-//	id("org.springframework.boot") version "2.3.5.RELEASE"
-//	id("io.spring.dependency-management") version "1.0.10.RELEASE"
+
 	kotlin("jvm") version "1.4.20"
 //	application
 	kotlin("plugin.serialization") version "1.4.20"
-//	kotlin("plugin.spring") version "1.4.20"
+
+	// spring
+	id("org.springframework.boot") version "2.3.5.RELEASE"
+	id("io.spring.dependency-management") version "1.0.10.RELEASE"
+	kotlin("plugin.spring") version "1.4.20"
 //	kotlin("plugin.allopen") version "1.4.20"
 //	kotlin("plugin.noarg") version "1.4.20"
 //	kotlin("plugin.jpa") version "1.4.20"
+
 }
+
+//allOpen {
+//	annotation("javax.persistence.Entity")
+//	annotation("javax.persistence.MappedSuperclass")
+//	annotation("javax.persistence.Embeddable")
+//}
+//
+//noArg {
+//	annotation("javax.persistence.Entity")
+//	annotation("javax.persistence.MappedSuperclass")
+//	annotation("javax.persistence.Embeddable")
+//	invokeInitializers = true
+//}
 
 //application {
 ////	mainClassName = "com.github.nayasis.helloworld.HelloWorldApp"
@@ -44,8 +61,8 @@ repositories {
 	mavenLocal()
 	mavenCentral()
 	jcenter()
-	maven { url = uri("https://jitpack.io") }
 	maven { url = uri("https://raw.github.com/nayasis/maven-repo/mvn-repo") }
+	maven { url = uri("https://jitpack.io") }
 }
 
 dependencies {
@@ -61,8 +78,8 @@ dependencies {
 	implementation( "no.tornado:tornadofx:1.7.20" )
 	implementation( "com.github.vatbub:mslinks:1.0.6" )
 
-//	// spring
-//	implementation("org.springframework.boot:spring-boot-starter")
+	// spring
+	implementation("org.springframework.boot:spring-boot-starter")
 //	implementation("org.springframework.boot:spring-boot-starter-aop")
 //	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 //	implementation("org.springframework.boot:spring-boot-starter-cache")
@@ -79,7 +96,7 @@ dependencies {
 	// kotlin
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-//	implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.0.1")
+	implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.0.1")
 	implementation( "io.github.microutils:kotlin-logging:1.8.3" )
 	implementation("au.com.console:kassava:2.1.0-rc.1")
 
