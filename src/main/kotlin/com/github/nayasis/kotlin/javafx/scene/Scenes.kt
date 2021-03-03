@@ -166,7 +166,7 @@ fun Scene.addClose(button: Button) {
 }
 
 fun Scene.addIconified(button: Button) {
-    button.setOnAction { (window as Stage).isIconified = true }
+    button.setOnAction { (window as Stage)?.isIconified = true }
 }
 
 fun Scene.addZoomed(button: Button) {
