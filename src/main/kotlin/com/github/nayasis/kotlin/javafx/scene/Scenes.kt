@@ -123,7 +123,7 @@ fun Scene.addMoveHandler(node: Node, buttonClose: Boolean = false, buttonHide: B
 
     with(handler) {
         setOnMouseClicked { e ->
-            if( e.clickCount <= 1 ) return@setOnMouseClicked
+            if( e.clickCount <= 1 || resizeListener == null ) return@setOnMouseClicked
             setZoom( ! isZoomed() )
         }
         setOnMousePressed { e ->
@@ -131,7 +131,6 @@ fun Scene.addMoveHandler(node: Node, buttonClose: Boolean = false, buttonHide: B
             offset.y = e.sceneY
         }
         setOnMouseDragged { e ->
-            if(resizeListener == null || resizeListener!!.onDragged()) return@setOnMouseDragged
             if( isZoomed() ) {
                 setZoom(false)
                 val half = width / 2
