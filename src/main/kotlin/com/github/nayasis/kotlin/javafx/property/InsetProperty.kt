@@ -1,6 +1,6 @@
 package com.github.nayasis.kotlin.javafx.property
 
-import javafx.stage.Stage
+import javafx.stage.Window
 import java.io.Serializable
 
 data class InsetProperty(
@@ -9,22 +9,22 @@ data class InsetProperty(
     var width:  Int = 400,
     var height: Int = 300,
 ): Serializable {
-    constructor(stage: Stage): this(
-        x = stage.x.toInt(),
-        y = stage.y.toInt(),
-        width = stage.width.toInt(),
-        height = stage.height.toInt(),
+    constructor(window: Window): this(
+        x = window.x.toInt(),
+        y = window.y.toInt(),
+        width = window.width.toInt(),
+        height = window.height.toInt(),
     )
-    fun read(stage: Stage) {
-        x = stage.x.toInt()
-        y = stage.y.toInt()
-        width = stage.width.toInt()
-        height = stage.height.toInt()
+    fun read(window: Window) {
+        x = window.x.toInt()
+        y = window.y.toInt()
+        width = window.width.toInt()
+        height = window.height.toInt()
     }
-    fun apply(stage: Stage) {
-        stage.x = x.toDouble()
-        stage.y = y.toDouble()
-        stage.width = width.toDouble()
-        stage.height = height.toDouble()
+    fun apply(window: Window) {
+        window.x = x.toDouble()
+        window.y = y.toDouble()
+        window.width = width.toDouble()
+        window.height = height.toDouble()
     }
 }

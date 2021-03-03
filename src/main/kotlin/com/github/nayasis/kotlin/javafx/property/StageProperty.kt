@@ -1,9 +1,8 @@
 package com.github.nayasis.kotlin.javafx.property
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.github.nayasis.basica.base.Classes
+import com.github.nayasis.kotlin.javafx.scene.previousZoomSize
 import com.github.nayasis.kotlin.javafx.stage.BoundaryChecker
-import com.github.nayasis.kotlin.javafx.stage.previousZoomSize
 import javafx.css.Styleable
 import javafx.scene.Node
 import javafx.scene.control.*
@@ -15,7 +14,6 @@ import java.io.Serializable
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.reflect.KClass
-import kotlin.reflect.full.isSubclassOf
 import kotlin.reflect.full.isSuperclassOf
 
 private const val PREFIX_ID = "_tmp_id"
@@ -44,7 +42,7 @@ data class StageProperty(
 
         inset.read(stage)
         maximized = stage.isMaximized
-        previousZoomSize = stage.previousZoomSize
+        previousZoomSize = stage.scene.previousZoomSize
 
         stage.scene?.root?.getChildList()?.forEach {
             if( ! allow(it) ) return
@@ -78,9 +76,9 @@ data class StageProperty(
 
         inset.apply(stage)
         BoundaryChecker.reset(stage)
-        stage.previousZoomSize = previousZoomSize
+        stage.scene.previousZoomSize = previousZoomSize
 
-        stage.scene?.root?.getChildList()?.forEach {
+        stage.scene.root?.getChildList()?.forEach {
             if( ! allow(it) ) return
             val fxid = getFxId(it)
             when(it) {
