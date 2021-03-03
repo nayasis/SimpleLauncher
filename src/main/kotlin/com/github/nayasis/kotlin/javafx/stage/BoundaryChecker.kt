@@ -2,7 +2,7 @@ package com.github.nayasis.kotlin.javafx.stage
 
 import javafx.geometry.Rectangle2D
 import javafx.stage.Screen
-import javafx.stage.Stage
+import javafx.stage.Window
 import mu.KotlinLogging
 import kotlin.math.abs
 import kotlin.math.max
@@ -15,15 +15,15 @@ object BoundaryChecker {
     /**
      * reset stage position to displayed screen
      *
-     * @param stage Stage
+     * @param window Window
      */
-    fun reset(stage: Stage) {
-        if( getScreenContains(stage.x,stage.y) == null ) {
+    fun reset(window: Window) {
+        if( getScreenContains(window.x,window.y) == null ) {
             Screen.getPrimary().visualBounds.let {
-                stage.x = it.minX
-                stage.y = it.minY
-                stage.width  = min(stage.width,  it.width)
-                stage.height = min(stage.height, it.height)
+                window.x = it.minX
+                window.y = it.minY
+                window.width  = min(window.width,  it.width)
+                window.height = min(window.height, it.height)
             }
         }
     }
@@ -40,12 +40,12 @@ object BoundaryChecker {
      *
      * if there is no screen related to stage, return primary screen.
      */
-    fun getMajorScreen(stage: Stage): Screen {
+    fun getMajorScreen(window: Window): Screen {
 
         var major = Screen.getPrimary()
         var max   = 0.0
 
-        val boundary = stage.boundary()
+        val boundary = window.boundary()
 
         for( screen in Screen.getScreens() ) {
             val area = screen.bounds.areaIntersected(boundary)

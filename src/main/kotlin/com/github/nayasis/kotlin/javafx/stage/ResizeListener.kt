@@ -11,7 +11,7 @@ import mu.KotlinLogging
 private val log = KotlinLogging.logger{}
 
 class ResizeListener(
-    private val stage: Stage,
+    private val stage: Stage?,
     private val margin: Int = 5
 ): EventHandler<MouseEvent> {
 
@@ -24,10 +24,11 @@ class ResizeListener(
 
     override fun handle(event: MouseEvent) {
 
-        val eventType = event.eventType
-        val scene = stage.scene
+        if( stage == null || stage.scene == null ) return
 
-        val pointer = Point(event)
+        val eventType = event.eventType
+        val scene     = stage.scene
+        val pointer   = Point(event)
 
         when {
             MOUSE_MOVED == eventType -> {
