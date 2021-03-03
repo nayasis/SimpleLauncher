@@ -1,6 +1,7 @@
 package com.github.nayasis.sample.stage
 
 import com.github.nayasis.kotlin.javafx.stage.addMoveHandler
+import com.github.nayasis.kotlin.javafx.stage.addResizeHandler
 import com.github.nayasis.kotlin.javafx.stage.setBorderless
 import javafx.geometry.Insets
 import javafx.scene.layout.VBox
@@ -53,6 +54,7 @@ class BorderlessView: View() {
 
         with(currentStage!!) {
             setBorderless()
+            addResizeHandler()
 //            addMoveHandler(scene.lookup("#mainmenu"), buttonAll = true)
             addMoveHandler(scene.lookup("#mainmenu"), buttonClose = true)
         }

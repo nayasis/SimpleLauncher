@@ -1,12 +1,10 @@
 package com.github.nayasis.sample.forms
 
-import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon.HOME
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIcon.USER
 import de.jensd.fx.glyphs.fontawesome.FontAwesomeIconView
 import org.controlsfx.control.Notifications
 import tornadofx.*
-import javax.management.NotificationBroadcasterSupport
 
 class CustomerForm: View("Register Customer") {
 
