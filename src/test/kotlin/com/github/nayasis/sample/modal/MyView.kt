@@ -5,6 +5,7 @@ import com.github.nayasis.kotlin.javafx.stage.isBorderless
 import com.github.nayasis.kotlin.javafx.stage.setBorderless
 import javafx.beans.property.SimpleStringProperty
 import javafx.geometry.Insets
+import javafx.scene.control.MenuBar
 import javafx.scene.layout.VBox
 import javafx.stage.StageStyle
 import tornadofx.*
@@ -46,8 +47,11 @@ class MyView: View() {
 }
 
 class Editor: View() {
+
+    lateinit var menubar: MenuBar
+
     override val root = vbox {
-        menubar { id = "mainmenu" }
+        menubar = menubar {}
         label("Editor")
         form {
             fieldset {
@@ -63,7 +67,7 @@ class Editor: View() {
         with(currentStage!!) {
             if(!isBorderless()) {
                 setBorderless()
-                addMoveHandler(scene.lookup("#mainmenu"), buttonClose = true)
+                addMoveHandler(menubar, buttonClose = true)
             }
         }
     }
