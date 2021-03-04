@@ -10,43 +10,43 @@ plugins {
 	id("org.springframework.boot") version "2.3.5.RELEASE"
 	id("io.spring.dependency-management") version "1.0.10.RELEASE"
 	kotlin("plugin.spring") version "1.4.20"
-//	kotlin("plugin.allopen") version "1.4.20"
-//	kotlin("plugin.noarg") version "1.4.20"
-//	kotlin("plugin.jpa") version "1.4.20"
+	kotlin("plugin.allopen") version "1.4.20"
+	kotlin("plugin.noarg") version "1.4.20"
+	kotlin("plugin.jpa") version "1.4.20"
 
 }
 
-//allOpen {
-//	annotation("javax.persistence.Entity")
-//	annotation("javax.persistence.MappedSuperclass")
-//	annotation("javax.persistence.Embeddable")
-//}
-//
-//noArg {
-//	annotation("javax.persistence.Entity")
-//	annotation("javax.persistence.MappedSuperclass")
-//	annotation("javax.persistence.Embeddable")
-//	invokeInitializers = true
-//}
+allOpen {
+	annotation("javax.persistence.Entity")
+	annotation("javax.persistence.MappedSuperclass")
+	annotation("javax.persistence.Embeddable")
+}
+
+noArg {
+	annotation("javax.persistence.Entity")
+	annotation("javax.persistence.MappedSuperclass")
+	annotation("javax.persistence.Embeddable")
+	invokeInitializers = true
+}
+allOpen {
+	annotation("javax.persistence.Entity")
+	annotation("javax.persistence.MappedSuperclass")
+	annotation("javax.persistence.Embeddable")
+}
+
+noArg {
+	annotation("javax.persistence.Entity")
+	annotation("javax.persistence.MappedSuperclass")
+	annotation("javax.persistence.Embeddable")
+	annotation("com.github.nayasis.kotlin.spring.kotlin.annotation.NoArg")
+	invokeInitializers = true
+}
 
 //application {
 ////	mainClassName = "com.github.nayasis.helloworld.HelloWorldApp"
 //	mainClassName = "com.github.nayasis.example.Squeeze"
 //}
 
-//allOpen {
-//	annotation("javax.persistence.Entity")
-//	annotation("javax.persistence.MappedSuperclass")
-//	annotation("javax.persistence.Embeddable")
-//}
-//
-//noArg {
-//	annotation("javax.persistence.Entity")
-//	annotation("javax.persistence.MappedSuperclass")
-//	annotation("javax.persistence.Embeddable")
-////	annotation("com.onestorecorp.point.api.biz.common.annotation.NoArg")
-//	invokeInitializers = true
-//}
 
 group = "com.github.nayasis"
 version = "0.0.1-SNAPSHOT"
@@ -76,22 +76,24 @@ dependencies {
 
 	// application
 	implementation( "no.tornado:tornadofx:1.7.20" )
+	implementation("de.jensd:fontawesomefx:8.9")
+	implementation("org.controlsfx:controlsfx:8.40.10")
 	implementation( "com.github.vatbub:mslinks:1.0.6" )
 
 	// spring
 	implementation("org.springframework.boot:spring-boot-starter")
-//	implementation("org.springframework.boot:spring-boot-starter-aop")
-//	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-//	implementation("org.springframework.boot:spring-boot-starter-cache")
-//	implementation("org.springframework.boot:spring-boot-starter-validation")
-//	implementation( "com.h2database:h2" )
-//	testImplementation("org.springframework.boot:spring-boot-starter-test") {
-//		exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
-//		exclude(group="com.vaadin.external.google",module="android-json")
-//	}
+	implementation("org.springframework.boot:spring-boot-starter-aop")
+	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+	implementation("org.springframework.boot:spring-boot-starter-cache")
+	implementation("org.springframework.boot:spring-boot-starter-validation")
+	testImplementation("org.springframework.boot:spring-boot-starter-test") {
+		exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
+		exclude(group="com.vaadin.external.google",module="android-json")
+	}
 
-	implementation("de.jensd:fontawesomefx:8.9")
-	implementation("org.controlsfx:controlsfx:8.40.10")
+	// db
+	implementation("org.xerial:sqlite-jdbc:3.34.0")
+	implementation("com.zsoltfabok:sqlite-dialect:1.0")
 
 	// kotlin
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
