@@ -2,9 +2,13 @@ package com.github.nayasis.kotlin.basica
 
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatter.ISO_LOCAL_DATE
 import java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME
+import java.util.*
+import java.sql.Date as SqlDate
 
 /**
  * convert string to LocalDateTime
@@ -84,6 +88,30 @@ fun String.toLocalDate(format: DateTimeFormatter): LocalDate {
     return this.toLocalDateTime(format).toLocalDate()
 }
 
+fun String.toZonedDateTime(format: String = "", zoneId: ZoneId = ZoneId.systemDefault()): ZonedDateTime {
+    return ZonedDateTime.of( this.toLocalDateTime(format), zoneId )
+}
+
+fun String.toZonedDateTime(format: DateTimeFormatter, zoneId: ZoneId = ZoneId.systemDefault()): ZonedDateTime {
+    return ZonedDateTime.of( this.toLocalDateTime(format), zoneId )
+}
+
+fun String.toDate(format: String = "", zoneId: ZoneId = ZoneId.systemDefault()): Date {
+    return Date.from( this.toZonedDateTime(format,zoneId).toInstant() )
+}
+
+fun String.toDate(format: DateTimeFormatter, zoneId: ZoneId = ZoneId.systemDefault()): Date {
+    return Date.from( this.toZonedDateTime(format,zoneId).toInstant() )
+}
+
+fun String.toSqlDate(format: String = ""): java.sql.Date {
+    return java.sql.Date.valueOf(this.toLocalDate(format))
+}
+
+fun String.toSqlDate(format: DateTimeFormatter): java.sql.Date {
+    return java.sql.Date.valueOf(this.toLocalDate(format))
+}
+
 fun LocalDateTime.atStartOfMonth(): LocalDateTime {
     return this.withDayOfMonth(1)
 }
@@ -107,3 +135,12 @@ fun LocalDateTime.toString(format: String = ""): String {
 fun LocalDate.toString(format: String = ""): String {
     return this.format( printFormat(format, ISO_LOCAL_DATE) )
 }
+
+fun Date.toString(format: String = "", zoneId: ZoneId = ZoneId.systemDefault()): String {
+    return this.toLocalDateTime(zoneId).format( printFormat(format, ISO_LOCAL_DATE_TIME) )
+}
+
+fun SqlDate.toString(format: String = ""): String {
+    return this.toLocalDate().format( printFormat(format, ISO_LOCAL_DATE_TIME) )
+}
+

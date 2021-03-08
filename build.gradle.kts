@@ -118,7 +118,10 @@ tasks.withType<Test> {
 
 tasks.withType<KotlinCompile> {
 	kotlinOptions {
-		freeCompilerArgs = listOf("-Xjsr305=strict")
+		freeCompilerArgs = listOf(
+			"-Xjsr305=strict",
+			"-Xuse-experimental=kotlinx.serialization.ExperimentalSerializationApi"
+		)
 		jvmTarget = "1.8"
 	}
 }
