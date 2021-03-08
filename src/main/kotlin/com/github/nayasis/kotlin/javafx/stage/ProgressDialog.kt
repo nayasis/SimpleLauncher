@@ -21,7 +21,7 @@ import javafx.stage.StageStyle
 import javafx.util.Callback
 import java.util.concurrent.Executors
 
-class ProgressDialog: Dialog<Void> {
+open class ProgressDialog: Dialog<Void> {
 
     constructor(worker: Worker<*>?) {
 
