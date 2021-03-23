@@ -2,11 +2,13 @@ package com.github.nayasis.kotlin.basica
 
 import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatter.ISO_LOCAL_DATE
 import java.time.format.DateTimeFormatter.ISO_LOCAL_DATE_TIME
+import java.time.temporal.ChronoField
 import java.util.*
 import java.sql.Date as SqlDate
 
@@ -121,11 +123,26 @@ fun LocalDateTime.atEndOfMonth(): LocalDateTime {
 }
 
 fun LocalDate.atStartOfMonth(): LocalDate {
+    this.atStartOfDay()
     return this.withDayOfMonth(1)
 }
 
 fun LocalDate.atEndOfMonth(): LocalDate {
     return this.withDayOfMonth(this.lengthOfMonth())
+}
+
+fun LocalDateTime.atStartOfDay(): LocalDateTime {
+    return this.with(ChronoField.NANO_OF_DAY, LocalTime.MIN.toNanoOfDay())
+}
+
+fun LocalDateTime.atEndOfDay(): LocalDateTime {
+    return this.with(ChronoField.NANO_OF_DAY, LocalTime.MAX.toNanoOfDay())
+}
+
+// [LocalDate.atStartOfDay()] is already exists.
+
+fun LocalDate.atEndOfDay(): LocalDateTime {
+    return LocalDateTime.of(this, LocalTime.MAX)
 }
 
 fun LocalDateTime.toString(format: String = ""): String {
