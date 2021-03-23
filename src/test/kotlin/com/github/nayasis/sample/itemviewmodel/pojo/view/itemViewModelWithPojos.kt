@@ -59,7 +59,6 @@ class CategoryListView : View() {
     override val root = listview<Category> {
         prefWidth = 100.0
         items = controller.categories.observable()
-
         cellFormat { text = it.title }
         bindSelected(controller.categoryModel)
     }
