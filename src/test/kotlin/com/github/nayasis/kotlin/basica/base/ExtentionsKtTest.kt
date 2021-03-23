@@ -1,4 +1,4 @@
-package com.github.nayasis.kotlin.basica
+package com.github.nayasis.kotlin.basica.base
 
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test

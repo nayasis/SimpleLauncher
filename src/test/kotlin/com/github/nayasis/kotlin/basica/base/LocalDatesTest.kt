@@ -1,5 +1,9 @@
-package com.github.nayasis.kotlin.basica
+package com.github.nayasis.kotlin.basica.base
 
+import com.github.nayasis.kotlin.basica.atEndOfMonth
+import com.github.nayasis.kotlin.basica.atStartOfMonth
+import com.github.nayasis.kotlin.basica.toLocalDateTime
+import com.github.nayasis.kotlin.basica.toString
 import mu.KotlinLogging
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
