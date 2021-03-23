@@ -1,5 +1,6 @@
 package com.github.nayasis.kotlin.basica
 
+import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -51,4 +52,24 @@ fun Date.toZonedDateTime(zoneId: ZoneId = ZoneId.systemDefault()): ZonedDateTime
 
 fun Date.toSqlDate(zoneId: ZoneId = ZoneId.systemDefault()): SqlDate {
     return SqlDate.valueOf(this.toLocalDate(zoneId))
+}
+
+fun LocalDateTime.toLong(): Long {
+    return this.toZonedDateTime().toInstant().toEpochMilli()
+}
+
+fun LocalDate.toLong(): Long {
+    return this.toLocalDateTime().toLong()
+}
+
+fun Long.toZonedDateTime(zoneId: ZoneId = ZoneId.systemDefault()): ZonedDateTime {
+     return Instant.ofEpochMilli(this).atZone(zoneId)
+}
+
+fun Long.toLocalDateTime(): LocalDateTime {
+    return this.toZonedDateTime().toLocalDateTime()
+}
+
+fun Long.toLocalDate(): LocalDate {
+    return this.toLocalDateTime().toLocalDate()
 }
