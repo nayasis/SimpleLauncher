@@ -1,4 +1,4 @@
-package com.github.nayasis.kotlin.basica
+package com.github.nayasis.kotlin.basica.base
 
 import java.util.*
 import kotlin.reflect.KProperty

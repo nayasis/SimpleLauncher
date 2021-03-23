@@ -1,5 +1,8 @@
-package com.github.nayasis.kotlin.basica
+package com.github.nayasis.kotlin.basica.base
 
+import com.github.nayasis.kotlin.basica.toDate
+import com.github.nayasis.kotlin.basica.toLocalDate
+import com.github.nayasis.kotlin.basica.toLocalDateTime
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Serializer

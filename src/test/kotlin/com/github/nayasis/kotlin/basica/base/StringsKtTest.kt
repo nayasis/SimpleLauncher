@@ -1,7 +1,8 @@
-package com.github.nayasis.kotlin.basica
+package com.github.nayasis.kotlin.basica.base
 
+import com.github.nayasis.kotlin.basica.glob
+import com.github.nayasis.kotlin.basica.isDate
 import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 internal class StringsKtTest {
