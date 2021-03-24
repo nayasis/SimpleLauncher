@@ -3,18 +3,15 @@ package com.github.nayasis.kotlin.javafx.control.tableview
 import com.github.nayasis.kotlin.javafx.control.tableview.column.children
 import com.github.nayasis.kotlin.javafx.control.tableview.column.findBy
 import com.github.nayasis.kotlin.basica.exception.NotFound
-import com.github.nayasis.kotlin.basica.nvl
+import com.github.nayasis.kotlin.basica.core.nvl
 import com.sun.javafx.scene.control.skin.TableViewSkin
 import com.sun.javafx.scene.control.skin.VirtualFlow
 import javafx.collections.transformation.FilteredList
 import javafx.collections.transformation.SortedList
-import javafx.scene.control.IndexedCell
 import javafx.scene.control.TableColumn
 import javafx.scene.control.TablePosition
 import javafx.scene.control.TableView
-import tornadofx.field
 import java.lang.Integer.min
-import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.max
 

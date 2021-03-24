@@ -1,6 +1,6 @@
 package com.github.nayasis.kotlin.javafx.stage
 
-import com.github.nayasis.kotlin.basica.toList
+import com.github.nayasis.kotlin.basica.core.toList
 import com.github.nayasis.kotlin.javafx.scene.*
 import javafx.geometry.Rectangle2D
 import javafx.scene.Node
