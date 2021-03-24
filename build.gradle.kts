@@ -2,9 +2,9 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
 
-	kotlin("jvm") version "1.4.20"
+	kotlin("jvm") version "1.4.30"
 //	application
-	kotlin("plugin.serialization") version "1.4.20"
+	kotlin("plugin.serialization") version "1.4.30"
 
 	// spring
 	id("org.springframework.boot") version "2.3.5.RELEASE"
@@ -68,12 +68,17 @@ repositories {
 dependencies {
 
 	// common
-	implementation( "com.github.nayasis:basica:0.3.6-SNAPSHOT" ){ isChanging = true }
+//	implementation( "com.github.nayasis:basica:0.3.6-SNAPSHOT" ){ isChanging = true }
+	implementation( "com.github.nayasis:basica-kt:0.0.1-SNAPSHOT" ){ isChanging = true }
 	implementation( "org.apache.httpcomponents:httpclient:4.4" )
-	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
 //	implementation( "commons-io:commons-io:2.4" )
 //	implementation( "commons-cli:commons-cli:1.4" )
 //	implementation( "commons-codec:commons-codec:1.13" )
+
+	// for kotlin basica
+	implementation("org.mvel:mvel2:2.4.8.Final")
+	implementation("com.googlecode.juniversalchardet:juniversalchardet:1.0.3")
+	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
 
 	// application
 	implementation( "no.tornado:tornadofx:1.7.20" )

@@ -1,9 +1,9 @@
 package com.github.nayasis.kotlin.javafx.stage
 
 import com.github.nayasis.kotlin.basica.exception.Caller
-import com.github.nayasis.kotlin.basica.exists
+import com.github.nayasis.kotlin.basica.core.exists
 import com.github.nayasis.kotlin.basica.message
-import com.github.nayasis.kotlin.basica.nvl
+import com.github.nayasis.kotlin.basica.core.nvl
 import com.github.nayasis.kotlin.basica.toFile
 import com.github.nayasis.kotlin.basica.toPath
 import javafx.scene.control.*
