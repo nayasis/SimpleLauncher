@@ -75,11 +75,6 @@ dependencies {
 //	implementation( "commons-cli:commons-cli:1.4" )
 //	implementation( "commons-codec:commons-codec:1.13" )
 
-	// for kotlin basica
-	implementation("org.mvel:mvel2:2.4.8.Final")
-	implementation("com.googlecode.juniversalchardet:juniversalchardet:1.0.3")
-	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
-
 	// application
 	implementation( "no.tornado:tornadofx:1.7.20" )
 	implementation("de.jensd:fontawesomefx:8.9")
