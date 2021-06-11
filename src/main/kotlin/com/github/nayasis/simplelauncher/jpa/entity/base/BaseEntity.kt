@@ -1,5 +1,6 @@
 package com.github.nayasis.simplelauncher.jpa.entity.base
 
+import com.github.nayasis.kotlin.basica.reflection.Reflector
 import org.hibernate.annotations.CreationTimestamp
 import org.hibernate.annotations.UpdateTimestamp
 import java.io.Serializable
@@ -17,5 +18,9 @@ class BaseEntity: Serializable {
     @UpdateTimestamp
     @Column
     var updDt: LocalDateTime? = null
+
+    override fun toString(): String {
+        return Reflector.toJson(this)
+    }
 
 }

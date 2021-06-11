@@ -11,7 +11,6 @@ import javax.persistence.Id
 import javax.persistence.Lob
 
 @Entity
-//@Serializable
 class Link: BaseEntity() {
 
     @Id @GeneratedValue
@@ -39,7 +38,7 @@ class Link: BaseEntity() {
     @Column(name="desc") @Lob
     var description: String? = null
 
-    @Column
+    @Column @Lob
     var keyword: Set<String>? = null
 
     @Column @Lob
@@ -47,6 +46,5 @@ class Link: BaseEntity() {
 
     var executeCount: Int = 0
     var lastExecDate: LocalDateTime? = null
-
 
 }
