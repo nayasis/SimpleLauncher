@@ -1,5 +1,8 @@
 package com.github.nayasis.kotlin.spring.javafx.app
 
+import com.github.nayasis.kotlin.basica.model.Messages
+import com.github.nayasis.kotlin.javafx.preloader.NPreloader
+import com.github.nayasis.kotlin.javafx.stage.DEFAULT_ICON
 import javafx.scene.image.Image
 import org.springframework.boot.SpringApplication
 import org.springframework.context.ConfigurableApplicationContext
@@ -11,6 +14,16 @@ import tornadofx.Scope
 import tornadofx.Stylesheet
 import tornadofx.UIComponent
 import kotlin.reflect.KClass
+import kotlin.reflect.jvm.jvmName
+
+fun setPreloader(preloader: KClass<out NPreloader>) {
+    System.setProperty("javafx.preloader", preloader.jvmName)
+    System.setProperty("java.awt.headless", "false")
+}
+
+fun loadDefaultIcon(resourcePath: String) = DEFAULT_ICON.add(resourcePath)
+
+fun loadMessage(resourcePath: String) = Messages.loadFromResource(resourcePath)
 
 @Suppress("SpringJavaConstructorAutowiringInspection")
 open class TornadoFxSpringApp: App {
@@ -19,7 +32,7 @@ open class TornadoFxSpringApp: App {
     constructor(primaryView: KClass<out UIComponent> = NoPrimaryViewSpecified::class, stylesheet: KClass<out Stylesheet>, scope: Scope = FX.defaultScope) : super(primaryView, stylesheet)
     constructor(icon: Image, primaryView: KClass<out UIComponent> = NoPrimaryViewSpecified::class, vararg stylesheet: KClass<out Stylesheet>) : super(icon, primaryView, *stylesheet)
 
-    private lateinit var context: ConfigurableApplicationContext
+    lateinit var context: ConfigurableApplicationContext
 
     override fun init() {
         context = SpringApplication.run(this.javaClass)

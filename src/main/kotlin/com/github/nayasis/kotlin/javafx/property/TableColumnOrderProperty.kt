@@ -1,6 +1,6 @@
 package com.github.nayasis.kotlin.javafx.property
 
-import com.github.nayasis.kotlin.basica.core.nvl
+import com.github.nayasis.kotlin.basica.core.validator.nvl
 import javafx.scene.control.TableColumn
 import javafx.scene.control.TableView
 import java.io.Serializable

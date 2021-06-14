@@ -23,14 +23,14 @@ data class StageProperty(
     val inset: InsetProperty = InsetProperty(),
     var maximized: Boolean = false,
     var previousZoomSize: InsetProperty? = null,
-    val tables: HashMap<String, TableProperty> = hashMapOf(),
-    val checks: HashMap<String, Boolean> = hashMapOf(),
-    val values: HashMap<String, String> = hashMapOf(),
-    val lists: HashMap<String, List<Int>> = hashMapOf(),
-    val visibles: HashMap<String, Boolean> = hashMapOf(),
-    val editables: HashMap<String, Boolean> = hashMapOf(),
-    val disables: HashMap<String, Boolean> = hashMapOf(),
-    val indices: HashMap<String, Int> = hashMapOf(),
+    val tables: HashMap<String,TableProperty> = hashMapOf(),
+    val checks: HashMap<String,Boolean> = hashMapOf(),
+    val values: HashMap<String,String> = hashMapOf(),
+    val lists: HashMap<String,List<Int>> = hashMapOf(),
+    val visibles: HashMap<String,Boolean> = hashMapOf(),
+    val editables: HashMap<String,Boolean> = hashMapOf(),
+    val disables: HashMap<String,Boolean> = hashMapOf(),
+    val indices: HashMap<String,Int> = hashMapOf(),
 ): Serializable{
 
     @JsonIgnore

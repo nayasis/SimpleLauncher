@@ -1,9 +1,8 @@
 package com.github.nayasis.kotlin.javafx.stage
 
-import com.github.nayasis.basica.model.Messages
+import com.github.nayasis.kotlin.basica.model.Messages
 import javafx.application.Platform
 import javafx.beans.value.ChangeListener
-import javafx.beans.value.ObservableValue
 import javafx.concurrent.Task
 import javafx.concurrent.Worker
 import javafx.concurrent.Worker.State.*
@@ -27,36 +26,36 @@ open class ProgressDialog: Dialog<Void> {
 
         if( ! isValid(worker) ) return
 
-        val scene = dialogPane.scene
-        val stage = scene.window as Stage
+        val scene = dialogPane.scene.apply {
+            fill = Color.TRANSPARENT
+            stylesheets.add("/view/dialog-progress.css")
+        }
+        val stage = (scene.window as Stage).apply {
+            initStyle(StageStyle.TRANSPARENT)
+            isAlwaysOnTop = true
+            loadDefaultIcon()
+            addMoveHandler(dialogPane)
+        }
 
         // set style
-        scene.fill = Color.TRANSPARENT
-        stage.initStyle(StageStyle.TRANSPARENT)
-        stage.isAlwaysOnTop = true
-        scene.stylesheets.add("/view/dialog-progress.css")
-        stage.loadDefaultIcon()
-
-        // set event
-        stage.addMoveHandler(dialogPane)
         resultConverter = Callback { dialogButton: ButtonType? -> null }
 
         // set view
         val progressMessage = Label()
 
-        val content = WorkerProgressPane(this)
-        content.maxWidth = Double.MAX_VALUE
-        content.setWorker(worker)
+        val content = WorkerProgressPane(this).apply{
+            maxWidth = Double.MAX_VALUE
+            setWorker(worker)
+        }
 
-        val vbox = VBox(10.0, progressMessage, content)
-        vbox.maxWidth = Double.MAX_VALUE
-        vbox.setPrefSize(400.0, 40.0)
-
-        dialogPane.content = vbox
+        dialogPane.content = VBox(10.0, progressMessage, content).apply {
+            maxWidth = Double.MAX_VALUE
+            setPrefSize(400.0, 40.0)
+        }
 
         // bind text
-        worker!!.titleProperty().addListener { _, _, new: String? -> dialogPane.headerText = Messages.get(new) }
-        worker!!.messageProperty().addListener { _, _, new: String? -> progressMessage.text = Messages.get(new) }
+        worker!!.titleProperty().addListener { _, _, new: String? -> dialogPane.headerText = Messages[new] }
+        worker!!.messageProperty().addListener { _, _, new: String? -> progressMessage.text = Messages[new] }
 
     }
 

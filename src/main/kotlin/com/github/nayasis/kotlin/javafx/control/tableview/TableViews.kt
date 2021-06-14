@@ -1,9 +1,9 @@
 package com.github.nayasis.kotlin.javafx.control.tableview
 
+import com.github.nayasis.kotlin.basica.core.validator.nvl
+import com.github.nayasis.kotlin.basica.exception.implements.NotFound
 import com.github.nayasis.kotlin.javafx.control.tableview.column.children
 import com.github.nayasis.kotlin.javafx.control.tableview.column.findBy
-import com.github.nayasis.kotlin.basica.exception.NotFound
-import com.github.nayasis.kotlin.basica.core.nvl
 import com.sun.javafx.scene.control.skin.TableViewSkin
 import com.sun.javafx.scene.control.skin.VirtualFlow
 import javafx.collections.transformation.FilteredList

@@ -2,15 +2,12 @@
 
 package com.github.nayasis.kotlin.javafx.misc
 
-import com.github.nayasis.basica.file.Files
-import com.github.nayasis.kotlin.basica.core.extension
-import com.github.nayasis.kotlin.basica.core.isFile
-import com.github.nayasis.kotlin.basica.decodeBase64
-import com.github.nayasis.kotlin.basica.encodeBase64
-import com.github.nayasis.kotlin.basica.found
-import com.github.nayasis.kotlin.basica.toDir
-import com.github.nayasis.kotlin.basica.toFile
-import com.github.nayasis.kotlin.basica.toUrl
+import com.github.nayasis.kotlin.basica.core.path.isFile
+import com.github.nayasis.kotlin.basica.core.string.decodeBase64
+import com.github.nayasis.kotlin.basica.core.string.encodeBase64
+import com.github.nayasis.kotlin.basica.core.string.found
+import com.github.nayasis.kotlin.basica.core.string.toFile
+import com.github.nayasis.kotlin.basica.core.string.toUrl
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
@@ -48,7 +45,7 @@ import kotlin.math.floor
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-private val log = KotlinLogging.logger {}
+val log = KotlinLogging.logger {}
 
 object Images {
 
@@ -430,13 +427,12 @@ object Images {
 
     fun toFile(image: Image?, path: String?): File? {
         if( image == null || path.isNullOrEmpty() ) return null
-        Files.makeDir(path.toDir())
-        val output = path.toFile()
-        val extension = output.extension("jpg")
-        var bufferedImage = toBufferedImage(image)
+        val output    = path.toFile().also { it.mkdirs() }
+        val extension = output.extension.ifEmpty {"jpg"}
+        var bfimage   = toBufferedImage(image)
         if ("jpg" == extension )
-            bufferedImage = toBufferedImage(toJpgBinary(bufferedImage))
-        ImageIO.write(bufferedImage, extension, output)
+            bfimage = toBufferedImage(toJpgBinary(bfimage))
+        ImageIO.write(bfimage, extension, output)
         return output
     }
 
