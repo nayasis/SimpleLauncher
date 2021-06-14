@@ -75,6 +75,13 @@ dependencies {
 //	implementation( "commons-codec:commons-codec:1.13" )
 	implementation("ch.qos.logback:logback-classic:1.2.3")
 
+	// basicafx
+	implementation( "org.jclarion:image4j:0.7" )
+	implementation( "org.apache.commons:commons-exec:1.3" )
+	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
+//	implementation group: 'org.apache.commons', name: 'commons-exec', version: '1.3'
+
+
 	// application
 	implementation( "no.tornado:tornadofx:1.7.20" )
 	implementation("de.jensd:fontawesomefx:8.9")
@@ -95,6 +102,7 @@ dependencies {
 	// db
 	implementation("org.xerial:sqlite-jdbc:3.34.0")
 	implementation("com.zsoltfabok:sqlite-dialect:1.0")
+//	implementation("com.github.gwenn:sqlite-dialect:0.1.0")
 
 	// kotlin
 	implementation("org.jetbrains.kotlin:kotlin-reflect")

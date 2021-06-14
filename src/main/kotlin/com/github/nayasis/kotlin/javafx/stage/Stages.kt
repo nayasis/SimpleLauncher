@@ -1,11 +1,10 @@
 package com.github.nayasis.kotlin.javafx.stage
 
-import com.github.nayasis.kotlin.basica.core.toList
+import com.github.nayasis.kotlin.basica.core.collection.toList
 import com.github.nayasis.kotlin.javafx.scene.*
 import javafx.geometry.Rectangle2D
 import javafx.scene.Node
 import javafx.scene.control.Button
-import javafx.scene.image.Image
 import javafx.stage.Stage
 import javafx.stage.Window
 import mu.KotlinLogging
@@ -14,7 +13,7 @@ private val log = KotlinLogging.logger {}
 
 private const val KEY_BORDERLESS = "KEY_BORDERLESS"
 
-val DEFAULT_ICONS = ArrayList<Image>()
+val DEFAULT_ICON = IconContainer()
 
 fun focusedWindow(): Window? {
     for( window in windows())
@@ -27,8 +26,8 @@ fun windows(): List<Window> {
 }
 
 fun Stage.loadDefaultIcon() {
-    if( DEFAULT_ICONS.isNotEmpty() ) {
-        this.icons.addAll(DEFAULT_ICONS)
+    if( ! DEFAULT_ICON.isEmpty() ) {
+        this.icons.addAll(DEFAULT_ICON.icons)
     }
 }
 

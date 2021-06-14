@@ -1,15 +1,13 @@
 package com.github.nayasis.kotlin.javafx.misc
 
-import com.github.nayasis.basica.cli.Command
-import com.github.nayasis.basica.cli.CommandExecutor
-import com.github.nayasis.basica.exception.unchecked.CommandLineException
 import javafx.scene.image.Image
 import javafx.scene.input.Clipboard
 import javafx.scene.input.ClipboardContent
+import org.apache.commons.exec.CommandLine
+import org.apache.commons.exec.DefaultExecutor
 import java.awt.Font
 import java.awt.GraphicsEnvironment
 import java.awt.Toolkit
-import java.awt.datatransfer.DataFlavor
 import java.io.File
 import java.net.URI
 import java.awt.Desktop as AwtDesktop
@@ -36,22 +34,24 @@ object Desktop {
         }
     }
 
-    private fun execute(command: String, parameter: String?): Boolean {
+    private fun execute(command: String, parameter: String? = null): Boolean {
         return try {
-            val executor = CommandExecutor()
-            executor.run(Command().add(command).addQuote(parameter))
+            val commandline = CommandLine(command)
+            if( ! parameter.isNullOrEmpty() )
+                commandline.addArgument(parameter)
+            DefaultExecutor().execute(commandline)
             true
-        } catch (e: CommandLineException) {
+        } catch (e: Exception) {
             false
         }
     }
 
     private fun openOsSpecific(what: String?) {
         if (Platforms.isLinux() || Platforms.isUnix() || Platforms.isSolaris()) {
-            if (execute("kde-open", what)) return
+            if (execute("kde-open",   what)) return
             if (execute("gnome-open", what)) return
-            if (execute("xdg-open", what)) return
-            throw CommandLineException("fail to open(kde, gnome, xdg).")
+            if (execute("xdg-open",   what)) return
+            throw IllegalArgumentException("fail to open(kde, gnome, xdg).")
         } else if (Platforms.isMac()) {
             execute("open", what)
         } else if (Platforms.isWindows()) {

@@ -1,7 +1,6 @@
 package com.github.nayasis.simplelauncher.jpa.entity
 
-import com.github.nayasis.simplelauncher.jpa.entity.base.BaseEntity
-import kotlinx.serialization.Serializable
+import org.hibernate.annotations.DynamicUpdate
 import org.hibernate.annotations.Type
 import java.time.LocalDateTime
 import javax.persistence.Column
@@ -11,7 +10,8 @@ import javax.persistence.Id
 import javax.persistence.Lob
 
 @Entity
-class Link: BaseEntity() {
+@DynamicUpdate
+class Link {
 
     @Id @GeneratedValue
     var id: Long = 0
@@ -19,20 +19,28 @@ class Link: BaseEntity() {
     @Column
     var title: String? = null
 
+    @Column(name = "group_a")
     var group: String? = null
 
+    @Column
     var path: String? = null
 
+    @Column
     val relativePath: String? = null
 
     @Column @Type(type = "yes_no")
     var showConsole: Boolean = false
 
+    @Column
     var option: String? = null
 
+    @Column
     var optionPrefix: String? = null
 
+    @Column
     var commandPrev: String? = null
+
+    @Column
     var commandNext: String? = null
 
     @Column(name="desc") @Lob
@@ -44,7 +52,10 @@ class Link: BaseEntity() {
     @Column @Lob
     var icon: ByteArray? = null
 
+    @Column
     var executeCount: Int = 0
+
+    @Column
     var lastExecDate: LocalDateTime? = null
 
 }
