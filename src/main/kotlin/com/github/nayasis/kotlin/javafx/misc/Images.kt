@@ -19,6 +19,7 @@ import javafx.scene.layout.BackgroundPosition
 import javafx.scene.layout.BackgroundRepeat
 import javafx.scene.layout.BackgroundSize
 import mu.KotlinLogging
+import net.sf.image4j.codec.ico.ICODecoder
 import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.conn.ssl.NoopHostnameVerifier
@@ -31,6 +32,7 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.InputStream
 import java.lang.Math.toRadians
 import java.net.URL
 import java.nio.file.Path
@@ -45,7 +47,7 @@ import kotlin.math.floor
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
-val log = KotlinLogging.logger {}
+private val log = KotlinLogging.logger {}
 
 object Images {
 
@@ -274,10 +276,14 @@ object Images {
         }
     }
 
-    fun toIconImage(file: File?): Image? {
-        if( file == null || ! file.isFile ) return null
-        val icon = FileSystemView.getFileSystemView().getSystemIcon(file) as ImageIcon?
-        return if( icon == null ) null else toImage(icon.image as BufferedImage)
+    fun toIconImage(file: File?): List<Image> {
+        if( file == null || ! file.isFile ) return emptyList()
+        return toIconImage(file.inputStream())
+    }
+
+    fun toIconImage(instream: InputStream): List<Image> {
+        if( instream == null ) return emptyList()
+        return ICODecoder.read(instream).mapNotNull { toImage(it) }
     }
 
     fun toImage(url: String?): Image? {
