@@ -1,30 +1,33 @@
 package com.github.nayasis.kotlin.javafx.preloader
 
-import javafx.stage.Stage
+import com.github.nayasis.kotlin.javafx.stage.Dialog
+import javafx.application.Platform
 import javafx.application.Preloader as FxPreloader
 
 open abstract class NPreloader: FxPreloader() {
 
-    var stage: Stage? = null
-    var handler: ((message: String?, percentage: Double?) -> Unit)? = null
-
-    override fun handleApplicationNotification(info: PreloaderNotification?) {
-        if( info !is Notificator) return
-        if( info.close == true ) {
-            stage?.close()
-            stage?.scene = null
-        } else {
-            handler?.let { it(info.message,info.progress) }
+    override fun handleApplicationNotification(notificator: PreloaderNotification) {
+        when(notificator) {
+            is ProgressNotificator -> onProgress(notificator)
+            is ErrorNotificator -> onError(notificator)
+            is CloseNotificator -> onClose(notificator)
         }
     }
 
-    fun close() = notifyPreloader( Notificator(close=true) )
+    open fun onError( notificator: ErrorNotificator ) {
+        Platform.runLater {
+            notificator.throwable?.printStackTrace( System.err )
+            with(notificator) {
+                Dialog.error( message, throwable )
+            }
+            onClose()
+        }
+    }
 
-    fun notify(index: Number, max: Number) = notifyPreloader( Notificator().progress(index,max) )
+    abstract fun onProgress( notificator: ProgressNotificator )
 
-    fun notify(percent: Double, message: String? = null) =
-        notifyPreloader( Notificator(progress=percent, message=message) )
-
-    fun notify(message: String) = notifyPreloader( Notificator(message = message) )
+    abstract fun onClose( notificator: CloseNotificator = CloseNotificator() )
 
 }
+
+

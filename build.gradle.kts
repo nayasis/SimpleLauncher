@@ -87,6 +87,7 @@ dependencies {
 	implementation("de.jensd:fontawesomefx:8.9")
 	implementation("org.controlsfx:controlsfx:8.40.10")
 	implementation( "com.github.vatbub:mslinks:1.0.6" )
+	implementation( "commons-cli:commons-cli:1.4" )
 
 	// spring
 	implementation("org.springframework.boot:spring-boot-starter")
