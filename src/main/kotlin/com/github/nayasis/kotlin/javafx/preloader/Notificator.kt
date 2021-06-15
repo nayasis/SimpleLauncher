@@ -4,23 +4,27 @@ import javafx.application.Preloader
 import java.lang.Double.isInfinite
 import java.lang.Double.isNaN
 
-class Notificator(
-    var message: String? = null,
-    var progress: Double? = null,
-    val close: Boolean? = null,
-): Preloader.PreloaderNotification {
+interface Notificator: Preloader.PreloaderNotification
 
-    fun progress(index: Number, max: Number): Notificator {
-        progress(index.toDouble(), max.toDouble())
-        return this
+class ProgressNotificator(
+    var progress: Double = 0.0,
+    var message: String? = null,
+): Notificator {
+
+    constructor(index:Number, max:Number, message: String? = null): this(0.0,message) {
+        progress(index,max)
     }
 
-    private fun progress(index: Double, max: Double) {
-        progress = when {
+    fun progress(index: Number, max: Number) {
+        this.progress = progress(index.toDouble(), max.toDouble())
+    }
+
+    private fun progress(index: Double, max: Double): Double {
+        return when {
             isInvalid(index) -> 0.0
             isInvalid(max) -> 0.0
             else -> {
-                if(index > max) max else index / max
+                if(index > max) 1.0 else (index / max)
             }
         }
     }
@@ -30,3 +34,10 @@ class Notificator(
     }
 
 }
+
+class ErrorNotificator(
+    var message: String? = null,
+    var throwable: Throwable? = null,
+): Notificator
+
+class CloseNotificator: Notificator
