@@ -50,7 +50,6 @@ class Preloader: NPreloader() {
     }
 
     override fun onClose(notificator: CloseNotificator) {
-        stage.close()
         Platform.runLater { stage.close() }
     }
 
