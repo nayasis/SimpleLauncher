@@ -25,10 +25,11 @@ fun windows(): List<Window> {
     return Window.impl_getWindows().toList()
 }
 
-fun Stage.loadDefaultIcon() {
+fun Stage.loadDefaultIcon(): Stage {
     if( ! DEFAULT_ICON.isEmpty() ) {
         this.icons.addAll(DEFAULT_ICON.icons)
     }
+    return this
 }
 
 fun Stage.isBorderless(): Boolean {
