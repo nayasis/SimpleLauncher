@@ -292,7 +292,7 @@ object Images {
             url.found("^http(s?)://".toRegex()) -> toImage(url.toUrl())
             url.found("^data:.*?;base64,".toRegex()) -> {
                 val encoded = url.replaceFirst("^data:.*?;base64,".toRegex(), "")
-                toImage(encoded.decodeBase64())
+                toImage(encoded.decodeBase64<ByteArray>())
             }
             url.toFile().exists() -> toImage(url.toFile())
             else -> null
