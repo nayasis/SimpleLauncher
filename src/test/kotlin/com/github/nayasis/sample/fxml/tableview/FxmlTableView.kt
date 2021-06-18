@@ -1,6 +1,6 @@
 package com.github.nayasis.sample.fxml.tableview
 
-import com.github.nayasis.basica.reflection.Reflector
+import com.github.nayasis.kotlin.basica.reflection.Reflector
 import com.github.nayasis.kotlin.javafx.control.tableview.column.bindVal
 import com.github.nayasis.kotlin.javafx.control.tableview.column.findBy
 import com.github.nayasis.kotlin.javafx.control.tableview.findColumnBy
