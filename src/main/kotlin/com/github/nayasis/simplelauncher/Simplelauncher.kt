@@ -1,7 +1,9 @@
 package com.github.nayasis.simplelauncher
 
-import com.github.nayasis.kotlin.spring.javafx.app.TornadoFxSpringApp
-import com.github.nayasis.simplelauncher.view.Preloader
+import com.github.nayasis.kotlin.javafx.stage.loadDefaultIcon
+import com.github.nayasis.kotlin.spring.javafx.app.SpringFxApp
+import com.github.nayasis.simplelauncher.view.Main
+import javafx.stage.Stage
 import org.apache.commons.cli.CommandLine
 import org.apache.commons.cli.Options
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -13,10 +15,17 @@ import tornadofx.paddingAll
 import tornadofx.vbox
 
 @SpringBootApplication
-class Simplelauncher: TornadoFxSpringApp(SpringExampleView::class) {
+class Simplelauncher: SpringFxApp(Main::class) {
 
     override fun start(command: CommandLine) {
         closePreloader()
+    }
+
+    override fun start(stage: Stage) {
+        stage.apply {
+            loadDefaultIcon()
+            super.start(this)
+        }
     }
 
     override fun setOptions(options: Options) {}
@@ -25,9 +34,9 @@ class Simplelauncher: TornadoFxSpringApp(SpringExampleView::class) {
 
 fun main(args: Array<String>) {
 
-    TornadoFxSpringApp.loadMessage("/message/**.prop")
-    TornadoFxSpringApp.loadDefaultIcon("/image/icon/favicon.ico")
-    TornadoFxSpringApp.setPreloader(Preloader::class)
+    SpringFxApp.loadMessage("/message/**.prop")
+    SpringFxApp.loadDefaultIcon("/image/icon/favicon.ico")
+//    SpringFxApp.setPreloader(Splash::class)
 
     launch<Simplelauncher>(*args)
 
