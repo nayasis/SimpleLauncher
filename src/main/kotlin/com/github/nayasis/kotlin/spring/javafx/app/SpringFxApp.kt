@@ -26,7 +26,7 @@ import kotlin.reflect.jvm.jvmName
 
 
 @Suppress("SpringJavaConstructorAutowiringInspection")
-abstract class TornadoFxSpringApp: App {
+abstract class SpringFxApp: App {
 
     constructor(primaryView: KClass<out UIComponent> = NoPrimaryViewSpecified::class, vararg stylesheet: KClass<out Stylesheet>) : super(primaryView, *stylesheet)
     constructor(primaryView: KClass<out UIComponent> = NoPrimaryViewSpecified::class, stylesheet: KClass<out Stylesheet>, scope: Scope = FX.defaultScope) : super(primaryView, stylesheet)
