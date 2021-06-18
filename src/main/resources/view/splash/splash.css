@@ -1,5 +1,5 @@
 #splash {
-  -fx-background-image    : url("../image/splash.jpg");
+  -fx-background-image    : url("splash.jpg");
   -fx-background-repeat   : stretch;
   -fx-background-size     : stretch;
   -fx-background-position : center center;

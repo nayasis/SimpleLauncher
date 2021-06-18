@@ -1,29 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<?import javafx.geometry.Insets?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
 <?import javafx.scene.Cursor?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.CheckBox?>
-<?import javafx.scene.control.CheckMenuItem?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.Menu?>
-<?import javafx.scene.control.MenuBar?>
-<?import javafx.scene.control.MenuItem?>
-<?import javafx.scene.control.TableColumn?>
-<?import javafx.scene.control.TableView?>
-<?import javafx.scene.control.TextArea?>
-<?import javafx.scene.control.TextField?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
-<?import javafx.scene.input.KeyCodeCombination?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.RowConstraints?>
-<?import javafx.scene.layout.VBox?>
-
-<AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="659.0" prefWidth="1000.0" stylesheets="@SimpleLauncher.css" xmlns="http://javafx.com/javafx/8.0.111" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.nayasis.simplelauncher.controller.MainController">
+<?import javafx.scene.input.*?>
+<?import javafx.scene.layout.*?>
+<AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="659.0" prefWidth="1000.0" stylesheets="@SimpleLauncher.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" >
    <children>
       <VBox fx:id="vboxTop" minWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
@@ -31,17 +15,17 @@
               <menus>
                 <Menu mnemonicParsing="false" text="\%menu.file">
                   <items>
-                    <MenuItem mnemonicParsing="false" onAction="#importData" text="\%menu.file.import">
+                    <MenuItem mnemonicParsing="false" text="\%menu.file.import">
                            <accelerator>
                               <KeyCodeCombination alt="UP" code="I" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
                            </accelerator>
                         </MenuItem>
-                        <MenuItem mnemonicParsing="false" onAction="#exportData" text="\%menu.file.export">
+                        <MenuItem mnemonicParsing="false" text="\%menu.file.export">
                            <accelerator>
                               <KeyCodeCombination alt="UP" code="X" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
                            </accelerator>
                         </MenuItem>
-                        <MenuItem mnemonicParsing="false" onAction="#clearData" text="\%menu.file.clear">
+                        <MenuItem mnemonicParsing="false" text="\%menu.file.clear">
                            <accelerator>
                               <KeyCodeCombination alt="UP" code="D" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
                            </accelerator>
@@ -69,7 +53,7 @@
                 </Menu>
                 <Menu mnemonicParsing="false" text="\%menu.help">
                   <items>
-                    <MenuItem fx:id="menuItemHelp" mnemonicParsing="false" onAction="#showHelp" text="\%menu.help.about">
+                    <MenuItem fx:id="menuItemHelp" mnemonicParsing="false" text="\%menu.help.about">
                            <accelerator>
                               <KeyCodeCombination alt="ANY" code="F1" control="UP" meta="UP" shift="UP" shortcut="UP" />
                            </accelerator>
@@ -88,16 +72,11 @@
                         <Insets left="2.0" />
                      </HBox.margin></Label>
                   <TextField fx:id="inputKeyword" prefWidth="520.0" HBox.hgrow="ALWAYS" />
-                  <Label alignment="CENTER_RIGHT" text="\%search.group">
-                     <HBox.margin>
-                        <Insets left="5.0" />
-                     </HBox.margin></Label>
-                  <TextField fx:id="inputGroup" HBox.hgrow="ALWAYS" />
-                  <HBox alignment="CENTER_RIGHT" onDragDropped="#eventDragDroppedOnFileAdd" onDragOver="#eventDragOverByFile" HBox.hgrow="ALWAYS">
+                  <HBox alignment="CENTER_RIGHT" HBox.hgrow="ALWAYS">
                      <children>
-                        <ImageView id="faviconAddFile" fitHeight="27.0" fitWidth="26.0" onMouseClicked="#addFile">
+                        <ImageView id="faviconAddFile" fx:id="btnAddFile" fitHeight="27.0" fitWidth="26.0">
                            <image>
-                              <Image url="@../image/icon/add.png" />
+                              <Image url="@../../image/icon/add.png" />
                            </image>
                            <HBox.margin>
                               <Insets right="10.0" />
@@ -106,11 +85,6 @@
                               <Cursor fx:constant="HAND" />
                            </cursor>
                         </ImageView>
-                        <Label alignment="CENTER_RIGHT" text="\%view.addFile" HBox.hgrow="ALWAYS">
-                           <cursor>
-                              <Cursor fx:constant="HAND" />
-                           </cursor>
-                        </Label>
                      </children>
                      <opaqueInsets>
                         <Insets />
@@ -129,7 +103,7 @@
             </HBox>
             <HBox spacing="10.0" VBox.vgrow="ALWAYS">
                <children>
-                  <TableView fx:id="tableMainRaw" tableMenuButtonVisible="true" HBox.hgrow="ALWAYS">
+                  <TableView fx:id="tableMain" tableMenuButtonVisible="true" HBox.hgrow="ALWAYS">
                     <columns>
                       <TableColumn fx:id="colGroup" maxWidth="1000.0" minWidth="-1.0" prefWidth="100.0" text="\%table.groupName" />
                       <TableColumn fx:id="colTitle" maxWidth="1000.0" minWidth="-1.0" prefWidth="253.0" text="\%table.title" />
@@ -199,12 +173,12 @@
                         </TextArea>
                         <HBox alignment="CENTER_RIGHT" prefHeight="100.0" prefWidth="200.0" GridPane.columnIndex="1" GridPane.rowIndex="4">
                            <children>
-                              <ImageView id="iconTitle" fx:id="descIcon" fitHeight="23.0" fitWidth="23.0" onDragDropped="#eventDragDroppedOnChangeIcon" onDragOver="#eventDragOverByFile" pickOnBounds="true" preserveRatio="true">
+                              <ImageView id="iconTitle" fx:id="descIcon" fitHeight="23.0" fitWidth="23.0" pickOnBounds="true" preserveRatio="true">
                                  <HBox.margin>
                                     <Insets left="5.0" right="5.0" />
                                  </HBox.margin>
                               </ImageView>
-                              <TextField fx:id="descExecPath" onDragDropped="#eventDragDroppedOnPath" onDragOver="#eventDragOverByFile" HBox.hgrow="ALWAYS">
+                              <TextField fx:id="descExecPath" HBox.hgrow="ALWAYS">
                                  <HBox.margin>
                                     <Insets right="5.0" />
                                  </HBox.margin>
@@ -213,9 +187,18 @@
                         </HBox>
                         <HBox alignment="CENTER_RIGHT" prefHeight="100.0" prefWidth="200.0" spacing="5.0" GridPane.columnIndex="1" GridPane.rowIndex="5">
                            <children>
-                              <Button focusTraversable="false" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#copyFolder" text="\%btn.copyFolder" textOverrun="CLIP" />
-                              <Button fx:id="buttonOpenFolder" focusTraversable="false" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#openFolder" text="\%btn.openFolder" textOverrun="CLIP" />
-                              <Button fx:id="buttonChangeIcon" focusTraversable="false" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#changeIcon" onDragDropped="#eventDragDroppedOnChangeIcon" onDragOver="#eventDragOverByFile" text="\%btn.changeIcon" textOverrun="CLIP" />
+                              <Button fx:id="btnCopyFolder" focusTraversable="false" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" text="\%btn.copy.folder" textOverrun="CLIP">
+                                 <tooltip>
+                                    <Tooltip text="\%btn.copy.folder.tooltip" />
+                                 </tooltip></Button>
+                              <Button fx:id="btnOpenFolder" focusTraversable="false" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" text="\%btn.open.folder" textOverrun="CLIP">
+                                 <tooltip>
+                                    <Tooltip text="\%btn.open.folder.tooltip" />
+                                 </tooltip></Button>
+                              <Button fx:id="btnChangeIcon" focusTraversable="false" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" text="\%btn.change.icon" textOverrun="CLIP">
+                                 <tooltip>
+                                    <Tooltip text="\%btn.change.icon.tooltip" />
+                                 </tooltip></Button>
                            </children>
                         </HBox>
                         <TextField fx:id="descExecOption" GridPane.columnIndex="1" GridPane.rowIndex="6" />
@@ -247,22 +230,34 @@
                            <children>
                               <HBox alignment="CENTER_RIGHT" prefHeight="30.0" prefWidth="240.0" GridPane.columnIndex="1">
                                  <children>
-                                    <Button fx:id="buttonNew" ellipsisString="" focusTraversable="false" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#createNewLink" text="\%btn.new" textOverrun="CLIP">
+                                    <Button fx:id="btnNew" ellipsisString="" focusTraversable="false" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" text="\%btn.new" textOverrun="CLIP">
                                        <HBox.margin>
                                           <Insets right="5.0" />
                                        </HBox.margin>
+                                       <tooltip>
+                                          <Tooltip text="\%btn.new.tooltip" />
+                                       </tooltip>
                                     </Button>
-                                    <Button fx:id="buttonDelete" ellipsisString="" focusTraversable="false" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#deleteLink" text="\%btn.delete" textOverrun="CLIP">
+                                    <Button fx:id="btnDelete" ellipsisString="" focusTraversable="false" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" text="\%btn.delete" textOverrun="CLIP">
                                        <HBox.margin>
                                           <Insets right="5.0" />
                                        </HBox.margin>
+                                       <tooltip>
+                                          <Tooltip text="\%btn.delete.tooltip" />
+                                       </tooltip>
                                     </Button>
-                                    <Button fx:id="buttonCopy" ellipsisString="" focusTraversable="false" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#copyLink" text="\%btn.duplicate" textOverrun="CLIP">
+                                    <Button fx:id="btnDuplicate" ellipsisString="" focusTraversable="false" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" text="\%btn.duplicate" textOverrun="CLIP">
                                        <HBox.margin>
                                           <Insets right="5.0" />
                                        </HBox.margin>
+                                       <tooltip>
+                                          <Tooltip text="\%btn.duplicate.tooltip" />
+                                       </tooltip>
                                     </Button>
-                                    <Button fx:id="buttonSave" ellipsisString="" focusTraversable="false" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#saveLink" text="\%btn.save" textOverrun="CLIP" />
+                                    <Button fx:id="btnSave" ellipsisString="" focusTraversable="false" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" text="\%btn.save" textOverrun="CLIP">
+                                       <tooltip>
+                                          <Tooltip text="\%btn.save.tooltip" />
+                                       </tooltip></Button>
                                  </children>
                               </HBox>
                            </children>
