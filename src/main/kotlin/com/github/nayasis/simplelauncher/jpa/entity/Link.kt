@@ -26,7 +26,7 @@ class Link {
     var path: String? = null
 
     @Column
-    val relativePath: String? = null
+    var relativePath: String? = null
 
     @Column @Type(type = "yes_no")
     var showConsole: Boolean = false
@@ -53,7 +53,7 @@ class Link {
     var icon: ByteArray? = null
 
     @Column
-    var executeCount: Int = 0
+    var executeCount: Int? = null
 
     @Column
     var lastExecDate: LocalDateTime? = null
