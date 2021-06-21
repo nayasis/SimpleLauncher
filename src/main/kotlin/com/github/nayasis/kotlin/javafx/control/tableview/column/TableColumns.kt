@@ -21,6 +21,6 @@ fun <S,T:Any> TableColumn<S,T>.children(recursive: Boolean = false): List<TableC
     return ArrayList<TableColumn<S,T>>().apply {
         addAll( this@children.columns as Collection<TableColumn<S,T>> )
         if( recursive )
-            forEach{ addAll(it.children(recursive) as List<TableColumn<S,T>>) }
+            forEach{ addAll(it.children(recursive)) }
     }
 }

@@ -22,7 +22,7 @@ import java.util.concurrent.Executors
 
 open class ProgressDialog: Dialog<Void> {
 
-    constructor(worker: Worker<*>?) {
+    constructor(worker: Worker<*>) {
 
         if( ! isValid(worker) ) return
 
@@ -38,7 +38,7 @@ open class ProgressDialog: Dialog<Void> {
         }
 
         // set style
-        resultConverter = Callback { dialogButton: ButtonType? -> null }
+        resultConverter = Callback { null }
 
         // set view
         val progressMessage = Label()
@@ -54,13 +54,13 @@ open class ProgressDialog: Dialog<Void> {
         }
 
         // bind text
-        worker!!.titleProperty().addListener { _, _, new: String? -> dialogPane.headerText = Messages[new] }
-        worker!!.messageProperty().addListener { _, _, new: String? -> progressMessage.text = Messages[new] }
+        worker.titleProperty().addListener { _, _, new: String? -> dialogPane.headerText = Messages[new] }
+        worker.messageProperty().addListener { _, _, new: String? -> progressMessage.text = Messages[new] }
 
     }
 
-    private fun isValid(worker: Worker<*>?): Boolean {
-        return when (worker?.state) {
+    private fun isValid(worker: Worker<*>): Boolean {
+        return when (worker.state) {
             CANCELLED, FAILED, SUCCEEDED -> false
             else -> true
         }
@@ -79,7 +79,7 @@ open class ProgressDialog: Dialog<Void> {
 
 }
 
-class WorkerProgressPane: Region {
+open class WorkerProgressPane: Region {
 
     var localWorker: Worker<*>? = null
 

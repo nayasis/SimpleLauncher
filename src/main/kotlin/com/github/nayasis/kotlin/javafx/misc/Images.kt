@@ -281,7 +281,7 @@ object Images {
         return toIconImage(file.inputStream())
     }
 
-    fun toIconImage(instream: InputStream): List<Image> {
+    fun toIconImage(instream: InputStream?): List<Image> {
         if( instream == null ) return emptyList()
         return ICODecoder.read(instream).mapNotNull { toImage(it) }
     }
@@ -457,6 +457,6 @@ private fun Image?.isValid(): Boolean {
 }
 
 private fun getRegularFile(files: List<File>?): File? {
-    return files?.firstOrNull { it.isFile } ?: null
+    return files?.firstOrNull { it.isFile }
 }
 
