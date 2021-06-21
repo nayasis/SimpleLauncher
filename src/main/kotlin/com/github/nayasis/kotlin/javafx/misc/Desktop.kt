@@ -1,5 +1,6 @@
 package com.github.nayasis.kotlin.javafx.misc
 
+import com.github.nayasis.kotlin.basica.etc.Platforms
 import javafx.scene.image.Image
 import javafx.scene.input.Clipboard
 import javafx.scene.input.ClipboardContent
@@ -15,7 +16,7 @@ import java.awt.Desktop as AwtDesktop
 object Desktop {
 
     init {
-        if (Platforms.isMac())
+        if (Platforms.isMac)
             System.setProperty("javafx.macosx.embedded", "true")
     }
 
@@ -47,14 +48,14 @@ object Desktop {
     }
 
     private fun openOsSpecific(what: String?) {
-        if (Platforms.isLinux() || Platforms.isUnix() || Platforms.isSolaris()) {
+        if (Platforms.isLinux || Platforms.isUnix || Platforms.isSolaris) {
             if (execute("kde-open",   what)) return
             if (execute("gnome-open", what)) return
             if (execute("xdg-open",   what)) return
             throw IllegalArgumentException("fail to open(kde, gnome, xdg).")
-        } else if (Platforms.isMac()) {
+        } else if (Platforms.isMac) {
             execute("open", what)
-        } else if (Platforms.isWindows()) {
+        } else if (Platforms.isWindows) {
             execute("explorer", what)
         }
     }

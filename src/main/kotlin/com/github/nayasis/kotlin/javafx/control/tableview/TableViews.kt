@@ -64,7 +64,7 @@ private fun <S> TableView<S>.itemIndex(row: S?): Int {
     return when (row) {
         null -> -1
         is Int -> row
-        else -> items.indexOf(row) ?: -1
+        else -> items.indexOf(row)
     }
 }
 
@@ -108,7 +108,7 @@ fun <S> TableView<S>.visibleRows(): Int {
 }
 
 fun <S> TableView<S>.virtualFlow(): VirtualFlow<*>? {
-    return (skin as TableViewSkin<S>)?.children?.firstOrNull { it is VirtualFlow<*> } as VirtualFlow<*>
+    return (skin as TableViewSkin<S>).children?.firstOrNull { it is VirtualFlow<*> } as VirtualFlow<*>
 }
 
 fun <S> TableView<S>.setItems( list: FilteredList<S> ) {
