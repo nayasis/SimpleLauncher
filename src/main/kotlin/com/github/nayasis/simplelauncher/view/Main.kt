@@ -1,5 +1,6 @@
 package com.github.nayasis.simplelauncher.view
 
+import com.github.nayasis.kotlin.basica.core.path.userHome
 import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.javafx.control.tableview.column.bindVal
 import com.github.nayasis.kotlin.javafx.stage.Dialog
@@ -100,7 +101,7 @@ class Main: View() {
 
     private fun initShortcut() {
         menuImportData.setOnAction {
-            val file = Dialog.filePicker("msg.info.004".message(), FILE_EXT, FILE_EXT_DESC ).showOpenDialog(null)
+            val file = Dialog.filePicker("msg.info.004".message(), FILE_EXT, FILE_EXT_DESC ).apply { initialDirectory = userHome().toFile() }.showOpenDialog(null)
                 .also { if(it == null) return@setOnAction }
             linkService.importData(file)
             readData()
