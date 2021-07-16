@@ -7,4 +7,6 @@ import org.springframework.stereotype.Repository
 @Repository
 interface LinkRepository: JpaRepository<Link,Long> {
 
+    fun findAllByOrderByTitle(): List<Link>
+
 }

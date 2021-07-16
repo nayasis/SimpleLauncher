@@ -101,9 +101,10 @@ dependencies {
 	}
 
 	// db
-	implementation("org.xerial:sqlite-jdbc:3.34.0")
-	implementation("com.zsoltfabok:sqlite-dialect:1.0")
+//	implementation("org.xerial:sqlite-jdbc:3.34.0")
+//	implementation("com.zsoltfabok:sqlite-dialect:1.0")
 //	implementation("com.github.gwenn:sqlite-dialect:0.1.0")
+	implementation("com.h2database:h2")
 
 	// kotlin
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
