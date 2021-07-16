@@ -31,17 +31,17 @@
               <menus>
                 <Menu mnemonicParsing="false" text="\%menu.file">
                   <items>
-                    <MenuItem mnemonicParsing="false" onAction="#importData" text="\%menu.file.import">
+                    <MenuItem fx:id="menuImportData" mnemonicParsing="false" text="\%menu.file.import">
                            <accelerator>
                               <KeyCodeCombination alt="UP" code="I" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
                            </accelerator>
                         </MenuItem>
-                        <MenuItem mnemonicParsing="false" onAction="#exportData" text="\%menu.file.export">
+                        <MenuItem mnemonicParsing="false" text="\%menu.file.export">
                            <accelerator>
                               <KeyCodeCombination alt="UP" code="X" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
                            </accelerator>
                         </MenuItem>
-                        <MenuItem mnemonicParsing="false" onAction="#clearData" text="\%menu.file.clear">
+                        <MenuItem mnemonicParsing="false" text="\%menu.file.clear">
                            <accelerator>
                               <KeyCodeCombination alt="UP" code="D" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
                            </accelerator>
@@ -69,7 +69,7 @@
                 </Menu>
                 <Menu mnemonicParsing="false" text="\%menu.help">
                   <items>
-                    <MenuItem fx:id="menuItemHelp" mnemonicParsing="false" onAction="#showHelp" text="\%menu.help.about">
+                    <MenuItem fx:id="menuItemHelp" mnemonicParsing="false" text="\%menu.help.about">
                            <accelerator>
                               <KeyCodeCombination alt="ANY" code="F1" control="UP" meta="UP" shift="UP" shortcut="UP" />
                            </accelerator>

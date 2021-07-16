@@ -3,8 +3,11 @@ spring:
     ansi:
       enabled: always
   datasource:
-    url: jdbc:sqlite:simplelauncher.db?date_string_format=yyyy-MM-dd HH:mm:ss
-    driver-class-name: org.sqlite.JDBC
+#    url: jdbc:sqlite:simplelauncher.db?date_string_format=yyyy-MM-dd HH:mm:ss
+#    driver-class-name: org.sqlite.JDBC
+#    type: com.zaxxer.hikari.HikariDataSource
+    url: jdbc:h2:file:./simplelauncher
+    driver-class-name: org.h2.Driver
     type: com.zaxxer.hikari.HikariDataSource
     hikari:
       auto-commit: false
@@ -12,9 +15,9 @@ spring:
       maximum-pool-size: 3
       connection-timeout: 600000
   jpa:
-    database-platform: org.hibernate.dialect.SQLiteDialect
+    database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
-      ddl-auto: create
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true

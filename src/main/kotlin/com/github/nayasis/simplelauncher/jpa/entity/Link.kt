@@ -1,5 +1,8 @@
 package com.github.nayasis.simplelauncher.jpa.entity
 
+import com.github.nayasis.kotlin.javafx.misc.Images
+import javafx.beans.property.SimpleObjectProperty
+import javafx.scene.image.Image
 import org.hibernate.annotations.DynamicUpdate
 import org.hibernate.annotations.Type
 import java.time.LocalDateTime
@@ -58,4 +61,13 @@ class Link {
     @Column
     var lastExecDate: LocalDateTime? = null
 
+    fun iconTitle(): IconTitle {
+        return IconTitle(Images.toImage(icon), title)
+    }
+
 }
+
+data class IconTitle(
+    var icon: Image?,
+    var title: String?
+)
