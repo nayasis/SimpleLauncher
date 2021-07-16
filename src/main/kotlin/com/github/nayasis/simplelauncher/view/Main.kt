@@ -1,5 +1,6 @@
 package com.github.nayasis.simplelauncher.view
 
+import com.github.nayasis.kotlin.javafx.stage.Localizator
 import com.github.nayasis.simplelauncher.jpa.entity.Link
 import javafx.scene.control.TableColumn
 import javafx.scene.control.TableView
@@ -18,10 +19,8 @@ class Main: View() {
     val colLastUsedDt: TableColumn<Link,String> by fxid()
     val colExecCount: TableColumn<Link,String> by fxid()
 
-
-    private fun initTable() {
-        colTitle.remainingWidth()
-        tableMain.smartResize()
+    init {
+        Localizator().set(root)
     }
 
 }
