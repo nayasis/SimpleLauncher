@@ -15,9 +15,12 @@ private val logger = KotlinLogging.logger{}
 private const val FILE_EXT_DESC = "Data File (*.sl)"
 private const val FILE_EXT = "*.sl"
 
+private const val INITIAL_DIRECTORY = "link.path.fileopen.initial"
+
 @Component
 class LinkService(
-    private val linkRepository: LinkRepository
+    private val linkRepository: LinkRepository,
+    private val configService: ConfigService,
 ) {
 
     @Transactional
@@ -28,6 +31,14 @@ class LinkService(
         val links = Reflector.toObject<List<JsonLink>>(json)
 
         linkRepository.saveAll(links.map { it.toLink() })
+
+    }
+
+    private fun getInitialDirectory(): File {
+
+        if( configService[INITIAL_DIRECTORY].isNullOrEmpty() ) {
+
+        }
 
     }
 
