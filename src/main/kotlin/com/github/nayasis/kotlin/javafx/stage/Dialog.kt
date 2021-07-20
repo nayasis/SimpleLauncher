@@ -1,10 +1,11 @@
 package com.github.nayasis.kotlin.javafx.stage
 
-import com.github.nayasis.kotlin.basica.core.path.exists
+import com.github.nayasis.kotlin.basica.core.path.div
+import com.github.nayasis.kotlin.basica.core.path.userHome
 import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.core.string.toFile
-import com.github.nayasis.kotlin.basica.core.string.toPath
 import com.github.nayasis.kotlin.basica.core.validator.nvl
+import com.github.nayasis.kotlin.basica.etc.Platforms
 import com.github.nayasis.kotlin.basica.exception.Caller
 import javafx.scene.control.*
 import javafx.scene.control.Alert.AlertType
@@ -18,6 +19,7 @@ import javafx.stage.Modality.WINDOW_MODAL
 import javafx.stage.Stage
 import mu.KotlinLogging
 import tornadofx.*
+import java.io.File
 import kotlin.Double.Companion.MAX_VALUE
 
 private val logger = KotlinLogging.logger {}
@@ -92,22 +94,42 @@ class Dialog { companion object {
         }.showAndWait().get()
     }
 
-    fun filePicker(title: String = "", extensions: String = "", extensionDescription: String = "", initialDirectory: String = ""): FileChooser {
+    fun filePicker(title: String = "", extensions: String = "", extensionDescription: String = "", initialDirectory: File?): FileChooser {
         return FileChooser().apply {
             this.title = title
             this.extensionFilters.add( FileChooser.ExtensionFilter(nvl(extensionDescription,extensions), extensions.split(",")) )
-            if( initialDirectory.isNotEmpty() )
-                this.initialDirectory = initialDirectory.toFile()
+            if( initialDirectory != null && initialDirectory.exists() && initialDirectory.canRead() ) {
+                this.initialDirectory = initialDirectory
+            } else {
+                this.initialDirectory = dirDesktop()
+            }
         }
     }
 
-    fun dirPicker(title: String = "", initialDirectory: String = ""): DirectoryChooser {
+    fun filePicker(title: String = "", extensions: String = "", extensionDescription: String = "", initialDirectory: String? = null): FileChooser =
+        filePicker(title,extensions, extensionDescription,initialDirectory?.toFile())
+
+    fun dirPicker(title: String = "", initialDirectory: File?): DirectoryChooser {
         return DirectoryChooser().apply {
             this.title = title
-            if( initialDirectory.isNotEmpty() && initialDirectory.toPath().exists() ) {
-                this.initialDirectory = initialDirectory.toFile()
+            if( initialDirectory != null && initialDirectory.exists() && initialDirectory.canRead() ) {
+                this.initialDirectory = initialDirectory
+            } else {
+                this.initialDirectory = dirDesktop()
             }
         }
+    }
+
+    fun dirPicker(title: String = "", initialDirectory: String? = null): DirectoryChooser =
+        dirPicker(title, initialDirectory?.toFile())
+
+    private fun dirDesktop(): File {
+        return userHome().let {
+            when{
+                Platforms.isWindows -> it / "Desktop"
+                else -> it
+            }
+        }.toFile()
     }
 
 }}
