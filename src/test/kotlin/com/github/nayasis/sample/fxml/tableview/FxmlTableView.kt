@@ -1,17 +1,13 @@
 package com.github.nayasis.sample.fxml.tableview
 
 import com.github.nayasis.kotlin.basica.reflection.Reflector
-import com.github.nayasis.kotlin.javafx.control.tableview.column.bindVal
-import com.github.nayasis.kotlin.javafx.control.tableview.column.findBy
-import com.github.nayasis.kotlin.javafx.control.tableview.findColumnBy
-import javafx.scene.control.TableCell
+import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
 import javafx.scene.control.TableColumn
 import javafx.scene.control.TableView
 import javafx.scene.control.TableView.*
 import javafx.scene.layout.AnchorPane
 import javafx.scene.paint.Color
 import tornadofx.*
-import javax.security.auth.callback.Callback
 
 class DemoTableView: View() {
 
@@ -38,8 +34,8 @@ class DemoTableView: View() {
 
         main.columnResizePolicy = CONSTRAINED_RESIZE_POLICY
 
-        colName.bindVal(Person::name)
-        colAge.bindVal(Person::age).cellFormat {
+        colName.cellValue(Person::name)
+        colAge.cellValue(Person::age).cellFormat {
             style {
                 backgroundColor += if( it > 10 ) Color.RED else Color.GREEN
                 textFill = Color.LIGHTCYAN

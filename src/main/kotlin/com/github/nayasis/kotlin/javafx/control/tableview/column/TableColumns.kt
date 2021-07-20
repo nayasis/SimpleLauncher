@@ -5,7 +5,7 @@ import javafx.util.Callback
 import tornadofx.*
 import kotlin.reflect.KProperty1
 
-inline fun <S,T> TableColumn<S,T>.bindVal(prop: KProperty1<S,T?>, noinline option: TableColumn<S,T>.() -> Unit = {}): TableColumn<S,T> {
+inline fun <S,T> TableColumn<S,T>.cellValue(prop: KProperty1<S,T?>, noinline option: TableColumn<S,T>.() -> Unit = {}): TableColumn<S,T> {
     this.cellValueFactory = Callback { observable(it.value, prop) }
     return this.apply(option)
 }
