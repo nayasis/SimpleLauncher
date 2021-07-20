@@ -20,12 +20,12 @@
                               <KeyCodeCombination alt="UP" code="I" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
                            </accelerator>
                         </MenuItem>
-                        <MenuItem mnemonicParsing="false" text="\%menu.file.export">
+                        <MenuItem fx:id="menuExportData" mnemonicParsing="false" text="\%menu.file.export">
                            <accelerator>
                               <KeyCodeCombination alt="UP" code="X" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
                            </accelerator>
                         </MenuItem>
-                        <MenuItem mnemonicParsing="false" text="\%menu.file.clear">
+                        <MenuItem fx:id="menuDeleteAll" mnemonicParsing="false" text="\%menu.file.clear">
                            <accelerator>
                               <KeyCodeCombination alt="UP" code="D" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
                            </accelerator>

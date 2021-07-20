@@ -1,8 +1,10 @@
 package com.github.nayasis.simplelauncher.view
 
-import com.github.nayasis.kotlin.basica.core.path.userHome
+import com.github.nayasis.kotlin.basica.core.localdate.toFormat
 import com.github.nayasis.kotlin.basica.core.string.message
-import com.github.nayasis.kotlin.javafx.control.tableview.column.bindVal
+import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
+import com.github.nayasis.kotlin.javafx.geometry.Insets
+import com.github.nayasis.kotlin.javafx.misc.Images
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.kotlin.javafx.stage.Localizator
 import com.github.nayasis.simplelauncher.jpa.entity.Link
@@ -10,15 +12,21 @@ import com.github.nayasis.simplelauncher.jpa.repository.LinkRepository
 import com.github.nayasis.simplelauncher.service.LinkService
 import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.FXCollections
+import javafx.geometry.Insets
 import javafx.scene.control.*
 import javafx.scene.image.ImageView
 import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.GridPane
+import javafx.scene.layout.HBox
 import javafx.util.Callback
 import mu.KotlinLogging
 import tornadofx.View
+import tornadofx.hbox
+import tornadofx.imageview
+import tornadofx.label
 import tornadofx.remainingWidth
 import tornadofx.smartResize
+import tornadofx.toProperty
 import java.time.LocalDateTime
 
 private val logger = KotlinLogging.logger {}
@@ -45,6 +53,8 @@ class Main: View() {
     val menuitemAlwaysOnTop: CheckMenuItem by fxid()
     val menuItemHelp: MenuItem by fxid()
     val menuImportData: MenuItem by fxid()
+    val menuExportData: MenuItem by fxid()
+    val menuDeleteAll: MenuItem by fxid()
 
     val inputKeyword: TextField by fxid()
     val inputGroup: TextField by fxid()
@@ -85,34 +95,64 @@ class Main: View() {
         tableMain.smartResize()
         tableMain.selectionModel.selectionMode = SelectionMode.SINGLE
 
-        colGroup.bindVal(Link::group)
-
-        colTitle.cellValueFactory = Callback { SimpleObjectProperty(it.value) }
+        colGroup.cellValue(Link::group)
+        colTitle.cellValueFactory = Callback { it.value.toProperty() }
         colTitle.cellFormat {
-            text = it.title
+            graphic = hbox {
+                imageview {
+                    image = Images.toImage(it.icon)
+                    HBox.setMargin( this, Insets(0,0,0,2) )
+                }
+                label {
+                    text = it.title ?: ""
+                    HBox.setMargin( this, Insets(0,0,0,5) )
+                }
+            }
+
+
         }
 
-        colLastUsedDt.bindVal(Link::lastExecDate)
-        colExecCount.bindVal(Link::executeCount)
+        colLastUsedDt.cellValue(Link::lastExecDate).cellFormat {
+            text = it.toFormat("YYYY-MM-DD HH:MI:SS")
+        }
+        colExecCount.cellValue(Link::executeCount)
 
         readData()
 
     }
 
     private fun initShortcut() {
+
         menuImportData.setOnAction {
-            val file = Dialog.filePicker("msg.info.004".message(), FILE_EXT, FILE_EXT_DESC ).apply { initialDirectory = userHome().toFile() }.showOpenDialog(null)
-                .also { if(it == null) return@setOnAction }
+            val file = linkService.openImportFilePicker().also { if(it==null) return@setOnAction }!!
             linkService.importData(file)
             readData()
             Dialog.alert( "msg.info.009".message().format(file) )
-
         }
+
+        menuExportData.setOnAction {
+            val file = linkService.openExportFilePicker().also { if(it==null) return@setOnAction }!!
+            linkService.exportData(file!!)
+            Dialog.alert( "msg.info.010".message().format(file) )
+        }
+
+        menuDeleteAll.setOnAction {
+            linkService.deleteAll()
+            tableMain.items.clear()
+            clearDetailView()
+        }
+
+    }
+
+    private fun clearDetailView() {
+
     }
 
     fun readData() {
         val links = linkRepository.findAllByOrderByTitle()
         tableMain.items.addAll(FXCollections.observableArrayList(links))
     }
+
+
 
 }
