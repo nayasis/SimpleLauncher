@@ -1,5 +1,6 @@
 package com.github.nayasis.simplelauncher.service
 
+import com.github.nayasis.kotlin.basica.core.path.directory
 import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.reflection.Reflector
 import com.github.nayasis.kotlin.javafx.stage.Dialog
@@ -25,23 +26,36 @@ class LinkService(
 
     @Transactional
     fun importData(file: File) {
-
-        val json = file.readText()
-
-        val links = Reflector.toObject<List<JsonLink>>(json)
-
-        linkRepository.saveAll(links.map { it.toLink() })
-
+        val links = file.readText().let { Reflector.toObject<List<JsonLink>>(it) }.map { it.toLink() }
+        linkRepository.saveAll(links)
     }
 
-    private fun getInitialDirectory(): File {
-
-        if( configService[INITIAL_DIRECTORY].isNullOrEmpty() ) {
-
-        }
-
+    fun exportData(file: File) {
+        val jsonLinks = linkRepository.findAllByOrderByTitle().map { JsonLink(it) }
+        file.writeText( Reflector.toJson(jsonLinks, pretty = true))
     }
 
+    @Transactional
+    fun deleteAll() {
+        linkRepository.deleteAll()
+    }
 
+    fun openImportFilePicker(): File? {
+        return Dialog.filePicker("msg.info.004".message(), FILE_EXT, "msg.info.011".message(), configService.filePickerInitialDirectory)
+            .showOpenDialog(null)
+            .also {
+                if( it != null )
+                    configService.filePickerInitialDirectory = it.directory.path
+            }
+    }
+
+    fun openExportFilePicker(): File? {
+        return Dialog.filePicker("msg.info.003".message(), FILE_EXT, "msg.info.011".message(), configService.filePickerInitialDirectory)
+            .showOpenDialog(null)
+            .also {
+                if( it != null )
+                    configService.filePickerInitialDirectory = it.directory.path
+            }
+    }
 
 }

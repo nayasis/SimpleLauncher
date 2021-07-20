@@ -1,5 +1,6 @@
 package com.github.nayasis.simplelauncher.service
 
+import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.jpa.entity.Config
 import com.github.nayasis.simplelauncher.jpa.repository.ConfigRepository
 import org.springframework.data.repository.findByIdOrNull
@@ -10,6 +11,12 @@ import org.springframework.transaction.annotation.Transactional
 class ConfigService(
     private val repository: ConfigRepository
 ) {
+
+    var filePickerInitialDirectory: String? = null
+        get() = this[::filePickerInitialDirectory.name]
+        set(value) {
+            field = value.also { Context.configService[::filePickerInitialDirectory.name] = it }
+        }
 
     operator fun get(key: String): String? {
         return repository.findByIdOrNull(key)?.value
@@ -23,5 +30,7 @@ class ConfigService(
             repository.save(Config(key,value))
         }
     }
+
+
 
 }
