@@ -3,9 +3,6 @@ spring:
     ansi:
       enabled: always
   datasource:
-#    url: jdbc:sqlite:simplelauncher.db?date_string_format=yyyy-MM-dd HH:mm:ss
-#    driver-class-name: org.sqlite.JDBC
-#    type: com.zaxxer.hikari.HikariDataSource
     url: jdbc:h2:file:./simplelauncher
     driver-class-name: org.h2.Driver
     type: com.zaxxer.hikari.HikariDataSource
@@ -22,15 +19,13 @@ spring:
       hibernate:
         format_sql: true
         use_sql_comments: false
-        show_sql: true
 logging:
   level:
-    org:
-      hibernate:
-        SQL: error
+    org.hibernate:
+        SQL: trace
         type:
           descriptor:
-            sql.BasicBinder : error
+            sql.BasicBinder : trace
     com.nayasis.simplelauncher : trace
     io.nayasis : trace
   pattern:
