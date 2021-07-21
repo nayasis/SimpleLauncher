@@ -3,6 +3,8 @@ package com.github.nayasis.simplelauncher.view
 import com.github.nayasis.kotlin.basica.core.localdate.toFormat
 import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
+import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValueByDefault
+import com.github.nayasis.kotlin.javafx.control.tableview.column.setAlign
 import com.github.nayasis.kotlin.javafx.geometry.Insets
 import com.github.nayasis.kotlin.javafx.misc.Images
 import com.github.nayasis.kotlin.javafx.stage.Dialog
@@ -10,16 +12,15 @@ import com.github.nayasis.kotlin.javafx.stage.Localizator
 import com.github.nayasis.simplelauncher.jpa.entity.Link
 import com.github.nayasis.simplelauncher.jpa.repository.LinkRepository
 import com.github.nayasis.simplelauncher.service.LinkService
-import javafx.beans.property.SimpleObjectProperty
 import javafx.collections.FXCollections
-import javafx.geometry.Insets
+import javafx.geometry.Pos
 import javafx.scene.control.*
 import javafx.scene.image.ImageView
 import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
-import javafx.util.Callback
 import mu.KotlinLogging
+import org.apache.commons.cli.CommandLine
 import tornadofx.View
 import tornadofx.hbox
 import tornadofx.imageview
@@ -91,13 +92,13 @@ class Main: View() {
 
         logger.debug { ">> start initialize" }
 
+        colGroup.remainingWidth()
         colTitle.remainingWidth()
         tableMain.smartResize()
         tableMain.selectionModel.selectionMode = SelectionMode.SINGLE
 
         colGroup.cellValue(Link::group)
-        colTitle.cellValueFactory = Callback { it.value.toProperty() }
-        colTitle.cellFormat {
+        colTitle.cellValueByDefault().cellFormat {
             graphic = hbox {
                 imageview {
                     image = Images.toImage(it.icon)
@@ -108,14 +109,12 @@ class Main: View() {
                     HBox.setMargin( this, Insets(0,0,0,5) )
                 }
             }
-
-
         }
 
         colLastUsedDt.cellValue(Link::lastExecDate).cellFormat {
             text = it.toFormat("YYYY-MM-DD HH:MI:SS")
         }
-        colExecCount.cellValue(Link::executeCount)
+        colExecCount.cellValue(Link::executeCount).setAlign(Pos.CENTER_RIGHT)
 
         readData()
 
