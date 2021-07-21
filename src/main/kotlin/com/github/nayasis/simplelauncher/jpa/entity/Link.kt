@@ -61,13 +61,4 @@ class Link {
     @Column
     var lastExecDate: LocalDateTime? = null
 
-    fun iconTitle(): IconTitle {
-        return IconTitle(Images.toImage(icon), title)
-    }
-
 }
-
-data class IconTitle(
-    var icon: Image?,
-    var title: String?
-)

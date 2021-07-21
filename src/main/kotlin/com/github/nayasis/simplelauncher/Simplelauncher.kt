@@ -41,18 +41,3 @@ fun main(args: Array<String>) {
     launch<Simplelauncher>(*args)
 
 }
-
-class SpringExampleView: View("Example View") {
-
-    val bean: HelloBean by di()
-
-    override val root = vbox{
-        label(bean.helloworld()).paddingAll = 20
-    }
-
-}
-
-@Component
-class HelloBean {
-    fun helloworld(): String = "Hello by di()"
-}

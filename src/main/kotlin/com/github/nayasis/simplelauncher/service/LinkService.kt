@@ -4,6 +4,7 @@ import com.github.nayasis.kotlin.basica.core.path.directory
 import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.reflection.Reflector
 import com.github.nayasis.kotlin.javafx.stage.Dialog
+import com.github.nayasis.simplelauncher.jpa.entity.Link
 import com.github.nayasis.simplelauncher.jpa.repository.LinkRepository
 import com.github.nayasis.simplelauncher.jpa.vo.JsonLink
 import mu.KotlinLogging
@@ -23,6 +24,11 @@ class LinkService(
     private val linkRepository: LinkRepository,
     private val configService: ConfigService,
 ) {
+
+    @Transactional
+    fun update( link: Link ) {
+        linkRepository.save(link)
+    }
 
     @Transactional
     fun importData(file: File) {
