@@ -26,7 +26,6 @@ logging:
         type:
           descriptor:
             sql.BasicBinder : trace
-    com.nayasis.simplelauncher : trace
-    io.nayasis : trace
+    com.github.nayasis.simplelauncher : debug
   pattern:
     console: "%d{HH:mm:ss.SSS} %clr(%-5level) %50(\\(%F:%L\\)){blue} : %msg%n"
