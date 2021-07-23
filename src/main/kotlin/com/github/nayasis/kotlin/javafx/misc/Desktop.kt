@@ -13,20 +13,24 @@ import java.io.File
 import java.net.URI
 import java.awt.Desktop as AwtDesktop
 
-object Desktop {
+class Desktop { companion object {
 
     init {
         if (Platforms.isMac)
             System.setProperty("javafx.macosx.embedded", "true")
     }
 
-    fun toolkit(): Toolkit {
-        return Toolkit.getDefaultToolkit()
-    }
+    val toolkit: Toolkit
+        get() = Toolkit.getDefaultToolkit()
 
-    private fun clipboard(): Clipboard {
-        return Clipboard.getSystemClipboard()
-    }
+    val clipboard: Clipboard
+        get() = Clipboard.getSystemClipboard()
+
+    val graphics: GraphicsEnvironment
+        get() = GraphicsEnvironment.getLocalGraphicsEnvironment()
+
+    val allFonts: List<Font>
+        get() = graphics.allFonts.toList()
 
     private fun support(action: AwtDesktop.Action): Boolean {
         return when {
@@ -84,26 +88,16 @@ object Desktop {
         }
     }
 
-    fun graphics(): GraphicsEnvironment = GraphicsEnvironment.getLocalGraphicsEnvironment()
-
-    fun allFonts(): List<Font> = graphics().allFonts.toList()
-
-}
-
-private fun clipboard(): Clipboard = Clipboard.getSystemClipboard()
+}}
 
 fun Clipboard.set(text: String?) {
-    text?.let{ clipboard().setContent(ClipboardContent().apply {putString(it)}) }
+    text?.let{ setContent(ClipboardContent().apply {putString(it)}) }
 }
 
 fun Clipboard.set(image: Image?) {
-    image?.let { clipboard().setContent(ClipboardContent().apply {putImage(it)}) }
+    image?.let { setContent(ClipboardContent().apply {putImage(it)}) }
 }
 
-fun Clipboard.getText(): String {
-    return clipboard().string
-}
+fun Clipboard.getText(): String = this.string
 
-fun Clipboard.getImage(): Image? {
-    return Images.toImage(clipboard())
-}
+fun Clipboard.getImage(): Image? = Images.toImage(this)
