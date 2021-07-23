@@ -1,10 +1,9 @@
 package com.github.nayasis.simplelauncher.jpa.entity
 
 import com.github.nayasis.kotlin.javafx.misc.Images
-import javafx.beans.property.SimpleObjectProperty
+import com.github.nayasis.simplelauncher.common.ICON_NEW
 import javafx.scene.image.Image
 import org.hibernate.annotations.DynamicUpdate
-import org.hibernate.annotations.Type
 import java.time.LocalDateTime
 import javax.persistence.Column
 import javax.persistence.Entity
@@ -22,7 +21,7 @@ class Link {
     @Column
     var title: String? = null
 
-    @Column(name = "group_a")
+    @Column(name="a_group")
     var group: String? = null
 
     @Column
@@ -31,14 +30,17 @@ class Link {
     @Column
     var relativePath: String? = null
 
-    @Column @Type(type = "yes_no")
+    @Column
     var showConsole: Boolean = false
 
     @Column
-    var option: String? = null
+    var eachExecution: Boolean = true
 
     @Column
-    var optionPrefix: String? = null
+    var argument: String? = null
+
+    @Column
+    var commandPrefix: String? = null
 
     @Column
     var commandPrev: String? = null
@@ -56,9 +58,13 @@ class Link {
     var icon: ByteArray? = null
 
     @Column
-    var executeCount: Int? = null
+    var executeCount: Int = 0
 
     @Column
     var lastExecDate: LocalDateTime? = null
+
+    fun getIconAsImage(): Image {
+        return Images.toImage(icon ?: ICON_NEW)!!
+    }
 
 }

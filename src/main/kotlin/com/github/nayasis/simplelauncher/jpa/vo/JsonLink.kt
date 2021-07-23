@@ -21,7 +21,7 @@ data class JsonLink(
     var description: String? = null,
     var keyword: Set<String>? = null,
     var icon: String? = null,
-    var executeCount: Int? = null,
+    var executeCount: Int = 0,
     var lastExecDate: LocalDateTime? = null,
 ) {
 
@@ -31,8 +31,8 @@ data class JsonLink(
         path         = entity.path,
         relativePath = entity.relativePath,
         showConsole  = entity.showConsole,
-        option       = entity.option,
-        optionPrefix = entity.optionPrefix,
+        option       = entity.argument,
+        optionPrefix = entity.commandPrefix,
         commandPrev  = entity.commandPrev,
         commandNext  = entity.commandNext,
         description  = entity.description,
@@ -50,8 +50,8 @@ data class JsonLink(
             path         = it.path
             relativePath = it.relativePath
             showConsole  = it.showConsole
-            option       = it.option
-            optionPrefix = it.optionPrefix
+            argument       = it.option
+            commandPrefix = it.optionPrefix
             commandPrev  = it.commandPrev
             commandNext  = it.commandNext
             description  = it.description
