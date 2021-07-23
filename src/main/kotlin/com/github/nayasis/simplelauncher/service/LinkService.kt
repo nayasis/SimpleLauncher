@@ -4,6 +4,7 @@ import com.github.nayasis.kotlin.basica.core.path.directory
 import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.reflection.Reflector
 import com.github.nayasis.kotlin.javafx.stage.Dialog
+import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.jpa.entity.Link
 import com.github.nayasis.simplelauncher.jpa.repository.LinkRepository
 import com.github.nayasis.simplelauncher.jpa.vo.JsonLink
@@ -14,10 +15,7 @@ import java.io.File
 
 private val logger = KotlinLogging.logger{}
 
-private const val FILE_EXT_DESC = "Data File (*.sl)"
 private const val FILE_EXT = "*.sl"
-
-private const val INITIAL_DIRECTORY = "link.path.fileopen.initial"
 
 @Component
 class LinkService(
@@ -44,6 +42,12 @@ class LinkService(
     @Transactional
     fun deleteAll() {
         linkRepository.deleteAll()
+    }
+
+    @Transactional
+    fun delete(link: Link) {
+        linkRepository.delete(link)
+        Context.main.links.remove(link)
     }
 
     fun openImportFilePicker(): File? {

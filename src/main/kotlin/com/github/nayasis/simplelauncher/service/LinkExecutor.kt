@@ -1,40 +1,71 @@
 package com.github.nayasis.simplelauncher.service
 
-import com.github.nayasis.kotlin.basica.core.extention.ifEmpty
 import com.github.nayasis.kotlin.basica.core.path.*
-import com.github.nayasis.kotlin.basica.core.string.format.DEFAULT_BINDER
-import com.github.nayasis.kotlin.basica.core.string.format.ExtractPattern
-import com.github.nayasis.kotlin.basica.core.string.format.Formatter
-import com.github.nayasis.kotlin.basica.core.string.toPath
+import com.github.nayasis.kotlin.basica.core.string.message
+import com.github.nayasis.kotlin.basica.core.string.tokenize
+import com.github.nayasis.kotlin.javafx.misc.Desktop
+import com.github.nayasis.kotlin.javafx.stage.Dialog
+import com.github.nayasis.simplelauncher.common.Context.Companion.main
 import com.github.nayasis.simplelauncher.jpa.entity.Link
-import com.github.nayasis.simplelauncher.jpa.repository.LinkRepository
 import mu.KotlinLogging
 import org.apache.commons.exec.CommandLine
 import org.apache.commons.exec.DefaultExecuteResultHandler
 import org.apache.commons.exec.DefaultExecutor
 import org.springframework.stereotype.Service
+import tornadofx.runLater
 import java.io.File
+import java.lang.StringBuilder
 import java.nio.file.Path
-
 
 private val logger = KotlinLogging.logger{}
 
-private val PATTERN_KEYWORD = ExtractPattern("#\\{([^\\s{}]*?)}".toPattern())
-
 @Service
 class LinkExecutor(
-    private val linkService: LinkService,
-    private val linkRepository: LinkRepository
+    private val linkService: LinkService
 ) {
 
-    fun run(link: Link) {
+    fun run( link: Link, files: Collection<File>? = null ) {
+        linkService.update(link.apply { executeCount++ })
+        if( files == null ) {
+            runLater { run(LinkCommand(link)) }
+        } else {
+            if( link.eachExecution ) {
+                files.forEach { file ->
+                    runLater { run(LinkCommand(link,file),true) }
+                }
+            } else {
+                runLater { run(LinkCommand(link,files),false) }
+            }
+        }
+    }
 
+//    fun run(link: Link) = run(LinkCommand(link))
+//
+//    fun run(link: Link, file: File, wait: Boolean = true) = run(LinkCommand(link,file),wait)
+//
+//    fun run(link: Link, files: Collection<File>, wait: Boolean = false) = run(LinkCommand(link,files),wait)
 
+    private fun run(linkCommand: LinkCommand, wait: Boolean = false) {
+
+        linkCommand.commandPrev.tokenize("\n").forEach { run(it,linkCommand.workingDirectory,true) }
+
+        val command = StringBuilder().apply {
+            if( ! linkCommand.commandPrefix.isNullOrEmpty() )
+                append(linkCommand.commandPrefix).append(' ')
+            append(linkCommand.path)
+            if( ! linkCommand.argument.isNullOrEmpty() )
+                append(' ').append(linkCommand.argument)
+        }.toString()
+
+        main.printCommand(command)
+
+        run(command, linkCommand.workingDirectory, wait || linkCommand.showConsole)
+
+        linkCommand.commandNext.tokenize("\n").forEach { run(it,linkCommand.workingDirectory,true) }
 
     }
 
-
-    fun run(command: String?, wait: Boolean): Boolean {
+    private fun run(command: String?, workingDirectory: Path?, wait: Boolean): Boolean {
 
         if( command.isNullOrBlank() ) return false
 
@@ -43,8 +74,10 @@ class LinkExecutor(
 
         val cli = CommandLine.parse(command)
 
-        command.toPath().let {
-            if(it.exists()) executor.workingDirectory = it.directory.toFile() }
+        if( workingDirectory?.exists() == true )
+            executor.workingDirectory = workingDirectory.toFile().directory
+
+        logger.debug { ">> command : $cli" }
 
         executor.execute(cli, resultHandler)
 
@@ -55,43 +88,19 @@ class LinkExecutor(
 
     }
 
-
-    private fun getExecutionPath(link: Link): Path? {
-
-        var path = link.path?.toPath().also { if(it==null) return null }!!
-        if( path.exists() ) return path
-
-        path = rootPath() / link.path.ifEmpty{""}
-        if( path.exists() ) return path
-
-        path = rootPath() / link.relativePath.ifEmpty{""}
-        if( path.exists() ) {
-            link.path = path.pathString
-            linkService.update(link)
-            return path
-        }
-
-        return null
-
-    }
-
-    private fun wrapDoubleQuote(value: String) = "\"${value.replace("\"", "\\\"")}\""
-
-    private fun getParameter(file: File?): Map<String,String> {
-        return HashMap<String,String>().apply {
-            if( file == null || ! file.exists() ) return this
-            this["filepath"] = file.absolutePath
-            this["dir"]      = if (file.isDirectory) file.path else file.parent
-            this["filename"] = file.name
-            this["name"]     = file.nameWithoutExtension
-            this["ext"]      = file.extension
-            this["home"]     = userHome().pathString
+    fun openFolder(link: Link) {
+        LinkCommand(link).path?.directory?.let {
+            if( it.notExists() ) {
+                Dialog.error("msg.err.005".message().format(it) )
+            } else {
+                Desktop.open(it.toFile())
+            }
         }
     }
 
-    private fun bindOption(option: String, param: Map<String,String>): String {
-        return Formatter().bind( PATTERN_KEYWORD, option, DEFAULT_BINDER, false, param )
+    fun copyFolder(link: Link) {
+        val path = LinkCommand(link).path?.directory ?: link.path
+        Desktop
     }
-
 
 }
