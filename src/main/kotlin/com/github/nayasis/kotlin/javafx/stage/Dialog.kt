@@ -82,6 +82,10 @@ class Dialog { companion object {
         }.showAndWait()
     }
 
+    fun error(exception: Throwable?) {
+        error(exception?.message, exception)
+    }
+
     fun prompt(message: String?): String {
         return TextInputDialog().apply {
             headerText = message
