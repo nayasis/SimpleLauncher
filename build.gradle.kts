@@ -68,19 +68,17 @@ repositories {
 dependencies {
 
 	// common
-	implementation( "com.github.nayasis:basica-kt:develop-SNAPSHOT" ){ isChanging = true }
-	implementation( "org.apache.httpcomponents:httpclient:4.4" )
-//	implementation( "commons-io:commons-io:2.4" )
-//	implementation( "commons-cli:commons-cli:1.4" )
-//	implementation( "commons-codec:commons-codec:1.13" )
+	implementation("com.github.nayasis:basica-kt:develop-SNAPSHOT"){ isChanging = true }
+//	implementation("commons-io:commons-io:2.4")
+//	implementation("commons-cli:commons-cli:1.4")
+//	implementation("commons-codec:commons-codec:1.13")
 	implementation("ch.qos.logback:logback-classic:1.2.3")
 
 	// basicafx
 	implementation( "org.jclarion:image4j:0.7" )
 	implementation( "org.apache.commons:commons-exec:1.3" )
+	implementation("org.apache.httpcomponents:httpclient:4.5.13")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
-//	implementation group: 'org.apache.commons', name: 'commons-exec', version: '1.3'
-
 
 	// application
 	implementation( "no.tornado:tornadofx:1.7.20" )
@@ -115,7 +113,7 @@ dependencies {
 
 	testImplementation("org.apache.pdfbox:pdfbox:2.0.16")
 	testImplementation("com.levigo.jbig2:levigo-jbig2-imageio:2.0")
-	testImplementation("org.apache.httpcomponents:httpclient:4.5.3")
+	testImplementation("org.apache.httpcomponents:httpclient:4.5.13")
 
 	testImplementation("org.junit.jupiter:junit-jupiter-api:5.3.1")
 	testImplementation("org.junit.jupiter:junit-jupiter-engine:5.3.1")
