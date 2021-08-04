@@ -5,7 +5,7 @@ package com.github.nayasis.kotlin.javafx.misc
 import com.github.nayasis.kotlin.basica.core.path.isFile
 import com.github.nayasis.kotlin.basica.core.string.decodeBase64
 import com.github.nayasis.kotlin.basica.core.string.encodeBase64
-import com.github.nayasis.kotlin.basica.core.string.found
+import com.github.nayasis.kotlin.basica.core.string.find
 import com.github.nayasis.kotlin.basica.core.string.toFile
 import com.github.nayasis.kotlin.basica.core.string.toUrl
 import javafx.embed.swing.SwingFXUtils
@@ -20,7 +20,6 @@ import javafx.scene.layout.BackgroundRepeat
 import javafx.scene.layout.BackgroundSize
 import mu.KotlinLogging
 import net.sf.image4j.codec.ico.ICODecoder
-import org.apache.http.client.methods.CloseableHttpResponse
 import org.apache.http.client.methods.HttpGet
 import org.apache.http.conn.ssl.NoopHostnameVerifier
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory
@@ -39,8 +38,6 @@ import java.nio.file.Path
 import java.util.*
 import javax.imageio.ImageIO
 import javax.net.ssl.SSLContext
-import javax.swing.ImageIcon
-import javax.swing.filechooser.FileSystemView
 import kotlin.collections.HashMap
 import kotlin.math.abs
 import kotlin.math.floor
@@ -233,23 +230,15 @@ object Images {
     }
 
     fun toImage(url: URL?): Image? {
-
-        val httpClient = getHttpClient()
-        val request = HttpGet(url.toString())
-        var response: CloseableHttpResponse? = null
-
-        return try {
-            response = httpClient.execute(request)
-            val image: BufferedImage = ImageIO.read(response.getEntity().content)
-            toImage(image)
-        } catch (e: Exception) {
-            log.error(e.message,e)
-            null
-        } finally {
-            try { response?.close()  } catch (ignored: Exception) {}
-            try { httpClient.close() } catch (ignored: Exception) {}
-        }
-
+        if( url == null ) return null
+        return getHttpClient().use{ it.execute(HttpGet(url.toString()))?.use { response ->
+             try {
+                toImage(ImageIO.read(response.entity.content))
+            } catch (e: Exception) {
+                log.error(e.message,e)
+                null
+            }
+        }}
     }
 
     private fun getHttpClient(): CloseableHttpClient {
@@ -289,8 +278,8 @@ object Images {
     fun toImage(url: String?): Image? {
         return when {
             url == null -> null
-            url.found("^http(s?)://".toRegex()) -> toImage(url.toUrl())
-            url.found("^data:.*?;base64,".toRegex()) -> {
+            url.find("^http(s?)://".toRegex()) -> toImage(url.toUrl())
+            url.find("^data:.*?;base64,".toRegex()) -> {
                 val encoded = url.replaceFirst("^data:.*?;base64,".toRegex(), "")
                 toImage(encoded.decodeBase64<ByteArray>())
             }
@@ -449,7 +438,7 @@ private fun Dragboard.hasRegularFile(): Boolean {
 }
 
 private fun Dragboard.hasHtmlImgTag(): Boolean {
-    return this.hasHtml() && this.html.found("(?is)^<img\\W".toPattern())
+    return this.hasHtml() && this.html.find("(?is)^<img\\W".toPattern())
 }
 
 private fun Image?.isValid(): Boolean {
