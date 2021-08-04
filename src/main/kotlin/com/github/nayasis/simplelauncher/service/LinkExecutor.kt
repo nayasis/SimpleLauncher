@@ -4,13 +4,16 @@ import com.github.nayasis.kotlin.basica.core.path.*
 import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.core.string.tokenize
 import com.github.nayasis.kotlin.javafx.misc.Desktop
+import com.github.nayasis.kotlin.javafx.misc.set
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.simplelauncher.common.Context.Companion.main
+import com.github.nayasis.simplelauncher.common.wrapDoubleQuote
 import com.github.nayasis.simplelauncher.jpa.entity.Link
 import mu.KotlinLogging
 import org.apache.commons.exec.CommandLine
 import org.apache.commons.exec.DefaultExecuteResultHandler
 import org.apache.commons.exec.DefaultExecutor
+import org.apache.commons.exec.ExecuteException
 import org.springframework.stereotype.Service
 import tornadofx.runLater
 import java.io.File
@@ -53,7 +56,8 @@ class LinkExecutor(
         val command = StringBuilder().apply {
             if( ! linkCommand.commandPrefix.isNullOrEmpty() )
                 append(linkCommand.commandPrefix).append(' ')
-            append(linkCommand.path)
+            if( linkCommand.path != null )
+                append(linkCommand.path!!.pathString.wrapDoubleQuote())
             if( ! linkCommand.argument.isNullOrEmpty() )
                 append(' ').append(linkCommand.argument)
         }.toString()
@@ -71,7 +75,13 @@ class LinkExecutor(
         if( command.isNullOrBlank() ) return false
 
         val executor = DefaultExecutor()
-        val resultHandler = DefaultExecuteResultHandler()
+        val resultHandler = object:DefaultExecuteResultHandler() {
+            override fun onProcessFailed(e: ExecuteException?) {
+                runLater {
+                    e?.cause?.let { Dialog.error(it) }
+                }
+            }
+        }
 
         val cli = CommandLine.parse(command)
 
@@ -101,7 +111,7 @@ class LinkExecutor(
 
     fun copyFolder(link: Link) {
         val path = LinkCommand(link).path?.directory ?: link.path
-        Desktop
+        Desktop.clipboard.set(path.toString())
     }
 
 }
