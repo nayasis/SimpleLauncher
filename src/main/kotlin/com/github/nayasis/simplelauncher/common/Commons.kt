@@ -8,3 +8,7 @@ fun makeKeyword(vararg word: String?): Set<String> {
         .map { it.toLowerCase() }
         .toSet()
 }
+
+fun String.wrapDoubleQuote(): String {
+    return "\"${this.replace("\"", "\\\"")}\""
+}

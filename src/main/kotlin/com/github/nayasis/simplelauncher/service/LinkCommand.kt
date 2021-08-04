@@ -12,6 +12,7 @@ import com.github.nayasis.kotlin.basica.core.string.format.ExtractPattern
 import com.github.nayasis.kotlin.basica.core.string.format.Formatter
 import com.github.nayasis.kotlin.basica.core.string.toPath
 import com.github.nayasis.simplelauncher.common.Context
+import com.github.nayasis.simplelauncher.common.wrapDoubleQuote
 import com.github.nayasis.simplelauncher.jpa.entity.Link
 import java.io.File
 import java.nio.file.Path
@@ -51,7 +52,7 @@ class LinkCommand {
         val prevArgument = argument
         bind(file)
         if( prevArgument == argument ) {
-            argument += " " + wrapDoubleQuote(file.path)
+            argument += " " + file.path.wrapDoubleQuote()
         }
     }
 
@@ -60,7 +61,7 @@ class LinkCommand {
         bind(files.first())
         if( prevArgument == argument ) {
             @Suppress("SimplifiableCallChain")
-            argument += " " + files.map { wrapDoubleQuote(it.path) }.joinToString(" ")
+            argument += " " + files.map { it.path.wrapDoubleQuote() }.joinToString(" ")
         }
     }
 
@@ -72,8 +73,6 @@ class LinkCommand {
             commandNext   = bindOption(commandNext, it)
         }
     }
-
-    private fun wrapDoubleQuote(value: String) = "\"${value.replace("\"", "\\\"")}\""
 
     private fun toParameter(file: File?): Map<String,String> {
         return HashMap<String,String>().apply {
@@ -109,7 +108,7 @@ class LinkCommand {
             return path
         }
 
-        return null
+        return link.path!!.toPath()
 
     }
 
