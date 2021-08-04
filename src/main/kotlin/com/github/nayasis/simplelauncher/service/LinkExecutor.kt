@@ -26,6 +26,7 @@ class LinkExecutor(
 
     fun run( link: Link, files: Collection<File>? = null ) {
         linkService.update(link.apply { executeCount++ })
+        main.tableMain.refresh()
         if( files == null ) {
             runLater { run(LinkCommand(link)) }
         } else {
