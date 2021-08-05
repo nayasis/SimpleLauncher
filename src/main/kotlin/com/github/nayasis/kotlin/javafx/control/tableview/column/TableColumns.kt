@@ -40,6 +40,6 @@ fun <S,T:Any> TableColumn<S,T>.children(recursive: Boolean = false): List<TableC
 }
 
 inline fun <S,T> TableColumn<S,T>.setAlign(align: Pos): TableColumn<S,T> {
-    this.styleClass.add("-fx-alignment: ${align.name}")
+    this.style = "${this.style};-fx-alignment:${align.name}"
     return this
 }
