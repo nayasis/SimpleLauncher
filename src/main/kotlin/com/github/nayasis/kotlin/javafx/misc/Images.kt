@@ -80,7 +80,7 @@ object Images {
      * @param format    image format (jpg, png, ... )
      * @return binary data
      */
-    fun toBinary(image: BufferedImage?, format: String?): ByteArray {
+    fun toBinary(image: BufferedImage?, format: String = "jpg"): ByteArray {
         return try {
             val stream = ByteArrayOutputStream()
             ImageIO.write(image, format, stream)
@@ -97,7 +97,7 @@ object Images {
      * @param format    image format (jpg, png, ... )
      * @return binary data
      */
-    fun toBinary(image: Image?, format: String?): ByteArray {
+    fun toBinary(image: Image?, format: String = "jpg"): ByteArray {
         return try {
             val stream = ByteArrayOutputStream()
             ImageIO.write(toBufferedImage(image), format, stream)
