@@ -103,6 +103,7 @@ object Images {
             ImageIO.write(toBufferedImage(image), format, stream)
             stream.toByteArray()
         } catch (e: Exception) {
+            log.error(e.message, e)
             byteArrayOf()
         }
     }
