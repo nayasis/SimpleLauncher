@@ -15,6 +15,7 @@ import com.github.nayasis.kotlin.javafx.misc.set
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.kotlin.javafx.stage.Localizator
 import com.github.nayasis.simplelauncher.common.Context
+import com.github.nayasis.simplelauncher.common.ICON_IMAGE_TYPE
 import com.github.nayasis.simplelauncher.jpa.entity.Link
 import com.github.nayasis.simplelauncher.jpa.repository.LinkRepository
 import com.github.nayasis.simplelauncher.service.LinkExecutor
@@ -326,13 +327,13 @@ class Main: View("application.title".message()) {
             it.showConsole   = descShowConsole.isSelected
             it.eachExecution = descEachExecution.isSelected
             it.group         = descGroupName.text.trim()
-            it.description   = descDescription.text.trim()
+            it.description   = descDescription.text?.trim()
             it.path          = descExecPath.text.trim()
             it.argument      = descArg.text.trim()
             it.commandPrefix = descCmdPrefix.text.trim()
             it.commandPrev   = descCmdPrev.text
             it.commandNext   = descCmdNext.text
-            it.icon          = Images.toBinary(descIcon.image)
+            it.icon          = Images.toBinary(descIcon.image,ICON_IMAGE_TYPE)
             linkService.save(it)
             if(isNew) links.add(it)
             tableMain.refresh()
