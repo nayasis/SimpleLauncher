@@ -13,7 +13,7 @@ import javax.persistence.Lob
 
 @Entity
 @DynamicUpdate
-class Link {
+class Link: Cloneable {
 
     @Id @GeneratedValue
     var id: Long = 0
@@ -63,8 +63,16 @@ class Link {
     @Column
     var lastExecDate: LocalDateTime? = null
 
-    fun getIconAsImage(): Image {
-        return Images.toImage(icon ?: ICON_NEW)!!
+    fun getImageIcon(): Image {
+        return try {
+            Images.toImage(icon ?: ICON_NEW)!!
+        } catch (e: Exception) {
+            Images.toImage(ICON_NEW)!!
+        }
+    }
+
+    public override fun clone(): Link {
+        return super.clone() as Link
     }
 
 }
