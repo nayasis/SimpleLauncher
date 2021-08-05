@@ -6,34 +6,39 @@ import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValueByDefault
 import com.github.nayasis.kotlin.javafx.control.tableview.column.setAlign
+import com.github.nayasis.kotlin.javafx.control.tableview.focused
+import com.github.nayasis.kotlin.javafx.control.tableview.select
 import com.github.nayasis.kotlin.javafx.geometry.Insets
+import com.github.nayasis.kotlin.javafx.misc.Desktop
 import com.github.nayasis.kotlin.javafx.misc.Images
+import com.github.nayasis.kotlin.javafx.misc.set
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.kotlin.javafx.stage.Localizator
+import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.jpa.entity.Link
 import com.github.nayasis.simplelauncher.jpa.repository.LinkRepository
 import com.github.nayasis.simplelauncher.service.LinkExecutor
 import com.github.nayasis.simplelauncher.service.LinkService
-import javafx.collections.FXCollections
 import javafx.collections.ListChangeListener
-import javafx.collections.ObservableList
 import javafx.geometry.Pos
+import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.image.ImageView
 import javafx.scene.input.KeyCode
+import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
+import javafx.scene.layout.VBox
 import mu.KotlinLogging
 import tornadofx.*
-import java.io.File
 import java.time.LocalDateTime
 
 private val logger = KotlinLogging.logger {}
 
-class Main: View() {
+class Main: View("application.title".message()) {
 
     val linkRepository: LinkRepository by di()
     val linkService: LinkService by di()
@@ -47,7 +52,8 @@ class Main: View() {
     val colLastUsedDt: TableColumn<Link,LocalDateTime> by fxid()
     val colExecCount: TableColumn<Link,Int> by fxid()
 
-    val vboxTop: AnchorPane by fxid()
+    val vboxTop: VBox by fxid()
+    val menubarTop: MenuBar by fxid()
     val menuitemViewDesc: CheckMenuItem by fxid()
     val menuitemViewMenuBar: CheckMenuItem by fxid()
     val menuitemAlwaysOnTop: CheckMenuItem by fxid()
@@ -65,11 +71,12 @@ class Main: View() {
     val buttonChangeIcon: Button by fxid()
     val buttonOpenFolder: Button by fxid()
     val buttonCopyFolder: Button by fxid()
-    val buttonDuplicate: Button by fxid()
+    val buttonCopy: Button by fxid()
 
     val descGridPane: GridPane by fxid()
     val descGroupName: TextField by fxid()
     val descShowConsole: CheckBox by fxid()
+    val descEachExecution: CheckBox by fxid()
     val descTitle: TextField by fxid()
     val descDescription: TextArea by fxid()
     val descIcon: ImageView by fxid()
@@ -88,7 +95,7 @@ class Main: View() {
 
     init {
         Localizator().set(root)
-        initShortcut()
+        initEvent()
         initTable()
     }
 
@@ -98,7 +105,7 @@ class Main: View() {
         colTitle.cellValueByDefault().cellFormat {
             graphic = hbox {
                 imageview {
-                    image = it.getIconAsImage()
+                    image = it.getImageIcon()
                     HBox.setMargin( this, Insets(0,0,0,2) )
                 }
                 label {
@@ -110,10 +117,11 @@ class Main: View() {
                 event.acceptTransferModes(TransferMode.LINK)
             }}
             setOnDragDropped { event->
-                val dragboard = event.dragboard
-                if( dragboard.hasFiles() ) {
-                    val link = tableRow.item as Link
-                    linkExecutor.run(link,dragboard.files)
+                event.dragboard.let {
+                    if( it.hasFiles() ) {
+                        val link = tableRow.item as Link
+                        linkExecutor.run(link,it.files)
+                    }
                 }
                 event.isDropCompleted = true
                 event.consume()
@@ -122,7 +130,7 @@ class Main: View() {
 
         colTitle.setComparator { o1, o2 -> o1.title.ifNull{""}.compareTo(o2.title.ifNull{""}) }
 
-        colLastUsedDt.cellValue(Link::lastExecDate).cellFormat {
+        colLastUsedDt.cellValue(Link::lastExecDate).setAlign(Pos.CENTER).cellFormat {
             text = it.toFormat("YYYY-MM-DD HH:MI:SS")
         }
         colExecCount.cellValue(Link::executeCount).setAlign(Pos.CENTER_RIGHT)
@@ -140,6 +148,12 @@ class Main: View() {
             }
         }
 
+        tableMain.focusedProperty().addListener { _, _, newVal ->
+            if( newVal == true && tableMain.selectionModel.focusedIndex <= 0 ) {
+                tableMain.selectionModel.selectFirst()
+            }
+        }
+
         tableMain.selectionModel.selectedItems.addListener { change: ListChangeListener.Change<out Link?> ->
             if (change.list.isEmpty()) return@addListener
             drawDetail(change.list[0])
@@ -151,10 +165,11 @@ class Main: View() {
                     tableMain.selectedItem?.let { linkExecutor.run(it) }
                 }
                 KeyCode.DELETE -> {
-                    tableMain.selectedItem?.let { linkService.delete(it) }
+                    if(event.isShiftDown)
+                        tableMain.selectedItem?.let { deleteLink(it) }
                 }
                 KeyCode.ESCAPE -> {
-                    TODO("Focus to keyword input")
+                    inputKeyword.requestFocus()
                 }
                 KeyCode.TAB -> {
 //                    TODO( "traverse to descGroupName")
@@ -168,7 +183,7 @@ class Main: View() {
 
     }
 
-    private fun initShortcut() {
+    private fun initEvent() {
 
         menuImportData.setOnAction {
             linkService.openImportFilePicker()?.let { file ->
@@ -191,13 +206,78 @@ class Main: View() {
             clearDetailView()
         }
 
+        menuitemViewDesc.selectedProperty().addListener { _, _, value ->
+            showDetail(value)
+        }
+
+        menuitemViewMenuBar.selectedProperty().addListener { _, _, value ->
+            showMenubar(value)
+        }
+
+        menuitemAlwaysOnTop.selectedProperty().addListener { _, _, value ->
+            Context.main.primaryStage.isAlwaysOnTop = value
+        }
+
+        buttonSave.setOnAction { saveDetail() }
+        buttonDelete.setOnAction { detail?.let{ deleteLink(it) } }
+        buttonCopy.setOnAction { copyDetail() }
+
         buttonOpenFolder.setOnAction { tableMain.selectedItem?.let { linkExecutor.openFolder(it) } }
 
         buttonCopyFolder.setOnAction { tableMain.selectedItem?.let { linkExecutor.copyFolder(it) } }
 
+        labelCmd.setOnMouseClicked { event ->
+            if(event.button == MouseButton.PRIMARY && event.clickCount > 1) {
+                Desktop.clipboard.set(labelCmd.text)
+            }
+        }
+
+        listOf(descDescription,descCmdNext,descCmdPrev).forEach { tabPressed(it) }
+
+    }
+
+    private fun tabPressed(textArea: TextArea) {
+        textArea.addEventFilter(KeyEvent.KEY_PRESSED) { event ->
+            if( event.code != KeyCode.TAB || event.isShiftDown || event.isControlDown ) return@addEventFilter
+            event.consume()
+            (event.source as Node).fireEvent( KeyEvent(
+                event.source,
+                event.target,
+                event.eventType,
+                event.character,
+                event.text,
+                event.code,
+                event.isShiftDown,
+                true,
+                event.isAltDown,
+                event.isMetaDown
+            ))
+        }
     }
 
     private fun clearDetailView() = drawDetail(Link())
+
+    fun showDetail(show: Boolean) {
+        (tableMain.parent as HBox).children.also {
+            if(show) {
+                if( descGridPane !in it )
+                    it.add(descGridPane)
+            } else {
+                it.remove(descGridPane)
+            }
+        }
+    }
+
+    fun showMenubar(show: Boolean) {
+        vboxTop.children.also {
+            if(show) {
+                if(menubarTop !in it)
+                    it.add(0,menubarTop)
+            } else {
+                it.remove(menubarTop)
+            }
+        }
+    }
 
     fun readData() {
         links.addAll(linkRepository.findAllByOrderByTitle())
@@ -205,14 +285,12 @@ class Main: View() {
     }
 
     fun drawDetail(link: Link?) {
-
-        if( link == null || (link.id != null && detail?.id == link.id) ) return
-
+        if( link == null || (link.id != 0L && detail?.id == link.id) ) return
         detail = link
-
         with(detail!!) {
             descTitle.text = title
             descShowConsole.isSelected = showConsole
+            descEachExecution.isSelected = eachExecution
             descGroupName.text = group
             descDescription.text = description
             descExecPath.text = path
@@ -220,13 +298,50 @@ class Main: View() {
             descCmdPrefix.text = commandPrefix
             descCmdPrev.text = commandPrev
             descCmdNext.text = commandNext
-            descIcon.image = getIconAsImage()
+            descIcon.image = getImageIcon()
         }
+    }
 
-        buttonDelete.isDisable = false
-        buttonDuplicate.isDisable = false
-        buttonSave.isDisable = false
+    fun deleteLink(link: Link) {
 
+        val summary = if( ! link.group.isNullOrEmpty() ) "[${link.group}] ${link.title}" else "${link.title}"
+
+        if( ! Dialog.confirm("msg.confirm.001".message().format(summary)) ) return
+
+        val prev = tableMain.focused()
+
+        linkService.delete(link)
+        links.remove(link)
+
+        clearDetailView()
+        tableMain.select(prev.row)
+        printSearchResult()
+
+    }
+
+    fun saveDetail() {
+        detail?.let {
+            val isNew = it.id == 0L
+            it.title         = descTitle.text.trim()
+            it.showConsole   = descShowConsole.isSelected
+            it.eachExecution = descEachExecution.isSelected
+            it.group         = descGroupName.text.trim()
+            it.description   = descDescription.text.trim()
+            it.path          = descExecPath.text.trim()
+            it.argument      = descArg.text.trim()
+            it.commandPrefix = descCmdPrefix.text.trim()
+            it.commandPrev   = descCmdPrev.text
+            it.commandNext   = descCmdNext.text
+            it.icon          = Images.toBinary(descIcon.image)
+            linkService.save(it)
+            if(isNew) links.add(it)
+            tableMain.refresh()
+        }
+    }
+
+    fun copyDetail() {
+        if( detail == null || detail?.id == 0L ) return
+        drawDetail( detail!!.clone().apply { id = 0L } )
     }
 
     fun printCommand(command: String? = null) {

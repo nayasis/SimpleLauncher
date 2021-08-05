@@ -104,7 +104,7 @@ class LinkCommand {
         path = rootPath() / link.relativePath.ifEmpty{""}
         if( path.exists() ) {
             link.path = path.pathString
-            Context.linkService.update(link)
+            Context.linkService.save(link)
             return path
         }
 

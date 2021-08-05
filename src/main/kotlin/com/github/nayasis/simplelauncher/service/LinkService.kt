@@ -24,7 +24,7 @@ class LinkService(
 ) {
 
     @Transactional
-    fun update( link: Link ) {
+    fun save(link: Link) {
         linkRepository.save(link)
     }
 
