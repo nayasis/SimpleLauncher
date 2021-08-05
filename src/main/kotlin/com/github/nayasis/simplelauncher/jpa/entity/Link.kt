@@ -64,6 +64,8 @@ class Link: Cloneable {
     var lastExecDate: LocalDateTime? = null
 
     fun getImageIcon(): Image {
+        if( icon == null || icon!!.isEmpty() )
+            return Images.toImage(ICON_NEW)!!
         return try {
             Images.toImage(icon ?: ICON_NEW)!!
         } catch (e: Exception) {
