@@ -1,3 +1,4 @@
+application.title          = SimpleLauncher
 menu.file                  = 파일
 menu.file.save             = 저장
 menu.file.import           = 불러오기
@@ -37,6 +38,7 @@ desc.description           = 설명
 desc.relativeYn            = 상대경로여부
 desc.icon                  = 아이콘
 desc.showConsole           = 콘솔출력
+desc.eachExecution         = 개별실행
 
 preloader.spring-core.loaded = Spring 코어 적재
 preloader.ui.made            = UI 구성
