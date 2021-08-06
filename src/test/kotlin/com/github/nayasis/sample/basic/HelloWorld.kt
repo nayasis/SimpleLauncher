@@ -1,4 +1,4 @@
-package com.github.nayasis.sample
+package com.github.nayasis.sample.basic
 
 import javafx.beans.property.SimpleIntegerProperty
 import javafx.scene.text.FontWeight
