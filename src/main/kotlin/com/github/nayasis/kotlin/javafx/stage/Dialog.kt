@@ -45,12 +45,10 @@ class Dialog { companion object {
     }
 
     fun confirm(message: String?): Boolean {
-
-        val yes  = ButtonType("Yes".message())
-        val no   = ButtonType("No".message())
-
+        val yes = ButtonType("Yes".message())
+        val no  = ButtonType("No".message())
         return dialog(AlertType.CONFIRMATION, message).apply {
-            buttonTypes.addAll(yes,no)
+            buttonTypes.setAll(yes,no)
             listOf(yes,no).map{ dialogPane.lookupButton(it) }.forEach {
                 it.addEventHandler(KeyEvent.KEY_PRESSED) { e ->
                     if (e.code == KeyCode.ENTER && e.target is Button)
@@ -58,15 +56,11 @@ class Dialog { companion object {
                 }
             }
         }.showAndWait().get() == yes
-
     }
 
     fun error(message: String?, exception: Throwable? = null) {
         dialog(AlertType.ERROR, message ?: exception?.message).apply {
             if( exception != null ) {
-                logger.error {
-                    Caller(4).let { ">> called (${it.fileName}:${it.lineNo})" }
-                }
                 logger.error( exception.message, exception )
                 dialogPane.expandableContent = GridPane().apply {
                     maxWidth = MAX_VALUE
@@ -74,8 +68,8 @@ class Dialog { companion object {
                         isEditable = false
                         maxWidth   = MAX_VALUE
                         maxHeight  = MAX_VALUE
-                        vgrow      = ALWAYS
-                        hgrow      = ALWAYS
+                        GridPane.setVgrow(this,ALWAYS)
+                        GridPane.setHgrow(this,ALWAYS)
                     }, 0, 0 )
                 }
             }
