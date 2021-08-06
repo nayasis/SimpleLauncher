@@ -7,8 +7,13 @@ import javafx.scene.layout.Pane
 import java.util.*
 
 class Localizator (
+    val node: Node?,
     val locale: Locale = Locale.getDefault()
 ) {
+
+    init {
+        set(node)
+    }
 
     fun set(node: Node?) {
         when (node) {
