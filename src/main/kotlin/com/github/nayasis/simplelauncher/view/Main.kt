@@ -16,10 +16,12 @@ import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.kotlin.javafx.stage.Localizator
 import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.common.ICON_IMAGE_TYPE
+import com.github.nayasis.simplelauncher.common.ICON_NEW
 import com.github.nayasis.simplelauncher.jpa.entity.Link
 import com.github.nayasis.simplelauncher.jpa.repository.LinkRepository
 import com.github.nayasis.simplelauncher.service.LinkExecutor
 import com.github.nayasis.simplelauncher.service.LinkService
+import javafx.beans.value.ObservableValue
 import javafx.collections.ListChangeListener
 import javafx.geometry.Pos
 import javafx.scene.Node
@@ -34,7 +36,15 @@ import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import mu.KotlinLogging
-import tornadofx.*
+import tornadofx.SortedFilteredList
+import tornadofx.View
+import tornadofx.asObservable
+import tornadofx.hbox
+import tornadofx.imageview
+import tornadofx.label
+import tornadofx.remainingWidth
+import tornadofx.selectedItem
+import tornadofx.smartResize
 import java.time.LocalDateTime
 
 private val logger = KotlinLogging.logger {}
@@ -95,7 +105,7 @@ class Main: View("application.title".message()) {
     val links = SortedFilteredList(mutableListOf<Link>().asObservable())
 
     init {
-        Localizator().set(root)
+        Localizator(root)
         initEvent()
         initTable()
     }
@@ -178,7 +188,7 @@ class Main: View("application.title".message()) {
             }
         }
 
-        readData()
+        readLinks()
 
         logger.debug { ">> done initialize" }
 
@@ -189,7 +199,7 @@ class Main: View("application.title".message()) {
         menuImportData.setOnAction {
             linkService.openImportFilePicker()?.let { file ->
                 linkService.importData(file)
-                readData()
+                readLinks()
                 Dialog.alert( "msg.info.009".message().format(file) )
             }
         }
@@ -204,7 +214,7 @@ class Main: View("application.title".message()) {
         menuDeleteAll.setOnAction {
             linkService.deleteAll()
             links.clear()
-            clearDetailView()
+            clearDetail()
         }
 
         menuitemViewDesc.selectedProperty().addListener { _, _, value ->
@@ -222,6 +232,7 @@ class Main: View("application.title".message()) {
         buttonSave.setOnAction { saveDetail() }
         buttonDelete.setOnAction { detail?.let{ deleteLink(it) } }
         buttonCopy.setOnAction { copyDetail() }
+        buttonNew.setOnAction { createDetail() }
 
         buttonOpenFolder.setOnAction { tableMain.selectedItem?.let { linkExecutor.openFolder(it) } }
 
@@ -233,7 +244,15 @@ class Main: View("application.title".message()) {
             }
         }
 
-        listOf(descDescription,descCmdNext,descCmdPrev).forEach { tabPressed(it) }
+        descGridPane.children.filterIsInstance<TextArea>().forEach { tabPressed(it) }
+
+        // 상세내역 변경시 버튼 컨트롤
+        val listener: (observable: ObservableValue<*>, oldValue: Any?, newValue: Any?) -> Unit =
+            { _,_,_ -> buttonSave.isDisable = false }
+        descGridPane.children.filterIsInstance<TextInputControl>().forEach {
+            it.textProperty().addListener(listener)
+        }
+        descIcon.imageProperty().addListener(listener)
 
     }
 
@@ -255,8 +274,6 @@ class Main: View("application.title".message()) {
             ))
         }
     }
-
-    private fun clearDetailView() = drawDetail(Link())
 
     fun showDetail(show: Boolean) {
         (tableMain.parent as HBox).children.also {
@@ -280,27 +297,38 @@ class Main: View("application.title".message()) {
         }
     }
 
-    fun readData() {
-        links.addAll(linkRepository.findAllByOrderByTitle())
+    fun readLinks() {
+        links.apply {
+            clear()
+            addAll(linkRepository.findAllByOrderByTitle())
+        }
         printSearchResult()
+    }
+
+    private fun clearDetail() {
+        drawDetail(Link())
+        buttonSave.isDisable = false
     }
 
     fun drawDetail(link: Link?) {
         if( link == null || (link.id != 0L && detail?.id == link.id) ) return
         detail = link
         with(detail!!) {
-            descTitle.text = title
-            descShowConsole.isSelected = showConsole
+            descTitle.text               = title
+            descShowConsole.isSelected   = showConsole
             descEachExecution.isSelected = eachExecution
-            descGroupName.text = group
-            descDescription.text = description
-            descExecPath.text = path
-            descArg.text = argument
-            descCmdPrefix.text = commandPrefix
-            descCmdPrev.text = commandPrev
-            descCmdNext.text = commandNext
-            descIcon.image = getImageIcon()
+            descGroupName.text           = group
+            descDescription.text         = description
+            descExecPath.text            = path
+            descArg.text                 = argument
+            descCmdPrefix.text           = commandPrefix
+            descCmdPrev.text             = commandPrev
+            descCmdNext.text             = commandNext
+            descIcon.image               = getImageIcon()
         }
+        buttonDelete.isDisable = false
+        buttonCopy.isDisable = false
+        buttonSave.isDisable = true
     }
 
     fun deleteLink(link: Link) {
@@ -314,7 +342,7 @@ class Main: View("application.title".message()) {
         linkService.delete(link)
         links.remove(link)
 
-        clearDetailView()
+        clearDetail()
         tableMain.select(prev.row)
         printSearchResult()
 
@@ -323,26 +351,44 @@ class Main: View("application.title".message()) {
     fun saveDetail() {
         detail?.let {
             val isNew = it.id == 0L
-            it.title         = descTitle.text.trim()
+            it.title         = descTitle.text?.trim()
             it.showConsole   = descShowConsole.isSelected
             it.eachExecution = descEachExecution.isSelected
-            it.group         = descGroupName.text.trim()
+            it.group         = descGroupName.text?.trim()
             it.description   = descDescription.text?.trim()
-            it.path          = descExecPath.text.trim()
-            it.argument      = descArg.text.trim()
-            it.commandPrefix = descCmdPrefix.text.trim()
+            it.path          = descExecPath.text?.trim()
+            it.argument      = descArg.text?.trim()
+            it.commandPrefix = descCmdPrefix.text?.trim()
             it.commandPrev   = descCmdPrev.text
             it.commandNext   = descCmdNext.text
             it.icon          = Images.toBinary(descIcon.image,ICON_IMAGE_TYPE)
             linkService.save(it)
-            if(isNew) links.add(it)
-            tableMain.refresh()
+            if(isNew) {
+                links.add(it)
+                tableMain.refresh()
+                printSearchResult()
+            } else {
+                tableMain.refresh()
+            }
+            buttonDelete.isDisable = false
+            buttonCopy.isDisable = false
+            buttonSave.isDisable = true
         }
     }
 
     fun copyDetail() {
         if( detail == null || detail?.id == 0L ) return
         drawDetail( detail!!.clone().apply { id = 0L } )
+        buttonDelete.isDisable = true
+        buttonCopy.isDisable = true
+        buttonSave.isDisable = false
+    }
+
+    fun createDetail() {
+        drawDetail(Link().apply { icon = ICON_NEW })
+        buttonDelete.isDisable = true
+        buttonCopy.isDisable = true
+        buttonSave.isDisable = false
     }
 
     fun printCommand(command: String? = null) {
