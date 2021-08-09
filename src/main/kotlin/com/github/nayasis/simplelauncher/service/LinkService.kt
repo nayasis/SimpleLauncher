@@ -68,4 +68,13 @@ class LinkService(
             }
     }
 
+    fun openIconFilePicker(): File? {
+        return Dialog.filePicker("msg.info.002".message(), "*.*", "msg.info.012".message(), configService.filePickerInitialDirectory)
+            .showOpenDialog(null)
+            .also {
+                if( it != null )
+                    configService.filePickerInitialDirectory = it.directory.path
+            }
+    }
+
 }

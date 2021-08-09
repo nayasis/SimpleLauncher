@@ -1,5 +1,6 @@
 package com.github.nayasis.simplelauncher.view
 
+import com.github.nayasis.kotlin.basica.core.extention.ifEmpty
 import com.github.nayasis.kotlin.basica.core.extention.ifNull
 import com.github.nayasis.kotlin.basica.core.localdate.toFormat
 import com.github.nayasis.kotlin.basica.core.string.message
@@ -10,12 +11,10 @@ import com.github.nayasis.kotlin.javafx.control.tableview.focused
 import com.github.nayasis.kotlin.javafx.control.tableview.select
 import com.github.nayasis.kotlin.javafx.geometry.Insets
 import com.github.nayasis.kotlin.javafx.misc.Desktop
-import com.github.nayasis.kotlin.javafx.misc.Images
 import com.github.nayasis.kotlin.javafx.misc.set
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.kotlin.javafx.stage.Localizator
 import com.github.nayasis.simplelauncher.common.Context
-import com.github.nayasis.simplelauncher.common.ICON_IMAGE_TYPE
 import com.github.nayasis.simplelauncher.common.ICON_NEW
 import com.github.nayasis.simplelauncher.jpa.entity.Link
 import com.github.nayasis.simplelauncher.jpa.repository.LinkRepository
@@ -28,6 +27,7 @@ import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.image.ImageView
 import javafx.scene.input.KeyCode
+import javafx.scene.input.KeyCode.*
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton
 import javafx.scene.input.TransferMode
@@ -45,6 +45,7 @@ import tornadofx.label
 import tornadofx.remainingWidth
 import tornadofx.selectedItem
 import tornadofx.smartResize
+import java.io.File
 import java.time.LocalDateTime
 
 private val logger = KotlinLogging.logger {}
@@ -113,10 +114,10 @@ class Main: View("application.title".message()) {
     private fun initTable() {
 
         colGroup.cellValue(Link::group)
-        colTitle.cellValueByDefault().cellFormat {
+        colTitle.cellValueByDefault().setAlign(Pos.CENTER_LEFT).cellFormat {
             graphic = hbox {
                 imageview {
-                    image = it.getImageIcon()
+                    image = it.getIconImage()
                     HBox.setMargin( this, Insets(0,0,0,2) )
                 }
                 label {
@@ -172,17 +173,17 @@ class Main: View("application.title".message()) {
 
         tableMain.setOnKeyPressed { event ->
             when(event.code) {
-                KeyCode.ENTER -> {
+                ENTER -> {
                     tableMain.selectedItem?.let { linkExecutor.run(it) }
                 }
-                KeyCode.DELETE -> {
+                DELETE -> {
                     if(event.isShiftDown)
                         tableMain.selectedItem?.let { deleteLink(it) }
                 }
-                KeyCode.ESCAPE -> {
+                ESCAPE -> {
                     inputKeyword.requestFocus()
                 }
-                KeyCode.TAB -> {
+                TAB -> {
 //                    TODO( "traverse to descGroupName")
                 }
             }
@@ -195,6 +196,21 @@ class Main: View("application.title".message()) {
     }
 
     private fun initEvent() {
+
+        // global shortcut
+        root.setOnKeyPressed { e ->
+            if( e.isControlDown ) {
+                when(e.code) {
+                    S -> buttonSave       .let { if(!it.isDisable) it.fire() }
+                    D -> buttonDelete     .let { if(!it.isDisable) it.fire() }
+                    C -> buttonCopy       .let { if(!it.isDisable) it.fire() }
+                    I -> buttonChangeIcon .let { if(!it.isDisable) it.fire() }
+                    N -> buttonNew        .let { if(!it.isDisable) it.fire() }
+                    O -> buttonOpenFolder .let { if(!it.isDisable) it.fire() }
+                    F -> buttonCopyFolder .let { if(!it.isDisable) it.fire() }
+                }
+            }
+        }
 
         menuImportData.setOnAction {
             linkService.openImportFilePicker()?.let { file ->
@@ -233,10 +249,24 @@ class Main: View("application.title".message()) {
         buttonDelete.setOnAction { detail?.let{ deleteLink(it) } }
         buttonCopy.setOnAction { copyDetail() }
         buttonNew.setOnAction { createDetail() }
-
         buttonOpenFolder.setOnAction { tableMain.selectedItem?.let { linkExecutor.openFolder(it) } }
-
         buttonCopyFolder.setOnAction { tableMain.selectedItem?.let { linkExecutor.copyFolder(it) } }
+
+        buttonChangeIcon.setOnAction { changeIcon() }
+        descIcon.setOnMouseClicked { e ->
+            if( e.isPrimaryButtonDown && e.clickCount > 1 )
+                changeIcon()
+        }
+        descIcon.setOnDragDropped { e ->
+            e.dragboard.files.firstOrNull()?.let { changeIcon(it) }
+        }
+        descExecPath.setOnDragDropped { e ->
+            e.dragboard.files.firstOrNull()?.let {
+                detail?.setPath(it)
+                descExecPath.text = detail?.path
+                changeIcon(it)
+            }
+        }
 
         labelCmd.setOnMouseClicked { event ->
             if(event.button == MouseButton.PRIMARY && event.clickCount > 1) {
@@ -256,9 +286,19 @@ class Main: View("application.title".message()) {
 
     }
 
+    private fun changeIcon() {
+        linkService.openIconFilePicker()?.let { changeIcon(it) }
+    }
+
+    private fun changeIcon(file: File) {
+        detail?.setIcon(file)?.let { icon ->
+            descIcon.image = icon
+        }
+    }
+
     private fun tabPressed(textArea: TextArea) {
         textArea.addEventFilter(KeyEvent.KEY_PRESSED) { event ->
-            if( event.code != KeyCode.TAB || event.isShiftDown || event.isControlDown ) return@addEventFilter
+            if( event.code != TAB || event.isShiftDown || event.isControlDown ) return@addEventFilter
             event.consume()
             (event.source as Node).fireEvent( KeyEvent(
                 event.source,
@@ -324,14 +364,16 @@ class Main: View("application.title".message()) {
             descCmdPrefix.text           = commandPrefix
             descCmdPrev.text             = commandPrev
             descCmdNext.text             = commandNext
-            descIcon.image               = getImageIcon()
+            descIcon.image               = getIconImage()
         }
         buttonDelete.isDisable = false
         buttonCopy.isDisable = false
         buttonSave.isDisable = true
     }
 
-    fun deleteLink(link: Link) {
+    fun deleteLink(link: Link?) {
+
+        if( link == null ) return
 
         val summary = if( ! link.group.isNullOrEmpty() ) "[${link.group}] ${link.title}" else "${link.title}"
 
@@ -361,7 +403,7 @@ class Main: View("application.title".message()) {
             it.commandPrefix = descCmdPrefix.text?.trim()
             it.commandPrev   = descCmdPrev.text
             it.commandNext   = descCmdNext.text
-            it.icon          = Images.toBinary(descIcon.image,ICON_IMAGE_TYPE)
+            it.setIcon(descIcon.image)
             linkService.save(it)
             if(isNew) {
                 links.add(it)
@@ -370,6 +412,7 @@ class Main: View("application.title".message()) {
             } else {
                 tableMain.refresh()
             }
+            printStatus("msg.info.013".message())
             buttonDelete.isDisable = false
             buttonCopy.isDisable = false
             buttonSave.isDisable = true
@@ -379,6 +422,8 @@ class Main: View("application.title".message()) {
     fun copyDetail() {
         if( detail == null || detail?.id == 0L ) return
         drawDetail( detail!!.clone().apply { id = 0L } )
+        descTitle.requestFocus()
+        printStatus("msg.info.014".message())
         buttonDelete.isDisable = true
         buttonCopy.isDisable = true
         buttonSave.isDisable = false
@@ -386,6 +431,8 @@ class Main: View("application.title".message()) {
 
     fun createDetail() {
         drawDetail(Link().apply { icon = ICON_NEW })
+        descGroupName.requestFocus()
+        printStatus("msg.info.015".message())
         buttonDelete.isDisable = true
         buttonCopy.isDisable = true
         buttonSave.isDisable = false
