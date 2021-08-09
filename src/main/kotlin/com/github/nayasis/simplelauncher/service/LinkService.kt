@@ -52,7 +52,7 @@ class LinkService(
 
     fun openImportFilePicker(): File? {
         return Dialog.filePicker("msg.info.004".message(), FILE_EXT, "msg.info.011".message(), configService.filePickerInitialDirectory)
-            .showOpenDialog(null)
+            .showOpenDialog(Context.main.primaryStage)
             .also {
                 if( it != null )
                     configService.filePickerInitialDirectory = it.directory.path
@@ -61,7 +61,7 @@ class LinkService(
 
     fun openExportFilePicker(): File? {
         return Dialog.filePicker("msg.info.003".message(), FILE_EXT, "msg.info.011".message(), configService.filePickerInitialDirectory)
-            .showOpenDialog(null)
+            .showOpenDialog(Context.main.primaryStage)
             .also {
                 if( it != null )
                     configService.filePickerInitialDirectory = it.directory.path
@@ -70,7 +70,16 @@ class LinkService(
 
     fun openIconFilePicker(): File? {
         return Dialog.filePicker("msg.info.002".message(), "*.*", "msg.info.012".message(), configService.filePickerInitialDirectory)
-            .showOpenDialog(null)
+            .showOpenDialog(Context.main.primaryStage)
+            .also {
+                if( it != null )
+                    configService.filePickerInitialDirectory = it.directory.path
+            }
+    }
+
+    fun openPathFilePicker(): File? {
+        return Dialog.filePicker("msg.info.001".message(), "*.*", "msg.info.006".message(), configService.filePickerInitialDirectory)
+            .showOpenDialog(Context.main.primaryStage)
             .also {
                 if( it != null )
                     configService.filePickerInitialDirectory = it.directory.path
