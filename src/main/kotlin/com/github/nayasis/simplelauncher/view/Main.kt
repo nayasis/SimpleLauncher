@@ -26,6 +26,7 @@ import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.image.ImageView
+import javafx.scene.input.DragEvent
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyCode.*
 import javafx.scene.input.KeyEvent
@@ -84,6 +85,7 @@ class Main: View("application.title".message()) {
     val buttonOpenFolder: Button by fxid()
     val buttonCopyFolder: Button by fxid()
     val buttonCopy: Button by fxid()
+    val buttonAddFile: ImageView by fxid()
 
     val descGridPane: GridPane by fxid()
     val descGroupName: TextField by fxid()
@@ -111,6 +113,10 @@ class Main: View("application.title".message()) {
         initTable()
     }
 
+    private val fnDraggable = { event: DragEvent -> if( event.dragboard.hasFiles() ) {
+        event.acceptTransferModes(TransferMode.LINK)
+    }}
+
     private fun initTable() {
 
         colGroup.cellValue(Link::group)
@@ -125,9 +131,7 @@ class Main: View("application.title".message()) {
                     HBox.setMargin( this, Insets(0,0,0,5) )
                 }
             }
-            setOnDragOver { event -> if( event.dragboard.hasFiles() ) {
-                event.acceptTransferModes(TransferMode.LINK)
-            }}
+            setOnDragOver { fnDraggable }
             setOnDragDropped { event->
                 event.dragboard.let {
                     if( it.hasFiles() ) {
@@ -257,14 +261,36 @@ class Main: View("application.title".message()) {
             if( e.isPrimaryButtonDown && e.clickCount > 1 )
                 changeIcon()
         }
+        descIcon.setOnDragOver { fnDraggable }
         descIcon.setOnDragDropped { e ->
             e.dragboard.files.firstOrNull()?.let { changeIcon(it) }
         }
+        descExecPath.setOnDragOver { fnDraggable }
         descExecPath.setOnDragDropped { e ->
             e.dragboard.files.firstOrNull()?.let {
                 detail?.setPath(it)
                 descExecPath.text = detail?.path
                 changeIcon(it)
+            }
+        }
+
+        buttonAddFile.setOnDragOver { fnDraggable }
+        buttonAddFile.setOnDragDropped { e ->
+            e.dragboard.files.forEach { file ->
+                Link(file).let {
+                    linkService.save(it)
+                    links.add(it)
+                }
+            }
+        }
+        buttonAddFile.setOnMouseClicked { e ->
+            if( e.isPrimaryButtonDown ) {
+                linkService.openPathFilePicker()?.let { file ->
+                    Link(file).let {
+                        linkService.save(it)
+                        links.add(it)
+                    }
+                }
             }
         }
 

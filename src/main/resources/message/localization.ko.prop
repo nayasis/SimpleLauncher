@@ -65,6 +65,7 @@ msg.info.012    = Icon File
 msg.info.013    = 링크를 저장하였습니다.
 msg.info.014    = 링크를 복사하였습니다.
 msg.info.015    = 링크를 생성하였습니다.
+
 msg.warn.001    = 한 개의 파일만 등록할 수 있습니다.
 msg.confirm.001 = 삭제하시겠습니까 ? \n  - %s
 msg.confirm.002 = 삭제하시겠습니까 ? \n  - %s\n\n해당 링크를 다른 링크에서 사용하고 있습니다.\n%s
