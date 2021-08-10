@@ -3,6 +3,7 @@ package com.github.nayasis.simplelauncher.jpa.entity
 import com.github.nayasis.kotlin.basica.core.path.FOLDER_SEPARATOR
 import com.github.nayasis.kotlin.basica.core.path.pathString
 import com.github.nayasis.kotlin.basica.core.path.rootPath
+import com.github.nayasis.kotlin.basica.core.path.toRelativeOrSelf
 import com.github.nayasis.kotlin.basica.etc.Platforms
 import com.github.nayasis.kotlin.javafx.misc.Images
 import com.github.nayasis.simplelauncher.common.ICON_NEW
@@ -90,7 +91,7 @@ class Link: Cloneable {
 
     fun setPath(file: File) {
         path = file.toString()
-        relativePath = file.toPath().relativize(rootPath()).pathString
+        relativePath = file.toPath().toRelativeOrSelf(rootPath()).pathString
     }
 
     private fun resolveMicrosoftLnk(file: File) {

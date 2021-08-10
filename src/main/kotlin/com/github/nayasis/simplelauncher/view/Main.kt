@@ -1,6 +1,5 @@
 package com.github.nayasis.simplelauncher.view
 
-import com.github.nayasis.kotlin.basica.core.extention.ifEmpty
 import com.github.nayasis.kotlin.basica.core.extention.ifNull
 import com.github.nayasis.kotlin.basica.core.localdate.toFormat
 import com.github.nayasis.kotlin.basica.core.string.message
@@ -22,12 +21,12 @@ import com.github.nayasis.simplelauncher.service.LinkExecutor
 import com.github.nayasis.simplelauncher.service.LinkService
 import javafx.beans.value.ObservableValue
 import javafx.collections.ListChangeListener
+import javafx.event.EventHandler
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.image.ImageView
 import javafx.scene.input.DragEvent
-import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyCode.*
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton
@@ -113,10 +112,6 @@ class Main: View("application.title".message()) {
         initTable()
     }
 
-    private val fnDraggable = { event: DragEvent -> if( event.dragboard.hasFiles() ) {
-        event.acceptTransferModes(TransferMode.LINK)
-    }}
-
     private fun initTable() {
 
         colGroup.cellValue(Link::group)
@@ -131,7 +126,7 @@ class Main: View("application.title".message()) {
                     HBox.setMargin( this, Insets(0,0,0,5) )
                 }
             }
-            setOnDragOver { fnDraggable }
+            setOnDragOver { fnDraggable(it) }
             setOnDragDropped { event->
                 event.dragboard.let {
                     if( it.hasFiles() ) {
@@ -226,7 +221,7 @@ class Main: View("application.title".message()) {
 
         menuExportData.setOnAction {
             linkService.openExportFilePicker()?.let { file ->
-                linkService.exportData(file!!)
+                linkService.exportData(file)
                 Dialog.alert( "msg.info.010".message().format(file) )
             }
         }
@@ -261,11 +256,11 @@ class Main: View("application.title".message()) {
             if( e.isPrimaryButtonDown && e.clickCount > 1 )
                 changeIcon()
         }
-        descIcon.setOnDragOver { fnDraggable }
+        descIcon.setOnDragOver { fnDraggable(it) }
         descIcon.setOnDragDropped { e ->
             e.dragboard.files.firstOrNull()?.let { changeIcon(it) }
         }
-        descExecPath.setOnDragOver { fnDraggable }
+        descExecPath.setOnDragOver { fnDraggable(it) }
         descExecPath.setOnDragDropped { e ->
             e.dragboard.files.firstOrNull()?.let {
                 detail?.setPath(it)
@@ -274,13 +269,10 @@ class Main: View("application.title".message()) {
             }
         }
 
-        buttonAddFile.setOnDragOver { fnDraggable }
+        buttonAddFile.setOnDragOver { fnDraggable(it) }
         buttonAddFile.setOnDragDropped { e ->
             e.dragboard.files.forEach { file ->
-                Link(file).let {
-                    linkService.save(it)
-                    links.add(it)
-                }
+                drawDetail(Link(file))
             }
         }
         buttonAddFile.setOnMouseClicked { e ->
@@ -310,6 +302,14 @@ class Main: View("application.title".message()) {
         }
         descIcon.imageProperty().addListener(listener)
 
+    }
+
+    private fun fnDraggable(e: DragEvent) {
+        if (e.dragboard.hasFiles()) {
+            e.acceptTransferModes(TransferMode.COPY)
+        } else {
+            e.consume()
+        }
     }
 
     private fun changeIcon() {

@@ -30,24 +30,23 @@ class LinkExecutor(
     fun run( link: Link, files: Collection<File>? = null ) {
         linkService.save(link.apply { executeCount++ })
         main.tableMain.refresh()
-        if( files == null ) {
-            runLater { run(LinkCommand(link)) }
-        } else {
-            if( link.eachExecution ) {
-                files.forEach { file ->
-                    runLater { run(LinkCommand(link,file),true) }
-                }
+        try {
+            if( files == null ) {
+                runLater { run(LinkCommand(link)) }
             } else {
-                runLater { run(LinkCommand(link,files),false) }
+                if( link.eachExecution ) {
+                    files.forEach { file ->
+                        runLater { run(LinkCommand(link,file),files.size > 1) }
+                    }
+                } else {
+                    runLater { run(LinkCommand(link,files),false) }
+                }
             }
+        } catch (e: Exception) {
+            // TODO : 에러로그 치환
+            Dialog.error(e.message,e)
         }
     }
-
-//    fun run(link: Link) = run(LinkCommand(link))
-//
-//    fun run(link: Link, file: File, wait: Boolean = true) = run(LinkCommand(link,file),wait)
-//
-//    fun run(link: Link, files: Collection<File>, wait: Boolean = false) = run(LinkCommand(link,files),wait)
 
     private fun run(linkCommand: LinkCommand, wait: Boolean = false) {
 
@@ -58,6 +57,8 @@ class LinkExecutor(
                 append(linkCommand.commandPrefix).append(' ')
             if( linkCommand.path != null )
                 append(linkCommand.path!!.pathString.wrapDoubleQuote())
+            if(isEmpty())
+                throw IllegalArgumentException("msg.err.007".message())
             if( ! linkCommand.argument.isNullOrEmpty() )
                 append(' ').append(linkCommand.argument)
         }.toString()
