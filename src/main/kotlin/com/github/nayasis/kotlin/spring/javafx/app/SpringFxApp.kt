@@ -1,5 +1,6 @@
 package com.github.nayasis.kotlin.spring.javafx.app
 
+import com.github.nayasis.kotlin.basica.etc.error
 import com.github.nayasis.kotlin.basica.model.Messages
 import com.github.nayasis.kotlin.javafx.preloader.CloseNotificator
 import com.github.nayasis.kotlin.javafx.preloader.ErrorNotificator
@@ -7,8 +8,11 @@ import com.github.nayasis.kotlin.javafx.preloader.NPreloader
 import com.github.nayasis.kotlin.javafx.preloader.Notificator
 import com.github.nayasis.kotlin.javafx.preloader.ProgressNotificator
 import com.github.nayasis.kotlin.javafx.stage.DEFAULT_ICON
+import com.github.nayasis.kotlin.javafx.stage.Dialog
+import javafx.application.Platform
 import javafx.scene.image.Image
 import javafx.stage.Stage
+import mu.KotlinLogging
 import org.apache.commons.cli.CommandLine
 import org.apache.commons.cli.DefaultParser
 import org.apache.commons.cli.Options
@@ -24,6 +28,7 @@ import tornadofx.UIComponent
 import kotlin.reflect.KClass
 import kotlin.reflect.jvm.jvmName
 
+private val logger = KotlinLogging.logger {}
 
 @Suppress("SpringJavaConstructorAutowiringInspection")
 abstract class SpringFxApp: App {
@@ -39,6 +44,7 @@ abstract class SpringFxApp: App {
     override fun init() {
         try {
             setOptions(options)
+            setupDefaultExceptionHandler()
             context = SpringApplication.run(this.javaClass, *parameters.raw.toTypedArray())
             context.autowireCapableBeanFactory.autowireBean(this)
             FX.dicontainer = object: DIContainer {
@@ -51,6 +57,20 @@ abstract class SpringFxApp: App {
             stop()
         }
 
+    }
+
+    private fun setupDefaultExceptionHandler() {
+        Thread.setDefaultUncaughtExceptionHandler { _, exception ->
+            if (Platform.isFxApplicationThread()) {
+                try {
+                    Dialog.error(exception)
+                } catch (e: Exception) {
+                    logger.error(exception)
+                }
+            } else {
+                logger.error(exception)
+            }
+        }
     }
 
     override fun start(stage: Stage) {
