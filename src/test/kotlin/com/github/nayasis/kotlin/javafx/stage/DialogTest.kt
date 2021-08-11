@@ -28,6 +28,8 @@ class DialogTestView: View("dialog test") {
                 }
             }
         }
+        prefWidth = 300.0
+        prefHeight = 200.0
     }
 
 }

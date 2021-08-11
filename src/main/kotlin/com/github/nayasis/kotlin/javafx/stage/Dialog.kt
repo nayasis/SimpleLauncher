@@ -6,7 +6,7 @@ import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.core.string.toFile
 import com.github.nayasis.kotlin.basica.core.validator.nvl
 import com.github.nayasis.kotlin.basica.etc.Platforms
-import com.github.nayasis.kotlin.basica.exception.Caller
+import com.github.nayasis.kotlin.basica.etc.error
 import javafx.scene.control.*
 import javafx.scene.control.Alert.AlertType
 import javafx.scene.input.KeyCode
@@ -18,7 +18,6 @@ import javafx.stage.FileChooser
 import javafx.stage.Modality.WINDOW_MODAL
 import javafx.stage.Stage
 import mu.KotlinLogging
-import tornadofx.*
 import java.io.File
 import kotlin.Double.Companion.MAX_VALUE
 
@@ -45,23 +44,20 @@ class Dialog { companion object {
     }
 
     fun confirm(message: String?): Boolean {
-        val yes = ButtonType("Yes".message())
-        val no  = ButtonType("No".message())
         return dialog(AlertType.CONFIRMATION, message).apply {
-            buttonTypes.setAll(yes,no)
-            listOf(yes,no).map{ dialogPane.lookupButton(it) }.forEach {
+            buttonTypes.map { dialogPane.lookupButton(it) }.forEach {
                 it.addEventHandler(KeyEvent.KEY_PRESSED) { e ->
                     if (e.code == KeyCode.ENTER && e.target is Button)
                         (e.target as Button).fire()
                 }
             }
-        }.showAndWait().get() == yes
+        }.showAndWait().get() == ButtonType.OK
     }
 
     fun error(message: String?, exception: Throwable? = null) {
         dialog(AlertType.ERROR, message ?: exception?.message).apply {
             if( exception != null ) {
-                logger.error( exception.message, exception )
+                logger.error(exception)
                 dialogPane.expandableContent = GridPane().apply {
                     maxWidth = MAX_VALUE
                     add( TextArea(exception.stackTraceToString()).apply{
