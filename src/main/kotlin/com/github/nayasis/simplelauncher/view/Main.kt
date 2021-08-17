@@ -14,7 +14,6 @@ import com.github.nayasis.kotlin.javafx.misc.Desktop
 import com.github.nayasis.kotlin.javafx.misc.set
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.kotlin.javafx.stage.Localizator
-import com.github.nayasis.kotlin.javafx.stage.focusedNode
 import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.common.ICON_NEW
 import com.github.nayasis.simplelauncher.jpa.entity.Link
@@ -28,7 +27,6 @@ import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.image.ImageView
 import javafx.scene.input.DragEvent
-import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyCode.*
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton
@@ -74,7 +72,6 @@ class Main: View("application.title".message()) {
     val buttonNew: Button by fxid()
     val buttonSave: Button by fxid()
     val buttonDelete: Button by fxid()
-    val buttonChangeIcon: Button by fxid()
     val buttonOpenFolder: Button by fxid()
     val buttonCopyFolder: Button by fxid()
     val buttonCopy: Button by fxid()
@@ -171,10 +168,6 @@ class Main: View("application.title".message()) {
                 ENTER -> {
                     tableMain.selectedItem?.let { linkExecutor.run(it) }
                 }
-                DELETE -> {
-                    if(event.isShiftDown)
-                        tableMain.selectedItem?.let { deleteLink(it) }
-                }
                 ESCAPE -> {
                     inputKeyword.requestFocus()
                 }
@@ -202,10 +195,10 @@ class Main: View("application.title".message()) {
                     S -> buttonSave       .let { if(!it.isDisable) it.fire() }
                     D -> buttonDelete     .let { if(!it.isDisable) it.fire() }
                     C -> buttonCopy       .let { if(!it.isDisable) it.fire() }
-                    I -> buttonChangeIcon .let { if(!it.isDisable) it.fire() }
                     N -> buttonNew        .let { if(!it.isDisable) it.fire() }
                     O -> buttonOpenFolder .let { if(!it.isDisable) it.fire() }
                     F -> buttonCopyFolder .let { if(!it.isDisable) it.fire() }
+                    I -> changeIcon()
                 }
             }
         }
@@ -250,14 +243,18 @@ class Main: View("application.title".message()) {
         buttonOpenFolder.setOnAction { tableMain.selectedItem?.let { linkExecutor.openFolder(it) } }
         buttonCopyFolder.setOnAction { tableMain.selectedItem?.let { linkExecutor.copyFolder(it) } }
 
-        buttonChangeIcon.setOnAction { changeIcon() }
         descIcon.setOnMouseClicked { e ->
-            if( e.isPrimaryButtonDown && e.clickCount > 1 )
+            if( e.button == MouseButton.PRIMARY && e.clickCount > 1 )
                 changeIcon()
         }
         descIcon.setOnDragOver { fnDraggable(it) }
         descIcon.setOnDragDropped { e ->
-            e.dragboard.files.firstOrNull()?.let { changeIcon(it) }
+            e.dragboard.files.firstOrNull()?.let {
+                changeIcon(it)
+            }
+        }
+        Tooltip("btn.change.icon.tooltip".message()).let {
+            Tooltip.install(descIcon,it)
         }
         descExecPath.setOnDragOver { fnDraggable(it) }
         descExecPath.setOnDragDropped { e ->
@@ -271,37 +268,46 @@ class Main: View("application.title".message()) {
         buttonAddFile.setOnDragOver { fnDraggable(it) }
         buttonAddFile.setOnDragDropped { e ->
             e.dragboard.files.forEach { file ->
-                drawDetail(Link(file))
+                drawDetailForAdd(Link(file))
+                currentStage?.requestFocus()
             }
         }
         buttonAddFile.setOnMouseClicked { e ->
-            if( e.isPrimaryButtonDown ) {
+            if( e.button == MouseButton.PRIMARY ) {
                 linkService.openPathFilePicker()?.let { file ->
-                    Link(file).let {
-                        linkService.save(it)
-                        links.add(it)
-                    }
+                    drawDetailForAdd(Link(file))
                 }
             }
         }
 
-        labelCmd.setOnMouseClicked { event ->
-            if(event.button == MouseButton.PRIMARY && event.clickCount > 1) {
+        labelCmd.setOnMouseClicked { e ->
+            if(e.button == MouseButton.PRIMARY && e.clickCount > 1) {
                 Desktop.clipboard.set(labelCmd.text)
             }
         }
 
-        descGridPane.allChildren.filterIsInstance<TextInputControl>().forEach {
-            it.addEventFilter(KeyEvent.KEY_PRESSED) { e ->
-                if( e.code == ESCAPE ) {
-                    if( it == inputKeyword ) return@addEventFilter
-                    lastFocused = it
-                    tableMain.requestFocus()
+        descGridPane.allChildren.let{ children ->
+            children.filterIsInstance<TextInputControl>().forEach {
+                it.addEventFilter(KeyEvent.KEY_PRESSED) { e ->
+                    if( e.code == ESCAPE ) {
+                        if( it == inputKeyword ) return@addEventFilter
+                        lastFocused = it
+                        tableMain.requestFocus()
+                    }
+                }
+                it.textProperty().onChange { buttonSave.isDisable = false }
+            }
+            children.filterIsInstance<CheckBox>().forEach {
+                it.selectedProperty().addListener { _, _, _ -> buttonSave.isDisable = false }
+            }
+            children.filterIsInstance<TextArea>().forEach {
+                it.addEventFilter(KeyEvent.KEY_PRESSED) { e ->
+                    if( e.code != TAB || e.isShiftDown || e.isControlDown ) return@addEventFilter
+                    e.consume()
+                    (e.source as Node).fireEvent(getKeyEventTab(e))
                 }
             }
         }
-
-        descGridPane.children.filterIsInstance<TextArea>().forEach { tabPressed(it) }
 
         // 상세내역 변경시 버튼 컨트롤
         val listener: (observable: ObservableValue<*>, oldValue: Any?, newValue: Any?) -> Unit =
@@ -313,6 +319,11 @@ class Main: View("application.title".message()) {
 
     }
 
+    private fun changeIcon() {
+        if( detail == null ) return
+        linkService.openIconFilePicker()?.let { changeIcon(it) }
+    }
+
     private fun fnDraggable(e: DragEvent) {
         if (e.dragboard.hasFiles()) {
             e.acceptTransferModes(TransferMode.COPY)
@@ -321,35 +332,25 @@ class Main: View("application.title".message()) {
         }
     }
 
-    private fun changeIcon() {
-        linkService.openIconFilePicker()?.let { changeIcon(it) }
-    }
-
     private fun changeIcon(file: File) {
         detail?.setIcon(file)?.let { icon ->
             descIcon.image = icon
+            buttonSave.isDisable = false
         }
     }
 
-    private fun tabPressed(textArea: TextArea) {
-        textArea.addEventFilter(KeyEvent.KEY_PRESSED) { event ->
-            if( event.code != TAB || event.isShiftDown || event.isControlDown ) return@addEventFilter
-            event.consume()
-            val node = event.source as Node
-            node.fireEvent( KeyEvent(
-                event.source,
-                event.target,
-                event.eventType,
-                event.character,
-                event.text,
-                event.code,
-                event.isShiftDown,
-                true,
-                event.isAltDown,
-                event.isMetaDown
-            ))
-        }
-    }
+    private fun getKeyEventTab(event: KeyEvent) = KeyEvent(
+        event.source,
+        event.target,
+        event.eventType,
+        event.character,
+        event.text,
+        event.code,
+        event.isShiftDown,
+        true,
+        event.isAltDown,
+        event.isMetaDown
+    )
 
     fun showDetail(show: Boolean) {
         (tableMain.parent as HBox).children.also {
@@ -402,9 +403,19 @@ class Main: View("application.title".message()) {
             descCmdNext.text             = commandNext
             descIcon.image               = getIconImage()
         }
+        buttonNew.isDisable    = false
         buttonDelete.isDisable = false
-        buttonCopy.isDisable = false
-        buttonSave.isDisable = true
+        buttonCopy.isDisable   = false
+        buttonSave.isDisable   = true
+    }
+
+    fun drawDetailForAdd(link: Link?) {
+        drawDetail(link)
+        buttonNew.isDisable    = false
+        buttonDelete.isDisable = true
+        buttonCopy.isDisable   = true
+        buttonSave.isDisable   = false
+        descGroupName.requestFocus()
     }
 
     fun deleteLink(link: Link?) {
