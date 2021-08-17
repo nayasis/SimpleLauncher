@@ -35,9 +35,11 @@ import java.io.InputStream
 import java.lang.Math.toRadians
 import java.net.URL
 import java.nio.file.Path
-import java.util.*
 import javax.imageio.ImageIO
 import javax.net.ssl.SSLContext
+import javax.swing.ImageIcon
+import javax.swing.filechooser.FileSystemView
+import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.math.abs
 import kotlin.math.floor
@@ -266,9 +268,21 @@ object Images {
         }
     }
 
+    fun toImage(icon: ImageIcon?): Image? {
+        return when (icon) {
+            null -> null
+            else -> toImage(icon.image as BufferedImage)
+        }
+    }
+
     fun toIconImage(file: File?): List<Image> {
         if( file == null || ! file.isFile ) return emptyList()
-        return toIconImage(file.inputStream())
+        return try {
+            toIconImage(file.inputStream())
+        } catch (e: Exception) {
+            val icon = FileSystemView.getFileSystemView().getSystemIcon(file) as ImageIcon
+            listOfNotNull(toImage(icon))
+        }
     }
 
     fun toIconImage(instream: InputStream?): List<Image> {
