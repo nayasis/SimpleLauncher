@@ -27,25 +27,22 @@ class LinkExecutor(
     private val linkService: LinkService
 ) {
 
-    fun run( link: Link, files: Collection<File>? = null ) {
+    fun run(link: Link, files: Collection<File>? = null) {
         linkService.save(link.apply { executeCount++ })
         main.tableMain.refresh()
-        try {
-            if( files == null ) {
-                runLater { run(LinkCommand(link)) }
-            } else {
-                if( link.eachExecution ) {
-                    files.forEach { file ->
-                        runLater { run(LinkCommand(link,file),files.size > 1) }
-                    }
-                } else {
-                    runLater { run(LinkCommand(link,files),false) }
+
+        if( files == null ) {
+            runLater { run(LinkCommand(link)) }
+        } else {
+            if( link.eachExecution ) {
+                files.forEach { file ->
+                    runLater { run(LinkCommand(link,file),files.size > 1) }
                 }
+            } else {
+                runLater { run(LinkCommand(link,files),false) }
             }
-        } catch (e: Exception) {
-            // TODO : 에러로그 치환
-            Dialog.error(e.message,e)
         }
+
     }
 
     private fun run(linkCommand: LinkCommand, wait: Boolean = false) {
@@ -58,7 +55,7 @@ class LinkExecutor(
             if( linkCommand.path != null )
                 append(linkCommand.path!!.pathString.wrapDoubleQuote())
             if(isEmpty())
-                throw IllegalArgumentException("msg.err.007".message())
+                throw IllegalArgumentException("msg.err.007".message().format(linkCommand.title))
             if( ! linkCommand.argument.isNullOrEmpty() )
                 append(' ').append(linkCommand.argument)
         }.toString()

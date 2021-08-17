@@ -7,15 +7,11 @@ import javafx.stage.Stage
 import org.apache.commons.cli.CommandLine
 import org.apache.commons.cli.Options
 import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.stereotype.Component
-import tornadofx.View
-import tornadofx.label
+import tornadofx.Stylesheet
 import tornadofx.launch
-import tornadofx.paddingAll
-import tornadofx.vbox
 
 @SpringBootApplication
-class Simplelauncher: SpringFxApp(Main::class) {
+class Simplelauncher: SpringFxApp(Main::class,DefaultStylesheet::class) {
 
     override fun start(command: CommandLine) {
         closePreloader()
@@ -40,4 +36,12 @@ fun main(args: Array<String>) {
 
     launch<Simplelauncher>(*args)
 
+}
+
+class DefaultStylesheet : Stylesheet() {
+    init {
+        root {
+            fontFamily = "Arial"
+        }
+    }
 }

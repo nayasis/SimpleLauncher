@@ -3,6 +3,7 @@ package com.github.nayasis.simplelauncher.view
 import com.github.nayasis.kotlin.basica.core.extention.ifNull
 import com.github.nayasis.kotlin.basica.core.localdate.toFormat
 import com.github.nayasis.kotlin.basica.core.string.message
+import com.github.nayasis.kotlin.javafx.control.basic.allChildren
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValueByDefault
 import com.github.nayasis.kotlin.javafx.control.tableview.column.setAlign
@@ -13,6 +14,7 @@ import com.github.nayasis.kotlin.javafx.misc.Desktop
 import com.github.nayasis.kotlin.javafx.misc.set
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.kotlin.javafx.stage.Localizator
+import com.github.nayasis.kotlin.javafx.stage.focusedNode
 import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.common.ICON_NEW
 import com.github.nayasis.simplelauncher.jpa.entity.Link
@@ -21,12 +23,12 @@ import com.github.nayasis.simplelauncher.service.LinkExecutor
 import com.github.nayasis.simplelauncher.service.LinkService
 import javafx.beans.value.ObservableValue
 import javafx.collections.ListChangeListener
-import javafx.event.EventHandler
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.image.ImageView
 import javafx.scene.input.DragEvent
+import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyCode.*
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.MouseButton
@@ -36,15 +38,7 @@ import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import mu.KotlinLogging
-import tornadofx.SortedFilteredList
-import tornadofx.View
-import tornadofx.asObservable
-import tornadofx.hbox
-import tornadofx.imageview
-import tornadofx.label
-import tornadofx.remainingWidth
-import tornadofx.selectedItem
-import tornadofx.smartResize
+import tornadofx.*
 import java.io.File
 import java.time.LocalDateTime
 
@@ -105,6 +99,8 @@ class Main: View("application.title".message()) {
     var detail: Link? = null
 
     val links = SortedFilteredList(mutableListOf<Link>().asObservable())
+
+    private var lastFocused: Node? = null
 
     init {
         Localizator(root)
@@ -183,7 +179,10 @@ class Main: View("application.title".message()) {
                     inputKeyword.requestFocus()
                 }
                 TAB -> {
-//                    TODO( "traverse to descGroupName")
+                    if( ! event.isShiftDown ) {
+                        event.consume()
+                        (if(lastFocused == null || lastFocused == tableMain) descGroupName else lastFocused)!!.requestFocus()
+                    }
                 }
             }
         }
@@ -292,6 +291,16 @@ class Main: View("application.title".message()) {
             }
         }
 
+        descGridPane.allChildren.filterIsInstance<TextInputControl>().forEach {
+            it.addEventFilter(KeyEvent.KEY_PRESSED) { e ->
+                if( e.code == ESCAPE ) {
+                    if( it == inputKeyword ) return@addEventFilter
+                    lastFocused = it
+                    tableMain.requestFocus()
+                }
+            }
+        }
+
         descGridPane.children.filterIsInstance<TextArea>().forEach { tabPressed(it) }
 
         // 상세내역 변경시 버튼 컨트롤
@@ -326,7 +335,8 @@ class Main: View("application.title".message()) {
         textArea.addEventFilter(KeyEvent.KEY_PRESSED) { event ->
             if( event.code != TAB || event.isShiftDown || event.isControlDown ) return@addEventFilter
             event.consume()
-            (event.source as Node).fireEvent( KeyEvent(
+            val node = event.source as Node
+            node.fireEvent( KeyEvent(
                 event.source,
                 event.target,
                 event.eventType,

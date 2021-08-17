@@ -21,6 +21,8 @@ private val PATTERN_KEYWORD = ExtractPattern("#\\{([^\\s{}]*?)}".toPattern())
 
 class LinkCommand {
 
+    var title: String?
+
     var path: Path?
     var workingDirectory: Path?
 
@@ -31,6 +33,7 @@ class LinkCommand {
     var showConsole: Boolean
 
     constructor(link: Link) {
+        title            = link.title
         path             = getExecutionPath(link)
         workingDirectory = path?.directory
         argument         = link.argument ?: ""
