@@ -11,30 +11,33 @@ import mu.KotlinLogging
 
 private val log = KotlinLogging.logger {}
 
-private const val KEY_BORDERLESS = "KEY_BORDERLESS"
+class Stages { companion object {
 
-val DEFAULT_ICON = IconContainer()
+    val defaultIcons = IconContainer()
 
-fun focusedWindow(): Window? {
-    for( window in windows())
-        if( window.isFocused ) return window
-    return null
-}
+    val focusedWindow: Window?
+        get() {
+            for( window in windows)
+                if( window.isFocused ) return window
+            return null
+        }
 
-fun windows(): List<Window> {
-    return Window.impl_getWindows().toList()
-}
+    val windows: List<Window>
+        get() = Window.impl_getWindows().toList()
+
+}}
+
+
 
 fun Stage.loadDefaultIcon(): Stage {
-    if( ! DEFAULT_ICON.isEmpty() ) {
-        this.icons.addAll(DEFAULT_ICON.icons)
+    if( ! Stages.defaultIcons.isEmpty() ) {
+        this.icons.addAll(Stages.defaultIcons.icons)
     }
     return this
 }
 
-fun Stage.isBorderless(): Boolean {
-    return scene?.isBorderless() ?: false
-}
+val Stage.isBorderless: Boolean
+    get() = scene?.isBorderless() ?: false
 
 fun Stage.setBorderless(option: Stage.() -> Unit = {}, defaultCss: Boolean = true) {
     scene?.setBorderless(defaultCss = defaultCss)
@@ -65,14 +68,15 @@ fun Stage.addZoomed(button: Button) {
     scene?.addZoomed(button)
 }
 
-fun Stage.isZoomed(): Boolean {
-    return scene?.isZoomed() ?: false
-}
+val Stage.isZoomed: Boolean
+    get() = scene?.isZoomed() ?: false
 
 fun Stage.setZoom(enable: Boolean) {
     scene?.setZoom(enable)
 }
 
-fun Window.boundary(): Rectangle2D {
-    return Rectangle2D(this.x, this.y, this.width, this.height)
-}
+val Stage.focusedNode: Node?
+    get() = this.scene?.focusOwnerProperty()?.get()
+
+val Window.boundary: Rectangle2D
+    get() = Rectangle2D(this.x, this.y, this.width, this.height)

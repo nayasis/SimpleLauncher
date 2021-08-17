@@ -2,13 +2,16 @@ package com.github.nayasis.kotlin.javafx.stage
 
 import com.github.nayasis.kotlin.basica.core.path.div
 import com.github.nayasis.kotlin.basica.core.path.userHome
-import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.core.string.toFile
 import com.github.nayasis.kotlin.basica.core.validator.nvl
 import com.github.nayasis.kotlin.basica.etc.Platforms
 import com.github.nayasis.kotlin.basica.etc.error
-import javafx.scene.control.*
+import javafx.scene.control.Alert
 import javafx.scene.control.Alert.AlertType
+import javafx.scene.control.Button
+import javafx.scene.control.ButtonType
+import javafx.scene.control.TextArea
+import javafx.scene.control.TextInputDialog
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.GridPane
@@ -31,7 +34,7 @@ class Dialog { companion object {
             headerText = null
             contentText = message
             initModality(WINDOW_MODAL)
-            initOwner(focusedWindow())
+            initOwner(Stages.focusedWindow)
             with( dialogPane.scene.window as Stage ) {
                 isAlwaysOnTop = true
                 loadDefaultIcon()
@@ -80,7 +83,7 @@ class Dialog { companion object {
         return TextInputDialog().apply {
             headerText = message
             initModality(WINDOW_MODAL)
-            initOwner(focusedWindow())
+            initOwner(Stages.focusedWindow)
             with( dialogPane.scene.window as Stage ) {
                 isAlwaysOnTop = true
                 loadDefaultIcon()
