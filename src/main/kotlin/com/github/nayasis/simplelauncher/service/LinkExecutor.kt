@@ -19,6 +19,7 @@ import tornadofx.runLater
 import java.io.File
 import java.lang.StringBuilder
 import java.nio.file.Path
+import java.time.LocalDateTime
 
 private val logger = KotlinLogging.logger{}
 
@@ -28,7 +29,11 @@ class LinkExecutor(
 ) {
 
     fun run(link: Link, files: Collection<File>? = null) {
-        linkService.save(link.apply { executeCount++ })
+
+        linkService.save( link.apply {
+            lastExecDate = LocalDateTime.now()
+            executeCount++
+        })
         main.tableMain.refresh()
 
         if( files == null ) {
