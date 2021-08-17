@@ -213,10 +213,6 @@
                                  <tooltip>
                                     <Tooltip text="\%btn.open.folder.tooltip" />
                                  </tooltip></Button>
-                              <Button fx:id="buttonChangeIcon" focusTraversable="false" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" text="\%btn.change.icon" textOverrun="CLIP">
-                                 <tooltip>
-                                    <Tooltip text="\%btn.change.icon.tooltip" />
-                                 </tooltip></Button>
                            </children>
                         </HBox>
                         <TextField fx:id="descArg" GridPane.columnIndex="1" GridPane.rowIndex="6" />
