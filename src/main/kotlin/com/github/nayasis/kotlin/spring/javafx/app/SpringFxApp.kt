@@ -7,8 +7,8 @@ import com.github.nayasis.kotlin.javafx.preloader.ErrorNotificator
 import com.github.nayasis.kotlin.javafx.preloader.NPreloader
 import com.github.nayasis.kotlin.javafx.preloader.Notificator
 import com.github.nayasis.kotlin.javafx.preloader.ProgressNotificator
-import com.github.nayasis.kotlin.javafx.stage.DEFAULT_ICON
 import com.github.nayasis.kotlin.javafx.stage.Dialog
+import com.github.nayasis.kotlin.javafx.stage.Stages
 import javafx.application.Platform
 import javafx.scene.image.Image
 import javafx.stage.Stage
@@ -109,7 +109,7 @@ abstract class SpringFxApp: App {
             System.setProperty("java.awt.headless", "false")
         }
 
-        fun loadDefaultIcon(resourcePath: String) = DEFAULT_ICON.add(resourcePath)
+        fun loadDefaultIcon(resourcePath: String) = Stages.defaultIcons.add(resourcePath)
 
         fun loadMessage(resourcePath: String) = Messages.loadFromResource(resourcePath)
 

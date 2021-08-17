@@ -45,7 +45,7 @@ object BoundaryChecker {
         var major = Screen.getPrimary()
         var max   = 0.0
 
-        val boundary = window.boundary()
+        val boundary = window.boundary
 
         for( screen in Screen.getScreens() ) {
             val area = screen.bounds.areaIntersected(boundary)
