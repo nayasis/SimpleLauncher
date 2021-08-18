@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test
 
 internal class KeywordParserTest {
 
-    private val matcher = KeywordParser()
+    private val parser = KeywordParser()
 
     @Test
     fun match() {
@@ -16,7 +16,7 @@ internal class KeywordParserTest {
     }
 
     private fun filter(list: List<String>, searchWord: String): List<String> {
-        val keyword = matcher.toKeyword(searchWord)
+        val keyword = parser.parse(searchWord)
             .also { if(it==null) return emptyList() }!!
         return list.filter { title ->
             keyword.match { pattern -> title.find(pattern) } }
@@ -24,23 +24,23 @@ internal class KeywordParserTest {
 
     @Test
     fun toPostfix() {
-        assertEquals("[a, b, AND]", matcher.toPostfix("a b"))
-        assertEquals("[a, b, AND]", matcher.toPostfix("a   b"))
-        assertEquals("[a, b, OR]", matcher.toPostfix("a, b"))
-        assertEquals("[a, b, OR]", matcher.toPostfix("a  , b"))
-        assertEquals("[a, b, OR]", matcher.toPostfix("a,,, , b"))
-        assertEquals("[a, NOT, b, NOT, AND]", matcher.toPostfix("-a -b"))
-        assertEquals("[a, NOT, b, NOT, OR]", matcher.toPostfix("-a, -b"))
-        assertEquals("[a, NOT, b, NOT, OR]", matcher.toPostfix("-a , -b "))
-        assertEquals("[a, NOT, b, NOT, OR]", matcher.toPostfix("-a, -b, "))
-        assertEquals("[a, NOT, b, NOT, AND]", matcher.toPostfix("(-a) -(b) "))
-        assertEquals("[a, NOT, b, OR, c, d, AND, AND]", matcher.toPostfix("(-a, b) ( c d )"))
-        assertEquals("[a, b, AND, c, d, OR, AND]", matcher.toPostfix("(a b) (c, d) "))
+        assertEquals("[a, b, AND]", parser.toPostfix("a b"))
+        assertEquals("[a, b, AND]", parser.toPostfix("a   b"))
+        assertEquals("[a, b, OR]", parser.toPostfix("a, b"))
+        assertEquals("[a, b, OR]", parser.toPostfix("a  , b"))
+        assertEquals("[a, b, OR]", parser.toPostfix("a,,, , b"))
+        assertEquals("[a, NOT, b, NOT, AND]", parser.toPostfix("-a -b"))
+        assertEquals("[a, NOT, b, NOT, OR]", parser.toPostfix("-a, -b"))
+        assertEquals("[a, NOT, b, NOT, OR]", parser.toPostfix("-a , -b "))
+        assertEquals("[a, NOT, b, NOT, OR]", parser.toPostfix("-a, -b, "))
+        assertEquals("[a, NOT, b, NOT, AND]", parser.toPostfix("(-a) -(b) "))
+        assertEquals("[a, NOT, b, OR, c, d, AND, AND]", parser.toPostfix("(-a, b) ( c d )"))
+        assertEquals("[a, b, AND, c, d, OR, AND]", parser.toPostfix("(a b) (c, d) "))
         assertEquals(
             "[a, NOT, b, OR, e, f, g, h, OR, OR, AND, AND, c, d, AND, AND]",
-            matcher.toPostfix("((-a, b,) e (f, g, h ), ) ( c d )")
+            parser.toPostfix("((-a, b,) e (f, g, h ), ) ( c d )")
         )
-        assertEquals("[except, NOT]", matcher.toPostfix("() ( ) -except"))
+        assertEquals("[except, NOT]", parser.toPostfix("() ( ) -except"))
     }
 
     private fun assertEquals(string: String, list: List<*>) {
