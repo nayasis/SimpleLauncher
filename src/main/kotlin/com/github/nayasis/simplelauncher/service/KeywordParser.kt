@@ -7,19 +7,21 @@ import com.github.nayasis.simplelauncher.service.Operator.*
 import java.util.*
 import java.util.regex.Pattern
 
-class KeywordParser {
+class KeywordParser(capacity: Int = 20) {
 
-    private val cache: LruCache<String,Keyword> = LruCache(20)
+    private val cache = LruCache<String,Keyword>(capacity)
 
-    fun toKeyword(word: String?): Keyword? {
+    fun parse(word: String?): Keyword? {
         if(word.isNullOrEmpty()) return null
         val key = word.trim()
         return cache.getOrPut(key) {toPostfix(key)}
     }
 
-    fun toPostfix(text: String): Keyword {
+    internal fun toPostfix(text: String): Keyword {
+
         val queue = Keyword()
         val stack = Stack<Any?>()
+
         for (token in tokenize(text)) {
             if (token is String) {
                 queue.add(toPattern(token)!!)
@@ -56,11 +58,15 @@ class KeywordParser {
                         break
                     }
                 }
+
                 stack.push(token)
+
             }
         }
+
         while (!stack.isEmpty()) queue.add(stack.pop()!!)
         return queue
+
     }
 
     private fun priority(token: Any?): Int {
@@ -133,21 +139,19 @@ class KeywordParser {
         return result.reversed()
     }
 
-
     private fun toPattern(keyword: String?): Pattern? {
         if (keyword.isNullOrEmpty()) return null
         return try {
             Pattern.compile(keyword.toLowerCase())
         } catch (e: Exception) {
+
             Pattern.compile(
-                keyword.toLowerCase().replace("[\\[\\]\\(\\)\\{\\}\\.\\*\\+\\?\\$\\^\\|\\#\\\\]".toRegex(), "")
+                keyword.toLowerCase().replace(PATTERN_REGEX, "")
             )
         }
     }
 
 }
-
-private val ARITH_OPERATOR = listOf(AND, OR, NOT)
 
 private enum class Operator(val priority: Int) {
 
@@ -157,6 +161,9 @@ private enum class Operator(val priority: Int) {
     BRACE_OPEN(-1), BRACE_CLOSE(-1);
 
 }
+
+private val PATTERN_REGEX  = "[\\[\\]\\(\\)\\{\\}\\.\\*\\+\\?\\$\\^\\|\\#\\\\]".toRegex()
+private val ARITH_OPERATOR = listOf(AND, OR, NOT)
 
 class Keyword: ArrayList<Any>() {
 
@@ -178,3 +185,4 @@ class Keyword: ArrayList<Any>() {
     }
 
 }
+
