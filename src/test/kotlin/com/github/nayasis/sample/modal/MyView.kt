@@ -65,7 +65,7 @@ class Editor: View() {
     override fun onDock() {
         VBox.setMargin(root, Insets(5.0, 5.0, 5.0, 5.0))
         with(currentStage!!) {
-            if(!isBorderless()) {
+            if(!isBorderless) {
                 setBorderless()
                 addMoveHandler(menubar, buttonClose = true)
             }
