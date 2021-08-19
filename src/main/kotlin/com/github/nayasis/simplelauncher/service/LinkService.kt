@@ -15,8 +15,6 @@ import java.io.File
 
 private val logger = KotlinLogging.logger{}
 
-private const val FILE_EXT = "*.sl"
-
 @Component
 class LinkService(
     private val linkRepository: LinkRepository,
@@ -50,35 +48,20 @@ class LinkService(
         Context.main.links.remove(link)
     }
 
-    fun openImportFilePicker(): File? {
-        return Dialog.filePicker("msg.info.004".message(), FILE_EXT, "msg.info.011".message(), configService.filePickerInitialDirectory)
-            .showOpenDialog(Context.main.primaryStage)
-            .also {
-                if( it != null )
-                    configService.filePickerInitialDirectory = it.directory.path
-            }
-    }
+    fun openImportFilePicker(): File? =
+        openFilePicker("msg.info.004","*.sl","msg.info.011")
 
-    fun openExportFilePicker(): File? {
-        return Dialog.filePicker("msg.info.003".message(), FILE_EXT, "msg.info.011".message(), configService.filePickerInitialDirectory)
-            .showOpenDialog(Context.main.primaryStage)
-            .also {
-                if( it != null )
-                    configService.filePickerInitialDirectory = it.directory.path
-            }
-    }
+    fun openExportFilePicker(): File? =
+        openFilePicker("msg.info.003","*.sl","msg.info.011")
 
-    fun openIconFilePicker(): File? {
-        return Dialog.filePicker("msg.info.002".message(), "*.*", "msg.info.012".message(), configService.filePickerInitialDirectory)
-            .showOpenDialog(Context.main.primaryStage)
-            .also {
-                if( it != null )
-                    configService.filePickerInitialDirectory = it.directory.path
-            }
-    }
+    fun openIconFilePicker(): File? =
+        openFilePicker("msg.info.002","*.*","msg.info.012")
 
-    fun openPathFilePicker(): File? {
-        return Dialog.filePicker("msg.info.001".message(), "*.*", "msg.info.006".message(), configService.filePickerInitialDirectory)
+    fun openPathFilePicker(): File? =
+        openFilePicker("msg.info.001","*.*","msg.info.006")
+
+    private fun openFilePicker(title: String, extension: String, description: String): File? {
+        return Dialog.filePicker(title.message(), extension, description.message(), configService.filePickerInitialDirectory)
             .showOpenDialog(Context.main.primaryStage)
             .also {
                 if( it != null )
