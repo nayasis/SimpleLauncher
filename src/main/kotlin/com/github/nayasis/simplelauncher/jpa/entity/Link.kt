@@ -134,4 +134,12 @@ class Link: Cloneable {
         return super.clone() as Link
     }
 
+    fun generateKeyword(): Link {
+        keyword = listOfNotNull(group, title, description).joinToString(" ")
+            .split(" \t\n!@#$%^&*()-_=+[{]}\\|;:'\",<.>/?")
+            .map { it.toLowerCase() }
+            .toSet()
+        return this
+    }
+
 }

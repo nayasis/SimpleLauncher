@@ -25,7 +25,7 @@ class LinkService(
 
     @Transactional
     fun save(link: Link) {
-        linkRepository.save(link)
+        linkRepository.save(link.generateKeyword())
     }
 
     @Transactional

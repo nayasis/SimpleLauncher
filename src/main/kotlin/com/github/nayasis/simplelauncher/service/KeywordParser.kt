@@ -11,8 +11,8 @@ class KeywordParser(capacity: Int = 20) {
 
     private val cache = LruCache<String,Keyword>(capacity)
 
-    fun parse(word: String?): Keyword? {
-        if(word.isNullOrEmpty()) return null
+    fun parse(word: String?): Keyword {
+        if(word.isNullOrEmpty()) return Keyword()
         val key = word.trim()
         return cache.getOrPut(key) {toPostfix(key)}
     }
@@ -123,7 +123,7 @@ class KeywordParser(capacity: Int = 20) {
         // 표현식 마지막이 연산자일 경우 삭제
         val last = buffer.peek()
 
-        if( last in ARITH_OPERATOR)
+        if(last in ARITH_OPERATOR)
             buffer.pop()
         val result = ArrayList<Any>()
         while (!buffer.isEmpty()) {
@@ -168,6 +168,7 @@ private val ARITH_OPERATOR = listOf(AND, OR, NOT)
 class Keyword: ArrayList<Any>() {
 
     fun match(fn: (pattern: Pattern) -> Boolean): Boolean {
+        if(isEmpty()) return false
         val stack = Stack<Boolean>()
         for (token in this) {
             when {
