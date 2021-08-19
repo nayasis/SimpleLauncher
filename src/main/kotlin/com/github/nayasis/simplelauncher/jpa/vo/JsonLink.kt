@@ -3,7 +3,6 @@ package com.github.nayasis.simplelauncher.jpa.vo
 import com.github.nayasis.kotlin.basica.annotation.NoArg
 import com.github.nayasis.kotlin.basica.core.string.decodeBase64
 import com.github.nayasis.kotlin.basica.core.string.encodeBase64
-import com.github.nayasis.simplelauncher.common.makeKeyword
 import com.github.nayasis.simplelauncher.jpa.entity.Link
 import java.time.LocalDateTime
 
@@ -45,20 +44,20 @@ data class JsonLink(
     fun toLink(): Link {
         val it = this
         return Link().apply {
-            title        = it.title
-            group        = it.group
-            path         = it.path
-            relativePath = it.relativePath
-            showConsole  = it.showConsole
-            argument       = it.option
+            title         = it.title
+            group         = it.group
+            path          = it.path
+            relativePath  = it.relativePath
+            showConsole   = it.showConsole
+            argument      = it.option
             commandPrefix = it.optionPrefix
-            commandPrev  = it.commandPrev
-            commandNext  = it.commandNext
-            description  = it.description
-            keyword      = makeKeyword(it.group,it.title,it.description)
-            icon         = it.icon.decodeBase64()
-            executeCount = it.executeCount
-            lastExecDate = it.lastExecDate
+            commandPrev   = it.commandPrev
+            commandNext   = it.commandNext
+            description   = it.description
+            icon          = it.icon.decodeBase64()
+            executeCount  = it.executeCount
+            lastExecDate  = it.lastExecDate
+            generateKeyword()
         }
     }
 

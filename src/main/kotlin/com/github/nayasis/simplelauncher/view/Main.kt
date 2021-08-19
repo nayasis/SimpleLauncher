@@ -19,6 +19,7 @@ import com.github.nayasis.simplelauncher.common.ICON_NEW
 import com.github.nayasis.simplelauncher.jpa.entity.Link
 import com.github.nayasis.simplelauncher.jpa.repository.LinkRepository
 import com.github.nayasis.simplelauncher.service.LinkExecutor
+import com.github.nayasis.simplelauncher.service.LinkMatcher
 import com.github.nayasis.simplelauncher.service.LinkService
 import javafx.beans.value.ObservableValue
 import javafx.collections.ListChangeListener
@@ -47,6 +48,7 @@ class Main: View("application.title".message()) {
     val linkRepository: LinkRepository by di()
     val linkService: LinkService by di()
     val linkExecutor: LinkExecutor by di()
+    val linkMatcher: LinkMatcher by di()
 
     override val root: AnchorPane by fxml("/view/main/main.fxml")
 
@@ -67,7 +69,6 @@ class Main: View("application.title".message()) {
     val menuDeleteAll: MenuItem by fxid()
 
     val inputKeyword: TextField by fxid()
-    val inputGroup: TextField by fxid()
 
     val buttonNew: Button by fxid()
     val buttonSave: Button by fxid()
@@ -316,6 +317,18 @@ class Main: View("application.title".message()) {
             it.textProperty().addListener(listener)
         }
         descIcon.imageProperty().addListener(listener)
+
+        // 검색필터 설정
+        inputKeyword.textProperty().addListener { _, _, value ->
+            if(value.isNullOrEmpty()) {
+                links.predicate = {true}
+            } else {
+                linkMatcher.setKeyword(value)
+                if (linkMatcher.hasKeyword) {
+                    links.predicate = { link -> linkMatcher.isMatch(link) }
+                }
+            }
+        }
 
     }
 
