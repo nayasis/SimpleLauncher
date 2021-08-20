@@ -11,7 +11,7 @@ data class PositionProperty(
         x = stage.x.toInt()
         y = stage.y.toInt()
     }
-    fun apply(stage: Stage) {
+    fun bind(stage: Stage) {
         stage.x = x.toDouble()
         stage.y = y.toDouble()
     }

@@ -194,7 +194,7 @@ fun Scene.setZoom(enable: Boolean) {
             window.height = it.height
         }
     } else {
-        previousZoomSize?.apply(window)
+        previousZoomSize?.bind(window)
         previousZoomSize = null
     }
 
