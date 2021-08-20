@@ -85,6 +85,11 @@ class Link: Cloneable {
             when(file.extension) {
                 "lnk" -> resolveMicrosoftLnk(file)
                 "jar" -> commandPrefix = "java -jar"
+                "xls", "xlsx" -> {
+                    if(Platforms.isWindows) {
+                       commandPrefix = "cmd /c start excel"
+                    }
+                }
             }
         }
     }
