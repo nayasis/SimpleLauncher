@@ -22,7 +22,6 @@ private val logger = KotlinLogging.logger{}
 private const val PREFIX_ID = "_tmp_id"
 private var seq = 0
 
-
 data class StageProperty(
     val inset: InsetProperty = InsetProperty(),
     var maximized: Boolean = false,
@@ -60,29 +59,25 @@ data class StageProperty(
         maximized = stage.isMaximized
         previousZoomSize = stage.scene.previousZoomSize
 
-        stage.scene?.root?.allStyleables?.forEach {
-            val fxid = getFxId(it) ?: return@forEach
-            if( skippable(it) ) return
+        getAllChildren(stage).forEach {
+            if( skippable(it) ) return@forEach
             when(it) {
-                is TableView<*> -> tables[fxid] = TableProperty(it)
-                is CheckMenuItem -> checks[fxid] = it.isSelected
-                is CheckBox -> checks[fxid] = it.isSelected
-                is TextField -> values[fxid] = it.text ?: ""
-                is TextArea -> values[fxid] = it.text ?: ""
-                is ComboBox<*> -> indices[fxid] = it.selectionModel.selectedIndex
-                is ChoiceBox<*> -> indices[fxid] = it.selectionModel.selectedIndex
-                is CheckComboBox<*> -> lists[fxid] = it.checkModel.checkedIndices.toList()
+                is TableView<*> -> tables[it.id] = TableProperty(it)
+                is CheckMenuItem -> checks[it.id] = it.isSelected
+                is CheckBox -> checks[it.id] = it.isSelected
+                is TextField -> values[it.id] = it.text ?: ""
+                is TextArea -> values[it.id] = it.text ?: ""
+                is ComboBox<*> -> indices[it.id] = it.selectionModel.selectedIndex
+                is ChoiceBox<*> -> indices[it.id] = it.selectionModel.selectedIndex
+                is CheckComboBox<*> -> lists[it.id] = it.checkModel.checkedIndices.toList()
             }
             when(it) {
-                is Pane -> visibles[fxid] = it.isVisible
+                is Pane -> visibles[it.id] = it.isVisible
                 is Control -> {
-                    if( fxid == "buttonCopy" ) {
-                        logger.debug { "got!!" }
-                    }
-                    visibles[fxid] = it.isVisible
-                    disables[fxid] = it.isDisable
+                    visibles[it.id] = it.isVisible
+                    disables[it.id] = it.isDisable
                     if (it is TextInputControl) {
-                        editables[fxid] = it.isEditable
+                        editables[it.id] = it.isEditable
                     }
                 }
             }
@@ -98,33 +93,29 @@ data class StageProperty(
         BoundaryChecker.reset(stage)
         stage.scene.previousZoomSize = previousZoomSize
 
-        stage.scene.root?.allStyleables?.forEach {
-            val fxid = getFxId(it) ?: return@forEach
-            if( skippable(it) ) return
+        getAllChildren(stage).forEach {
+            if( skippable(it) ) return@forEach
             when(it) {
-                is TableView<*> -> tables[fxid]?.bind(it as TableView<Any>)
-                is CheckMenuItem -> checks[fxid]?.let{ value -> it.isSelected = value }
-                is CheckBox -> checks[fxid]?.let{ value -> it.isSelected = value }
-                is TextField -> values[fxid]?.let{ value -> it.text = value }
-                is TextArea -> values[fxid]?.let{ value -> it.text = value }
-                is ComboBox<*> -> indices[fxid]?.let{ value -> it.selectionModel.select(min(max(value,0),it.items.size-1)) }
-                is ChoiceBox<*> -> indices[fxid]?.let{ value -> it.selectionModel.select(min(max(value,0),it.items.size-1)) }
-                is CheckComboBox<*> -> lists[fxid]?.let{ value ->
+                is TableView<*> -> tables[it.id]?.bind(it as TableView<Any>)
+                is CheckMenuItem -> checks[it.id]?.let{ value -> it.isSelected = value }
+                is CheckBox -> checks[it.id]?.let{ value -> it.isSelected = value }
+                is TextField -> values[it.id]?.let{ value -> it.text = value }
+                is TextArea -> values[it.id]?.let{ value -> it.text = value }
+                is ComboBox<*> -> indices[it.id]?.let{ value -> it.selectionModel.select(min(max(value,0),it.items.size-1)) }
+                is ChoiceBox<*> -> indices[it.id]?.let{ value -> it.selectionModel.select(min(max(value,0),it.items.size-1)) }
+                is CheckComboBox<*> -> lists[it.id]?.let{ value ->
                     it.checkModel.clearChecks()
                     it.checkModel.checkedIndices.addAll(value)
                 }
             }
             if( visibility ) {
                 when(it) {
-                    is Pane -> visibles[fxid]?.let { value -> it.isVisible = value }
+                    is Pane -> visibles[it.id]?.let { value -> it.isVisible = value }
                     is Control -> {
-                        if( fxid == "buttonCopy" ) {
-                            logger.debug { "got!!" }
-                        }
-                        visibles[fxid]?.let { value -> it.isVisible = value }
-                        disables[fxid]?.let { value -> it.isDisable = value }
+                        visibles[it.id]?.let { value -> it.isVisible = value }
+                        disables[it.id]?.let { value -> it.isDisable = value }
                         if (it is TextInputControl) {
-                            editables[fxid]?.let { value -> it.isEditable = value }
+                            editables[it.id]?.let { value -> it.isEditable = value }
                         }
                     }
                 }
@@ -133,19 +124,22 @@ data class StageProperty(
 
     }
 
-    private fun getFxId(node: Styleable): String? {
-        if( node.id.isNullOrEmpty() ) {
-            try {
-                if( node is Node ) {
-                    node.id = "${PREFIX_ID}_${seq++}"
-                } else if( node is MenuItem ) {
-                    node.id = "${PREFIX_ID}_${seq++}"
-                }
-            } catch (e: Exception) {
-                seq--
+    private fun getAllChildren(stage: Stage): List<Styleable> {
+        return stage.scene.root?.allStyleables?.filter { setFxId(it) } ?: emptyList()
+    }
+
+    private fun setFxId(node: Styleable): Boolean {
+        return if( node.id.isNullOrEmpty() ) try {
+            when (node) {
+                is Node -> node.id = "${PREFIX_ID}_${seq++}"
+                is MenuItem -> node.id = "${PREFIX_ID}_${seq++}"
+                else -> return false
             }
-        }
-        return node.id
+            true
+        } catch (e: Exception) {
+            seq--
+            false
+        } else true
     }
 
     private fun skippable(node: Styleable): Boolean {
