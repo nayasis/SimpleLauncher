@@ -21,7 +21,7 @@ data class InsetProperty(
         width = window.width.toInt()
         height = window.height.toInt()
     }
-    fun apply(window: Window) {
+    fun bind(window: Window) {
         window.x = x.toDouble()
         window.y = y.toDouble()
         window.width = width.toDouble()

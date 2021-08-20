@@ -11,7 +11,7 @@ data class SizeProperty(
         width = stage.width.toInt()
         height = stage.height.toInt()
     }
-    fun apply(stage: Stage) {
+    fun bind(stage: Stage) {
         stage.width = width.toDouble()
         stage.height = height.toDouble()
     }

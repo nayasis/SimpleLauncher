@@ -12,7 +12,6 @@ import javafx.scene.control.TableColumn
 import javafx.scene.control.TablePosition
 import javafx.scene.control.TableView
 import java.lang.Integer.min
-import kotlin.collections.ArrayList
 import kotlin.math.max
 
 fun <S,T:Any> TableView<S>.findColumnBy(fxId: String): TableColumn<S,T> {
@@ -21,27 +20,33 @@ fun <S,T:Any> TableView<S>.findColumnBy(fxId: String): TableColumn<S,T> {
     throw NotFound("fxId:$fxId")
 }
 
-fun <S> TableView<S>.allColumns(): List<TableColumn<S,*>> {
-    return ArrayList<TableColumn<S,*>>().apply {
-        columns.forEach{
-            this.add(it as TableColumn<S,*> )
-            this.addAll( it.children(true) )
+val <S> TableView<S>.allColumns: List<TableColumn<S,*>>
+    get() {
+        return ArrayList<TableColumn<S,*>>().apply {
+            columns.forEach{
+                this.add(it as TableColumn<S,*> )
+                it.children(true).let { children ->
+                    if(children.isNotEmpty()) this.addAll(children)
+                }
+            }
         }
     }
-}
 
 fun <S> TableView<S>.fillFxId(): TableView<S> {
-    this.allColumns().withIndex().forEach {
-        it.value.id = nvl( it.value.id, it.index.toString() )
+    this.allColumns.withIndex().forEach {
+        if(it.value.id.isNullOrEmpty()) {
+            it.value.id = "${this.id}-${it.index}"
+        }
     }
     return this
 }
 
-fun <S> TableView<S>.focused(): Position {
-    return (focusModel.focusedCellProperty().get() as TablePosition<S,*>).let {
-        return Position(it.row, it.column)
+val <S> TableView<S>.focused: Position
+    get() {
+        return (focusModel.focusedCellProperty().get() as TablePosition<S,*>).let {
+            return Position(it.row, it.column)
+        }
     }
-}
 data class Position(val row: Int, val col: Int )
 
 fun <S> TableView<S>.select( row: Int, col: Int = -1, scroll: Boolean = true ) {
@@ -87,7 +92,7 @@ fun <S> TableView<S>.focusBy( row: S? ): Int {
 
 fun <S> TableView<S>.scroll( row: Int, middle: Boolean = true ) {
     val index = if( middle ) {
-        max( row - (visibleRows() / 2), 0)
+        max( row - (visibleRows / 2), 0)
     } else {
         row
     }
@@ -99,17 +104,17 @@ fun <S> TableView<S>.scrollBy( row: S?, middle: Boolean = true ): Int {
 }
 
 
-fun <S> TableView<S>.visibleRows(): Int {
-    return virtualFlow()?.let{
-        val first = it.firstVisibleCell.index
-        val last  = it.lastVisibleCell.index
-        last + first + 1
-    } ?: 0
-}
+val <S> TableView<S>.visibleRows: Int
+    get() {
+        return virtualFlow?.let{
+            val first = it.firstVisibleCell.index
+            val last  = it.lastVisibleCell.index
+            last + first + 1
+        } ?: 0
+    }
 
-fun <S> TableView<S>.virtualFlow(): VirtualFlow<*>? {
-    return (skin as TableViewSkin<S>).children?.firstOrNull { it is VirtualFlow<*> } as VirtualFlow<*>
-}
+val <S> TableView<S>.virtualFlow: VirtualFlow<*>?
+    get() = (skin as TableViewSkin<S>?)?.children?.firstOrNull { it is VirtualFlow<*> } as VirtualFlow<*>?
 
 fun <S> TableView<S>.setItems( list: FilteredList<S> ) {
     val sortedList = SortedList(list)
