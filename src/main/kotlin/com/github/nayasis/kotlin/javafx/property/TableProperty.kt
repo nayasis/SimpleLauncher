@@ -5,6 +5,7 @@ import com.github.nayasis.kotlin.javafx.control.tableview.allColumns
 import com.github.nayasis.kotlin.javafx.control.tableview.fillFxId
 import com.github.nayasis.kotlin.javafx.control.tableview.focus
 import com.github.nayasis.kotlin.javafx.control.tableview.focused
+import javafx.application.Platform
 import javafx.scene.control.TableColumn
 import javafx.scene.control.TableView
 import java.io.Serializable
@@ -36,7 +37,11 @@ data class TableProperty(
         visible?.let { tableview.isVisible = it }
         reorderColumns(tableview)
         columnSortOrder?.bind(tableview)
-        focusedRow?.let { tableview.focus(it) }
+        focusedRow?.let {
+            Platform.runLater {
+                tableview.focus(it)
+            }
+        }
 
     }
 
