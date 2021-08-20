@@ -3,6 +3,8 @@ package com.github.nayasis.simplelauncher.view
 import com.github.nayasis.kotlin.basica.core.extention.ifNull
 import com.github.nayasis.kotlin.basica.core.localdate.toFormat
 import com.github.nayasis.kotlin.basica.core.string.message
+import com.github.nayasis.kotlin.basica.etc.error
+import com.github.nayasis.kotlin.basica.reflection.Reflector
 import com.github.nayasis.kotlin.javafx.control.basic.allChildren
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValueByDefault
@@ -12,6 +14,7 @@ import com.github.nayasis.kotlin.javafx.control.tableview.select
 import com.github.nayasis.kotlin.javafx.geometry.Insets
 import com.github.nayasis.kotlin.javafx.misc.Desktop
 import com.github.nayasis.kotlin.javafx.misc.set
+import com.github.nayasis.kotlin.javafx.property.StageProperty
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.kotlin.javafx.stage.Localizator
 import com.github.nayasis.simplelauncher.common.Context
@@ -104,6 +107,23 @@ class Main: View("application.title".message()) {
         Localizator(root)
         initEvent()
         initTable()
+    }
+
+    override fun onBeforeShow() {
+        if(config.isNotEmpty()) {
+            try {
+                val property = Reflector.toObject<StageProperty>(config.getProperty(StageProperty::class.simpleName))
+                property.excludeKlass.add(Button::class)
+                property.bind(currentStage!!)
+            } catch (e: Exception) {
+                logger.error(e)
+            }
+        }
+    }
+
+    override fun onUndock() {
+        config.setProperty(StageProperty::class.simpleName, Reflector.toJson(StageProperty(currentStage!!)) )
+        config.save()
     }
 
     private fun initTable() {
@@ -439,7 +459,7 @@ class Main: View("application.title".message()) {
 
         if( ! Dialog.confirm("msg.confirm.001".message().format(summary)) ) return
 
-        val prev = tableMain.focused()
+        val prev = tableMain.focused
 
         linkService.delete(link)
         links.remove(link)
