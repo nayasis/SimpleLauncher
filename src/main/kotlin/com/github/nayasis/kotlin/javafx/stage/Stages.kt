@@ -1,6 +1,5 @@
 package com.github.nayasis.kotlin.javafx.stage
 
-import com.github.nayasis.kotlin.basica.core.collection.toList
 import com.github.nayasis.kotlin.javafx.scene.*
 import javafx.geometry.Rectangle2D
 import javafx.scene.Node
@@ -9,7 +8,7 @@ import javafx.stage.Stage
 import javafx.stage.Window
 import mu.KotlinLogging
 
-private val log = KotlinLogging.logger {}
+private val logger = KotlinLogging.logger {}
 
 class Stages { companion object {
 
@@ -23,11 +22,9 @@ class Stages { companion object {
         }
 
     val windows: List<Window>
-        get() = Window.impl_getWindows().toList()
+        get() = Window.getWindows()
 
 }}
-
-
 
 fun Stage.loadDefaultIcon(): Stage {
     if( ! Stages.defaultIcons.isEmpty() ) {

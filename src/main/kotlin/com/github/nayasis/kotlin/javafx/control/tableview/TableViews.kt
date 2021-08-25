@@ -1,19 +1,16 @@
 package com.github.nayasis.kotlin.javafx.control.tableview
 
-import com.github.nayasis.kotlin.basica.core.validator.nvl
 import com.github.nayasis.kotlin.basica.exception.implements.NotFound
 import com.github.nayasis.kotlin.javafx.control.tableview.column.children
 import com.github.nayasis.kotlin.javafx.control.tableview.column.findBy
-import com.sun.javafx.scene.control.skin.TableViewSkin
-import com.sun.javafx.scene.control.skin.VirtualFlow
-import javafx.collections.transformation.FilteredList
-import javafx.collections.transformation.SortedList
 import javafx.scene.control.TableColumn
-import javafx.scene.control.TablePosition
 import javafx.scene.control.TableView
+import javafx.scene.control.skin.TableViewSkin
+import javafx.scene.control.skin.VirtualFlow
 import java.lang.Integer.min
 import kotlin.math.max
 
+@Suppress("UNCHECKED_CAST")
 fun <S,T:Any> TableView<S>.findColumnBy(fxId: String): TableColumn<S,T> {
     for( col in columns )
         return (col.findBy(fxId) ?: continue) as TableColumn<S,T>
@@ -43,11 +40,11 @@ fun <S> TableView<S>.fillFxId(): TableView<S> {
 
 val <S> TableView<S>.focused: Position
     get() {
-        return (focusModel.focusedCellProperty().get() as TablePosition<S,*>).let {
-            return Position(it.row, it.column)
+        return focusModel.focusedCellProperty().get().let {
+            Position(it.row, it.column)
         }
     }
-data class Position(val row: Int, val col: Int )
+data class Position(val row: Int, val col: Int)
 
 fun <S> TableView<S>.select( row: Int, col: Int = -1, scroll: Boolean = true ) {
     selectionModel.clearSelection()
@@ -103,7 +100,6 @@ fun <S> TableView<S>.scrollBy( row: S?, middle: Boolean = true ): Int {
     return itemIndex(row).also { scroll(it,middle) }
 }
 
-
 val <S> TableView<S>.visibleRows: Int
     get() {
         return virtualFlow?.let{
@@ -113,11 +109,6 @@ val <S> TableView<S>.visibleRows: Int
         } ?: 0
     }
 
+@Suppress("UNCHECKED_CAST")
 val <S> TableView<S>.virtualFlow: VirtualFlow<*>?
     get() = (skin as TableViewSkin<S>?)?.children?.firstOrNull { it is VirtualFlow<*> } as VirtualFlow<*>?
-
-fun <S> TableView<S>.setItems( list: FilteredList<S> ) {
-    val sortedList = SortedList(list)
-    sortedList.comparatorProperty().bind( this.comparatorProperty() )
-    this.items = sortedList
-}

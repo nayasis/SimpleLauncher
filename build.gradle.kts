@@ -2,17 +2,21 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
 
+	// kotlin
 	kotlin("jvm") version "1.4.32"
-//	application
 	kotlin("plugin.serialization") version "1.4.32"
 
 	// spring
 	id("org.springframework.boot") version "2.3.5.RELEASE"
 	id("io.spring.dependency-management") version "1.0.10.RELEASE"
-	kotlin("plugin.spring") version "1.4.20"
-	kotlin("plugin.allopen") version "1.4.20"
-	kotlin("plugin.noarg") version "1.4.20"
 	kotlin("plugin.jpa") version "1.4.20"
+	kotlin("plugin.noarg") version "1.4.20"
+	kotlin("plugin.allopen") version "1.4.20"
+	kotlin("plugin.spring") version "1.4.20"
+
+	// javafx
+	application
+	id("org.openjfx.javafxplugin") version "0.0.8"
 
 }
 
@@ -42,15 +46,18 @@ noArg {
 	invokeInitializers = true
 }
 
-//application {
-////	mainClassName = "com.github.nayasis.helloworld.HelloWorldApp"
-//	mainClassName = "com.github.nayasis.example.Squeeze"
-//}
+application {
+	mainClassName = "com.github.nayasis.simplelauncher.Simplelauncher"
+}
 
+javafx {
+	version = "11.0.2"
+	modules = listOf("javafx.controls","javafx.fxml","javafx.web","javafx.swing")
+}
 
 group = "com.github.nayasis"
 version = "0.0.1-SNAPSHOT"
-java.sourceCompatibility = JavaVersion.VERSION_1_8
+java.sourceCompatibility = JavaVersion.VERSION_11
 
 configurations.all {
 	resolutionStrategy.cacheChangingModulesFor(  0, "seconds" )
@@ -61,7 +68,6 @@ repositories {
 	mavenLocal()
 	mavenCentral()
 	jcenter()
-	maven { url = uri("https://raw.github.com/nayasis/maven-repo/mvn-repo") }
 	maven { url = uri("https://jitpack.io") }
 }
 
@@ -77,7 +83,7 @@ dependencies {
 	// basicafx
 	implementation( "org.jclarion:image4j:0.7" )
 	implementation( "org.apache.commons:commons-exec:1.3" )
-	implementation("org.apache.httpcomponents:httpclient:4.5.13")
+	implementation("org.apache.httpcomponents:httpclient:4.5.8")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
 
 	// application
@@ -131,6 +137,6 @@ tasks.withType<KotlinCompile> {
 			"-Xjsr305=strict",
 			"-Xuse-experimental=kotlinx.serialization.ExperimentalSerializationApi"
 		)
-		jvmTarget = "1.8"
+		jvmTarget = "11"
 	}
 }

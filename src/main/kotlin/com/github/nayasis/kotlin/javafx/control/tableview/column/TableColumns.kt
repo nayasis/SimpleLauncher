@@ -13,12 +13,12 @@ inline fun <S,T> TableColumn<S,T>.cellValue(prop: KProperty1<S,T?>, noinline opt
     return this.apply(option)
 }
 
-inline fun <S,T> TableColumn<S,T>.cellValue(callback: Callback<TableColumn.CellDataFeatures<S, T>, ObservableValue<T>>): TableColumn<S,T> {
+fun <S,T> TableColumn<S,T>.cellValue(callback: Callback<TableColumn.CellDataFeatures<S, T>, ObservableValue<T>>): TableColumn<S,T> {
     this.cellValueFactory = callback
     return this
 }
 
-inline fun <S,T> TableColumn<S,T>.cellValueByDefault(): TableColumn<S,T> {
+fun <S,T> TableColumn<S,T>.cellValueByDefault(): TableColumn<S,T> {
     this.cellValueFactory = Callback { SimpleObjectProperty(it.value as T) }
     return this
 }
@@ -39,7 +39,7 @@ fun <S,T:Any> TableColumn<S,T>.children(recursive: Boolean = false): List<TableC
     }
 }
 
-inline fun <S,T> TableColumn<S,T>.setAlign(align: Pos): TableColumn<S,T> {
+fun <S,T> TableColumn<S,T>.setAlign(align: Pos): TableColumn<S,T> {
     this.style = "${this.style};-fx-alignment:${align.name}"
     return this
 }

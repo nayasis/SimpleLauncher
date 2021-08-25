@@ -14,7 +14,7 @@ data class TableProperty(
     val columns: LinkedHashMap<String,TableColumnProperty> = LinkedHashMap(),
     var columnSortOrder: TableColumnSortOrderProperty? = null,
     var visible: Boolean? = null,
-    var focusedRow: Int = -1,
+    var focusedRow: Int? = null,
 ): Serializable{
 
     constructor(tableview: TableView<*>): this() {
