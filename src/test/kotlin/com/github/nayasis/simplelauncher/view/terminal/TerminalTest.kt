@@ -30,7 +30,7 @@ class TerminalTest: App() {
         stage.scene = Scene(terminal, 900.0, 600.0)
         stage.show()
 
-        stage.setOnCloseRequest { e ->
+        stage.setOnCloseRequest {
             stage.close()
             exitProcess(0)
         }
