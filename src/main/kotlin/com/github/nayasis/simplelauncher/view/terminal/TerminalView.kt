@@ -1,73 +1,82 @@
 package com.github.nayasis.simplelauncher.view.terminal
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.nayasis.kotlin.basica.core.klass.Classes
 import com.github.nayasis.kotlin.basica.etc.error
+import com.github.nayasis.kotlin.basica.reflection.Reflector
 import javafx.application.Platform
-import javafx.beans.property.ObjectProperty
 import javafx.beans.property.ReadOnlyIntegerWrapper
 import javafx.beans.property.SimpleObjectProperty
-import javafx.beans.value.ObservableValue
-import javafx.concurrent.Worker
 import javafx.scene.input.Clipboard
 import javafx.scene.input.ClipboardContent
 import javafx.scene.layout.Pane
-import javafx.scene.web.WebEngine
 import javafx.scene.web.WebView
 import mu.KotlinLogging
 import netscape.javascript.JSObject
 import java.io.Reader
-import java.util.*
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
 
 private val logger = KotlinLogging.logger {}
 
-open class TerminalView: Pane() {
+open class TerminalView(
+    var config: TerminalConfig
+): Pane() {
 
     protected val webView = WebView()
 
-    val columnsProperty = ReadOnlyIntegerWrapper(2000)
-    val rowsProperty = ReadOnlyIntegerWrapper(1000)
+    private val columnsProperty = ReadOnlyIntegerWrapper(2000)
+    private val rowsProperty = ReadOnlyIntegerWrapper(1000)
 
-    private val inputReaderProperty: ObjectProperty<Reader> = SimpleObjectProperty()
-    private val errorReaderProperty: ObjectProperty<Reader> = SimpleObjectProperty()
-    protected val countDownLatch = CountDownLatch(1)
+    private val inputReaderProperty = SimpleObjectProperty<Reader>()
+    private val errorReaderProperty = SimpleObjectProperty<Reader>()
 
-    var terminalConfig = TerminalConfig()
+//    protected val countDownLatch = CountDownLatch(1)
 
-    private val contents: String
-        private get() {
+    var columns: Int
+        get() = columnsProperty.get()
+        set(value) = columnsProperty.set(value)
 
-            val script =  Classes.getResourceStream("/view/hterm/hterm_all.js").bufferedReader().readText()
-            val sb = StringBuilder()
+    var rows: Int
+        get() = rowsProperty.get()
+        set(value) = rowsProperty.set(value)
 
-            Classes.getResourceStream("/view/hterm/hterm.html").bufferedReader().readLines().forEach { readline ->
-                if (("<script src=\"hterm_all.js\"></script>" == readline)) {
-                    sb.append("<script>")
-                    sb.append(script)
-                    sb.append("</script>")
+    var inputReader: Reader
+        get() = inputReaderProperty.get()
+        set(reader) {
+            inputReaderProperty.set(reader)
+        }
+
+    var errorReader: Reader
+        get() = errorReaderProperty.get()
+        set(reader) {
+            errorReaderProperty.set(reader)
+        }
+
+    private fun getContents(): String {
+        val script = Classes.getResourceStream("/view/hterm/hterm_all.js").bufferedReader().readText()
+        return StringBuilder().apply {
+            Classes.getResourceStream("/view/hterm/hterm.html").bufferedReader().readLines().forEach { line ->
+                if (("<script src=\"hterm_all.js\"></script>" == line)) {
+                    append("<script>")
+                    append(script)
+                    append("</script>")
                 } else {
-                    sb.append(readline)
+                    append(line)
                 }
             }
-            return sb.toString()
-        }
+        }.toString()
+    }
 
     @get:WebkitCall
     val prefs: String
         get() = try {
-            ObjectMapper().writeValueAsString(terminalConfig)
+            Reflector.toJson(config,pretty=true)
         } catch (e: Exception) {
             throw RuntimeException(e)
         }
 
     @WebkitCall
-    fun updatePrefs(terminalConfig: TerminalConfig) {
-        if (this.terminalConfig == terminalConfig) {
-            return
-        }
-        this.terminalConfig = terminalConfig
+    fun updatePrefs(config: TerminalConfig) {
+        if(this.config == config) return
+        this.config = config
         val prefs = prefs
         Platform.runLater {
             try {
@@ -80,38 +89,29 @@ open class TerminalView: Pane() {
 
     @WebkitCall
     fun resizeTerminal(columns: Int, rows: Int) {
-        columnsProperty.set(columns)
-        rowsProperty.set(rows)
+        this.columns = columns
+        this.rows    = rows
     }
 
     @WebkitCall
     fun onTerminalInit() {
-        Platform.runLater { getChildren().add(webView) }
+        Platform.runLater { children.add(webView) }
     }
 
     @WebkitCall
     open fun onTerminalReady() {
-        run {
-            try {
-                focusCursor()
-                countDownLatch.countDown()
-            } catch (e: Exception) {
-                logger.error(e.message, e)
-            }
-        }
+        focusCursor()
     }
 
-    private fun printReader(bufferedReader: Reader) {
+    private fun print(reader: Reader) {
         try {
-            var nRead: Int
-            val data = CharArray(1 * 1024)
-            while (bufferedReader.read(data, 0, data.size).also { nRead = it } != -1) {
-                val builder = StringBuilder(nRead)
-                builder.append(data, 0, nRead)
-                print(builder.toString())
+            var size: Int
+            val buffer = CharArray(1 * 1024)
+            while (reader.read(buffer, 0, buffer.size).also { size = it } != -1) {
+                StringBuilder(size).append(buffer, 0, size).run { print(toString()) }
             }
         } catch (e: Exception) {
-            e.printStackTrace()
+            logger.error(e)
         }
     }
 
@@ -124,15 +124,15 @@ open class TerminalView: Pane() {
     }
 
     fun onTerminalFxReady(onReadyAction: Runnable) {
-        run {
-            Threads.await(countDownLatch)
-            if (Objects.nonNull(onReadyAction)) {
-                run(onReadyAction)
-            }
-        }
+//        runLater {
+//            Threads.await(countDownLatch)
+//            if (Objects.nonNull(onReadyAction)) {
+//                Threads.run(onReadyAction)
+//            }
+//        }
     }
 
-    protected fun print(text: String?) {
+    protected fun print(text: String) {
         Platform.runLater { terminalIO.call("print", text) }
     }
 
@@ -141,96 +141,57 @@ open class TerminalView: Pane() {
             webView.requestFocus()
             terminal.call("focus")
         }
+//        runAsync {
+//            webView.requestFocus()
+//            terminal.call("focus")
+//        }
+//        Platform.runLater {
+//            GlobalScope.launch {
+//                webView.requestFocus()
+//                terminal.call("focus")
+//            }
+//        }
     }
 
     private val terminal: JSObject
-        private get() = webEngine().executeScript("t") as JSObject
+        private get() = webView.engine.executeScript("t") as JSObject
     private val terminalIO: JSObject
-        private get() = webEngine().executeScript("t.io") as JSObject
+        private get() = webView.engine.executeScript("t.io") as JSObject
     val window: JSObject
-        get() = webEngine().executeScript("window") as JSObject
-
-    private fun webEngine(): WebEngine {
-        return webView.engine
-    }
-
-    val columns: Int
-        get() = columnsProperty.get()
-
-    val rows: Int
-        get() = rowsProperty.get()
-
-    fun inputReaderProperty(): ObjectProperty<Reader> {
-        return inputReaderProperty
-    }
-
-    var inputReader: Reader
-        get() = inputReaderProperty.get()
-        set(reader) {
-            inputReaderProperty.set(reader)
-        }
-
-    fun errorReaderProperty(): ObjectProperty<Reader> {
-        return errorReaderProperty
-    }
-
-    var errorReader: Reader
-        get() = errorReaderProperty.get()
-        set(reader) {
-            errorReaderProperty.set(reader)
-        }
+        get() = webView.engine.executeScript("window") as JSObject
 
     init {
-        inputReaderProperty.addListener { _, _, newValue: Reader ->
-            run {
-                printReader(
-                    newValue
-                )
-            }
-        }
-        errorReaderProperty.addListener { _, _, newValue: Reader ->
-            run {
-                printReader(
-                    newValue
-                )
-            }
-        }
-        webView.engine.loadWorker.stateProperty()
-            .addListener { _, _, _ ->
-                window.setMember(
-                    "app",
-                    this
-                )
+        inputReaderProperty.addListener { _, _, reader -> print(reader) }
+        errorReaderProperty.addListener { _, _, reader -> print(reader) }
+        webView.engine.loadWorker.stateProperty().addListener { _, _, _ ->
+                window.setMember( "app", this )
             }
         webView.prefHeightProperty().bind(heightProperty())
         webView.prefWidthProperty().bind(widthProperty())
-        val webEngine = webEngine()
-        webEngine.loadContent(contents)
+        webView.engine.loadContent(getContents())
     }
 
-    protected fun run(runnable: Runnable) {
-        Platform.runLater {
-            Threads.run(runnable)
-        }
-    }
+//    open fun runLater(runnable: Runnable) {
+//        Platform.runLater{ Threads.run(runnable) }
+//    }
 
 }
 
 annotation class WebkitCall(val from: String = "")
 
-object Threads {
-
-    internal val executor = Executors.newCachedThreadPool()
-
-    fun await(latch: CountDownLatch) {
-        try {
-            latch.await()
-        } catch (e: InterruptedException) {
-            logger.error(e)
-        }
-    }
-
-    fun run(runnable: Runnable) {
-        executor.submit(runnable)
-    }
-}
+//object Threads {
+//
+//    private val executor = Executors.newCachedThreadPool()
+//
+//    fun await(latch: CountDownLatch) {
+//        try {
+//            latch.await()
+//        } catch (e: InterruptedException) {
+//            logger.error(e)
+//        }
+//    }
+//
+//    fun run(runnable: Runnable?) {
+//        executor.submit(runnable)
+//    }
+//}
