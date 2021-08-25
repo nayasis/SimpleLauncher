@@ -85,6 +85,7 @@ data class StageProperty(
 
     }
 
+    @Suppress("UNCHECKED_CAST")
     fun bind(stage: Stage?, visibility: Boolean = true ) {
 
         if( stage?.scene == null ) return

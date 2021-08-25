@@ -36,11 +36,8 @@ import java.lang.Math.toRadians
 import java.net.URL
 import java.nio.file.Path
 import javax.imageio.ImageIO
-import javax.net.ssl.SSLContext
 import javax.swing.ImageIcon
 import javax.swing.filechooser.FileSystemView
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 import kotlin.math.abs
 import kotlin.math.floor
 import kotlin.math.roundToInt
@@ -236,6 +233,7 @@ object Images {
         if( url == null ) return null
         return getHttpClient().use{ it.execute(HttpGet(url.toString()))?.use { response ->
              try {
+                 val a:java.io.InputStream? = null
                 toImage(ImageIO.read(response.entity.content))
             } catch (e: Exception) {
                 log.error(e.message,e)
@@ -245,10 +243,11 @@ object Images {
     }
 
     private fun getHttpClient(): CloseableHttpClient {
-        val sslContext: SSLContext = SSLContexts.custom()
+        val sslContext = SSLContexts.custom()
             .loadTrustMaterial(null) { _, _ -> true }
             .build()
         val sslSocket = SSLConnectionSocketFactory(sslContext, NoopHostnameVerifier.INSTANCE)
+
         return HttpClients.custom().setSSLSocketFactory(sslSocket).build()
     }
 
@@ -463,4 +462,3 @@ private fun Image?.isValid(): Boolean {
 private fun getRegularFile(files: List<File>?): File? {
     return files?.firstOrNull { it.isFile }
 }
-
