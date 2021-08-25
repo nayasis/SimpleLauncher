@@ -24,7 +24,7 @@ class TerminalTest: App() {
             enableClipboardNotice = false
         }
 
-        val terminal = Terminal(config).setCommand("cmd /c c: && cd \"c:\\Windows\" && dir").setStage(stage)
+        val terminal = Terminal(config).setCommand("cmd /c c: && cd \"c:\\Windows\" && dir").apply {this.stage = stage}
 
         stage.title = "Terminal Test"
         stage.scene = Scene(terminal, 900.0, 600.0)
