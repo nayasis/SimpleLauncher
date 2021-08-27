@@ -18,11 +18,11 @@ import javafx.scene.paint.Color
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.Callback
-import java.util.concurrent.Executors
+import tornadofx.runAsync
 
-open class ProgressDialog: Dialog<Void> {
+open class ProgressDialog<T>: Dialog<T> {
 
-    constructor(worker: Worker<*>) {
+    constructor(worker: Worker<T>) {
 
         if( ! isValid(worker) ) return
 
@@ -67,19 +67,21 @@ open class ProgressDialog: Dialog<Void> {
     }
 
     companion object {
-        fun run(title:String?, task: Task<*>) {
+        fun run(title:String?, task: Task<Any?>) {
             if( ! Platform.isFxApplicationThread() ) return
             val dialog = ProgressDialog(task).apply {
                 this.title = title
             }
             dialog.show()
-            Executors.newSingleThreadExecutor().execute(task)
+
+            runAsync {  }
+            task.run()
         }
     }
 
 }
 
-open class WorkerProgressPane: Region {
+open class WorkerProgressPane<T>: Region {
 
     var localWorker: Worker<*>? = null
 
@@ -117,10 +119,10 @@ open class WorkerProgressPane: Region {
 
     // If the progress indicator changes, then we need to re-initialize
     // If the worker changes, we need to re-initialize
-    var dialog: ProgressDialog? = null
+    var dialog: ProgressDialog<T>? = null
     var progressBar: ProgressBar? = null
 
-    constructor(dialog: ProgressDialog) {
+    constructor(dialog: ProgressDialog<T>) {
         this.dialog = dialog
         this.progressBar = ProgressBar()
         progressBar!!.maxWidth = Double.MAX_VALUE
