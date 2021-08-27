@@ -2,34 +2,24 @@ package com.github.nayasis.simplelauncher.view.terminal
 
 import com.github.nayasis.kotlin.basica.core.extention.isNotEmpty
 import com.github.nayasis.kotlin.basica.etc.Platforms
-import com.github.nayasis.kotlin.basica.etc.error
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import javafx.application.Platform
-import javafx.beans.property.SimpleObjectProperty
 import javafx.event.EventHandler
 import javafx.stage.Stage
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import java.io.BufferedReader
-import java.io.BufferedWriter
 import java.io.File
-import java.io.IOException
 import java.io.InputStreamReader
-import java.io.OutputStreamWriter
-import java.io.Writer
-import java.util.concurrent.LinkedBlockingQueue
 
 private val logger = KotlinLogging.logger {}
 
-class Terminal @JvmOverloads constructor(
+class Terminal(
     config: TerminalConfig = TerminalConfig().apply {
         copyOnSelect = true
         enableClipboardNotice = false
 }): TerminalView(config) {
-
-    private val outputWriterProperty = SimpleObjectProperty<Writer>()
-    private val commandQueue = LinkedBlockingQueue<String>()
 
     private lateinit var command: Array<String>
 
@@ -38,17 +28,17 @@ class Terminal @JvmOverloads constructor(
             field = stage
             stage?.onCloseRequest = EventHandler {
                 postAction = null
-                close()
+                try {
+                    process?.destroyForcibly()
+                    webView.engine.load(null)
+                } finally {
+                    closeStream()
+                }
             }
         }
 
     var workingDirectory: String? = null
     var postAction: Runnable? = null
-    var outputWriter: Writer
-        get() = outputWriterProperty.get()
-        set(writer) {
-            outputWriterProperty.set(writer)
-        }
 
     private var process: Process? = null
 
@@ -59,19 +49,8 @@ class Terminal @JvmOverloads constructor(
         return this
     }
 
-    @WebkitCall
-    fun sendCommand(command: String) {
-        commandQueue.put(command)
-        try {
-            val executableCommand = commandQueue.poll()
-            outputWriter.write(executableCommand)
-            outputWriter.flush()
-        } catch (e: IOException) {
-            logger.error(e)
-        }
-    }
+    override fun sendCommand(command: String) {}
 
-    @WebkitCall
     override fun onTerminalReady() {
         GlobalScope.launch {
             try {
@@ -82,7 +61,6 @@ class Terminal @JvmOverloads constructor(
                     }}
                 postAction?.run()
             } catch (e: Exception) {
-                logger.error(e)
                 Platform.runLater { Dialog.error("msg.error.003", e) }
             }
         }
@@ -93,11 +71,9 @@ class Terminal @JvmOverloads constructor(
             process = ProcessBuilder(*command).apply {
                     if ( workingDirectory.isNotEmpty() ) directory(File(workingDirectory))
                 }.start()
-            inputReader  = BufferedReader(InputStreamReader(process?.inputStream, Platforms.os.charset))
-            errorReader  = BufferedReader(InputStreamReader(process?.errorStream, Platforms.os.charset))
-            outputWriter = BufferedWriter(OutputStreamWriter(process?.outputStream, Platforms.os.charset))
+            outputReader = BufferedReader(InputStreamReader(process?.inputStream, Platforms.os.charset))
+            errorReader = BufferedReader(InputStreamReader(process?.errorStream, Platforms.os.charset))
             focusCursor()
-//            countDownLatch.countDown()
             process?.waitFor()
         } finally {
             closeStream()
@@ -105,18 +81,8 @@ class Terminal @JvmOverloads constructor(
     }
 
     private fun closeStream() {
-        try { inputReader.close() } catch (e: Exception) {}
+        try { outputReader.close() } catch (e: Exception) {}
         try { errorReader.close() } catch (e: Exception) {}
-        try { outputWriter.close() } catch (e: Exception) {}
-    }
-
-    fun close() {
-        try {
-            process?.destroyForcibly()
-            webView.engine.load(null)
-        } finally {
-            closeStream()
-        }
     }
 
 }
