@@ -1,14 +1,10 @@
 package com.github.nayasis.kotlin.javafx.stage
 
-import com.github.nayasis.kotlin.basica.model.Messages
-import javafx.application.Platform
 import javafx.beans.value.ChangeListener
-import javafx.concurrent.Task
 import javafx.concurrent.Worker
 import javafx.concurrent.Worker.State.*
-import javafx.geometry.Insets
-import javafx.scene.control.ButtonBar
-import javafx.scene.control.ButtonType
+import javafx.scene.Scene
+import javafx.scene.control.ButtonType.CANCEL
 import javafx.scene.control.Dialog
 import javafx.scene.control.Label
 import javafx.scene.control.ProgressBar
@@ -18,169 +14,97 @@ import javafx.scene.paint.Color
 import javafx.stage.Stage
 import javafx.stage.StageStyle
 import javafx.util.Callback
-import tornadofx.runAsync
+import mu.KotlinLogging
+import tornadofx.runLater
 
-open class ProgressDialog<T>: Dialog<T> {
+private val logger = KotlinLogging.logger {}
+
+class ProgressDialog<T>: Dialog<T> {
+
+    val scene: Scene = dialogPane.scene.apply {
+        fill = Color.TRANSPARENT
+        stylesheets.add("basicafx/css/dialog-progress.css")
+    }
+    val stage: Stage = (scene.window as Stage).apply {
+        initStyle(StageStyle.TRANSPARENT)
+        isAlwaysOnTop = true
+        loadDefaultIcon()
+        addMoveHandler(dialogPane)
+    }
 
     constructor(worker: Worker<T>) {
 
-        if( ! isValid(worker) ) return
+        if( worker.state in setOf(CANCELLED, FAILED, SUCCEEDED) )
+            throw IllegalArgumentException("worker state is not valid (${worker.state})")
 
-        val scene = dialogPane.scene.apply {
-            fill = Color.TRANSPARENT
-            stylesheets.add("/view/dialog-progress.css")
-        }
-        val stage = (scene.window as Stage).apply {
-            initStyle(StageStyle.TRANSPARENT)
-            isAlwaysOnTop = true
-            loadDefaultIcon()
-            addMoveHandler(dialogPane)
-        }
-
-        // set style
         resultConverter = Callback { null }
 
         // set view
-        val progressMessage = Label()
-
-        val content = WorkerProgressPane(this).apply{
-            maxWidth = Double.MAX_VALUE
-            setWorker(worker)
-        }
-
-        dialogPane.content = VBox(10.0, progressMessage, content).apply {
+        val message = Label()
+        val content = ProgressPane(this,worker)
+        dialogPane.content = VBox(10.0, message, content).apply {
             maxWidth = Double.MAX_VALUE
             setPrefSize(400.0, 40.0)
         }
 
-        // bind text
-        worker.titleProperty().addListener { _, _, new: String? -> dialogPane.headerText = Messages[new] }
-        worker.messageProperty().addListener { _, _, new: String? -> progressMessage.text = Messages[new] }
+        worker.titleProperty().addListener { _, _, text -> dialogPane.headerText = text ?: "" }
+        worker.messageProperty().addListener { _, _, text -> message.text = text ?: "" }
 
-    }
-
-    private fun isValid(worker: Worker<*>): Boolean {
-        return when (worker.state) {
-            CANCELLED, FAILED, SUCCEEDED -> false
-            else -> true
-        }
-    }
-
-    companion object {
-        fun run(title:String?, task: Task<Any?>) {
-            if( ! Platform.isFxApplicationThread() ) return
-            val dialog = ProgressDialog(task).apply {
-                this.title = title
-            }
-            dialog.show()
-
-            runAsync {  }
-            task.run()
-        }
     }
 
 }
 
-open class WorkerProgressPane<T>: Region {
+private class ProgressPane<T>(
+    val dialog: ProgressDialog<T>,
+    val worker: Worker<T>,
+): Region() {
 
-    var localWorker: Worker<*>? = null
-
-    var dialogVisible = false
-    var cancelDialogShow = false
-
-    val stateListener = ChangeListener<Worker.State> { _, old, new ->
+    private val stateListener = ChangeListener<Worker.State> { _, old, new ->
         when (new) {
-            CANCELLED, FAILED, SUCCEEDED -> if (!dialogVisible) {
-                cancelDialogShow = true
-                end()
-            } else if (old == SCHEDULED || old == RUNNING) {
-                end()
-            }
+            CANCELLED, FAILED, SUCCEEDED -> end()
             SCHEDULED -> begin()
         }
     }
 
-    fun setWorker(worker: Worker<*>?) {
-        if (worker !== localWorker) {
-            if (localWorker != null) {
-                localWorker!!.stateProperty().removeListener(stateListener)
-                end()
-            }
-            localWorker = worker
-            if (worker != null) {
-                worker.stateProperty().addListener(stateListener)
-                if (worker.state == RUNNING || worker.state == SCHEDULED) {
-                    // It is already running
-                    begin()
-                }
-            }
-        }
+    private val progressBar: ProgressBar = ProgressBar().apply {
+        maxWidth = Double.MAX_VALUE
+        progressProperty().bind(worker.progressProperty())
     }
 
-    // If the progress indicator changes, then we need to re-initialize
-    // If the worker changes, we need to re-initialize
-    var dialog: ProgressDialog<T>? = null
-    var progressBar: ProgressBar? = null
-
-    constructor(dialog: ProgressDialog<T>) {
-        this.dialog = dialog
-        this.progressBar = ProgressBar()
-        progressBar!!.maxWidth = Double.MAX_VALUE
-        getChildren().add(progressBar)
-        if (localWorker != null) {
-            progressBar?.progressProperty()?.bind(localWorker!!.progressProperty())
-        }
+    init {
+        children.add(progressBar)
+        worker.stateProperty().addListener(stateListener)
     }
 
     open fun begin() {
-        cancelDialogShow = false
-        Platform.runLater {
-            if (!cancelDialogShow) {
-                progressBar!!.progressProperty().bind(localWorker!!.progressProperty())
-                dialogVisible = true
-                dialog?.show()
-            }
+        runLater {
+            progressBar.progressProperty().bind(worker.progressProperty())
+            dialog.show()
         }
     }
 
     open fun end() {
-        progressBar!!.progressProperty().unbind()
-        dialogVisible = false
-        forcefullyHideDialog(dialog)
+        progressBar.progressProperty().unbind()
+        hideForcibly(dialog)
+        dialog.close()
     }
 
     override fun layoutChildren() {
-        if (progressBar != null) {
-            val insets: Insets = getInsets()
-            val w: Double = getWidth() - insets.left - insets.right
-            val h: Double = getHeight() - insets.top - insets.bottom
-            val prefH = progressBar!!.prefHeight(-1.0)
-            val x = insets.left + (w - w) / 2.0
-            val y = insets.top + (h - prefH) / 2.0
-            progressBar!!.resizeRelocate(x, y, w, prefH)
-        }
+        val insets = insets
+        val w = width - insets.left - insets.right
+        val h = height - insets.top - insets.bottom
+        val prefH = progressBar.prefHeight(-1.0)
+        val x = insets.left + (w - w) / 2.0
+        val y = insets.top + (h - prefH) / 2.0
+        progressBar.resizeRelocate(x, y, w, prefH)
     }
 
-    open fun forcefullyHideDialog(dialog: Dialog<*>?) {
-        if( dialog == null ) return
-        val dialogPane = dialog.dialogPane
-        if (containsCancelButton(dialog)) {
-            dialog.hide()
-            return
+    private fun hideForcibly(dialog: Dialog<*>) {
+        with(dialog) {
+            dialogPane.buttonTypes.add(CANCEL)
+            hide()
+            dialogPane.buttonTypes.remove(CANCEL)
         }
-        dialogPane.buttonTypes.add(ButtonType.CANCEL)
-        dialog.hide()
-        dialogPane.buttonTypes.remove(ButtonType.CANCEL)
-    }
-
-    open fun containsCancelButton(dialog: Dialog<*>): Boolean {
-        val dialogPane = dialog.dialogPane
-        for (type in dialogPane.buttonTypes) {
-            if (type.buttonData == ButtonBar.ButtonData.CANCEL_CLOSE) {
-                return true
-            }
-        }
-        return false
     }
 
 }

@@ -1,5 +1,6 @@
 package com.github.nayasis.kotlin.javafx.stage
 
+import com.github.nayasis.kotlin.basica.core.extention.isNotEmpty
 import com.github.nayasis.kotlin.basica.core.path.div
 import com.github.nayasis.kotlin.basica.core.path.userHome
 import com.github.nayasis.kotlin.basica.core.string.toFile
@@ -21,6 +22,9 @@ import javafx.stage.FileChooser
 import javafx.stage.Modality.WINDOW_MODAL
 import javafx.stage.Stage
 import mu.KotlinLogging
+import tornadofx.FXTask
+import tornadofx.TaskStatus
+import tornadofx.runAsync
 import java.io.File
 import kotlin.Double.Companion.MAX_VALUE
 
@@ -89,6 +93,18 @@ class Dialog { companion object {
                 loadDefaultIcon()
             }
         }.showAndWait().get()
+    }
+
+    fun progress(title: String? = null, func: FXTask<*>.() -> Unit): FXTask<*> {
+        val task = FXTask(func=func)
+        val dialog = ProgressDialog(task)
+        if( title.isNotEmpty() )
+            dialog.headerText = title
+        dialog.show()
+        runAsync {
+            task.run()
+        }
+        return task
     }
 
     fun filePicker(title: String = "", extensions: String = "", extensionDescription: String = "", initialDirectory: File?): FileChooser {

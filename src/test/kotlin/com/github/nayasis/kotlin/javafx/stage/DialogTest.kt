@@ -1,6 +1,7 @@
 package com.github.nayasis.kotlin.javafx.stage
 
 import javafx.application.Application
+import javafx.concurrent.Task
 import javafx.scene.text.Font
 import mu.KotlinLogging
 import tornadofx.App
@@ -10,6 +11,7 @@ import tornadofx.action
 import tornadofx.button
 import tornadofx.launch
 import tornadofx.vbox
+import kotlin.system.exitProcess
 
 private val logger = KotlinLogging.logger {}
 
@@ -31,6 +33,20 @@ class DialogTestView: View("dialog test") {
             action {
                 if( Dialog.confirm("is it ok (1234567890) ??") ) {
                     Dialog.alert("it is ok !!")
+                }
+            }
+        }
+        button("progress") {
+            action {
+                Dialog.progress("header") {
+                    val max = 100
+                    for (i in 1..max) {
+                        logger.debug { "$i to $max" }
+                        updateProgress(i.toLong(), max.toLong())
+                        updateMessage("$i / $max")
+                        updateTitle("title : $i")
+                        Thread.sleep(100)
+                    }
                 }
             }
         }
