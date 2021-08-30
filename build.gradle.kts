@@ -81,8 +81,9 @@ dependencies {
 	implementation("ch.qos.logback:logback-classic:1.2.3")
 
 	// basicafx
-	implementation( "org.jclarion:image4j:0.7" )
-	implementation( "org.apache.commons:commons-exec:1.3" )
+//	implementation("org.controlsfx:controlsfx:11.1.0")
+	implementation("org.jclarion:image4j:0.7")
+	implementation("org.apache.commons:commons-exec:1.3")
 	implementation("org.apache.httpcomponents:httpclient:4.5.8")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
 
