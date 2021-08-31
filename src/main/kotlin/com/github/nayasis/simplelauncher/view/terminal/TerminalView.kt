@@ -59,20 +59,7 @@ abstract class TerminalView(
         webView.prefWidthProperty().bind(widthProperty())
         webView.engine.loadContent(getContents())
 
-//        addListener(outputReader)
-//        addListener(errorReader)
-
     }
-
-//    private fun addListener(reader: BufferedReader) {
-//        if( reader == null ) return
-//        GlobalScope.launch {
-//            while ( true ) {
-//                val line = reader.readLine() ?: break
-//                print(line)
-//            }
-//        }
-//    }
 
     private fun getContents(): String {
         val script = Classes.getResourceStream("/view/hterm/hterm_all.js").bufferedReader().readText()

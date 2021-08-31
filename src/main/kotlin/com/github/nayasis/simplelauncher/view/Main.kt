@@ -21,6 +21,7 @@ import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.common.ICON_NEW
 import com.github.nayasis.simplelauncher.jpa.entity.Link
 import com.github.nayasis.simplelauncher.jpa.repository.LinkRepository
+import com.github.nayasis.simplelauncher.service.ConfigService
 import com.github.nayasis.simplelauncher.service.LinkExecutor
 import com.github.nayasis.simplelauncher.service.LinkMatcher
 import com.github.nayasis.simplelauncher.service.LinkService
@@ -52,6 +53,7 @@ class Main: View("application.title".message()) {
     val linkService: LinkService by di()
     val linkExecutor: LinkExecutor by di()
     val linkMatcher: LinkMatcher by di()
+    val configService: ConfigService by di()
 
     override val root: AnchorPane by fxml("/view/main/main.fxml")
 
@@ -110,20 +112,15 @@ class Main: View("application.title".message()) {
     }
 
     override fun onBeforeShow() {
-        if(config.isNotEmpty()) {
-            try {
-                val property = Reflector.toObject<StageProperty>(config.getProperty(StageProperty::class.simpleName))
-                property.excludeKlass.add(Button::class)
-                property.bind(currentStage!!)
-            } catch (e: Exception) {
-                logger.error(e)
-            }
-        }
+//        configService.stageMain?.let {
+//            it.excludeKlass.add(Button::class)
+//            it.bind(currentStage!!)
+//        }
     }
 
     override fun onUndock() {
-        config.setProperty(StageProperty::class.simpleName, Reflector.toJson(StageProperty(currentStage!!)) )
-        config.save()
+        configService.stageMain = StageProperty(currentStage!!)
+        configService.commit()
     }
 
     private fun initTable() {
