@@ -7,7 +7,6 @@ import com.github.nayasis.kotlin.javafx.misc.Desktop
 import com.github.nayasis.kotlin.javafx.misc.set
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.simplelauncher.common.Context.Companion.main
-import com.github.nayasis.simplelauncher.common.wrapDoubleQuote
 import com.github.nayasis.simplelauncher.jpa.entity.Link
 import mu.KotlinLogging
 import org.apache.commons.exec.CommandLine
@@ -17,7 +16,6 @@ import org.apache.commons.exec.ExecuteException
 import org.springframework.stereotype.Service
 import tornadofx.runLater
 import java.io.File
-import java.lang.StringBuilder
 import java.nio.file.Path
 import java.time.LocalDateTime
 
@@ -40,8 +38,13 @@ class LinkExecutor(
             runLater { run(LinkCommand(link)) }
         } else {
             if( link.eachExecution ) {
-                files.forEach { file ->
-                    runLater { run(LinkCommand(link,file),files.size > 1) }
+                Dialog.progress {
+                    files.forEachIndexed { index, file ->
+                        val linkCmd = LinkCommand(link, file)
+                        updateTitle(linkCmd.toCommand())
+                        updateProgress(index.toLong(),files.size.toLong())
+                        run(linkCmd,files.size > 1)
+                    }
                 }
             } else {
                 runLater { run(LinkCommand(link,files),false) }
@@ -50,26 +53,17 @@ class LinkExecutor(
 
     }
 
-    private fun run(linkCommand: LinkCommand, wait: Boolean = false) {
+    private fun run(linkCmd: LinkCommand, wait: Boolean = false) {
 
-        linkCommand.commandPrev.tokenize("\n").forEach { run(it,linkCommand.workingDirectory,true) }
+        linkCmd.commandPrev.tokenize("\n").forEach { run(it,linkCmd.workingDirectory,true) }
 
-        val command = StringBuilder().apply {
-            if( ! linkCommand.commandPrefix.isNullOrEmpty() )
-                append(linkCommand.commandPrefix).append(' ')
-            if( linkCommand.path != null )
-                append(linkCommand.path!!.pathString.wrapDoubleQuote())
-            if(isEmpty())
-                throw IllegalArgumentException("msg.err.007".message().format(linkCommand.title))
-            if( ! linkCommand.argument.isNullOrEmpty() )
-                append(' ').append(linkCommand.argument)
-        }.toString()
+        val cmd = linkCmd.toCommand()
 
-        main.printCommand(command)
+        main.printCommand(cmd)
 
-        run(command, linkCommand.workingDirectory, wait || linkCommand.showConsole)
+        run(cmd, linkCmd.workingDirectory, wait || linkCmd.showConsole)
 
-        linkCommand.commandNext.tokenize("\n").forEach { run(it,linkCommand.workingDirectory,true) }
+        linkCmd.commandNext.tokenize("\n").forEach { run(it,linkCmd.workingDirectory,true) }
 
     }
 

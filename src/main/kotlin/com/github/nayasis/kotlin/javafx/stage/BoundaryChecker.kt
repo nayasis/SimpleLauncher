@@ -1,6 +1,7 @@
 package com.github.nayasis.kotlin.javafx.stage
 
 import javafx.geometry.Rectangle2D
+import javafx.scene.control.Dialog
 import javafx.stage.Screen
 import javafx.stage.Window
 import mu.KotlinLogging
@@ -24,6 +25,22 @@ object BoundaryChecker {
                 window.y = it.minY
                 window.width  = min(window.width,  it.width)
                 window.height = min(window.height, it.height)
+            }
+        }
+    }
+
+    /**
+     * reset stage position to displayed screen
+     *
+     * @param dialog Window
+     */
+    fun reset(dialog: Dialog<*>) {
+        if( getScreenContains(dialog.x,dialog.y) == null ) {
+            Screen.getPrimary().visualBounds.let {
+                dialog.x = it.minX
+                dialog.y = it.minY
+                dialog.width  = min(dialog.width,  it.width)
+                dialog.height = min(dialog.height, it.height)
             }
         }
     }
