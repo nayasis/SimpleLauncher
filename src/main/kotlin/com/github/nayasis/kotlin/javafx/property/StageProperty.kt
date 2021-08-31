@@ -91,7 +91,6 @@ data class StageProperty(
         if( stage?.scene == null ) return
 
         inset.bind(stage)
-        BoundaryChecker.reset(stage)
         stage.scene.previousZoomSize = previousZoomSize
 
         getAllChildren(stage).forEach {
