@@ -23,7 +23,6 @@ import javafx.stage.Modality.WINDOW_MODAL
 import javafx.stage.Stage
 import mu.KotlinLogging
 import tornadofx.FXTask
-import tornadofx.TaskStatus
 import tornadofx.runAsync
 import java.io.File
 import kotlin.Double.Companion.MAX_VALUE

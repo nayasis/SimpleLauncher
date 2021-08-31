@@ -10,11 +10,13 @@ import com.github.nayasis.kotlin.basica.core.path.userHome
 import com.github.nayasis.kotlin.basica.core.string.format.DEFAULT_BINDER
 import com.github.nayasis.kotlin.basica.core.string.format.ExtractPattern
 import com.github.nayasis.kotlin.basica.core.string.format.Formatter
+import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.core.string.toPath
 import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.common.wrapDoubleQuote
 import com.github.nayasis.simplelauncher.jpa.entity.Link
 import java.io.File
+import java.lang.StringBuilder
 import java.nio.file.Path
 
 private val PATTERN_KEYWORD = ExtractPattern("#\\{([^\\s{}]*?)}".toPattern())
@@ -113,6 +115,19 @@ class LinkCommand {
 
         return link.path!!.toPath()
 
+    }
+
+    fun toCommand(): String {
+        return StringBuilder().apply {
+            if( ! commandPrefix.isNullOrEmpty() )
+                append(commandPrefix).append(' ')
+            if( path != null )
+                append(path!!.pathString.wrapDoubleQuote())
+            if(isEmpty())
+                throw IllegalArgumentException("msg.err.007".message().format(title))
+            if( ! argument.isNullOrEmpty() )
+                append(' ').append(argument)
+        }.toString()
     }
 
 }
