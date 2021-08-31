@@ -126,7 +126,7 @@ class Main: View("application.title".message()) {
     private fun initTable() {
 
         colGroup.cellValue(Link::group)
-        colTitle.cellValueByDefault().setAlign(Pos.CENTER_LEFT).cellFormat {
+        colTitle.cellValueByDefault().cellFormat {
             graphic = hbox {
                 imageview {
                     image = it.getIconImage()
@@ -136,6 +136,7 @@ class Main: View("application.title".message()) {
                     text = it.title ?: ""
                     HBox.setMargin( this, Insets(0,0,0,5) )
                 }
+                alignment = Pos.CENTER_LEFT
             }
             setOnDragOver { fnDraggable(it) }
             setOnDragDropped { event->
@@ -152,7 +153,8 @@ class Main: View("application.title".message()) {
 
         colTitle.setComparator { o1, o2 -> o1.title.ifNull{""}.compareTo(o2.title.ifNull{""}) }
 
-        colLastUsedDt.cellValue(Link::lastExecDate).setAlign(Pos.CENTER).cellFormat {
+        colLastUsedDt.cellValue(Link::lastExecDate).cellFormat {
+            alignment = Pos.CENTER
             text = it.toFormat("YYYY-MM-DD HH:MI:SS")
         }
         colExecCount.cellValue(Link::executeCount).setAlign(Pos.CENTER_RIGHT)
