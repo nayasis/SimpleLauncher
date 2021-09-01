@@ -112,10 +112,10 @@ class Main: View("application.title".message()) {
     }
 
     override fun onBeforeShow() {
-//        configService.stageMain?.let {
-//            it.excludeKlass.add(Button::class)
-//            it.bind(currentStage!!)
-//        }
+        configService.stageMain?.let {
+            it.excludeKlass.add(Button::class)
+            it.bind(currentStage!!)
+        }
     }
 
     override fun onUndock() {
@@ -161,9 +161,9 @@ class Main: View("application.title".message()) {
 
         links.bindTo(tableMain)
 
-        colGroup.remainingWidth()
-        colTitle.remainingWidth()
-        tableMain.smartResize()
+//        colGroup.remainingWidth()
+//        colTitle.remainingWidth()
+//        tableMain.smartResize()
         tableMain.selectionModel.selectionMode = SelectionMode.SINGLE
 
         tableMain.setOnMouseClicked { event ->
