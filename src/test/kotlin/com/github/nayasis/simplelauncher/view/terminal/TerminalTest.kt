@@ -24,7 +24,8 @@ class TerminalTest: App() {
             enableClipboardNotice = false
         }
 
-        val terminal = Terminal(config).setCommand("cmd /c c: && cd \"c:\\Windows\" && dir").apply {this.stage = stage}
+//        val terminal = Terminal(config).setCommand("cmd /c c: && cd \"c:\\Windows\" && dir").apply {this.stage = stage}
+        val terminal = Terminal(config).setCommand("chdman.exe createcd -i disc.cue -o disc.chd","d:/download/test/t").apply {this.stage = stage}
 
         stage.title = "Terminal Test"
         stage.scene = Scene(terminal, 900.0, 600.0)
