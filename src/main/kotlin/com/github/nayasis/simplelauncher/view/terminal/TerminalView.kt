@@ -23,23 +23,17 @@ abstract class TerminalView(
 
     protected val webView = WebView()
 
-    private val outputProperty = SimpleObjectProperty<BufferedReader>()
-    private val errorProperty = SimpleObjectProperty<BufferedReader>()
+//    private val outputProperty = SimpleObjectProperty<BufferedReader>()
+//    private val errorProperty = SimpleObjectProperty<BufferedReader>()
 
     var columns: Int = 2000
     var rows: Int = 1000
 
-    var outputReader: BufferedReader
-        get() = outputProperty.get()
-        set(reader) {
-            outputProperty.set(reader)
-        }
-
-    var errorReader: BufferedReader
-        get() = errorProperty.get()
-        set(reader) {
-            errorProperty.set(reader)
-        }
+    var outputReader: BufferedReader? = null
+//        get() = outputProperty.get()
+//        set(reader) {
+//            outputProperty.set(reader)
+//        }
 
     private val terminal: JSObject
         get() = webView.engine.executeScript("t") as JSObject
@@ -50,14 +44,23 @@ abstract class TerminalView(
 
     init {
         children.add(webView)
-        outputProperty.addListener { _, _, reader -> print(reader.readText()) }
-        errorProperty.addListener { _, _, reader -> print(reader.readText()) }
+//        outputProperty.addListener { _, _, reader -> print(reader.readText()) }
         webView.engine.loadWorker.stateProperty().addListener { _, _, _ ->
             window.setMember( "app", this )
         }
         webView.prefHeightProperty().bind(heightProperty())
         webView.prefWidthProperty().bind(widthProperty())
         webView.engine.loadContent(getContents())
+
+    }
+
+    fun readOutput() {
+
+        GlobalScope.launch {
+            outputReader?.let{ reader ->
+                print(reader.readText())
+            }
+        }
 
     }
 
