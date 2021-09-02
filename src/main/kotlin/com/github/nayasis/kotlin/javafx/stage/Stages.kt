@@ -1,11 +1,14 @@
 package com.github.nayasis.kotlin.javafx.stage
 
 import com.github.nayasis.kotlin.javafx.scene.*
+import javafx.event.EventHandler
 import javafx.geometry.Rectangle2D
 import javafx.scene.Node
+import javafx.scene.Scene
 import javafx.scene.control.Button
 import javafx.stage.Stage
 import javafx.stage.Window
+import javafx.stage.WindowEvent
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -72,8 +75,14 @@ fun Stage.setZoom(enable: Boolean) {
     scene?.setZoom(enable)
 }
 
+fun Stage.addCloseRequest(event: EventHandler<WindowEvent>) =
+    this.addEventFilter(WindowEvent.WINDOW_CLOSE_REQUEST,event)
+
 val Stage.focusedNode: Node?
     get() = this.scene?.focusOwnerProperty()?.get()
 
 val Window.boundary: Rectangle2D
     get() = Rectangle2D(this.x, this.y, this.width, this.height)
+
+val Scene?.stage: Stage?
+    get() = this?.window as Stage
