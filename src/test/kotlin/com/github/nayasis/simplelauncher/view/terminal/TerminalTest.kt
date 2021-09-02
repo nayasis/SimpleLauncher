@@ -1,7 +1,7 @@
 package com.github.nayasis.simplelauncher.view.terminal
 
-import javafx.scene.Scene
-import javafx.scene.paint.Color
+import com.github.nayasis.kotlin.javafx.stage.addCloseRequest
+import com.github.nayasis.simplelauncher.service.ConfigService
 import javafx.stage.Stage
 import tornadofx.App
 import tornadofx.launch
@@ -14,26 +14,23 @@ fun main(args: Array<String>) {
 class TerminalTest: App() {
     override fun start(stage: Stage) {
 
-        val config = TerminalConfig().apply {
-            backgroundColor = Color.rgb(16, 16, 16).toHex()
-            foregroundColor = Color.rgb(240, 240, 240).toHex()
-            cursorColor = Color.rgb(255, 0, 0, 0.5).toHex()
-            scrollbarVisible = false
-            fontSize = 12
-            scrollWhellMoveMultiplier = 3.0
-            enableClipboardNotice = false
-        }
+        //        val terminal = Terminal(config).setCommand("cmd /c c: && cd \"c:\\Windows\" && dir").apply {this.stage = stage}
 
-//        val terminal = Terminal(config).setCommand("cmd /c c: && cd \"c:\\Windows\" && dir").apply {this.stage = stage}
-        val terminal = Terminal(config).setCommand("chdman.exe createcd -i disc.cue -o disc.chd","d:/download/test/t").apply {this.stage = stage}
+        val cd = "d:/download/test/chd"
+        val terminal = Terminal("${cd}/chdman.exe createcd -f -i ${cd}/disc.cue -o ${cd}/disc.chd",cd)
 
-        stage.title = "Terminal Test"
-        stage.scene = Scene(terminal, 900.0, 600.0)
-        stage.show()
+//        val cd = "d:/download/test/cso"
+//        val terminal = Terminal(config()).setCommand("${cd}/CisoPlus.exe -com -l9 ${cd}/disc.iso ${cd}/disc.cso",cd).apply {this.stage = stage}
 
-        stage.setOnCloseRequest {
-            stage.close()
-            exitProcess(0)
+        with(terminal) {
+            title = "Terminal Test"
+            width = 900.0
+            height = 600.0
+            addCloseRequest{
+                ConfigService.save()
+                exitProcess(0)
+            }
+            show()
         }
 
     }

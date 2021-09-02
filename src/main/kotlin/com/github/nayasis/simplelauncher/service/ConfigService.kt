@@ -9,8 +9,7 @@ import org.springframework.stereotype.Component
 import java.nio.file.Paths
 import kotlin.reflect.jvm.jvmName
 
-@Component
-class ConfigService {
+class ConfigService { companion object {
 
     private val configPath = Paths.get("conf").resolve("${this::class.jvmName}.properties")
 
@@ -24,6 +23,12 @@ class ConfigService {
         get() = this[::stageMain.name]?.let { Reflector.toObject(it) }
         set(value) {
             field = value.also { this[::stageMain.name] = Reflector.toJson(it) }
+        }
+
+    var stageTerminal: StageProperty? = null
+        get() = this[::stageTerminal.name]?.let { Reflector.toObject(it) }
+        set(value) {
+            field = value.also { this[::stageTerminal.name] = Reflector.toJson(it) }
         }
 
     private val config = loadConfig()
@@ -50,6 +55,6 @@ class ConfigService {
         config[key] = value
     }
 
-    fun commit() = Reflector.toJson(config).let { configPath.writeText(it) }
+    fun save() = Reflector.toJson(config).let { configPath.writeText(it) }
 
-}
+}}
