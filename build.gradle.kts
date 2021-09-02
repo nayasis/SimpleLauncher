@@ -16,7 +16,7 @@ plugins {
 
 	// javafx
 	application
-	id("org.openjfx.javafxplugin") version "0.0.8"
+	id("org.openjfx.javafxplugin") version "0.0.10"
 
 }
 
@@ -51,8 +51,9 @@ application {
 }
 
 javafx {
-	version = "11.0.2"
+	version = "13"
 	modules = listOf("javafx.controls","javafx.fxml","javafx.web","javafx.swing")
+//	configuration = "compileOnly"
 }
 
 group = "com.github.nayasis"
