@@ -256,6 +256,10 @@ class Main: View("application.title".message()) {
             Context.main.primaryStage.isAlwaysOnTop = value
         }
 
+        menuItemHelp.setOnAction{
+            find<Help>().openWindow()
+        }
+
         buttonSave.setOnAction { saveDetail() }
         buttonDelete.setOnAction { detail?.let{ deleteLink(it) } }
         buttonCopy.setOnAction { copyDetail() }
