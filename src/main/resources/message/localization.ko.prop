@@ -46,6 +46,9 @@ desc.icon               = 아이콘
 desc.showConsole        = 콘솔출력
 desc.eachExecution      = 개별실행
 
+stage.help = 도움말
+stage.help.url = https://github.com/nayasis/SimpleLauncher#readme
+
 preloader.spring-core.loaded = Spring 코어 적재
 preloader.ui.made            = UI 구성
 preloader.link-data.loaded   = Link 데이터 적재
