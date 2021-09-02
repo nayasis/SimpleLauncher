@@ -20,7 +20,7 @@ class TerminalConfig {
     var clearSelectionAfterCopy = true
 
     @JsonProperty("copy-on-select")
-    var copyOnSelect = false
+    var copyOnSelect = true
 
     @JsonProperty("ctrl-c-copy")
     var ctrlCCopy = true
@@ -47,7 +47,7 @@ class TerminalConfig {
     var scrollbarVisible = true
 
     @JsonProperty("enable-clipboard-notice")
-    var enableClipboardNotice = true
+    var enableClipboardNotice = false
 
     @JsonProperty("scroll-wheel-move-multiplier")
     var scrollWhellMoveMultiplier = 0.1

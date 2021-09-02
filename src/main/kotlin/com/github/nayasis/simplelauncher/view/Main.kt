@@ -3,12 +3,9 @@ package com.github.nayasis.simplelauncher.view
 import com.github.nayasis.kotlin.basica.core.extention.ifNull
 import com.github.nayasis.kotlin.basica.core.localdate.toFormat
 import com.github.nayasis.kotlin.basica.core.string.message
-import com.github.nayasis.kotlin.basica.etc.error
-import com.github.nayasis.kotlin.basica.reflection.Reflector
 import com.github.nayasis.kotlin.javafx.control.basic.allChildren
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValueByDefault
-import com.github.nayasis.kotlin.javafx.control.tableview.column.setAlign
 import com.github.nayasis.kotlin.javafx.control.tableview.focused
 import com.github.nayasis.kotlin.javafx.control.tableview.select
 import com.github.nayasis.kotlin.javafx.geometry.Insets
@@ -53,14 +50,13 @@ class Main: View("application.title".message()) {
     val linkService: LinkService by di()
     val linkExecutor: LinkExecutor by di()
     val linkMatcher: LinkMatcher by di()
-    val configService: ConfigService by di()
 
     override val root: AnchorPane by fxml("/view/main/main.fxml")
 
     val tableMain: TableView<Link> by fxid()
     val colGroup: TableColumn<Link,String> by fxid()
     val colTitle: TableColumn<Link,Link> by fxid()
-    val colLastUsedDt: TableColumn<Link,LocalDateTime> by fxid()
+    val colLastUsedDt: TableColumn<Link,LocalDateTime?> by fxid()
     val colExecCount: TableColumn<Link,Int> by fxid()
 
     val vboxTop: VBox by fxid()
@@ -112,15 +108,15 @@ class Main: View("application.title".message()) {
     }
 
     override fun onBeforeShow() {
-        configService.stageMain?.let {
+        ConfigService.stageMain?.let {
             it.excludeKlass.add(Button::class)
             it.bind(currentStage!!)
         }
     }
 
     override fun onUndock() {
-        configService.stageMain = StageProperty(currentStage!!)
-        configService.commit()
+        ConfigService.stageMain = StageProperty(currentStage!!)
+        ConfigService.save()
     }
 
     private fun initTable() {
@@ -155,9 +151,13 @@ class Main: View("application.title".message()) {
 
         colLastUsedDt.cellValue(Link::lastExecDate).cellFormat {
             alignment = Pos.CENTER
-            text = it.toFormat("YYYY-MM-DD HH:MI:SS")
+            text = it?.toFormat("YYYY-MM-DD HH:MI:SS")
         }
-        colExecCount.cellValue(Link::executeCount).setAlign(Pos.CENTER_RIGHT)
+//        colExecCount.cellValue(Link::executeCount).setAlign(Pos.CENTER_RIGHT)
+        colExecCount.cellValue(Link::executeCount).cellFormat {
+            alignment = Pos.CENTER_RIGHT
+            text = "$it"
+        }
 
         links.bindTo(tableMain)
 
@@ -224,7 +224,7 @@ class Main: View("application.title".message()) {
         }
 
         menuImportData.setOnAction {
-            linkService.openImportFilePicker()?.let { file ->
+            linkService.openImportPicker()?.let { file ->
                 linkService.importData(file)
                 readLinks()
                 Dialog.alert( "msg.info.009".message().format(file) )
@@ -232,7 +232,7 @@ class Main: View("application.title".message()) {
         }
 
         menuExportData.setOnAction {
-            linkService.openExportFilePicker()?.let { file ->
+            linkService.openExportPicker()?.let { file ->
                 linkService.exportData(file)
                 Dialog.alert( "msg.info.010".message().format(file) )
             }
@@ -294,7 +294,7 @@ class Main: View("application.title".message()) {
         }
         buttonAddFile.setOnMouseClicked { e ->
             if( e.button == MouseButton.PRIMARY ) {
-                linkService.openPathFilePicker()?.let { file ->
+                linkService.openExecutorPicker()?.let { file ->
                     drawDetailForAdd(Link(file))
                 }
             }
@@ -353,7 +353,7 @@ class Main: View("application.title".message()) {
 
     private fun changeIcon() {
         if( detail == null ) return
-        linkService.openIconFilePicker()?.let { changeIcon(it) }
+        linkService.openIconPicker()?.let { changeIcon(it) }
     }
 
     private fun fnDraggable(e: DragEvent) {

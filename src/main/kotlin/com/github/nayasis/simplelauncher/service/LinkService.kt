@@ -18,7 +18,6 @@ private val logger = KotlinLogging.logger{}
 @Component
 class LinkService(
     private val linkRepository: LinkRepository,
-    private val configService: ConfigService,
 ) {
 
     @Transactional
@@ -48,24 +47,24 @@ class LinkService(
         Context.main.links.remove(link)
     }
 
-    fun openImportFilePicker(): File? =
+    fun openImportPicker(): File? =
         openFilePicker("msg.info.004","*.sl","msg.info.011")
 
-    fun openExportFilePicker(): File? =
+    fun openExportPicker(): File? =
         openFilePicker("msg.info.003","*.sl","msg.info.011")
 
-    fun openIconFilePicker(): File? =
+    fun openIconPicker(): File? =
         openFilePicker("msg.info.002","*.*","msg.info.012")
 
-    fun openPathFilePicker(): File? =
+    fun openExecutorPicker(): File? =
         openFilePicker("msg.info.001","*.*","msg.info.006")
 
     private fun openFilePicker(title: String, extension: String, description: String): File? {
-        return Dialog.filePicker(title.message(), extension, description.message(), configService.filePickerInitialDirectory)
+        return Dialog.filePicker(title.message(), extension, description.message(), ConfigService.filePickerInitialDirectory)
             .showOpenDialog(Context.main.primaryStage)
             .also {
                 if( it != null )
-                    configService.filePickerInitialDirectory = it.directory.path
+                    ConfigService.filePickerInitialDirectory = it.directory.path
             }
     }
 
