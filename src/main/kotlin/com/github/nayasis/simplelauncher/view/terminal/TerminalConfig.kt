@@ -80,40 +80,40 @@ class TerminalConfig {
         if (scrollbarVisible != that.scrollbarVisible) return false
         if (enableClipboardNotice != that.enableClipboardNotice) return false
         if (java.lang.Double.compare(that.scrollWhellMoveMultiplier, scrollWhellMoveMultiplier) != 0) return false
-        if (if (sendEncoding != null) sendEncoding != that.sendEncoding else that.sendEncoding != null) return false
-        if (if (receiveEncoding != null) receiveEncoding != that.receiveEncoding else that.receiveEncoding != null) return false
-        if (if (cursorColor != null) cursorColor != that.cursorColor else that.cursorColor != null) return false
-        if (if (backgroundColor != null) backgroundColor != that.backgroundColor else that.backgroundColor != null) return false
-        if (if (foregroundColor != null) foregroundColor != that.foregroundColor else that.foregroundColor != null) return false
-        if (if (fontFamily != null) fontFamily != that.fontFamily else that.fontFamily != null) return false
-        if (if (userCss != null) userCss != that.userCss else that.userCss != null) return false
-        if (if (windowsTerminalStarter != null) windowsTerminalStarter != that.windowsTerminalStarter else that.windowsTerminalStarter != null) return false
-        return if (unixTerminalStarter != null) unixTerminalStarter == that.unixTerminalStarter else that.unixTerminalStarter == null
+        if (sendEncoding != that.sendEncoding) return false
+        if (receiveEncoding != that.receiveEncoding) return false
+        if (cursorColor != that.cursorColor) return false
+        if (backgroundColor != that.backgroundColor) return false
+        if (foregroundColor != that.foregroundColor) return false
+        if (fontFamily != that.fontFamily) return false
+        if (userCss != that.userCss) return false
+        if (windowsTerminalStarter != that.windowsTerminalStarter) return false
+        return unixTerminalStarter == that.unixTerminalStarter
     }
 
     override fun hashCode(): Int {
         var result: Int
         val temp: Long
-        result = if (sendEncoding != null) sendEncoding.hashCode() else 0
-        result = 31 * result + if (receiveEncoding != null) receiveEncoding.hashCode() else 0
+        result = sendEncoding.hashCode()
+        result = 31 * result + receiveEncoding.hashCode()
         result = 31 * result + if (useDefaultWindowCopy) 1 else 0
         result = 31 * result + if (clearSelectionAfterCopy) 1 else 0
         result = 31 * result + if (copyOnSelect) 1 else 0
         result = 31 * result + if (ctrlCCopy) 1 else 0
         result = 31 * result + if (ctrlVPaste) 1 else 0
-        result = 31 * result + if (cursorColor != null) cursorColor.hashCode() else 0
-        result = 31 * result + if (backgroundColor != null) backgroundColor.hashCode() else 0
+        result = 31 * result + cursorColor.hashCode()
+        result = 31 * result + backgroundColor.hashCode()
         result = 31 * result + fontSize
-        result = 31 * result + if (foregroundColor != null) foregroundColor.hashCode() else 0
+        result = 31 * result + foregroundColor.hashCode()
         result = 31 * result + if (cursorBlink) 1 else 0
         result = 31 * result + if (scrollbarVisible) 1 else 0
         result = 31 * result + if (enableClipboardNotice) 1 else 0
         temp = java.lang.Double.doubleToLongBits(scrollWhellMoveMultiplier)
         result = 31 * result + (temp xor (temp ushr 32)).toInt()
-        result = 31 * result + if (fontFamily != null) fontFamily.hashCode() else 0
-        result = 31 * result + if (userCss != null) userCss.hashCode() else 0
-        result = 31 * result + if (windowsTerminalStarter != null) windowsTerminalStarter.hashCode() else 0
-        result = 31 * result + if (unixTerminalStarter != null) unixTerminalStarter.hashCode() else 0
+        result = 31 * result + fontFamily.hashCode()
+        result = 31 * result + userCss.hashCode()
+        result = 31 * result + windowsTerminalStarter.hashCode()
+        result = 31 * result + unixTerminalStarter.hashCode()
         return result
     }
 
