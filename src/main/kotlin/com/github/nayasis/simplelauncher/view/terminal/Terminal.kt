@@ -8,6 +8,7 @@ import javafx.scene.Scene
 import javafx.scene.paint.Color
 import javafx.stage.Stage
 import mu.KotlinLogging
+import org.apache.commons.exec.ShutdownHookProcessDestroyer
 
 private val logger = KotlinLogging.logger {}
 
@@ -40,7 +41,7 @@ class Terminal(
             terminal.postAction = null
             terminal.webView.engine.load(null)
             runCatching {
-                terminal.executor.watchdog.destroyProcess()
+                terminal.destory()
             }.onFailure { logger.error(it) }
         }
         ConfigService.stageTerminal?.let {
