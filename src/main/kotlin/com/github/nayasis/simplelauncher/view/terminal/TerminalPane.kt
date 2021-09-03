@@ -1,28 +1,15 @@
 package com.github.nayasis.simplelauncher.view.terminal
 
-import com.github.nayasis.kotlin.basica.core.extention.isNotEmpty
-import com.github.nayasis.kotlin.basica.core.path.directory
-import com.github.nayasis.kotlin.basica.core.string.toFile
 import com.github.nayasis.kotlin.basica.etc.Platforms
 import com.github.nayasis.kotlin.basica.exec.Command
 import com.github.nayasis.kotlin.basica.exec.CommandExecutor
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.kotlin.javafx.stage.stage
 import mu.KotlinLogging
-import org.apache.commons.exec.CommandLine
-import org.apache.commons.exec.DefaultExecuteResultHandler
-import org.apache.commons.exec.DefaultExecutor
-import org.apache.commons.exec.ExecuteException
-import org.apache.commons.exec.ExecuteWatchdog
-import org.apache.commons.exec.ProcessDestroyer
-import org.apache.commons.exec.PumpStreamHandler
-import org.apache.commons.exec.ShutdownHookProcessDestroyer
 import tornadofx.runAsync
 import tornadofx.runLater
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.io.PipedInputStream
-import java.io.PipedOutputStream
 
 private val logger = KotlinLogging.logger {}
 
@@ -39,13 +26,13 @@ class TerminalPane(
 ): TerminalBasePane(config) {
 
     val cmd = Command(command,workingDirectory)
-    var process: Process? = null
-//    val executor = CommandExecutor().apply {
-//        onProcessFail = { e ->
-//            runLater { Dialog.error(e) }
-//            closeReader()
-//        }
-//    }
+
+    val executor = CommandExecutor().apply {
+        onProcessFail = { e ->
+            runLater { Dialog.error(e) }
+            closeReader()
+        }
+    }
 
     override fun onTerminalReady() {
         runAsync {
@@ -62,25 +49,15 @@ class TerminalPane(
     }
 
     private fun runProcess() {
-
-        val builder = ProcessBuilder(cmd.command).apply {
-            if(!cmd.workingDirectory.isNullOrEmpty())
-                this.directory(cmd.workingDirectory!!.toFile())
-        }
-
-        process = builder.start()
-
-        outputReader = BufferedReader(InputStreamReader(process!!.inputStream, Platforms.os.charset))
-        errorReader  = BufferedReader(InputStreamReader(process!!.errorStream, Platforms.os.charset))
-
+        executor.run(cmd)
+        outputReader = BufferedReader(InputStreamReader(executor.outputStream, Platforms.os.charset))
+        errorReader  = BufferedReader(InputStreamReader(executor.errorStream, Platforms.os.charset))
         focusCursor()
-
-        process!!.waitFor()
-
+        executor.waitFor()
     }
 
     fun destory() {
-        process?.destroyForcibly()
+        executor.destroy()
     }
 
 }
