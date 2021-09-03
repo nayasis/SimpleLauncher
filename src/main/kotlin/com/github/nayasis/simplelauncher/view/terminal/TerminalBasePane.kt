@@ -26,6 +26,7 @@ abstract class TerminalBasePane(
 ): TerminalIf, Pane() {
 
     private val outputProperty = SimpleObjectProperty<BufferedReader>()
+    private val errorProperty  = SimpleObjectProperty<BufferedReader>()
 
     val webView = WebView()
     var interrupted = false
@@ -33,11 +34,18 @@ abstract class TerminalBasePane(
     var rows: Int = 1000
 
     var taskOutputReader: Task<*>? = null
+    var taskErrorReader: Task<*>? = null
 
     var outputReader: BufferedReader
         get() = outputProperty.get()
         set(reader) {
             outputProperty.set(reader)
+        }
+
+    var errorReader: BufferedReader
+        get() = errorProperty.get()
+        set(reader) {
+            errorProperty.set(reader)
         }
 
     private val terminal: JSObject
@@ -49,9 +57,8 @@ abstract class TerminalBasePane(
 
     init {
         children.add(webView)
-        outputProperty.addListener { _, _, reader ->
-            taskOutputReader = runAsync { print(reader) }
-        }
+        outputProperty.addListener { _, _, reader -> taskOutputReader = runAsync { print(reader) } }
+        errorProperty.addListener { _, _, reader -> taskErrorReader = runAsync { print(reader) } }
         webView.engine.loadWorker.stateProperty().addListener { _, _, _ ->
             window.setMember( "app", this )
         }
@@ -114,7 +121,9 @@ abstract class TerminalBasePane(
 
     fun closeReader() {
         taskOutputReader?.cancel()
+        taskErrorReader?.cancel()
         outputReader.close()
+        errorReader.close()
     }
 
     override fun onTerminalInit() {}
