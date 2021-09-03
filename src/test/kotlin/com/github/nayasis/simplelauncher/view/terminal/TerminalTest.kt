@@ -16,6 +16,7 @@ class TerminalTest: App() {
 
         //        val terminal = Terminal(config).setCommand("cmd /c c: && cd \"c:\\Windows\" && dir").apply {this.stage = stage}
 
+//        val cd = "d:/download/test/chd222"
         val cd = "d:/download/test/chd"
         val terminal = Terminal("${cd}/chdman.exe createcd -f -i ${cd}/disc.cue -o ${cd}/disc.chd",cd)
 

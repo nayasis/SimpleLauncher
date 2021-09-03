@@ -4,22 +4,27 @@ import com.github.nayasis.kotlin.basica.core.extention.isNotEmpty
 import com.github.nayasis.kotlin.basica.core.path.directory
 import com.github.nayasis.kotlin.basica.core.string.toFile
 import com.github.nayasis.kotlin.basica.etc.Platforms
+import com.github.nayasis.kotlin.basica.exec.Command
+import com.github.nayasis.kotlin.basica.exec.CommandExecutor
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.kotlin.javafx.stage.stage
-import javafx.event.EventHandler
-import javafx.stage.Stage
 import mu.KotlinLogging
 import org.apache.commons.exec.CommandLine
 import org.apache.commons.exec.DefaultExecuteResultHandler
 import org.apache.commons.exec.DefaultExecutor
+import org.apache.commons.exec.ExecuteException
 import org.apache.commons.exec.ExecuteWatchdog
+import org.apache.commons.exec.ProcessDestroyer
 import org.apache.commons.exec.PumpStreamHandler
+import org.apache.commons.exec.ShutdownHookProcessDestroyer
 import tornadofx.runAsync
 import tornadofx.runLater
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.PipedInputStream
 import java.io.PipedOutputStream
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * Terminal Pane
@@ -33,10 +38,13 @@ class TerminalPane(
     config: TerminalConfig,
 ): TerminalBasePane(config) {
 
-    val executor = DefaultExecutor().apply {
-        if ( workingDirectory.isNotEmpty() )
-            this.workingDirectory = workingDirectory!!.toFile().directory
-        watchdog = ExecuteWatchdog(-1L)
+    val cmd = Command(command,workingDirectory)
+
+    val executor = CommandExecutor().apply {
+        onProcessFail = { e ->
+            runLater { Dialog.error(e) }
+            closeReader()
+        }
     }
 
     override fun onTerminalReady() {
@@ -48,28 +56,25 @@ class TerminalPane(
             } catch (e: Exception) {
                 runLater { Dialog.error("msg.error.003", e) }
             } finally {
-                runCatching { outputReader.close() }
+                runCatching { closeReader() }
             }
         }
     }
 
     private fun runProcess() {
 
-        val resultHandler = DefaultExecuteResultHandler()
+        executor.run(cmd)
 
-        val inStream = PipedInputStream()
-        val outStream = PipedOutputStream(inStream)
-        val pumpStream = PumpStreamHandler(outStream)
-
-        outputReader = BufferedReader(InputStreamReader(inStream, Platforms.os.charset))
-
-        executor.streamHandler = pumpStream
-        executor.execute(CommandLine.parse(command), resultHandler)
+        outputReader = BufferedReader(InputStreamReader(executor.outputStream, Platforms.os.charset))
 
         focusCursor()
 
-        resultHandler.waitFor()
+        executor.waitFor()
 
+    }
+
+    fun destory() {
+        executor.destroy()
     }
 
 }

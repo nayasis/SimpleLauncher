@@ -5,10 +5,12 @@ import com.github.nayasis.kotlin.basica.reflection.Reflector
 import com.github.nayasis.kotlin.javafx.misc.Desktop
 import com.github.nayasis.kotlin.javafx.misc.set
 import javafx.beans.property.SimpleObjectProperty
+import javafx.concurrent.Task
 import javafx.scene.layout.Pane
 import javafx.scene.web.WebView
 import mu.KotlinLogging
 import netscape.javascript.JSObject
+import tornadofx.FXTask
 import tornadofx.runAsync
 import tornadofx.runLater
 import java.io.BufferedReader
@@ -26,8 +28,11 @@ abstract class TerminalBasePane(
     private val outputProperty = SimpleObjectProperty<BufferedReader>()
 
     val webView = WebView()
+    var interrupted = false
     var columns: Int = 2000
     var rows: Int = 1000
+
+    var taskOutputReader: Task<*>? = null
 
     var outputReader: BufferedReader
         get() = outputProperty.get()
@@ -45,7 +50,7 @@ abstract class TerminalBasePane(
     init {
         children.add(webView)
         outputProperty.addListener { _, _, reader ->
-            runAsync{print(reader)}
+            taskOutputReader = runAsync { print(reader) }
         }
         webView.engine.loadWorker.stateProperty().addListener { _, _, _ ->
             window.setMember( "app", this )
@@ -98,12 +103,18 @@ abstract class TerminalBasePane(
     }
 
     private fun print(text: String) = runLater {
+        System.out.print(text)
         terminalIO.call("print", text)
     }
 
     fun focusCursor() = runLater {
         webView.requestFocus()
         terminal.call("focus")
+    }
+
+    fun closeReader() {
+        taskOutputReader?.cancel()
+        outputReader.close()
     }
 
     override fun onTerminalInit() {}
