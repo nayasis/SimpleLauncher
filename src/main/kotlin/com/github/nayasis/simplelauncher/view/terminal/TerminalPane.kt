@@ -39,13 +39,13 @@ class TerminalPane(
 ): TerminalBasePane(config) {
 
     val cmd = Command(command,workingDirectory)
-
-    val executor = CommandExecutor().apply {
-        onProcessFail = { e ->
-            runLater { Dialog.error(e) }
-            closeReader()
-        }
-    }
+    var process: Process? = null
+//    val executor = CommandExecutor().apply {
+//        onProcessFail = { e ->
+//            runLater { Dialog.error(e) }
+//            closeReader()
+//        }
+//    }
 
     override fun onTerminalReady() {
         runAsync {
@@ -63,18 +63,24 @@ class TerminalPane(
 
     private fun runProcess() {
 
-        executor.run(cmd)
+        val builder = ProcessBuilder(cmd.command).apply {
+            if(!cmd.workingDirectory.isNullOrEmpty())
+                this.directory(cmd.workingDirectory!!.toFile())
+        }
 
-        outputReader = BufferedReader(InputStreamReader(executor.outputStream, Platforms.os.charset))
+        process = builder.start()
+
+        outputReader = BufferedReader(InputStreamReader(process!!.inputStream, Platforms.os.charset))
+        errorReader  = BufferedReader(InputStreamReader(process!!.errorStream, Platforms.os.charset))
 
         focusCursor()
 
-        executor.waitFor()
+        process!!.waitFor()
 
     }
 
     fun destory() {
-        executor.destroy()
+        process?.destroyForcibly()
     }
 
 }
