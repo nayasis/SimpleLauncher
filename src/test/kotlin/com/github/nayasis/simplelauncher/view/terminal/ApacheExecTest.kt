@@ -57,11 +57,13 @@ class ApacheExecTest {
 
         val process = ProcessBuilder(command.split(" ")).start()
 
-        Executors.newSingleThreadExecutor().execute {
+        val threadPool = Executors.newFixedThreadPool(5)
+
+        threadPool.execute {
             print( BufferedReader(InputStreamReader(process.inputStream,Platforms.os.charset)) )
         }
 
-        Executors.newSingleThreadExecutor().execute {
+        threadPool.execute {
             print( BufferedReader(InputStreamReader(process.errorStream,Platforms.os.charset)) )
         }
 
