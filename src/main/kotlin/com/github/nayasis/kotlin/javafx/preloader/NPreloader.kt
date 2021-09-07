@@ -4,7 +4,7 @@ import com.github.nayasis.kotlin.javafx.stage.Dialog
 import javafx.application.Platform
 import javafx.application.Preloader as FxPreloader
 
-open abstract class NPreloader: FxPreloader() {
+abstract class NPreloader: FxPreloader() {
 
     override fun handleApplicationNotification(notificator: PreloaderNotification) {
         when(notificator) {

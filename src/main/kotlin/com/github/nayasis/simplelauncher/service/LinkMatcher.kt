@@ -17,9 +17,8 @@ class LinkMatcher {
     }
 
     fun isMatch(link: Link): Boolean {
-        if(keyword == null) return false
         for(word in link.keyword ?: emptySet())
-            if(keyword!!.match(word)) return true
+            if(keyword.match(word)) return true
         return false
     }
 

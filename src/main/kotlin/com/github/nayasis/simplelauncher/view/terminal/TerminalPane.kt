@@ -28,7 +28,7 @@ class TerminalPane(
     val cmd = Command(command,workingDirectory)
 
     val executor = CommandExecutor().apply {
-        onProcessFail = { e ->
+        onProcessFailed = { e ->
             runLater { Dialog.error(e) }
             closeReader()
         }
