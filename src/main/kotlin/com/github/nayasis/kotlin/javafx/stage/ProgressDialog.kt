@@ -59,8 +59,9 @@ private class ProgressPane<T>(
     val worker: Worker<T>,
 ): Region() {
 
-    private val stateListener = ChangeListener<Worker.State> { _, old, new ->
-        when (new) {
+//    @Suppress()
+    private val stateListener = ChangeListener<Worker.State> { _, _, state ->
+        when (state) {
             CANCELLED, FAILED, SUCCEEDED -> end()
             SCHEDULED -> begin()
         }
@@ -76,14 +77,14 @@ private class ProgressPane<T>(
         worker.stateProperty().addListener(stateListener)
     }
 
-    open fun begin() {
+    fun begin() {
         runLater {
             progressBar.progressProperty().bind(worker.progressProperty())
             dialog.show()
         }
     }
 
-    open fun end() {
+    fun end() {
         progressBar.progressProperty().unbind()
         hideForcibly(dialog)
         dialog.close()

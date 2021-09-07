@@ -233,7 +233,6 @@ object Images {
         if( url == null ) return null
         return getHttpClient().use{ it.execute(HttpGet(url.toString()))?.use { response ->
              try {
-                 val a:java.io.InputStream? = null
                 toImage(ImageIO.read(response.entity.content))
             } catch (e: Exception) {
                 log.error(e.message,e)
