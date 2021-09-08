@@ -94,11 +94,10 @@ class Dialog { companion object {
         }.showAndWait().get()
     }
 
-    fun progress(title: String? = null, func: FXTask<*>.() -> Unit): FXTask<*> {
+    fun <T> progress(title: String? = null, func: FXTask<*>.() -> T): FXTask<T> {
         val task = FXTask(func=func)
         val dialog = ProgressDialog(task)
-        if( title.isNotEmpty() )
-            dialog.headerText = title
+        dialog.headerText = title ?: " "
         dialog.show()
         runAsync {
             task.run()

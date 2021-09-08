@@ -1,5 +1,6 @@
 package com.github.nayasis.simplelauncher.view.terminal
 
+import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.etc.Platforms
 import com.github.nayasis.kotlin.basica.exec.Command
 import com.github.nayasis.kotlin.basica.exec.CommandExecutor
@@ -21,7 +22,7 @@ private val logger = KotlinLogging.logger {}
 class TerminalPane(
     val command: String,
     workingDirectory: String? = null,
-    var postAction:(() -> Unit)? = null,
+    var onDone:(() -> Unit)? = null,
     config: TerminalConfig,
 ): TerminalBasePane(config) {
 
@@ -38,10 +39,9 @@ class TerminalPane(
         runAsync {
             try {
                 runProcess()
-                scene?.stage?.let { runLater { it.title = "${it.title} (done)" }}
-                postAction?.let { it() }
+                onDone?.let { it() }
             } catch (e: Exception) {
-                runLater { Dialog.error("msg.error.003", e) }
+                runLater { Dialog.error("msg.error.003".message(), e) }
             } finally {
                 runCatching { closeReader() }
             }
