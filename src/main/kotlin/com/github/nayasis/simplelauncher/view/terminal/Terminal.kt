@@ -8,14 +8,13 @@ import javafx.scene.Scene
 import javafx.scene.paint.Color
 import javafx.stage.Stage
 import mu.KotlinLogging
-import org.apache.commons.exec.ShutdownHookProcessDestroyer
 
 private val logger = KotlinLogging.logger {}
 
 class Terminal(
     command: String,
     workingDirectory: String? = null,
-    postAction:(() -> Unit)? = null,
+    onDone:((Terminal) -> Unit)? = null,
     terminalConfig: TerminalConfig = TerminalConfig().apply {
         backgroundColor = Color.rgb(16, 16, 16).toHex()
         foregroundColor = Color.rgb(240, 240, 240).toHex()
@@ -30,15 +29,18 @@ class Terminal(
     private val terminal: TerminalPane = TerminalPane(
         command,
         workingDirectory,
-        postAction,
+        { onDone?.let{ it(this) } },
         terminalConfig,
     )
 
     init {
-        scene = Scene(terminal)
+        scene  = Scene(terminal)
+        title  = command
+        width  = 700.0
+        height = 600.0
         addCloseRequest {
             ConfigService.stageTerminal = StageProperty(this)
-            terminal.postAction = null
+            terminal.onDone = null
             terminal.webView.engine.load(null)
             runCatching {
                 terminal.destory()

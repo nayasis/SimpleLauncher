@@ -19,7 +19,28 @@ fun main(args: Array<String>) {
 class ProgressDialogTest: App() {
     override fun start(stage: Stage) {
 
-        val fxtask = FXTask {
+//        val fxtask = FXTask {
+//            val max = 100
+//            for (i in 1..max) {
+//                logger.debug { "$i to $max" }
+//                updateProgress(i.toLong(), max.toLong())
+//                updateMessage("$i / $max")
+//                updateTitle("title : $i")
+//                sleep(100)
+//            }
+//        }
+//
+//        val dialog = ProgressDialog(fxtask)
+//        dialog.headerText = "header"
+//        dialog.contentText = "content"
+//        dialog.show()
+//
+//        runAsync {
+//            fxtask.run()
+//            exitProcess(0)
+//        }
+
+        Dialog.progress {
             val max = 100
             for (i in 1..max) {
                 logger.debug { "$i to $max" }
@@ -28,16 +49,11 @@ class ProgressDialogTest: App() {
                 updateTitle("title : $i")
                 sleep(100)
             }
+            exitProcess(0)
         }
 
-        val dialog = ProgressDialog(fxtask)
-        dialog.headerText = "header"
-        dialog.contentText = "content"
-        dialog.show()
-
         runAsync {
-            fxtask.run()
-            exitProcess(0)
+
         }
 
     }

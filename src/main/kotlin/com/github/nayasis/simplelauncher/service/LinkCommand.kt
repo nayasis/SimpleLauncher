@@ -26,7 +26,7 @@ class LinkCommand {
     var title: String?
 
     var path: Path?
-    var workingDirectory: Path?
+    var workingDirectory: String?
 
     var argument: String
     var commandPrefix: String
@@ -37,7 +37,7 @@ class LinkCommand {
     constructor(link: Link) {
         title            = link.title
         path             = getExecutionPath(link)
-        workingDirectory = path?.directory
+        workingDirectory = path?.directory?.pathString
         argument         = link.argument ?: ""
         commandPrefix    = link.commandPrefix ?: ""
         commandPrev      = link.commandPrev ?: ""
