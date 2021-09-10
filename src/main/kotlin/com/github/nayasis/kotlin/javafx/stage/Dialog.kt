@@ -94,15 +94,13 @@ class Dialog { companion object {
         }.showAndWait().get()
     }
 
-    fun <T> progress(title: String? = null, func: FXTask<*>.() -> T): FXTask<T> {
-        val task = FXTask(func=func)
+    fun progress(title: String? = null, func: (FXTask<*>.() -> Any)? = null): ProgressDialog<Any> {
+        val task = func?.let {FXTask(func=it)}
         val dialog = ProgressDialog(task)
         dialog.headerText = title ?: " "
         dialog.show()
-        runAsync {
-            task.run()
-        }
-        return task
+        task?.let { runAsync { it.run() } }
+        return dialog
     }
 
     fun filePicker(title: String = "", extensions: String = "", extensionDescription: String = "", initialDirectory: File?): FileChooser {
