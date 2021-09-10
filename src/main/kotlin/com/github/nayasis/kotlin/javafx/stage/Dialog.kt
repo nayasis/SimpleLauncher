@@ -1,6 +1,5 @@
 package com.github.nayasis.kotlin.javafx.stage
 
-import com.github.nayasis.kotlin.basica.core.extention.isNotEmpty
 import com.github.nayasis.kotlin.basica.core.path.div
 import com.github.nayasis.kotlin.basica.core.path.userHome
 import com.github.nayasis.kotlin.basica.core.string.toFile
@@ -94,12 +93,15 @@ class Dialog { companion object {
         }.showAndWait().get()
     }
 
-    fun progress(title: String? = null, func: (FXTask<*>.() -> Any)? = null): ProgressDialog<Any> {
+    fun progress(title: String? = null, func: (FXTask<*>.() -> Any)? = null): ProgressDialog {
         val task = func?.let {FXTask(func=it)}
         val dialog = ProgressDialog(task)
         dialog.headerText = title ?: " "
-        dialog.show()
-        task?.let { runAsync { it.run() } }
+        if( task == null ) {
+            dialog.show()
+        } else {
+            runAsync { task.run() }
+        }
         return dialog
     }
 
