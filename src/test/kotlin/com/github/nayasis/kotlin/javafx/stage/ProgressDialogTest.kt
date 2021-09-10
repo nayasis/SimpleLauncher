@@ -6,9 +6,9 @@ import tornadofx.App
 import tornadofx.FXTask
 import tornadofx.launch
 import tornadofx.runAsync
+import tornadofx.runLater
 import java.lang.Thread.sleep
 import kotlin.system.exitProcess
-
 
 private val logger = KotlinLogging.logger {}
 
@@ -40,20 +40,30 @@ class ProgressDialogTest: App() {
 //            exitProcess(0)
 //        }
 
-        Dialog.progress {
-            val max = 100
-            for (i in 1..max) {
-                logger.debug { "$i to $max" }
-                updateProgress(i.toLong(), max.toLong())
-                updateMessage("$i / $max")
-                updateTitle("title : $i")
-                sleep(100)
-            }
-            exitProcess(0)
-        }
+//        val dialog = Dialog.progress {
+//            val max = 100
+//            for (i in 1..max) {
+//                logger.debug { "$i to $max" }
+//                updateProgress(i.toLong(), max.toLong())
+//                updateMessage("$i / $max")
+//                updateTitle("title : $i")
+//                sleep(100)
+//            }
+//            exitProcess(0)
+//        }
+
+        val progress = Dialog.progress("Terminal test")
 
         runAsync {
-
+            val max = 20
+            for( i in 1..max) {
+                println("$i / 10")
+                progress.updateMessage( "$i / $max")
+                progress.updateProgress(i.toLong(),max.toLong())
+                sleep(200)
+            }
+            progress.closeForcibly()
+            runLater { exitProcess(0) }
         }
 
     }

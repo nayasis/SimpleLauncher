@@ -1,9 +1,14 @@
 package com.github.nayasis.simplelauncher.view.terminal
 
+import com.github.nayasis.kotlin.javafx.property.StageProperty
+import com.github.nayasis.kotlin.javafx.stage.Dialog
+import com.github.nayasis.simplelauncher.service.ConfigService
 import javafx.stage.Stage
 import tornadofx.App
 import tornadofx.launch
+import tornadofx.runAsync
 import tornadofx.runLater
+import java.lang.Thread.sleep
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
@@ -23,25 +28,24 @@ class TerminalTest: App() {
 //        val cd = "d:/download/test/cso"
 //        val terminal = Terminal(config()).setCommand("${cd}/CisoPlus.exe -com -l9 ${cd}/disc.iso ${cd}/disc.cso",cd).apply {this.stage = stage}
 
-        Terminal(cmd,onDone = {
-            runLater { it.close() }
-        }).showAndWait()
+        val progress = Dialog.progress("Terminal test")
 
-        Terminal(cmd,onDone = {
-            runLater { it.close() }
-        }).showAndWait()
+        val max = 2
 
-//        with(terminal) {
-//            title = "Terminal Test"
-//            width = 900.0
-//            height = 600.0
-//            addCloseRequest{
-//                ConfigService.save()
-//                exitProcess(0)
-//            }
-//            show()
-//        }
+        for( i in 1..max) {
 
+            println("$i / $max")
+            progress.updateMessage( "$i / $max")
+            progress.updateProgress(i.toLong(),max.toLong())
+
+            Terminal(cmd,onDone = {
+                ConfigService.stageTerminal = StageProperty(it)
+                runLater { it.close() }
+            }).showAndWait()
+
+        }
+
+        progress.closeForcibly()
         exitProcess(0)
 
     }
