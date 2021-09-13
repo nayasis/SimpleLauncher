@@ -27,8 +27,8 @@ class ProgressDialogTest: App() {
         }
 
         ProgressDialog(task).apply {
-            headerText = "header"
-            contentText = "content"
+            title = "header"
+            message = "content"
         }
 
         runAsync {

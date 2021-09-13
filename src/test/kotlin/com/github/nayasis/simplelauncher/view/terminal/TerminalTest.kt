@@ -45,7 +45,7 @@ class TerminalTest: App() {
 
         }
 
-        progress.closeForcibly()
+        progress.close()
         exitProcess(0)
 
     }

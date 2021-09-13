@@ -1,3 +1,5 @@
+@file:Suppress("MemberVisibilityCanBePrivate")
+
 package com.github.nayasis.kotlin.javafx.stage
 
 import com.github.nayasis.kotlin.javafx.model.Point
@@ -5,6 +7,7 @@ import javafx.concurrent.Worker
 import javafx.concurrent.Worker.State.*
 import javafx.event.EventHandler
 import javafx.scene.Node
+import javafx.scene.Scene
 import javafx.scene.control.ButtonType.CANCEL
 import javafx.scene.control.Dialog
 import javafx.scene.control.Label
@@ -12,18 +15,51 @@ import javafx.scene.control.ProgressBar
 import javafx.scene.paint.Color
 import javafx.stage.Stage
 import javafx.stage.StageStyle
-import mu.KotlinLogging
 import tornadofx.label
 import tornadofx.progressbar
 import tornadofx.runLater
 import tornadofx.vbox
 
-private val logger = KotlinLogging.logger {}
+@Suppress("HasPlatformType")
+class ProgressDialog(worker: Worker<*>?) {
 
-class ProgressDialog: Dialog<Any> {
+    val dialog = ProgressDialogCore(worker)
+    val scene: Scene
+        get() = dialog.dialogPane.scene
+    val stage: Stage
+        get() = dialog.dialogPane.scene.window as Stage
 
-    private lateinit var message: Label
-    private lateinit var progressBar: ProgressBar
+    var title: String
+        get() = dialog.dialogPane.headerText ?: ""
+        set(value) {
+            dialog.updateTitle(value)
+        }
+    var progress: Double
+        get() = dialog.progressBar.progress
+        set(value) {
+            dialog.progressBar.progress = value
+        }
+    var message: String
+        get() = dialog.message.text
+        set(value) {
+            dialog.message.text = value
+        }
+
+    fun updateMessage(message: String?) = dialog.updateMessage(message)
+    fun updateProgress(workDone: Int, max: Int) = dialog.updateProgress(workDone,max)
+    fun updateProgress(workDone: Long, max: Long) = dialog.updateProgress(workDone,max)
+    fun updateProgress(workDone: Double, max: Double) = dialog.updateProgress(workDone,max)
+
+    fun show() = dialog.show()
+    fun showAndWait() = dialog.showAndWait()
+    fun close() = dialog.closeForcibly()
+
+}
+
+class ProgressDialogCore: Dialog<Any> {
+
+    lateinit var message: Label
+    lateinit var progressBar: ProgressBar
 
     constructor(worker: Worker<*>?) {
 
