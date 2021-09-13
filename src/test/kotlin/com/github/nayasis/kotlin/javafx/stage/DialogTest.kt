@@ -53,7 +53,7 @@ class DialogTestView: View("dialog test") {
                     progress.updateProgress(i.toLong(), max.toLong())
                     sleep(100)
                 }
-                progress.closeForcibly()
+                progress.close()
             }
         }}
         prefWidth = 300.0

@@ -96,7 +96,7 @@ class Dialog { companion object {
     fun progress(title: String? = null, func: (FXTask<*>.() -> Any)? = null): ProgressDialog {
         val task = func?.let {FXTask(func=it)}
         val dialog = ProgressDialog(task)
-        dialog.headerText = title ?: " "
+        dialog.title = title ?: " "
         if( task == null ) {
             dialog.show()
         } else {
