@@ -103,9 +103,13 @@ fun <S> TableView<S>.scrollBy( row: S?, middle: Boolean = true ): Int {
 val <S> TableView<S>.visibleRows: Int
     get() {
         return virtualFlow?.let{
-            val first = it.firstVisibleCell.index
-            val last  = it.lastVisibleCell.index
-            last + first + 1
+            if(it.firstVisibleCell == null) {
+                0
+            } else {
+                val first = it.firstVisibleCell.index
+                val last  = it.lastVisibleCell.index
+                last + first + 1
+            }
         } ?: 0
     }
 
