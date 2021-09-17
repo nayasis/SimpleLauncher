@@ -84,12 +84,25 @@
             </MenuBar>
             <HBox alignment="CENTER_LEFT" prefHeight="30.0" spacing="5.0">
                <children>
-                  <Label alignment="CENTER_RIGHT" text="\%search.keyword">
+                  <Label alignment="CENTER_RIGHT" minWidth="-Infinity" text="\%search.keyword">
                      <HBox.margin>
                         <Insets left="2.0" />
                      </HBox.margin></Label>
-                  <TextField fx:id="inputKeyword" prefWidth="520.0" HBox.hgrow="ALWAYS" />
-                  <HBox alignment="CENTER_RIGHT" HBox.hgrow="ALWAYS">
+                  <TextField fx:id="inputKeyword" minWidth="100.0" HBox.hgrow="ALWAYS">
+                     <HBox.margin>
+                        <Insets left="5.0" />
+                     </HBox.margin></TextField>
+                  <Label text="\%search.group">
+                     <HBox.margin>
+                        <Insets left="10.0" />
+                     </HBox.margin>
+                  </Label>
+                  <TextField fx:id="inputGroup">
+                     <HBox.margin>
+                        <Insets left="5.0" />
+                     </HBox.margin>
+                  </TextField>
+                  <HBox alignment="CENTER_RIGHT" maxWidth="100.0" HBox.hgrow="ALWAYS">
                      <children>
                         <ImageView id="faviconAddFile" fx:id="buttonAddFile" fitHeight="27.0" fitWidth="26.0">
                            <image>
@@ -120,7 +133,7 @@
             </HBox>
             <HBox spacing="10.0" VBox.vgrow="ALWAYS">
                <children>
-                  <TableView fx:id="tableMain" tableMenuButtonVisible="true" HBox.hgrow="ALWAYS">
+                  <TableView fx:id="tableMain" minWidth="150.0" tableMenuButtonVisible="true" HBox.hgrow="ALWAYS">
                     <columns>
                       <TableColumn fx:id="colGroup" maxWidth="1000.0" minWidth="-1.0" prefWidth="100.0" text="\%table.groupName" />
                       <TableColumn fx:id="colTitle" maxWidth="1000.0" minWidth="-1.0" prefWidth="253.0" text="\%table.title" />

@@ -1,3 +1,5 @@
+@file:Suppress("MemberVisibilityCanBePrivate")
+
 package com.github.nayasis.simplelauncher.view
 
 import com.github.nayasis.kotlin.basica.core.extention.ifNull
@@ -20,7 +22,7 @@ import com.github.nayasis.simplelauncher.jpa.entity.Link
 import com.github.nayasis.simplelauncher.jpa.repository.LinkRepository
 import com.github.nayasis.simplelauncher.service.ConfigService
 import com.github.nayasis.simplelauncher.service.LinkExecutor
-import com.github.nayasis.simplelauncher.service.LinkMatcher
+import com.github.nayasis.simplelauncher.service.TextMatcher
 import com.github.nayasis.simplelauncher.service.LinkService
 import javafx.beans.value.ObservableValue
 import javafx.collections.ListChangeListener
@@ -49,7 +51,6 @@ class Main: View("application.title".message()) {
     val linkRepository: LinkRepository by di()
     val linkService: LinkService by di()
     val linkExecutor: LinkExecutor by di()
-    val linkMatcher: LinkMatcher by di()
 
     override val root: AnchorPane by fxml("/view/main/main.fxml")
 
@@ -70,6 +71,7 @@ class Main: View("application.title".message()) {
     val menuDeleteAll: MenuItem by fxid()
 
     val inputKeyword: TextField by fxid()
+    val inputGroup: TextField by fxid()
 
     val buttonNew: Button by fxid()
     val buttonSave: Button by fxid()
@@ -98,6 +100,9 @@ class Main: View("application.title".message()) {
     var detail: Link? = null
 
     val links = SortedFilteredList(mutableListOf<Link>().asObservable())
+
+    val titleMatcher = TextMatcher()
+    val groupMatcher = TextMatcher()
 
     private var lastFocused: Node? = null
 
@@ -342,16 +347,22 @@ class Main: View("application.title".message()) {
         descIcon.imageProperty().addListener(listener)
 
         // 검색필터 설정
-        inputKeyword.textProperty().addListener { _, _, value ->
-            if(value.isNullOrEmpty()) {
-                links.predicate = {true}
-            } else {
-                linkMatcher.setKeyword(value)
-                if (linkMatcher.hasKeyword) {
-                    links.predicate = { link -> linkMatcher.isMatch(link) }
-                }
+        val searchFilter: (String?) -> Unit = {
+            val emptyKeyword = inputKeyword.text.isBlank()
+            val emptyGroup   = inputGroup.text.isBlank()
+            if( !emptyKeyword ) titleMatcher.setKeyword(inputKeyword.text)
+            if( !emptyGroup   ) groupMatcher.setKeyword(inputGroup.text)
+            when {
+                 emptyGroup &&  emptyKeyword -> links.predicate = {true}
+                 emptyGroup && !emptyKeyword -> links.predicate = {
+                     titleMatcher.isMatch(it.keyword)
+                 }
+                !emptyGroup &&  emptyKeyword -> links.predicate = {groupMatcher.isMatch(it.keywordGroup)}
+                !emptyGroup && !emptyKeyword -> links.predicate = {titleMatcher.isMatch(it.keywordTitle) && groupMatcher.isMatch(it.keywordGroup)}
             }
         }
+        inputKeyword.textProperty().onChange(searchFilter)
+        inputGroup.textProperty().onChange(searchFilter)
 
     }
 

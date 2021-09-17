@@ -181,8 +181,14 @@ class Keyword: ArrayList<Any>() {
         return stack.pop()!!
     }
 
-    fun match(text: String?): Boolean {
-        return match { pattern -> text.find(pattern) }
+    fun match(word: String?): Boolean {
+        return match { pattern -> word.find(pattern) }
+    }
+
+    fun match(words: Set<String>?): Boolean {
+        return match { pattern ->
+            words?.firstOrNull { it.find(pattern) } != null
+        }
     }
 
 }
