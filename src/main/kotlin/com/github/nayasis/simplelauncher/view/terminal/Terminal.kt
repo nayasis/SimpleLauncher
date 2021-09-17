@@ -15,6 +15,8 @@ class Terminal(
     command: String,
     workingDirectory: String? = null,
     onDone:((Terminal) -> Unit)? = null,
+    onFail:((Throwable,Terminal) -> Unit)? = null,
+    onSuccess:((Terminal) -> Unit)? = null,
     terminalConfig: TerminalConfig = TerminalConfig().apply {
         backgroundColor = Color.rgb(16, 16, 16).toHex()
         foregroundColor = Color.rgb(240, 240, 240).toHex()
@@ -30,6 +32,8 @@ class Terminal(
         command,
         workingDirectory,
         { onDone?.let{ it(this) } },
+        { e -> onFail?.let{ it(e,this) } },
+        { onSuccess?.let{ it(this) } },
         terminalConfig,
     )
 
@@ -41,6 +45,8 @@ class Terminal(
         addCloseRequest {
             ConfigService.stageTerminal = StageProperty(this)
             terminal.onDone = null
+            terminal.onFail = null
+            terminal.onSuccess = null
             terminal.webView.engine.load(null)
             runCatching {
                 terminal.destory()

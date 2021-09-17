@@ -102,10 +102,12 @@ abstract class TerminalBasePane(
     private fun print(reader: Reader) {
         var nRead: Int
         val data = CharArray(1 * 1024)
-        while (reader.read(data, 0, data.size).also { nRead = it } != -1) {
-            val sb = StringBuilder(nRead)
-            sb.append(data, 0, nRead)
-            print(sb.toString())
+        runCatching {
+            while (reader.read(data, 0, data.size).also { nRead = it } != -1) {
+                val sb = StringBuilder(nRead)
+                sb.append(data, 0, nRead)
+                print(sb.toString())
+            }
         }
     }
 
@@ -122,8 +124,8 @@ abstract class TerminalBasePane(
     fun closeReader() {
         taskOutputReader?.cancel()
         taskErrorReader?.cancel()
-        outputReader.close()
-        errorReader.close()
+        runCatching { outputReader.close() }
+        runCatching { errorReader.close() }
     }
 
     override fun onTerminalInit() {}

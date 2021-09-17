@@ -18,6 +18,7 @@ import javafx.scene.layout.GridPane
 import javafx.scene.layout.Priority.ALWAYS
 import javafx.stage.DirectoryChooser
 import javafx.stage.FileChooser
+import javafx.stage.Modality.NONE
 import javafx.stage.Modality.WINDOW_MODAL
 import javafx.stage.Stage
 import mu.KotlinLogging
@@ -98,6 +99,7 @@ class Dialog { companion object {
         val task = func?.let {FXTask(func=it)}
         val dialog = ProgressDialog(task)
         dialog.title = title ?: " "
+        dialog.initOwner(Stages.focusedWindow)
         if( task == null ) {
             runLater { dialog.show() }
         } else {
