@@ -8,8 +8,11 @@ import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.javafx.control.basic.allChildren
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValueByDefault
+import com.github.nayasis.kotlin.javafx.control.tableview.focus
 import com.github.nayasis.kotlin.javafx.control.tableview.focused
+import com.github.nayasis.kotlin.javafx.control.tableview.focusedItem
 import com.github.nayasis.kotlin.javafx.control.tableview.select
+import com.github.nayasis.kotlin.javafx.control.tableview.visibleRows
 import com.github.nayasis.kotlin.javafx.geometry.Insets
 import com.github.nayasis.kotlin.javafx.misc.Desktop
 import com.github.nayasis.kotlin.javafx.misc.set
@@ -33,6 +36,7 @@ import javafx.scene.image.ImageView
 import javafx.scene.input.DragEvent
 import javafx.scene.input.KeyCode.*
 import javafx.scene.input.KeyEvent
+import javafx.scene.input.KeyEvent.*
 import javafx.scene.input.MouseButton
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.AnchorPane
@@ -315,11 +319,26 @@ class Main: View("application.title".message()) {
             }
         }
 
+        inputKeyword.addEventFilter(KEY_PRESSED) { e ->
+            if( e.code == ENTER ) {
+                if( tableMain.visibleRows in 1..10 ) {
+                    e.consume()
+                    tableMain.focus(0)
+                    tableMain.focusedItem?.let { link -> linkExecutor.run(link) }
+                }
+            }
+        }
+
+        inputGroup.addEventFilter(KEY_PRESSED) { e ->
+            if( e.code == ESCAPE ) {
+                inputKeyword.requestFocus()
+            }
+        }
+
         descGridPane.allChildren.let{ children ->
             children.filterIsInstance<TextInputControl>().forEach {
-                it.addEventFilter(KeyEvent.KEY_PRESSED) { e ->
+                it.addEventFilter(KEY_PRESSED) { e ->
                     if( e.code == ESCAPE ) {
-                        if( it == inputKeyword ) return@addEventFilter
                         lastFocused = it
                         tableMain.requestFocus()
                     }
@@ -330,7 +349,7 @@ class Main: View("application.title".message()) {
                 it.selectedProperty().addListener { _, _, _ -> buttonSave.isDisable = false }
             }
             children.filterIsInstance<TextArea>().forEach {
-                it.addEventFilter(KeyEvent.KEY_PRESSED) { e ->
+                it.addEventFilter(KEY_PRESSED) { e ->
                     if( e.code != TAB || e.isShiftDown || e.isControlDown ) return@addEventFilter
                     e.consume()
                     (e.source as Node).fireEvent(getKeyEventTab(e))
