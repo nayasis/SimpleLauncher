@@ -3,6 +3,7 @@ package com.github.nayasis.simplelauncher
 import com.github.nayasis.kotlin.javafx.stage.loadDefaultIcon
 import com.github.nayasis.kotlin.spring.javafx.app.SpringFxApp
 import com.github.nayasis.simplelauncher.view.Main
+import com.github.nayasis.simplelauncher.view.Splash
 import javafx.stage.Stage
 import org.apache.commons.cli.CommandLine
 import org.apache.commons.cli.Options
@@ -32,7 +33,7 @@ fun main(args: Array<String>) {
 
     SpringFxApp.loadMessage("/message/**.prop")
     SpringFxApp.loadDefaultIcon("/image/icon/favicon.ico")
-//    SpringFxApp.setPreloader(Splash::class)
+    SpringFxApp.setPreloader(Splash::class)
 
     launch<Simplelauncher>(*args)
 

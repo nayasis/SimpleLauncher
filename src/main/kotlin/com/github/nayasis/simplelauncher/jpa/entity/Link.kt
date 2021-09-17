@@ -7,6 +7,7 @@ import com.github.nayasis.kotlin.basica.core.path.toRelativeOrSelf
 import com.github.nayasis.kotlin.basica.etc.Platforms
 import com.github.nayasis.kotlin.javafx.misc.Images
 import com.github.nayasis.simplelauncher.common.ICON_NEW
+import com.github.nayasis.simplelauncher.common.toKeyword
 import javafx.scene.image.Image
 import mslinks.ShellLink
 import org.hibernate.annotations.DynamicUpdate
@@ -62,6 +63,12 @@ class Link: Cloneable {
 
     @Column @Lob
     var keyword: Set<String>? = null
+
+    @Column @Lob
+    var keywordTitle: Set<String>? = null
+
+    @Column @Lob
+    var keywordGroup: Set<String>? = null
 
     @Column @Lob
     var icon: ByteArray? = null
@@ -140,10 +147,9 @@ class Link: Cloneable {
     }
 
     fun generateKeyword(): Link {
-        keyword = listOfNotNull(group, title, description).joinToString(" ")
-            .split(" \t\n!@#$%^&*()-_=+[{]}\\|;:'\",<.>/?")
-            .map { it.toLowerCase() }
-            .toSet()
+        keyword      = listOfNotNull(group,title,description).joinToString(" ").toKeyword()
+        keywordTitle = listOfNotNull(title,description).joinToString(" ").toKeyword()
+        keywordGroup = group?.toKeyword()
         return this
     }
 

@@ -5,3 +5,11 @@ val ICON_NEW = byteArrayOf(-119,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,0,0,0,
 fun String.wrapDoubleQuote(): String {
     return "\"${this.replace("\"", "\\\"")}\""
 }
+
+private val DELIMITERS = " \t\n!@#$%^&*()-_=+[{]}\\|;:'\",<.>/?".toCharArray()
+fun String.toKeyword(): Set<String> {
+    return this
+        .toLowerCase()
+        .split(*DELIMITERS)
+        .toSet()
+}

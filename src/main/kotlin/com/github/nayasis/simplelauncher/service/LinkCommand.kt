@@ -24,6 +24,7 @@ import kotlin.io.path.invariantSeparatorsPathString
 
 private val PATTERN_KEYWORD = ExtractPattern("\\$\\{([^\\s{}].*?)}".toPattern())
 
+@Suppress("MemberVisibilityCanBePrivate", "JoinDeclarationAndAssignment")
 class LinkCommand {
 
     var title: String?
