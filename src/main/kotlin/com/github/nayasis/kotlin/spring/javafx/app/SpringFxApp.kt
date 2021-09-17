@@ -60,17 +60,23 @@ abstract class SpringFxApp: App {
     }
 
     private fun setupDefaultExceptionHandler() {
-        Thread.setDefaultUncaughtExceptionHandler { _, exception ->
+        Thread.setDefaultUncaughtExceptionHandler { _, e ->
             if (Platform.isFxApplicationThread()) {
-                try {
-                    Dialog.error(exception)
-                } catch (e: Exception) {
-                    logger.error(exception)
-                }
+                runCatching {
+                    Dialog.error(firstDetailException(e))
+                }.onFailure { e -> logger.error(e) }
             } else {
-                logger.error(exception)
+                logger.error(e)
             }
         }
+    }
+
+    private fun firstDetailException(exception: Throwable): Throwable {
+        var cause = exception
+        while(cause.message == null && cause.cause != null) {
+            cause = cause.cause!!
+        }
+        return cause
     }
 
     override fun start(stage: Stage) {
