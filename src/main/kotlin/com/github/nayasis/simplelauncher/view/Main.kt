@@ -8,9 +8,7 @@ import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.javafx.control.basic.allChildren
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValueByDefault
-import com.github.nayasis.kotlin.javafx.control.tableview.focus
 import com.github.nayasis.kotlin.javafx.control.tableview.focused
-import com.github.nayasis.kotlin.javafx.control.tableview.focusedItem
 import com.github.nayasis.kotlin.javafx.control.tableview.select
 import com.github.nayasis.kotlin.javafx.control.tableview.visibleRows
 import com.github.nayasis.kotlin.javafx.geometry.Insets
@@ -25,8 +23,8 @@ import com.github.nayasis.simplelauncher.jpa.entity.Link
 import com.github.nayasis.simplelauncher.jpa.repository.LinkRepository
 import com.github.nayasis.simplelauncher.service.ConfigService
 import com.github.nayasis.simplelauncher.service.LinkExecutor
-import com.github.nayasis.simplelauncher.service.TextMatcher
 import com.github.nayasis.simplelauncher.service.LinkService
+import com.github.nayasis.simplelauncher.service.TextMatcher
 import javafx.beans.value.ObservableValue
 import javafx.collections.ListChangeListener
 import javafx.geometry.Pos
@@ -36,7 +34,7 @@ import javafx.scene.image.ImageView
 import javafx.scene.input.DragEvent
 import javafx.scene.input.KeyCode.*
 import javafx.scene.input.KeyEvent
-import javafx.scene.input.KeyEvent.*
+import javafx.scene.input.KeyEvent.KEY_PRESSED
 import javafx.scene.input.MouseButton
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.AnchorPane
@@ -44,7 +42,15 @@ import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import mu.KotlinLogging
-import tornadofx.*
+import tornadofx.SortedFilteredList
+import tornadofx.View
+import tornadofx.asObservable
+import tornadofx.hbox
+import tornadofx.imageview
+import tornadofx.label
+import tornadofx.onChange
+import tornadofx.runLater
+import tornadofx.selectedItem
 import java.io.File
 import java.time.LocalDateTime
 
@@ -323,8 +329,8 @@ class Main: View("application.title".message()) {
             if( e.code == ENTER ) {
                 if( tableMain.visibleRows in 1..10 ) {
                     e.consume()
-                    tableMain.focus(0)
-                    tableMain.focusedItem?.let { link -> linkExecutor.run(link) }
+                    tableMain.select(0)
+                    tableMain.selectedItem?.let { link -> linkExecutor.run(link) }
                 }
             }
         }
