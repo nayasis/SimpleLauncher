@@ -4,6 +4,7 @@ import com.github.nayasis.kotlin.basica.core.extention.ifEmpty
 import com.github.nayasis.kotlin.basica.core.path.directory
 import com.github.nayasis.kotlin.basica.core.path.div
 import com.github.nayasis.kotlin.basica.core.path.exists
+import com.github.nayasis.kotlin.basica.core.path.invariantSeparators
 import com.github.nayasis.kotlin.basica.core.path.pathString
 import com.github.nayasis.kotlin.basica.core.path.rootPath
 import com.github.nayasis.kotlin.basica.core.path.userHome
@@ -11,6 +12,7 @@ import com.github.nayasis.kotlin.basica.core.string.format.DEFAULT_BINDER
 import com.github.nayasis.kotlin.basica.core.string.format.ExtractPattern
 import com.github.nayasis.kotlin.basica.core.string.format.Formatter
 import com.github.nayasis.kotlin.basica.core.string.message
+import com.github.nayasis.kotlin.basica.core.string.toFile
 import com.github.nayasis.kotlin.basica.core.string.toPath
 import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.common.wrapDoubleQuote
@@ -18,8 +20,9 @@ import com.github.nayasis.simplelauncher.jpa.entity.Link
 import java.io.File
 import java.lang.StringBuilder
 import java.nio.file.Path
+import kotlin.io.path.invariantSeparatorsPathString
 
-private val PATTERN_KEYWORD = ExtractPattern("#\\{([^\\s{}]*?)}".toPattern())
+private val PATTERN_KEYWORD = ExtractPattern("\\$\\{([^\\s{}].*?)}".toPattern())
 
 class LinkCommand {
 
@@ -53,12 +56,13 @@ class LinkCommand {
         if( ! files.isNullOrEmpty() ) bindOption(files)
     }
 
-    fun bindOption(file: File) {
+    fun bindOption(file: File): LinkCommand {
         val prevArgument = argument
         bind(file)
         if( prevArgument == argument ) {
             argument += " " + file.path.wrapDoubleQuote()
         }
+        return this
     }
 
     fun bindOption(files: Collection<File>) {
@@ -82,18 +86,21 @@ class LinkCommand {
     private fun toParameter(file: File?): Map<String,String> {
         return HashMap<String,String>().apply {
             if( file == null || ! file.exists() ) return this
-            this["filepath"] = file.absolutePath
-            this["dir"]      = if (file.isDirectory) file.path else file.parent
-            this["filename"] = file.name
-            this["name"]     = file.nameWithoutExtension
-            this["ext"]      = file.extension
-            this["home"]     = userHome().pathString
+            val dir = if (file.isDirectory) file.path else file.parent
+            this["path"]      = file.absolutePath
+            this["dir"]       = dir
+            this["dir-unix"]  = dir.toFile().invariantSeparatorsPath
+            this["file"]      = file.name
+            this["name"]      = file.nameWithoutExtension
+            this["ext"]       = file.extension
+            this["home"]      = userHome().pathString
+            this["home-unix"] = userHome().invariantSeparators
         }
     }
 
     private fun bindOption(option: String?, param: Map<String,String>): String {
         if( option.isNullOrEmpty() ) return ""
-        return Formatter().bind( PATTERN_KEYWORD, option, DEFAULT_BINDER, false, param )
+        return Formatter().bind(PATTERN_KEYWORD, option, DEFAULT_BINDER, false, param)
     }
 
     private fun getExecutionPath(link: Link): Path? {

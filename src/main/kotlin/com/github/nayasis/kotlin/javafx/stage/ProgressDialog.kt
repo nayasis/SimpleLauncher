@@ -13,8 +13,10 @@ import javafx.scene.control.Dialog
 import javafx.scene.control.Label
 import javafx.scene.control.ProgressBar
 import javafx.scene.paint.Color
+import javafx.stage.Modality
 import javafx.stage.Stage
 import javafx.stage.StageStyle
+import javafx.stage.Window
 import tornadofx.label
 import tornadofx.progressbar
 import tornadofx.runLater
@@ -50,6 +52,8 @@ class ProgressDialog(worker: Worker<*>?) {
     fun updateProgress(workDone: Long, max: Long) = dialog.updateProgress(workDone,max)
     fun updateProgress(workDone: Double, max: Double) = dialog.updateProgress(workDone,max)
 
+    fun initModality(modality: Modality) = dialog.initModality(modality)
+    fun initOwner(window: Window?) = dialog.initOwner(window)
     fun show() = dialog.show()
     fun showAndWait() = dialog.showAndWait()
     fun close() = dialog.closeForcibly()
@@ -81,8 +85,9 @@ class ProgressDialogCore: Dialog<Any> {
             spacing   = 10.0
             message = label {}
             progressBar = progressbar {
-                maxWidth = Double.MAX_VALUE
+                maxWidth  = Double.MAX_VALUE
                 minHeight = 10.0
+                progress  = 0.0
             }
         }
 

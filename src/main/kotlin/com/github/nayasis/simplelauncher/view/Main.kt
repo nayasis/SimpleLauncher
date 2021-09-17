@@ -522,7 +522,9 @@ class Main: View("application.title".message()) {
     }
 
     fun printCommand(command: String? = null) {
-        labelCmd.text = command ?: ""
+        runLater {
+            labelCmd.text = command ?: ""
+        }
     }
 
     fun printStatus(status: String? = null) {

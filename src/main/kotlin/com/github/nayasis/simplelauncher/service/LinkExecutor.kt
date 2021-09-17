@@ -7,10 +7,12 @@ import com.github.nayasis.kotlin.basica.exec.Command
 import com.github.nayasis.kotlin.basica.exec.CommandExecutor
 import com.github.nayasis.kotlin.javafx.misc.Desktop
 import com.github.nayasis.kotlin.javafx.misc.set
+import com.github.nayasis.kotlin.javafx.property.StageProperty
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.simplelauncher.common.Context.Companion.main
 import com.github.nayasis.simplelauncher.jpa.entity.Link
 import com.github.nayasis.simplelauncher.view.terminal.Terminal
+import javafx.stage.Modality
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 import tornadofx.runLater
@@ -39,23 +41,34 @@ class LinkExecutor(
         } else {
             if( link.eachExecution ) {
                 if( ! link.showConsole ) {
-                    Dialog.progress {
+                    Dialog.progress(link.title) {
                         files.forEachIndexed { index, file ->
                             val cmd = LinkCommand(link, file)
-                            updateTitle(cmd.toCommand())
-                            updateProgress(index.toLong(),files.size.toLong())
+                            updateMessage(file.name)
+                            updateProgress(index + 1L,files.size.toLong())
                             run(cmd,wait=true)
                         }
                     }
                 } else {
-                    Dialog.progress {
-                        files.forEachIndexed { index, file ->
-                            val cmd = LinkCommand(link, file)
-                            updateTitle(cmd.toCommand())
-                            updateProgress(index.toLong(),files.size.toLong())
-                            Terminal("$cmd").showAndWait()
-                        }
+                    val progress = Dialog.progress(link.title).apply { initModality(Modality.NONE) }
+                    files.forEachIndexed { index, file ->
+                        progress.updateProgress(index + 1, files.size)
+                        progress.updateMessage(file.name)
+                        val cmd = LinkCommand(link, file)
+                        Terminal(cmd.toCommand(),
+                            onSuccess = { runLater { it.close() } },
+                            onFail = { throwable, it ->
+                                runLater {
+                                    Dialog.error(throwable)
+                                    it.close()
+                                }
+                            },
+                            onDone = {
+                                ConfigService.stageTerminal = StageProperty(it)
+                            }
+                        ).showAndWait()
                     }
+                    progress.close()
                 }
             } else {
                 runLater { run(LinkCommand(link,files),false) }
@@ -84,9 +97,10 @@ class LinkExecutor(
                 terminal.show()
             }
         } else {
-            CommandExecutor().apply {
+            val executor = CommandExecutor().apply {
                 onProcessFailed = { e -> Dialog.error(e) }
-            }.run(cli).also{ if(wait) it.waitFor()}
+            }.run(cli)
+            if(wait) executor.waitFor()
         }
     }
 
