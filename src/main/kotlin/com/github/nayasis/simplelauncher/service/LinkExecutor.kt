@@ -97,9 +97,7 @@ class LinkExecutor(
                 terminal.show()
             }
         } else {
-            val executor = CommandExecutor().apply {
-                onProcessFailed = { e -> Dialog.error(e) }
-            }.run(cli)
+            val executor = CommandExecutor().run(cli)
             if(wait) executor.waitFor()
         }
     }
