@@ -62,13 +62,13 @@ class Link: Cloneable {
     var description: String? = null
 
     @Column @Lob
-    var keyword: Set<String>? = null
+    var wordsAll: Set<String>? = null
 
     @Column @Lob
-    var keywordTitle: Set<String>? = null
+    var wordsKeyword: Set<String>? = null
 
     @Column @Lob
-    var keywordGroup: Set<String>? = null
+    var wordsGroup: Set<String>? = null
 
     @Column @Lob
     var icon: ByteArray? = null
@@ -147,9 +147,9 @@ class Link: Cloneable {
     }
 
     fun generateKeyword(): Link {
-        keyword      = listOfNotNull(group,title,description).joinToString(" ").toKeyword()
-        keywordTitle = listOfNotNull(title,description).joinToString(" ").toKeyword()
-        keywordGroup = group?.toKeyword()
+        wordsAll      = listOfNotNull(group,title,description).joinToString(" ").toKeyword()
+        wordsKeyword = listOfNotNull(title,description).joinToString(" ").toKeyword()
+        wordsGroup = group?.toKeyword()
         return this
     }
 
