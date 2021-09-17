@@ -23,6 +23,7 @@ import javafx.stage.Stage
 import mu.KotlinLogging
 import tornadofx.FXTask
 import tornadofx.runAsync
+import tornadofx.runLater
 import java.io.File
 import kotlin.Double.Companion.MAX_VALUE
 
@@ -98,7 +99,7 @@ class Dialog { companion object {
         val dialog = ProgressDialog(task)
         dialog.title = title ?: " "
         if( task == null ) {
-            dialog.show()
+            runLater { dialog.show() }
         } else {
             runAsync { task.run() }
         }
