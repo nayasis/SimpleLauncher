@@ -38,15 +38,6 @@ fun <S> TableView<S>.fillFxId(): TableView<S> {
     return this
 }
 
-val <S> TableView<S>.focusedItem: S?
-    get() {
-        return if( isFocused ) {
-            focusModel.focusedItem
-        } else {
-            null
-        }
-    }
-
 val <S> TableView<S>.focused: Position
     get() {
         return focusModel.focusedCellProperty().get().let {
