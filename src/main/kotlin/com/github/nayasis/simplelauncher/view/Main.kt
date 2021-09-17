@@ -101,7 +101,7 @@ class Main: View("application.title".message()) {
 
     val links = SortedFilteredList(mutableListOf<Link>().asObservable())
 
-    val titleMatcher = TextMatcher()
+    val keywordMatcher = TextMatcher()
     val groupMatcher = TextMatcher()
 
     private var lastFocused: Node? = null
@@ -347,22 +347,24 @@ class Main: View("application.title".message()) {
         descIcon.imageProperty().addListener(listener)
 
         // 검색필터 설정
-        val searchFilter: (String?) -> Unit = {
-            val emptyKeyword = inputKeyword.text.isBlank()
-            val emptyGroup   = inputGroup.text.isBlank()
-            if( !emptyKeyword ) titleMatcher.setKeyword(inputKeyword.text)
-            if( !emptyGroup   ) groupMatcher.setKeyword(inputGroup.text)
+        val searchFilter = {
+            val hasKeyword = inputKeyword.text.isNotBlank()
+            val hasGroup   = inputGroup.text.isNotBlank()
             when {
-                 emptyGroup &&  emptyKeyword -> links.predicate = {true}
-                 emptyGroup && !emptyKeyword -> links.predicate = {
-                     titleMatcher.isMatch(it.keyword)
-                 }
-                !emptyGroup &&  emptyKeyword -> links.predicate = {groupMatcher.isMatch(it.keywordGroup)}
-                !emptyGroup && !emptyKeyword -> links.predicate = {titleMatcher.isMatch(it.keywordTitle) && groupMatcher.isMatch(it.keywordGroup)}
+               !hasGroup && !hasKeyword -> links.predicate = {true}
+               !hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsAll) }
+                hasGroup && !hasKeyword -> links.predicate = {groupMatcher.isMatch(it.wordsGroup)}
+                hasGroup &&  hasKeyword -> links.predicate = {keywordMatcher.isMatch(it.wordsKeyword) && groupMatcher.isMatch(it.wordsGroup)}
             }
         }
-        inputKeyword.textProperty().onChange(searchFilter)
-        inputGroup.textProperty().onChange(searchFilter)
+        inputKeyword.textProperty().onChange{
+            if(!it.isNullOrBlank()) keywordMatcher.setKeyword(it)
+            searchFilter()
+        }
+        inputGroup.textProperty().onChange{
+            if(!it.isNullOrBlank()) groupMatcher.setKeyword(it)
+            searchFilter()
+        }
 
     }
 
