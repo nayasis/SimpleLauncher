@@ -42,15 +42,7 @@ import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import mu.KotlinLogging
-import tornadofx.SortedFilteredList
-import tornadofx.View
-import tornadofx.asObservable
-import tornadofx.hbox
-import tornadofx.imageview
-import tornadofx.label
-import tornadofx.onChange
-import tornadofx.runLater
-import tornadofx.selectedItem
+import tornadofx.*
 import java.io.File
 import java.time.LocalDateTime
 
@@ -200,12 +192,8 @@ class Main: View("application.title".message()) {
 
         tableMain.setOnKeyPressed { event ->
             when(event.code) {
-                ENTER -> {
-                    tableMain.selectedItem?.let { linkExecutor.run(it) }
-                }
-                ESCAPE -> {
-                    inputKeyword.requestFocus()
-                }
+                ENTER -> tableMain.selectedItem?.let { linkExecutor.run(it) }
+                ESCAPE -> inputKeyword.requestFocus()
                 TAB -> {
                     if( ! event.isShiftDown ) {
                         event.consume()
@@ -378,9 +366,10 @@ class Main: View("application.title".message()) {
             when {
                !hasGroup && !hasKeyword -> links.predicate = {true}
                !hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsAll) }
-                hasGroup && !hasKeyword -> links.predicate = {groupMatcher.isMatch(it.wordsGroup)}
-                hasGroup &&  hasKeyword -> links.predicate = {keywordMatcher.isMatch(it.wordsKeyword) && groupMatcher.isMatch(it.wordsGroup)}
+                hasGroup && !hasKeyword -> links.predicate = { groupMatcher.isMatch(it.wordsGroup) }
+                hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsKeyword) && groupMatcher.isMatch(it.wordsGroup) }
             }
+            printSearchResult()
         }
         inputKeyword.textProperty().onChange{
             if(!it.isNullOrBlank()) keywordMatcher.setKeyword(it)
@@ -570,7 +559,7 @@ class Main: View("application.title".message()) {
     }
 
     fun printSearchResult() {
-        printStatus("msg.info.005".message().format(links.sortedItems.size, links.size) )
+        printStatus("msg.info.005".message().format(links.size, links.items.size) )
     }
 
 }
