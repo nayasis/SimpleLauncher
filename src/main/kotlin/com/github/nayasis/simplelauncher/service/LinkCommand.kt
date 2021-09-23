@@ -87,7 +87,6 @@ class LinkCommand {
     private fun toParameter(file: File?): Map<String,String> {
         return HashMap<String,String>().apply {
             if( file == null || ! file.exists() ) return this
-            val dir = if (file.isDirectory) file.path else file.parent
             this["path"]      = file.absolutePath
             this["path-unix"]      = file.invariantSeparatorsPath
             this["dir"]       = file.directory.absolutePath

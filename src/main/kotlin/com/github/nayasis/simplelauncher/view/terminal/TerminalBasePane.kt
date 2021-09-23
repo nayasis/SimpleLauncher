@@ -10,7 +10,6 @@ import javafx.scene.layout.Pane
 import javafx.scene.web.WebView
 import mu.KotlinLogging
 import netscape.javascript.JSObject
-import tornadofx.FXTask
 import tornadofx.runAsync
 import tornadofx.runLater
 import java.io.BufferedReader
