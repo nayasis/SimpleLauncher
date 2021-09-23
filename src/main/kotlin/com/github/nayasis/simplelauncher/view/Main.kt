@@ -282,8 +282,8 @@ class Main: View("application.title".message()) {
             }
         }
 
-        menuAlwaysOnTop.selectedProperty().addListener { _, _, value ->
-            Context.main.primaryStage.isAlwaysOnTop = value
+        menuAlwaysOnTop.selectedProperty().addListener { _, _, flag ->
+            Context.main.primaryStage.isAlwaysOnTop = flag
         }
 
         menuHelp.setOnAction{
