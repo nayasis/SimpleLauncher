@@ -65,10 +65,11 @@ class Main: View("application.title".message()) {
 
     val vboxTop: VBox by fxid()
     val menubarTop: MenuBar by fxid()
-    val menuitemViewDesc: CheckMenuItem by fxid()
-    val menuitemViewMenuBar: CheckMenuItem by fxid()
-    val menuitemAlwaysOnTop: CheckMenuItem by fxid()
-    val menuItemHelp: MenuItem by fxid()
+    val menuViewDesc: CheckMenuItem by fxid()
+    val menuViewMenuBar: CheckMenuItem by fxid()
+    val menuShowInputGroup: CheckMenuItem by fxid()
+    val menuAlwaysOnTop: CheckMenuItem by fxid()
+    val menuHelp: MenuItem by fxid()
     val menuImportData: MenuItem by fxid()
     val menuExportData: MenuItem by fxid()
     val menuDeleteAll: MenuItem by fxid()
@@ -248,19 +249,44 @@ class Main: View("application.title".message()) {
             clearDetail()
         }
 
-        menuitemViewDesc.selectedProperty().addListener { _, _, value ->
-            showDetail(value)
+        menuViewDesc.selectedProperty().addListener { _, _, show ->
+            (tableMain.parent as HBox).children.also {
+                if(show && descGridPane !in it) {
+                    it.add(descGridPane)
+                } else {
+                    it.remove(descGridPane)
+                }
+            }
         }
 
-        menuitemViewMenuBar.selectedProperty().addListener { _, _, value ->
-            showMenubar(value)
+        menuViewMenuBar.selectedProperty().addListener { _, _, show ->
+            vboxTop.children.also {
+                if(show && menubarTop !in it) {
+                    it.add(0,menubarTop)
+                } else {
+                    it.remove(menubarTop)
+                }
+            }
         }
 
-        menuitemAlwaysOnTop.selectedProperty().addListener { _, _, value ->
+        menuShowInputGroup.selectedProperty().addListener{_,_,show ->
+            val group = inputGroup.parent as HBox
+            (inputKeyword.parent as HBox).children.also {
+                if(show && group !in it) {
+                    it.add(it.indexOf(inputKeyword) + 1, group)
+                    inputGroup.requestFocus()
+                } else {
+                    it.remove(group)
+                    inputGroup.text = ""
+                }
+            }
+        }
+
+        menuAlwaysOnTop.selectedProperty().addListener { _, _, value ->
             Context.main.primaryStage.isAlwaysOnTop = value
         }
 
-        menuItemHelp.setOnAction{
+        menuHelp.setOnAction{
             find<Help>().openWindow()
         }
 
