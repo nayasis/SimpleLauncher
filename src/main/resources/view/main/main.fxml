@@ -51,17 +51,22 @@
                 </Menu>
                 <Menu mnemonicParsing="false" text="\%menu.view">
                   <items>
-                        <CheckMenuItem fx:id="menuitemViewDesc" mnemonicParsing="false" selected="true" text="\%menu.view.description">
+                        <CheckMenuItem fx:id="menuViewDesc" mnemonicParsing="false" selected="true" text="\%menu.view.description">
                            <accelerator>
                               <KeyCodeCombination alt="DOWN" code="E" control="UP" meta="UP" shift="UP" shortcut="UP" />
                            </accelerator>
                         </CheckMenuItem>
-                        <CheckMenuItem fx:id="menuitemViewMenuBar" mnemonicParsing="false" selected="true" text="\%menu.view.showMenuBar">
+                        <CheckMenuItem fx:id="menuViewMenuBar" mnemonicParsing="false" selected="true" text="\%menu.view.showMenuBar">
                            <accelerator>
                               <KeyCodeCombination alt="DOWN" code="V" control="UP" meta="UP" shift="UP" shortcut="UP" />
                            </accelerator>
                         </CheckMenuItem>
-                        <CheckMenuItem fx:id="menuitemAlwaysOnTop" mnemonicParsing="false" text="\%menu.view.alwaysOnTop">
+                        <CheckMenuItem fx:id="menuShowInputGroup" mnemonicParsing="false" selected="true" text="\%menu.view.showInputGroup">
+                           <accelerator>
+                              <KeyCodeCombination alt="DOWN" code="G" control="UP" meta="UP" shift="UP" shortcut="UP" />
+                           </accelerator>
+                        </CheckMenuItem>
+                        <CheckMenuItem fx:id="menuAlwaysOnTop" mnemonicParsing="false" text="\%menu.view.alwaysOnTop">
                            <accelerator>
                               <KeyCodeCombination alt="UP" code="F" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
                            </accelerator>
@@ -70,7 +75,7 @@
                 </Menu>
                 <Menu mnemonicParsing="false" text="\%menu.help">
                   <items>
-                    <MenuItem fx:id="menuItemHelp" mnemonicParsing="false" text="\%menu.help.about">
+                    <MenuItem fx:id="menuHelp" mnemonicParsing="false" text="\%menu.help.about">
                            <accelerator>
                               <KeyCodeCombination alt="ANY" code="F1" control="UP" meta="UP" shift="UP" shortcut="UP" />
                            </accelerator>
@@ -92,16 +97,20 @@
                      <HBox.margin>
                         <Insets left="5.0" />
                      </HBox.margin></TextField>
-                  <Label text="\%search.group">
-                     <HBox.margin>
-                        <Insets left="10.0" />
-                     </HBox.margin>
-                  </Label>
-                  <TextField fx:id="inputGroup">
-                     <HBox.margin>
-                        <Insets left="5.0" />
-                     </HBox.margin>
-                  </TextField>
+                  <HBox alignment="CENTER">
+                     <children>
+                        <Label minWidth="-Infinity" text="\%search.group">
+                           <HBox.margin>
+                              <Insets left="10.0" />
+                           </HBox.margin>
+                        </Label>
+                        <TextField fx:id="inputGroup">
+                           <HBox.margin>
+                              <Insets left="5.0" />
+                           </HBox.margin>
+                        </TextField>
+                     </children>
+                  </HBox>
                   <HBox alignment="CENTER_RIGHT" maxWidth="100.0" HBox.hgrow="ALWAYS">
                      <children>
                         <ImageView id="faviconAddFile" fx:id="buttonAddFile" fitHeight="27.0" fitWidth="26.0">
@@ -330,5 +339,6 @@
             </GridPane>
          </children>
       </VBox>
+      <Button layoutX="-136.0" layoutY="65.0" mnemonicParsing="false" text="Button" />
    </children>
 </AnchorPane>
