@@ -6,7 +6,7 @@
 
 It accepts executable command or relative path to run so you could customize your own application launcher independent with OS.
 
-![screenshot](https://github.com/nayasis/SimpleLauncher/blob/master/doc/screenshot.jpg?raw=true)
+![screenshot](https://github.com/nayasis/simpleLauncher/blob/master/doc/screenshot.jpg?raw=true)
 
 ## Requirements
 
@@ -88,3 +88,27 @@ ape2wav.exe "#{filepath}" "#{dir}\\#{name}.wav"
 FAQs  : https://github.com/nayasis/simpleLauncher2/issues
 
 email : [nayasis@gmail.com](mailto:nayasis@gmail.com)
+
+## Development
+
+### Gradle
+
+This is **SpringBoot** application and run through **Spring Boot Loader**. 
+
+#### Run from source
+```shell
+gradle bootRun
+```
+
+#### Build
+```shell
+gradle bootJar
+```
+JAR file will be created in <u>${Project Directory}**/build/libs**</u>  
+It can be run like follow.
+```shell
+java -jar simplelauncher.jar
+```
+
+
+
