@@ -89,8 +89,9 @@ class LinkCommand {
             if( file == null || ! file.exists() ) return this
             val dir = if (file.isDirectory) file.path else file.parent
             this["path"]      = file.absolutePath
-            this["dir"]       = dir
-            this["dir-unix"]  = dir.toFile().invariantSeparatorsPath
+            this["path-unix"]      = file.invariantSeparatorsPath
+            this["dir"]       = file.directory.absolutePath
+            this["dir-unix"]  = file.directory.invariantSeparatorsPath
             this["file"]      = file.name
             this["name"]      = file.nameWithoutExtension
             this["ext"]       = file.extension

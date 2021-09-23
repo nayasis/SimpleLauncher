@@ -44,19 +44,35 @@ data class JsonLink(
         return Link().apply {
             title         = it.title
             group         = it.group
-            path          = it.path
+            path          = toNewParameter(it.path)
             relativePath  = it.relativePath
             showConsole   = it.showConsole
-            argument      = it.option
-            commandPrefix = it.optionPrefix
-            commandPrev   = it.commandPrev
-            commandNext   = it.commandNext
+            argument      = toNewParameter(it.option)
+            commandPrefix = toNewParameter(it.optionPrefix)
+            commandPrev   = toNewParameter(it.commandPrev)
+            commandNext   = toNewParameter(it.commandNext)
             description   = it.description
             icon          = it.icon.decodeBase64()
             executeCount  = it.executeCount
             lastExecDate  = it.lastExecDate
             generateKeyword()
         }
+    }
+
+    private fun toNewParameter(string: String?): String? {
+        val convert = mapOf(
+            "filepath" to "path",
+            "dir" to "dir",
+            "filename" to "file",
+            "name" to "name",
+            "ext" to "ext",
+            "home" to "home",
+        )
+        var text = string
+        convert.forEach{ old, new ->
+            text = text?.replace("#{$old}", "\${$new}" )
+        }
+        return text
     }
 
 }
