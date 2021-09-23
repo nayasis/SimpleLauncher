@@ -93,7 +93,7 @@ class ProgressDialogCore: Dialog<Any> {
 
         if( worker != null ) {
             if( worker.state in setOf(CANCELLED, FAILED, SUCCEEDED) )
-                throw IllegalArgumentException("worker state is not valid (${worker?.state})")
+                throw IllegalArgumentException("worker state is not valid (${worker.state})")
             progressBar.progressProperty().bind(worker.progressProperty())
             worker.titleProperty().addListener { _, _, text -> dialogPane.headerText = text ?: "" }
             worker.messageProperty().addListener { _, _, text -> message.text = text ?: "" }
