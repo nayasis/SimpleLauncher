@@ -8,6 +8,7 @@ import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.javafx.control.basic.allChildren
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValueByDefault
+import com.github.nayasis.kotlin.javafx.control.tableview.focus
 import com.github.nayasis.kotlin.javafx.control.tableview.focused
 import com.github.nayasis.kotlin.javafx.control.tableview.select
 import com.github.nayasis.kotlin.javafx.control.tableview.visibleRows
@@ -317,7 +318,7 @@ class Main: View("application.title".message()) {
             if( e.code == ENTER ) {
                 if( tableMain.visibleRows in 1..10 ) {
                     e.consume()
-                    tableMain.select(0)
+                    tableMain.focus(0)
                     tableMain.selectedItem?.let { link -> linkExecutor.run(link) }
                 }
             }
