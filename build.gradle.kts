@@ -47,7 +47,7 @@ noArg {
 }
 
 application {
-	mainClassName = "com.github.nayasis.simplelauncher.Simplelauncher"
+	mainClassName = "com.github.nayasis.simplelauncher.SimplelauncherKt"
 }
 
 javafx {
