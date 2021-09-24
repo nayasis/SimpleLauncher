@@ -14,10 +14,6 @@
   <restartOnCrash>false</restartOnCrash>
   <manifest></manifest>
   <icon>C:\NIDE\workspace\Application\simplelauncher\src\main\resources\image\icon\favicon.ico</icon>
-  <singleInstance>
-    <mutexName>simplelauncher</mutexName>
-    <windowTitle></windowTitle>
-  </singleInstance>
   <jre>
     <path>jre</path>
     <bundledJre64Bit>false</bundledJre64Bit>
