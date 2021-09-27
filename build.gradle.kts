@@ -96,6 +96,10 @@ dependencies {
 	implementation( "com.github.vatbub:mslinks:1.0.6" )
 	implementation( "commons-cli:commons-cli:1.4" )
 
+//	// JNA (windows)
+//	implementation("net.java.dev.jna:jna:5.9.0")
+//	implementation("net.java.dev.jna:jna-platform:5.9.0")
+
 	// spring
 	implementation("org.springframework.boot:spring-boot-starter")
 	implementation("org.springframework.boot:spring-boot-starter-aop")
