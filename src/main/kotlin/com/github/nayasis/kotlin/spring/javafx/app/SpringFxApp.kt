@@ -64,7 +64,7 @@ abstract class SpringFxApp: App {
             if (Platform.isFxApplicationThread()) {
                 runCatching {
                     Dialog.error(firstDetailException(e))
-                }.onFailure { e -> logger.error(e) }
+                }.onFailure { logger.error(it) }
             } else {
                 logger.error(e)
             }
