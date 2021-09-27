@@ -19,7 +19,7 @@ data class JsonLink(
     var commandNext: String? = null,
     var description: String? = null,
     var icon: String? = null,
-    var executeCount: Int = 0,
+    var execCount: Int = 0,
     var lastExecDate: LocalDateTime? = null,
 ) {
 
@@ -35,7 +35,7 @@ data class JsonLink(
         commandNext  = entity.commandNext,
         description  = entity.description,
         icon         = entity.icon.encodeBase64(),
-        executeCount = entity.executeCount,
+        execCount = entity.executeCount,
         lastExecDate = entity.lastExecDate,
     )
 
@@ -53,7 +53,7 @@ data class JsonLink(
             commandNext   = toNewParameter(it.commandNext)
             description   = it.description
             icon          = it.icon.decodeBase64()
-            executeCount  = it.executeCount
+            executeCount  = it.execCount
             lastExecDate  = it.lastExecDate
             generateKeyword()
         }
