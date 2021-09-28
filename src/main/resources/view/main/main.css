@@ -1,0 +1,15 @@
+.table-row-cell {
+  -fx-font-size: 11;
+}
+
+.list-cell:empty {
+  -fx-opacity: 0;
+}
+
+#faviconAddFile {
+  -fx-effect : dropshadow(three-pass-box, rgba(0,0,0,0.8), 5, 0, 0, 0)
+}
+
+#iconTitle {
+  -fx-effect : dropshadow(three-pass-box, rgba(0,0,0,0.8), 2, 0, 0, 0)
+}

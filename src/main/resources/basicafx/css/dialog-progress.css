@@ -1,0 +1,53 @@
+.root {
+  -fx-font : 11px Arial;
+}
+
+.dialog-pane {
+  -fx-background-color  : rgba(0, 0, 0, 0);
+  -fx-background-radius : 5 5 0 0;
+  -fx-background-insets : 0, 1, 2;
+  -fx-border-radius     : 5;
+  -fx-border-color      : -fx-box-border;
+}
+
+.dialog-pane.dragged {
+  -fx-border-color : -fx-focus-color, -fx-faint-focus-color;
+}
+
+.dialog-pane > *.button-bar > *.container{
+  -fx-background-color  : -fx-box-border, linear-gradient(-fx-background, derive(-fx-background, 30%));
+  -fx-background-radius : 0 0 5 5;
+}
+
+.dialog-pane:header *.header-panel *.label{
+  -fx-font-size   : 13px;
+  -fx-font-weight : bold;
+}
+
+.dialog-pane > .content {
+  -fx-padding          : 10 2 0 2;
+  -fx-background-color : -fx-box-border, linear-gradient(-fx-background, derive(-fx-background, 30%));
+}
+
+.dialog-pane > .content > .label {
+  -fx-padding : 0 0 0 10;
+}
+
+.progress-bar .bar {
+  -fx-accent: black;
+  -fx-background-color :
+    #a6b5c9,
+    linear-gradient(#303842 0%, #3e5577 20%, #375074 100%),
+    linear-gradient(#768aa5 0%, #849cbb 5%, #5877a2 50%, #486a9a 51%, #4a6c9b 100%);
+  -fx-padding           : 0.50em;
+  -fx-background-insets : 0 0 0 0;
+  -fx-background-radius : 0;
+}
+
+.progress-bar > .track {
+  -fx-padding                  : 0.80em;
+  -fx-text-box-border          : -fx-box-border, linear-gradient(-fx-background, derive(-fx-background, 40%));
+  -fx-control-inner-background : -fx-box-border, linear-gradient(-fx-background, derive(-fx-background, 40%));
+  -fx-background-insets        : 0 0 0 0;
+  -fx-background-radius        : 0;
+}
