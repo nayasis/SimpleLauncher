@@ -196,6 +196,11 @@ class Main: View("application.title".message()) {
             when(event.code) {
                 ENTER -> tableMain.selectedItem?.let { linkExecutor.run(it) }
                 ESCAPE -> inputKeyword.requestFocus()
+                DELETE -> if(event.isShiftDown) {
+                    tableMain.selectedItem?.let{
+                        deleteLink(it)
+                    }
+                }
                 TAB -> {
                     if( ! event.isShiftDown ) {
                         event.consume()
@@ -207,6 +212,8 @@ class Main: View("application.title".message()) {
 
         readLinks()
 
+        currentStage?.requestFocus()
+
         logger.debug { ">> done initialize" }
 
     }
@@ -217,12 +224,16 @@ class Main: View("application.title".message()) {
         root.setOnKeyPressed { e ->
             if( e.isControlDown ) {
                 when(e.code) {
-                    S -> buttonSave       .let { if(!it.isDisable) it.fire() }
-                    D -> buttonDelete     .let { if(!it.isDisable) it.fire() }
-                    C -> buttonCopy       .let { if(!it.isDisable) it.fire() }
-                    N -> buttonNew        .let { if(!it.isDisable) it.fire() }
-                    O -> buttonOpenFolder .let { if(!it.isDisable) it.fire() }
-                    F -> buttonCopyFolder .let { if(!it.isDisable) it.fire() }
+                    S -> buttonSave.let { if(!it.isDisable) it.fire() }
+                    D -> buttonDelete.let { if(!it.isDisable) it.fire() }
+                    C -> buttonCopy.let { if(!it.isDisable) it.fire() }
+                    N -> if( e.isShiftDown) {
+                            buttonAddFile.fireEvent(e)
+                        } else {
+                            buttonNew.let { if(!it.isDisable) it.fire() }
+                        }
+                    O -> buttonOpenFolder.let { if(!it.isDisable) it.fire() }
+                    F -> buttonCopyFolder.let { if(!it.isDisable) it.fire() }
                     I -> changeIcon()
                 }
             }
@@ -244,9 +255,11 @@ class Main: View("application.title".message()) {
         }
 
         menuDeleteAll.setOnAction {
-            linkService.deleteAll()
-            links.clear()
-            clearDetail()
+            if(Dialog.confirm("msg.confirm.002".message())) {
+                linkService.deleteAll()
+                links.clear()
+                clearDetail()
+            }
         }
 
         menuViewDesc.selectedProperty().addListener { _, _, show ->
@@ -310,6 +323,11 @@ class Main: View("application.title".message()) {
         Tooltip("btn.change.icon.tooltip".message()).let {
             Tooltip.install(descIcon,it)
         }
+        Tooltip("btn.addfile.tooltip".message()).let {
+            Tooltip.install(buttonAddFile,it)
+        }
+
+        buttonAddFile
         descExecPath.setOnDragOver { fnDraggable(it) }
         descExecPath.setOnDragDropped { e ->
             e.dragboard.files.firstOrNull()?.let {
