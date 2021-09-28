@@ -31,8 +31,6 @@ table.groupName          = 그룹
 table.title              = 타이틀
 table.lastUsedDt         = 사용일자
 table.execCount          = 실행수
-desc.id                  = ID
-desc.id.new              = 신규
 desc.groupName           = 그룹
 desc.title               = 타이틀
 desc.execPath            = 경로
@@ -41,8 +39,6 @@ desc.execCmdPrefix       = 선행 명령어
 desc.cmdPrev             = 선행 처리
 desc.cmdNext             = 후행 처리
 desc.description         = 설명
-desc.relativeYn          = 상대경로여부
-desc.icon                = 아이콘
 desc.showConsole         = 콘솔출력
 desc.eachExecution       = 개별실행
 
