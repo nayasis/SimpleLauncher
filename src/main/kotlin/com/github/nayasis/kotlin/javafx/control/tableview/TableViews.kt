@@ -108,7 +108,7 @@ val <S> TableView<S>.visibleRows: Int
             } else {
                 val first = it.firstVisibleCell.index
                 val last  = it.lastVisibleCell.index
-                last + first + 1
+                last - first + 1
             }
         } ?: 0
     }
