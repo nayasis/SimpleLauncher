@@ -13,19 +13,10 @@ It accepts executable command or relative path to run so you could customize you
 - Java 11 above
 - JavaFX 13 above
 
-## CommandLine Arguments
-
-| argument       | description                                         |
-| -------------- | --------------------------------------------------- |
-| help (or h)    | show help                                           |
-| clear          | clear memorized application configuration           |
-|                | (for example, last window position)                 |
-
-### example
-
-    java -jar SimpleLauncher.jar clear
-
-
+## Execution
+```shell
+java -jar SimpleLauncher.jar clear
+```
 ## Shortcuts
 
 ### Menu
@@ -37,6 +28,7 @@ It accepts executable command or relative path to run so you could customize you
 | Ctrl + Shift + **D** | clear  application catalog    |
 | ALT + **E**          | toggle detail launcher editor |
 | ALT + **V**          | toggle menu bar               |
+| ALT + **G**          | toggle group filter           |
 | Ctrl + Shift + **F** | set windows on top always     |
 | **F1**               | show help                     |
 
@@ -61,6 +53,10 @@ only works when Launcher editor is opened.
 | Ctrl + **O**   | open item's folder      |
 | Ctrl + **I**   | change item icon        |
 
+### Etc
+| shortcut       | description                 |
+| -------------- | ------------------          |
+| Ctrl + Shift + **N** | create link via file  |
 
 ## Binding parameters
 
