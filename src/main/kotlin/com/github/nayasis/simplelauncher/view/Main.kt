@@ -196,11 +196,7 @@ class Main: View("application.title".message()) {
             when(event.code) {
                 ENTER -> tableMain.selectedItem?.let { linkExecutor.run(it) }
                 ESCAPE -> inputKeyword.requestFocus()
-                DELETE -> if(event.isShiftDown) {
-                    tableMain.selectedItem?.let{
-                        deleteLink(it)
-                    }
-                }
+                DELETE -> tableMain.selectedItem?.let{ deleteLink(it) }
                 TAB -> {
                     if( ! event.isShiftDown ) {
                         event.consume()
@@ -541,6 +537,7 @@ class Main: View("application.title".message()) {
 
         clearDetail()
         tableMain.select(prev.row)
+
         printSearchResult()
 
     }
