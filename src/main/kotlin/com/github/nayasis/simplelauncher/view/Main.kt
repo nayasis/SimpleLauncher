@@ -3,6 +3,7 @@
 package com.github.nayasis.simplelauncher.view
 
 import com.github.nayasis.kotlin.basica.core.extention.ifNull
+import com.github.nayasis.kotlin.basica.core.localdate.between
 import com.github.nayasis.kotlin.basica.core.localdate.toFormat
 import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.javafx.control.basic.allChildren
@@ -45,7 +46,11 @@ import javafx.scene.layout.VBox
 import mu.KotlinLogging
 import tornadofx.*
 import java.io.File
+import java.time.Duration
 import java.time.LocalDateTime
+import java.time.LocalDateTime.*
+import java.util.*
+import kotlin.concurrent.timer
 
 private val logger = KotlinLogging.logger {}
 
@@ -113,6 +118,7 @@ class Main: View("application.title".message()) {
     init {
         Localizator(root)
         initEvent()
+        initSearchFilter()
         initTable()
     }
 
@@ -400,25 +406,42 @@ class Main: View("application.title".message()) {
         }
         descIcon.imageProperty().addListener(listener)
 
-        // 검색필터 설정
+    }
+
+    private fun initSearchFilter() {
+
         val searchFilter = {
             val hasKeyword = inputKeyword.text.isNotBlank()
             val hasGroup   = inputGroup.text.isNotBlank()
             when {
-               !hasGroup && !hasKeyword -> links.predicate = {true}
-               !hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsAll) }
+                !hasGroup && !hasKeyword -> links.predicate = {true}
+                !hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsAll) }
                 hasGroup && !hasKeyword -> links.predicate = { groupMatcher.isMatch(it.wordsGroup) }
                 hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsKeyword) && groupMatcher.isMatch(it.wordsGroup) }
             }
             printSearchResult()
         }
+
+        var lastModified: LocalDateTime? = null
+
+        timer(period = 100) {
+            if( lastModified != null && now().between(lastModified!!).toMillis() < 300 ) {
+                lastModified = null
+                runLater {
+                    listOf(inputKeyword,inputGroup).forEach { it.isDisable = true }
+                    searchFilter()
+                    listOf(inputKeyword,inputGroup).forEach { it.isDisable = false }
+                }
+            }
+        }
+
         inputKeyword.textProperty().onChange{
-            if(!it.isNullOrBlank()) keywordMatcher.setKeyword(it)
-            searchFilter()
+            keywordMatcher.setKeyword(it)
+            lastModified = now()
         }
         inputGroup.textProperty().onChange{
-            if(!it.isNullOrBlank()) groupMatcher.setKeyword(it)
-            searchFilter()
+            groupMatcher.setKeyword(it)
+            lastModified = now()
         }
 
     }
