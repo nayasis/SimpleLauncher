@@ -27,6 +27,7 @@ import tornadofx.Stylesheet
 import tornadofx.UIComponent
 import kotlin.reflect.KClass
 import kotlin.reflect.jvm.jvmName
+import kotlin.system.exitProcess
 
 private val logger = KotlinLogging.logger {}
 
@@ -85,8 +86,9 @@ abstract class SpringFxApp: App {
     }
 
     override fun stop() {
-        try { context.close() } catch (ignore: Exception) {}
-        try { super.stop() } catch (ignore: Exception) {}
+        runCatching { super.stop() }
+        runCatching { context.close() }
+        exitProcess(0)
     }
 
     private fun notifyPreloader( notificator: Notificator ) {
