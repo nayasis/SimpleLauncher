@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+  <timestamp key="byDate" datePattern="yyyy-MM-dd"/>
+
+  <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) %green([%12(%.-12(%t))]) %yellow(%50(\(%F:%L\))) %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="capture" class="com.github.nayasis.simplelauncher.common.CaptureAppender"/>
+
+  <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <Append>true</Append>
+    <file>log/${byDate}.log</file>
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} %-5level [%12(%.-12(%t))] %50(\(%F:%L\)) %msg%n</pattern>
+    </encoder>
+    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+      <fileNamePattern>log/${byDate}.log.%d{HH}</fileNamePattern>
+      <maxHistory>7</maxHistory>
+    </rollingPolicy>
+  </appender>
+
+  <logger name="org.hibernate.SQL" level="trace"/>
+  <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="trace"/>
+  <logger name="com.github.nayasis.simplelauncher" level="debug"/>
+
+  <root level="info">
+    <appender-ref ref="console" />
+    <appender-ref ref="file" />
+  </root>
+
+  <logger name="org.springframework" level="info">
+    <appender-ref ref="capture" />
+  </logger>
+
+</configuration>

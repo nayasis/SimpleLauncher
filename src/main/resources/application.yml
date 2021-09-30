@@ -19,13 +19,3 @@ spring:
       hibernate:
         format_sql: true
         use_sql_comments: false
-logging:
-  level:
-    org.hibernate:
-        SQL: trace
-        type:
-          descriptor:
-            sql.BasicBinder : trace
-    com.github.nayasis.simplelauncher : debug
-  pattern:
-    console: "%d{HH:mm:ss.SSS} %clr(%-5level) %50(\\(%F:%L\\)){blue} : %msg%n"
