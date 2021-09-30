@@ -59,6 +59,7 @@ class PreloaderLayout: View() {
             alignment = Pos.CENTER_RIGHT
             progressBar = progressbar {
                 maxWidth = Double.MAX_VALUE
+                progress = 0.0
             }
             label = label {  }
             AnchorPane.setLeftAnchor(this, 0.0)
