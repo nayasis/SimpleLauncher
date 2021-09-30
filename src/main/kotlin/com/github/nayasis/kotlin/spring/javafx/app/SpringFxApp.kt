@@ -9,6 +9,7 @@ import com.github.nayasis.kotlin.javafx.preloader.Notificator
 import com.github.nayasis.kotlin.javafx.preloader.ProgressNotificator
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.kotlin.javafx.stage.Stages
+import com.sun.javafx.application.LauncherImpl
 import javafx.application.Platform
 import javafx.scene.image.Image
 import javafx.stage.Stage
@@ -91,22 +92,6 @@ abstract class SpringFxApp: App {
         exitProcess(0)
     }
 
-    private fun notifyPreloader( notificator: Notificator ) {
-        super.notifyPreloader( notificator )
-    }
-
-    fun notifyProgress(percent: Double, message: String? = null) {
-        notifyPreloader(ProgressNotificator(percent,message))
-    }
-
-    fun notifyProgress(index: Number, max: Number, message: String? = null) {
-        notifyPreloader(ProgressNotificator(index,max,message))
-    }
-
-    fun closePreloader() {
-        notifyPreloader(CloseNotificator())
-    }
-
     abstract fun setOptions(options: Options)
     abstract fun start(command: CommandLine)
 
@@ -120,6 +105,21 @@ abstract class SpringFxApp: App {
         fun loadDefaultIcon(resourcePath: String) = Stages.defaultIcons.add(resourcePath)
 
         fun loadMessage(resourcePath: String) = Messages.loadFromResource(resourcePath)
+
+        @Suppress("MemberVisibilityCanBePrivate")
+        fun notifyPreloader( notificator: Notificator ) {
+            LauncherImpl.notifyPreloader(null,notificator)
+        }
+
+        fun notifyProgress(percent: Double, message: String? = null) {
+            notifyPreloader(ProgressNotificator(percent,message))
+        }
+
+        fun notifyProgress(index: Number, max: Number, message: String? = null) {
+            notifyPreloader(ProgressNotificator(index,max,message))
+        }
+
+        fun closePreloader() = notifyPreloader(CloseNotificator())
 
     }
 
