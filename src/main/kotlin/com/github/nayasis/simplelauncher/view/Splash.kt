@@ -36,7 +36,7 @@ class Splash: NPreloader() {
     override fun onProgress(notificator: ProgressNotificator) {
         with(notificator) {
             message?.let { view.label.text = it }
-            view.progressBar.progress = progress * 100
+            view.progressBar.progress = progress
         }
     }
 
