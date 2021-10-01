@@ -7,6 +7,7 @@ import com.github.nayasis.kotlin.basica.core.localdate.between
 import com.github.nayasis.kotlin.basica.core.localdate.toFormat
 import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.javafx.control.basic.allChildren
+import com.github.nayasis.kotlin.javafx.control.basic.resize
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValueByDefault
 import com.github.nayasis.kotlin.javafx.control.tableview.focus
@@ -46,10 +47,8 @@ import javafx.scene.layout.VBox
 import mu.KotlinLogging
 import tornadofx.*
 import java.io.File
-import java.time.Duration
 import java.time.LocalDateTime
 import java.time.LocalDateTime.*
-import java.util.*
 import kotlin.concurrent.timer
 
 private val logger = KotlinLogging.logger {}
@@ -126,6 +125,7 @@ class Main: View("application.title".message()) {
         ConfigService.stageMain?.let {
             it.excludeKlass.add(Button::class)
             it.bind(currentStage!!)
+            menubarTop.resize()
         }
     }
 
@@ -275,12 +275,9 @@ class Main: View("application.title".message()) {
         }
 
         menuViewMenuBar.selectedProperty().addListener { _, _, show ->
-            vboxTop.children.also {
-                if(show && menubarTop !in it) {
-                    it.add(0,menubarTop)
-                } else {
-                    it.remove(menubarTop)
-                }
+            menubarTop.let {
+                it.isVisible = !show
+                it.resize()
             }
         }
 
