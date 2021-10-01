@@ -11,7 +11,6 @@ class BootProgressAppender: AppenderBase<ILoggingEvent>() {
     }
 
     override fun append(event: ILoggingEvent) {
-        println(event.formattedMessage)
         SpringFxApp.notifyProgress(++i,8,event.formattedMessage)
     }
 
