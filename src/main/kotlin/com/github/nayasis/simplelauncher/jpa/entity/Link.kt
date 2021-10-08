@@ -1,15 +1,18 @@
 package com.github.nayasis.simplelauncher.jpa.entity
 
-import com.github.nayasis.kotlin.basica.core.path.FOLDER_SEPARATOR
-import com.github.nayasis.kotlin.basica.core.path.pathString
+import com.github.nayasis.kotlin.basica.core.extention.ifEmpty
+import com.github.nayasis.kotlin.basica.core.path.invariantSeparators
 import com.github.nayasis.kotlin.basica.core.path.rootPath
 import com.github.nayasis.kotlin.basica.core.path.toRelativeOrSelf
+import com.github.nayasis.kotlin.basica.core.string.invariantSeparators
 import com.github.nayasis.kotlin.basica.etc.Platforms
+import com.github.nayasis.kotlin.basica.etc.error
 import com.github.nayasis.kotlin.javafx.misc.Images
 import com.github.nayasis.simplelauncher.common.ICON_NEW
 import com.github.nayasis.simplelauncher.common.toKeyword
 import javafx.scene.image.Image
 import mslinks.ShellLink
+import mu.KotlinLogging
 import org.hibernate.annotations.DynamicUpdate
 import java.io.File
 import java.time.LocalDateTime
@@ -18,6 +21,8 @@ import javax.persistence.Entity
 import javax.persistence.GeneratedValue
 import javax.persistence.Id
 import javax.persistence.Lob
+
+private val logger = KotlinLogging.logger {}
 
 const val ICON_IMAGE_TYPE = "png"
 
@@ -102,8 +107,8 @@ class Link: Cloneable {
     }
 
     fun setPath(file: File) {
-        path = file.toString()
-        relativePath = file.toPath().toRelativeOrSelf(rootPath()).pathString
+        path = file.invariantSeparatorsPath
+        relativePath = file.toPath().toRelativeOrSelf(rootPath()).invariantSeparators
     }
 
     private fun resolveMicrosoftLnk(file: File) {
@@ -112,12 +117,16 @@ class Link: Cloneable {
 
         val link = ShellLink(file)
 
-        relativePath = link.relativePath
-        path = "${link.workingDir}${FOLDER_SEPARATOR}${link.relativePath}"
+        relativePath = link.relativePath.invariantSeparators()
+        path = link.linkInfo.localBasePath.invariantSeparators()
         argument = link.cmdArgs
         description = link.name
 
-        link.iconLocation.ifEmpty { path }.let { setIcon(File(it)) }
+        try {
+            link.iconLocation.ifEmpty { path }.let { setIcon(File(it)) }
+        } catch (e: Throwable) {
+            logger.error(e)
+        }
 
     }
 
