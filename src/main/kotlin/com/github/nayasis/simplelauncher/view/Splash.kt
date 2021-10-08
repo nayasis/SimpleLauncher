@@ -3,9 +3,9 @@ package com.github.nayasis.simplelauncher.view
 import com.github.nayasis.kotlin.javafx.preloader.CloseNotificator
 import com.github.nayasis.kotlin.javafx.preloader.NPreloader
 import com.github.nayasis.kotlin.javafx.preloader.ProgressNotificator
+import com.github.nayasis.kotlin.javafx.stage.addMoveHandler
 import com.github.nayasis.kotlin.javafx.stage.loadDefaultIcon
 import com.github.nayasis.kotlin.tornadofx.extension.toScene
-import javafx.application.Platform
 import javafx.geometry.Pos
 import javafx.scene.control.Label
 import javafx.scene.control.ProgressBar
@@ -16,6 +16,7 @@ import tornadofx.View
 import tornadofx.anchorpane
 import tornadofx.label
 import tornadofx.progressbar
+import tornadofx.runLater
 import tornadofx.vbox
 
 class Splash: NPreloader() {
@@ -29,6 +30,7 @@ class Splash: NPreloader() {
             scene = view.toScene("/view/splash/splash.css")
             isAlwaysOnTop = true
             loadDefaultIcon()
+            addMoveHandler(view.root)
             show()
         }
     }
@@ -41,7 +43,7 @@ class Splash: NPreloader() {
     }
 
     override fun onClose(notificator: CloseNotificator) {
-        Platform.runLater { stage.close() }
+        runLater { stage.close() }
     }
 
 }
