@@ -6,15 +6,29 @@
   -fx-effect              : dropshadow(three-pass-box, black, 30, 0.5, 0, 0);
 }
 
-#splash .progress-bar > .bar {
-  -fx-background-insets : 1 1 1 1;
-  -fx-padding           : 0.50em;
-}
-
 #splash .label {
   -fx-font-size   : 9pt;
   -fx-text-fill   : white;
   -fx-font-weight : bolder;
   -fx-opacity     : 1;
   -fx-padding     : 7 5 10 10;
+}
+
+.progress-bar .bar {
+  -fx-accent: black;
+  -fx-background-color :
+    #a6b5c9,
+    linear-gradient(#303842 0%, #3e5577 20%, #375074 100%),
+    linear-gradient(#768aa5 0%, #849cbb 5%, #5877a2 50%, #486a9a 51%, #4a6c9b 100%);
+  -fx-padding           : 0.50em;
+  -fx-background-insets : 0 0 0 0;
+  -fx-background-radius : 0;
+}
+
+.progress-bar > .track {
+  -fx-padding                  : 0.80em;
+  -fx-text-box-border          : -fx-box-border, linear-gradient(-fx-background, derive(-fx-background, 40%));
+  -fx-control-inner-background : -fx-box-border, linear-gradient(-fx-background, derive(-fx-background, 40%));
+  -fx-background-insets        : 0 0 0 0;
+  -fx-background-radius        : 0;
 }
