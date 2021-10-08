@@ -7,7 +7,7 @@ import com.github.nayasis.kotlin.basica.core.localdate.between
 import com.github.nayasis.kotlin.basica.core.localdate.toFormat
 import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.javafx.control.basic.allChildren
-import com.github.nayasis.kotlin.javafx.control.basic.resize
+import com.github.nayasis.kotlin.javafx.control.basic.repack
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValueByDefault
 import com.github.nayasis.kotlin.javafx.control.tableview.focus
@@ -45,10 +45,18 @@ import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import mu.KotlinLogging
-import tornadofx.*
+import tornadofx.SortedFilteredList
+import tornadofx.View
+import tornadofx.asObservable
+import tornadofx.hbox
+import tornadofx.imageview
+import tornadofx.label
+import tornadofx.onChange
+import tornadofx.runLater
+import tornadofx.selectedItem
 import java.io.File
 import java.time.LocalDateTime
-import java.time.LocalDateTime.*
+import java.time.LocalDateTime.now
 import kotlin.concurrent.timer
 
 private val logger = KotlinLogging.logger {}
@@ -125,7 +133,7 @@ class Main: View("application.title".message()) {
         ConfigService.stageMain?.let {
             it.excludeKlass.add(Button::class)
             it.bind(currentStage!!)
-            menubarTop.resize()
+            menubarTop.repack()
         }
     }
 
@@ -277,7 +285,7 @@ class Main: View("application.title".message()) {
         menuViewMenuBar.selectedProperty().addListener { _, _, show ->
             menubarTop.let {
                 it.isVisible = !show
-                it.resize()
+                it.repack()
             }
         }
 

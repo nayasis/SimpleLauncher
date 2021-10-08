@@ -20,7 +20,7 @@ import tornadofx.getChildList
 
 private val log = KotlinLogging.logger{}
 
-fun Node.resize() {
+fun Node.repack() {
     this.managedProperty().bind(this.visibleProperty())
 }
 
