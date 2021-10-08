@@ -10,6 +10,7 @@ import com.github.nayasis.kotlin.javafx.control.basic.allChildren
 import com.github.nayasis.kotlin.javafx.control.basic.repack
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValueByDefault
+import com.github.nayasis.kotlin.javafx.control.tableview.column.setAlign
 import com.github.nayasis.kotlin.javafx.control.tableview.focus
 import com.github.nayasis.kotlin.javafx.control.tableview.focused
 import com.github.nayasis.kotlin.javafx.control.tableview.select
@@ -173,14 +174,10 @@ class Main: View("application.title".message()) {
         colTitle.setComparator { o1, o2 -> o1.title.ifNull{""}.compareTo(o2.title.ifNull{""}) }
 
         colLastUsedDt.cellValue(Link::lastExecDate).cellFormat {
-            alignment = Pos.CENTER
             text = it?.toFormat("YYYY-MM-DD HH:MI:SS")
+            alignment = Pos.CENTER
         }
-//        colExecCount.cellValue(Link::executeCount).setAlign(Pos.CENTER_RIGHT)
-        colExecCount.cellValue(Link::executeCount).cellFormat {
-            alignment = Pos.CENTER_RIGHT
-            text = "$it"
-        }
+        colExecCount.cellValue(Link::executeCount).setAlign(Pos.CENTER_RIGHT)
 
         links.bindTo(tableMain)
 
