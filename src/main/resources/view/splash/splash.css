@@ -7,7 +7,7 @@
 }
 
 #splash .label {
-  -fx-font-size   : 9pt;
+  -fx-font        : 9px Arial;
   -fx-text-fill   : white;
   -fx-font-weight : bolder;
   -fx-opacity     : 1;
