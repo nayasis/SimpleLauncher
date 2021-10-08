@@ -3,6 +3,7 @@ package com.github.nayasis.simplelauncher.view
 import com.github.nayasis.kotlin.javafx.preloader.CloseNotificator
 import com.github.nayasis.kotlin.javafx.preloader.NPreloader
 import com.github.nayasis.kotlin.javafx.preloader.ProgressNotificator
+import com.github.nayasis.kotlin.javafx.stage.addMoveHandler
 import com.github.nayasis.kotlin.javafx.stage.loadDefaultIcon
 import com.github.nayasis.kotlin.tornadofx.extension.toScene
 import javafx.application.Platform
@@ -29,6 +30,7 @@ class Splash: NPreloader() {
             scene = view.toScene("/view/splash/splash.css")
             isAlwaysOnTop = true
             loadDefaultIcon()
+            addMoveHandler(view.root)
             show()
         }
     }
