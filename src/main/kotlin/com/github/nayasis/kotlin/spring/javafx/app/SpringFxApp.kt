@@ -9,6 +9,7 @@ import com.github.nayasis.kotlin.javafx.preloader.Notificator
 import com.github.nayasis.kotlin.javafx.preloader.ProgressNotificator
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.kotlin.javafx.stage.Stages
+import com.sun.javafx.application.LauncherImpl
 import javafx.application.Platform
 import javafx.scene.image.Image
 import javafx.stage.Stage
@@ -27,6 +28,7 @@ import tornadofx.Stylesheet
 import tornadofx.UIComponent
 import kotlin.reflect.KClass
 import kotlin.reflect.jvm.jvmName
+import kotlin.system.exitProcess
 
 private val logger = KotlinLogging.logger {}
 
@@ -85,24 +87,9 @@ abstract class SpringFxApp: App {
     }
 
     override fun stop() {
-        try { context.close() } catch (ignore: Exception) {}
-        try { super.stop() } catch (ignore: Exception) {}
-    }
-
-    private fun notifyPreloader( notificator: Notificator ) {
-        super.notifyPreloader( notificator )
-    }
-
-    fun notifyProgress(percent: Double, message: String? = null) {
-        notifyPreloader(ProgressNotificator(percent,message))
-    }
-
-    fun notifyProgress(index: Number, max: Number, message: String? = null) {
-        notifyPreloader(ProgressNotificator(index,max,message))
-    }
-
-    fun closePreloader() {
-        notifyPreloader(CloseNotificator())
+        runCatching { super.stop() }
+        runCatching { context.close() }
+        exitProcess(0)
     }
 
     abstract fun setOptions(options: Options)
@@ -118,6 +105,21 @@ abstract class SpringFxApp: App {
         fun loadDefaultIcon(resourcePath: String) = Stages.defaultIcons.add(resourcePath)
 
         fun loadMessage(resourcePath: String) = Messages.loadFromResource(resourcePath)
+
+        @Suppress("MemberVisibilityCanBePrivate")
+        fun notifyPreloader( notificator: Notificator ) {
+            LauncherImpl.notifyPreloader(null,notificator)
+        }
+
+        fun notifyProgress(percent: Double, message: String? = null) {
+            notifyPreloader(ProgressNotificator(percent,message))
+        }
+
+        fun notifyProgress(index: Number, max: Number, message: String? = null) {
+            notifyPreloader(ProgressNotificator(index,max,message))
+        }
+
+        fun closePreloader() = notifyPreloader(CloseNotificator())
 
     }
 
