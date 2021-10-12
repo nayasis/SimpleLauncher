@@ -3,11 +3,14 @@
 package com.github.nayasis.simplelauncher.view
 
 import com.github.nayasis.kotlin.basica.core.extention.ifNull
+import com.github.nayasis.kotlin.basica.core.localdate.between
 import com.github.nayasis.kotlin.basica.core.localdate.toFormat
 import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.javafx.control.basic.allChildren
+import com.github.nayasis.kotlin.javafx.control.basic.repack
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValueByDefault
+import com.github.nayasis.kotlin.javafx.control.tableview.column.setAlign
 import com.github.nayasis.kotlin.javafx.control.tableview.focus
 import com.github.nayasis.kotlin.javafx.control.tableview.focused
 import com.github.nayasis.kotlin.javafx.control.tableview.select
@@ -43,9 +46,19 @@ import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import mu.KotlinLogging
-import tornadofx.*
+import tornadofx.SortedFilteredList
+import tornadofx.View
+import tornadofx.asObservable
+import tornadofx.hbox
+import tornadofx.imageview
+import tornadofx.label
+import tornadofx.onChange
+import tornadofx.runLater
+import tornadofx.selectedItem
 import java.io.File
 import java.time.LocalDateTime
+import java.time.LocalDateTime.now
+import kotlin.concurrent.timer
 
 private val logger = KotlinLogging.logger {}
 
@@ -113,6 +126,7 @@ class Main: View("application.title".message()) {
     init {
         Localizator(root)
         initEvent()
+        initSearchFilter()
         initTable()
     }
 
@@ -120,6 +134,7 @@ class Main: View("application.title".message()) {
         ConfigService.stageMain?.let {
             it.excludeKlass.add(Button::class)
             it.bind(currentStage!!)
+            menubarTop.repack()
         }
     }
 
@@ -159,14 +174,10 @@ class Main: View("application.title".message()) {
         colTitle.setComparator { o1, o2 -> o1.title.ifNull{""}.compareTo(o2.title.ifNull{""}) }
 
         colLastUsedDt.cellValue(Link::lastExecDate).cellFormat {
-            alignment = Pos.CENTER
             text = it?.toFormat("YYYY-MM-DD HH:MI:SS")
+            alignment = Pos.CENTER
         }
-//        colExecCount.cellValue(Link::executeCount).setAlign(Pos.CENTER_RIGHT)
-        colExecCount.cellValue(Link::executeCount).cellFormat {
-            alignment = Pos.CENTER_RIGHT
-            text = "$it"
-        }
+        colExecCount.cellValue(Link::executeCount).setAlign(Pos.CENTER_RIGHT)
 
         links.bindTo(tableMain)
 
@@ -269,12 +280,9 @@ class Main: View("application.title".message()) {
         }
 
         menuViewMenuBar.selectedProperty().addListener { _, _, show ->
-            vboxTop.children.also {
-                if(show && menubarTop !in it) {
-                    it.add(0,menubarTop)
-                } else {
-                    it.remove(menubarTop)
-                }
+            menubarTop.let {
+                it.isVisible = !show
+                it.repack()
             }
         }
 
@@ -400,25 +408,42 @@ class Main: View("application.title".message()) {
         }
         descIcon.imageProperty().addListener(listener)
 
-        // 검색필터 설정
+    }
+
+    private fun initSearchFilter() {
+
         val searchFilter = {
             val hasKeyword = inputKeyword.text.isNotBlank()
             val hasGroup   = inputGroup.text.isNotBlank()
             when {
-               !hasGroup && !hasKeyword -> links.predicate = {true}
-               !hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsAll) }
-                hasGroup && !hasKeyword -> links.predicate = { groupMatcher.isMatch(it.wordsGroup) }
-                hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsKeyword) && groupMatcher.isMatch(it.wordsGroup) }
+                !hasGroup && !hasKeyword -> links.predicate = {true}
+                !hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsAll) }
+                 hasGroup && !hasKeyword -> links.predicate = { groupMatcher.isMatch(it.wordsGroup) }
+                 hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsKeyword) && groupMatcher.isMatch(it.wordsGroup) }
             }
             printSearchResult()
         }
+
+        var lastModified: LocalDateTime? = null
+
+        timer(period = 100) {
+            if( lastModified != null && now().between(lastModified!!).toMillis() < 300 ) {
+                lastModified = null
+                runLater {
+                    listOf(inputKeyword,inputGroup).forEach { it.isDisable = true }
+                    searchFilter()
+                    listOf(inputKeyword,inputGroup).forEach { it.isDisable = false }
+                }
+            }
+        }
+
         inputKeyword.textProperty().onChange{
-            if(!it.isNullOrBlank()) keywordMatcher.setKeyword(it)
-            searchFilter()
+            keywordMatcher.setKeyword(it)
+            lastModified = now()
         }
         inputGroup.textProperty().onChange{
-            if(!it.isNullOrBlank()) groupMatcher.setKeyword(it)
-            searchFilter()
+            groupMatcher.setKeyword(it)
+            lastModified = now()
         }
 
     }

@@ -11,7 +11,8 @@ import kotlin.reflect.KProperty1
 @Suppress("NOTHING_TO_INLINE")
 inline fun <S,T> TableColumn<S,T>.cellValue(prop: KProperty1<S,T?>, noinline option: TableColumn<S,T>.() -> Unit = {}): TableColumn<S,T> {
     this.cellValueFactory = Callback { observable(it.value, prop) }
-    return this.apply(option)
+    this.apply(option)
+    return this
 }
 
 fun <S,T> TableColumn<S,T>.cellValue(callback: Callback<TableColumn.CellDataFeatures<S, T>, ObservableValue<T>>): TableColumn<S,T> {
