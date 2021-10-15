@@ -1,6 +1,8 @@
 package com.github.nayasis.kotlin.spring.javafx.app
 
+import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.etc.error
+import com.github.nayasis.kotlin.basica.exception.rootCause
 import com.github.nayasis.kotlin.basica.model.Messages
 import com.github.nayasis.kotlin.javafx.preloader.CloseNotificator
 import com.github.nayasis.kotlin.javafx.preloader.ErrorNotificator
@@ -26,6 +28,7 @@ import tornadofx.NoPrimaryViewSpecified
 import tornadofx.Scope
 import tornadofx.Stylesheet
 import tornadofx.UIComponent
+import tornadofx.runLater
 import kotlin.reflect.KClass
 import kotlin.reflect.jvm.jvmName
 import kotlin.system.exitProcess
@@ -65,20 +68,14 @@ abstract class SpringFxApp: App {
         Thread.setDefaultUncaughtExceptionHandler { _, e ->
             if (Platform.isFxApplicationThread()) {
                 runCatching {
-                    Dialog.error(firstDetailException(e))
+                    runLater {
+                        Dialog.error("Fail on startup".message(),e.rootCause)
+                    }
                 }.onFailure { logger.error(it) }
             } else {
                 logger.error(e)
             }
         }
-    }
-
-    private fun firstDetailException(exception: Throwable): Throwable {
-        var cause = exception
-        while(cause.message == null && cause.cause != null) {
-            cause = cause.cause!!
-        }
-        return cause
     }
 
     override fun start(stage: Stage) {
