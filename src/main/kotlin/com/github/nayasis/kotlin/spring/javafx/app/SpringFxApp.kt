@@ -69,7 +69,7 @@ abstract class SpringFxApp: App {
             if (Platform.isFxApplicationThread()) {
                 runCatching {
                     runLater {
-                        Dialog.error("Fail on startup".message(),e.rootCause)
+                        Dialog.error(e.rootCause)
                     }
                 }.onFailure { logger.error(it) }
             } else {
