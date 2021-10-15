@@ -55,7 +55,7 @@ class LinkExecutor(
                         progress.updateProgress(index + 1, files.size)
                         progress.updateMessage(file.name)
                         val cmd = LinkCommand(link, file)
-                        Terminal(cmd.toCommand(),
+                        Terminal("${cmd.toCommand()}",
                             onSuccess = { runLater { it.close() } },
                             onFail = { throwable, it ->
                                 runLater {
@@ -77,28 +77,27 @@ class LinkExecutor(
 
     }
 
-    private fun run(linkCmd: LinkCommand, wait: Boolean = false, onTerminal: Boolean = false) {
+    private fun run(linkCmd: LinkCommand, wait: Boolean = false) {
         with(linkCmd) {
-            commandPrev.tokenize("\n").forEach { run(it,workingDirectory,true,onTerminal) }
-            main.printCommand(toCommand())
-            run(toCommand(), workingDirectory, wait || showConsole)
-            commandNext.tokenize("\n").forEach { run(it,workingDirectory,true,onTerminal) }
+            commandPrev.tokenize("\n").forEach { run(Command(it,workingDirectory),true,showConsole) }
+            main.printCommand("${toCommand()}")
+            run(toCommand(), wait || showConsole, showConsole)
+            commandNext.tokenize("\n").forEach { run(Command(it,workingDirectory),true,showConsole) }
         }
     }
 
-    private fun run(command: String?, workingDirectory: String?, wait: Boolean, onTerminal: Boolean = false) {
-        if( command.isNullOrBlank() ) return
-        val cli = Command(command,workingDirectory).also { logger.debug { ">> command : $it" } }
-        if( onTerminal ) {
-            val terminal = Terminal("$cli", onDone = { it.close() })
+    private fun run(command: Command, wait: Boolean, showConsole: Boolean = false) {
+        if( command.isEmpty() ) return
+//        logger.debug { ">> command : $command" }
+        if( showConsole ) {
+            val terminal = Terminal("$command", onDone = { it.close() })
             if(wait) {
                 terminal.showAndWait()
             } else {
                 terminal.show()
             }
         } else {
-            val executor = CommandExecutor().run(cli)
-            if(wait) executor.waitFor()
+            CommandExecutor().run(command).also { if(wait) it.waitFor() }
         }
     }
 
