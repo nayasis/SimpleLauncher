@@ -12,6 +12,7 @@ import javafx.scene.control.TabPane
 import javafx.scene.control.TableColumn
 import javafx.scene.control.TableView
 import javafx.scene.control.ToolBar
+import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.Pane
 import javafx.scene.layout.VBox
@@ -24,13 +25,14 @@ fun Node.repack() {
     this.managedProperty().bind(this.visibleProperty())
 }
 
-fun Node.root(): Node {
-    var curr = this
-    while( true ) {
-        if( curr.parent == null ) return curr
-        curr = curr.parent
+val Node.root: Node
+    get() {
+        var curr = this
+        while( true ) {
+            if( curr.parent == null ) return curr
+            curr = curr.parent
+        }
     }
-}
 
 val Node.allChildren: List<Node>
     get() {
@@ -40,6 +42,32 @@ val Node.allChildren: List<Node>
             it
         }.toList()
     }
+
+var Node.leftAnchor: Double?
+    get() = AnchorPane.getLeftAnchor(this)
+    set(value) = AnchorPane.setLeftAnchor(this, value)
+
+var Node.rightAnchor: Double?
+    get() = AnchorPane.getRightAnchor(this)
+    set(value) = AnchorPane.setRightAnchor(this, value)
+
+var Node.bottomAnchor: Double?
+    get() = AnchorPane.getBottomAnchor(this)
+    set(value) = AnchorPane.setBottomAnchor(this, value)
+
+var Node.topAnchor: Double?
+    get() = AnchorPane.getTopAnchor(this)
+    set(value) = AnchorPane.setTopAnchor(this, value)
+
+/**
+ * remove all anchor pane constraints
+ */
+fun Node.clearAnchor() {
+    this.leftAnchor   = null
+    this.rightAnchor  = null
+    this.bottomAnchor = null
+    this.topAnchor    = null
+}
 
 private fun gatherChildren(target: Node?, targets: HashSet<Node>) {
     if(target == null) return
