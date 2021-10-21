@@ -492,17 +492,6 @@ class Main: View("application.title".message()) {
         }
     }
 
-    fun showMenubar(show: Boolean) {
-        vboxTop.children.also {
-            if(show) {
-                if(menubarTop !in it)
-                    it.add(0,menubarTop)
-            } else {
-                it.remove(menubarTop)
-            }
-        }
-    }
-
     fun readLinks() {
         links.apply {
             clear()
