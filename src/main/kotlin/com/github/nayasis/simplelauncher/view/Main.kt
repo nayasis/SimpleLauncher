@@ -174,7 +174,9 @@ class Main: View("application.title".message()) {
         colTitle.setComparator { o1, o2 -> o1.title.ifNull{""}.compareTo(o2.title.ifNull{""}) }
 
         colLastUsedDt.cellValue(Link::lastExecDate).cellFormat {
-            text = it?.toFormat("YYYY-MM-DD HH:MI:SS")
+            graphic = label {
+                text = it?.toFormat("YYYY-MM-DD HH:MI:SS")
+            }
             alignment = Pos.CENTER
         }
         colExecCount.cellValue(Link::executeCount).setAlign(Pos.CENTER_RIGHT)
