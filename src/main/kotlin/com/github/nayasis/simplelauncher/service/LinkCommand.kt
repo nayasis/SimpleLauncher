@@ -118,7 +118,7 @@ class LinkCommand {
     }
 
     fun toCommand(): Command {
-        return Command(workingDirectory=workingDirectory).append(commandPrefix).append(path?.pathString)
+        return Command(workingDirectory=workingDirectory).appendParsing(commandPrefix).append(path?.pathString)
             .also { if(it.isEmpty()) throw IllegalArgumentException("msg.err.007".message().format(title)) }
             .append(argument)
 

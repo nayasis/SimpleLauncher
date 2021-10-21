@@ -55,7 +55,7 @@ class LinkExecutor(
                         progress.updateProgress(index + 1, files.size)
                         progress.updateMessage(file.name)
                         val cmd = LinkCommand(link, file)
-                        Terminal("${cmd.toCommand()}",
+                        Terminal(cmd.toCommand(),
                             onSuccess = { runLater { it.close() } },
                             onFail = { throwable, it ->
                                 runLater {
@@ -90,7 +90,7 @@ class LinkExecutor(
         if( command.isEmpty() ) return
 //        logger.debug { ">> command : $command" }
         if( showConsole ) {
-            val terminal = Terminal("$command", onDone = { it.close() })
+            val terminal = Terminal(command, onDone = { it.close() })
             if(wait) {
                 terminal.showAndWait()
             } else {

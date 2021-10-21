@@ -1,5 +1,6 @@
 package com.github.nayasis.simplelauncher.view.terminal
 
+import com.github.nayasis.kotlin.basica.exec.Command
 import com.github.nayasis.kotlin.javafx.property.StageProperty
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.simplelauncher.service.ConfigService
@@ -26,7 +27,7 @@ class TerminalTest: App() {
 //        val cd = "d:/download/test/cso"
 //        val terminal = Terminal(config()).setCommand("${cd}/CisoPlus.exe -com -l9 ${cd}/disc.iso ${cd}/disc.cso",cd).apply {this.stage = stage}
 
-        Terminal(cmd).showAndWait()
+        Terminal(Command(cmd)).showAndWait()
 
         exitProcess(0)
 
