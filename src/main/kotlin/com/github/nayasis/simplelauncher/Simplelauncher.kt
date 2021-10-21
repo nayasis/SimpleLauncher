@@ -40,7 +40,7 @@ class Simplelauncher: SpringFxApp(Main::class,DefaultStylesheet::class) {
 fun main(args: Array<String>) {
 
     SpringFxApp.loadMessage("/message/**.prop")
-    SpringFxApp.loadDefaultIcon("/image/icon/favicon.ico")
+    SpringFxApp.loadDefaultIcon("/image/icon/favicon.png")
     SpringFxApp.setPreloader(Splash::class)
 
     launch<Simplelauncher>(*args)
