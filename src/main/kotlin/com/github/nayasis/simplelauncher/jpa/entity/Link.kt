@@ -1,13 +1,13 @@
 package com.github.nayasis.simplelauncher.jpa.entity
 
 import com.github.nayasis.kotlin.basica.core.extention.ifEmpty
-import com.github.nayasis.kotlin.basica.core.path.invariantSeparators
-import com.github.nayasis.kotlin.basica.core.path.rootPath
-import com.github.nayasis.kotlin.basica.core.path.toRelativeOrSelf
+import com.github.nayasis.kotlin.basica.core.path.*
 import com.github.nayasis.kotlin.basica.core.string.invariantSeparators
+import com.github.nayasis.kotlin.basica.core.string.toPath
 import com.github.nayasis.kotlin.basica.etc.Platforms
 import com.github.nayasis.kotlin.basica.etc.error
 import com.github.nayasis.kotlin.javafx.misc.Images
+import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.common.ICON_NEW
 import com.github.nayasis.simplelauncher.common.toKeyword
 import javafx.scene.image.Image
@@ -15,6 +15,7 @@ import mslinks.ShellLink
 import mu.KotlinLogging
 import org.hibernate.annotations.DynamicUpdate
 import java.io.File
+import java.nio.file.Path
 import java.time.LocalDateTime
 import javax.persistence.Column
 import javax.persistence.Entity
@@ -151,14 +152,30 @@ class Link: Cloneable {
         }
     }
 
+    fun toPath(): Path? {
+        runCatching {
+            var p = path!!.toPath()
+                if( p.exists() ) return p
+            p = rootPath() / path.ifEmpty{""}
+                if( p.exists() ) return p
+            p = rootPath() / relativePath.ifEmpty{""}
+                if( p.exists() ) {
+                    path = p.pathString
+                    Context.linkService.save(this)
+                    return p
+                }
+        }
+        return null
+    }
+
     public override fun clone(): Link {
         return super.clone() as Link
     }
 
     fun generateKeyword(): Link {
-        wordsAll      = listOfNotNull(group,title,description).joinToString(" ").toKeyword()
+        wordsAll     = listOfNotNull(group,title,description).joinToString(" ").toKeyword()
         wordsKeyword = listOfNotNull(title,description).joinToString(" ").toKeyword()
-        wordsGroup = group?.toKeyword()
+        wordsGroup   = group?.toKeyword()
         return this
     }
 

@@ -79,9 +79,10 @@ class LinkExecutor(
 
     private fun run(linkCmd: LinkCommand, wait: Boolean = false) {
         with(linkCmd) {
+            val command = toCommand()
             commandPrev.tokenize("\n").forEach { run(Command(it,workingDirectory),true,showConsole) }
-            main.printCommand("${toCommand()}")
-            run(toCommand(), wait || showConsole, showConsole)
+            main.printCommand("$command")
+            run(command, wait || showConsole, showConsole)
             commandNext.tokenize("\n").forEach { run(Command(it,workingDirectory),true,showConsole) }
         }
     }
@@ -102,7 +103,7 @@ class LinkExecutor(
     }
 
     fun openFolder(link: Link) {
-        LinkCommand(link).path?.directory?.let {
+        link.toPath()?.directory?.let {
             if( it.notExists() ) {
                 Dialog.error("msg.err.005".message().format(it) )
             } else {
@@ -112,7 +113,7 @@ class LinkExecutor(
     }
 
     fun copyFolder(link: Link) {
-        val path = LinkCommand(link).path?.directory ?: link.path
+        val path = link.toPath()?.directory ?: link.path
         Desktop.clipboard.set(path.toString())
     }
 
