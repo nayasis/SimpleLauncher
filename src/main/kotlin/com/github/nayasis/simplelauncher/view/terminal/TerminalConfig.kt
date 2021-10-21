@@ -53,7 +53,9 @@ class TerminalConfig {
     var scrollWhellMoveMultiplier = 0.1
 
     @JsonProperty("font-family")
-    var fontFamily = "\"DejaVu Sans Mono\", \"Everson Mono\", FreeMono, \"Menlo\", \"Terminal\", monospace"
+    var fontFamily = """
+         "DejaVu Sans Mono", "Everson Mono", FreeMono, "Menlo", "Terminal", monospace
+       """.trim()
 
     @JsonProperty(value = "user-css")
     var userCss = "data:text/plain;base64," + "eC1zY3JlZW4geyBjdXJzb3I6IGF1dG87IH0="
@@ -64,31 +66,29 @@ class TerminalConfig {
     @JsonIgnore
     var unixTerminalStarter = "/bin/bash -i"
 
-
-
     override fun equals(o: Any?): Boolean {
         if (this === o) return true
         if (o == null || javaClass != o.javaClass) return false
         val that = o as TerminalConfig
-        if (useDefaultWindowCopy != that.useDefaultWindowCopy) return false
-        if (clearSelectionAfterCopy != that.clearSelectionAfterCopy) return false
-        if (copyOnSelect != that.copyOnSelect) return false
-        if (ctrlCCopy != that.ctrlCCopy) return false
-        if (ctrlVPaste != that.ctrlVPaste) return false
-        if (fontSize != that.fontSize) return false
-        if (cursorBlink != that.cursorBlink) return false
-        if (scrollbarVisible != that.scrollbarVisible) return false
-        if (enableClipboardNotice != that.enableClipboardNotice) return false
-        if (java.lang.Double.compare(that.scrollWhellMoveMultiplier, scrollWhellMoveMultiplier) != 0) return false
-        if (sendEncoding != that.sendEncoding) return false
-        if (receiveEncoding != that.receiveEncoding) return false
-        if (cursorColor != that.cursorColor) return false
-        if (backgroundColor != that.backgroundColor) return false
-        if (foregroundColor != that.foregroundColor) return false
-        if (fontFamily != that.fontFamily) return false
-        if (userCss != that.userCss) return false
-        if (windowsTerminalStarter != that.windowsTerminalStarter) return false
-        return unixTerminalStarter == that.unixTerminalStarter
+        if (useDefaultWindowCopy != o.useDefaultWindowCopy) return false
+        if (clearSelectionAfterCopy != o.clearSelectionAfterCopy) return false
+        if (copyOnSelect != o.copyOnSelect) return false
+        if (ctrlCCopy != o.ctrlCCopy) return false
+        if (ctrlVPaste != o.ctrlVPaste) return false
+        if (fontSize != o.fontSize) return false
+        if (cursorBlink != o.cursorBlink) return false
+        if (scrollbarVisible != o.scrollbarVisible) return false
+        if (enableClipboardNotice != o.enableClipboardNotice) return false
+        if (java.lang.Double.compare(o.scrollWhellMoveMultiplier, scrollWhellMoveMultiplier) != 0) return false
+        if (sendEncoding != o.sendEncoding) return false
+        if (receiveEncoding != o.receiveEncoding) return false
+        if (cursorColor != o.cursorColor) return false
+        if (backgroundColor != o.backgroundColor) return false
+        if (foregroundColor != o.foregroundColor) return false
+        if (fontFamily != o.fontFamily) return false
+        if (userCss != o.userCss) return false
+        if (windowsTerminalStarter != o.windowsTerminalStarter) return false
+        return unixTerminalStarter == o.unixTerminalStarter
     }
 
     override fun hashCode(): Int {
