@@ -391,9 +391,21 @@ class Main: View("application.title".message()) {
                 it.textProperty().onChange { buttonSave.isDisable = false }
             }
             children.filterIsInstance<CheckBox>().forEach {
+                it.addEventFilter(KEY_PRESSED) { e ->
+                    if( e.code == ESCAPE ) {
+                        lastFocused = it
+                        tableMain.requestFocus()
+                    }
+                }
                 it.selectedProperty().addListener { _, _, _ -> buttonSave.isDisable = false }
             }
             children.filterIsInstance<TextArea>().forEach {
+                it.addEventFilter(KEY_PRESSED) { e ->
+                    if( e.code == ESCAPE ) {
+                        lastFocused = it
+                        tableMain.requestFocus()
+                    }
+                }
                 it.addEventFilter(KEY_PRESSED) { e ->
                     if( e.code != TAB || e.isShiftDown || e.isControlDown ) return@addEventFilter
                     e.consume()
