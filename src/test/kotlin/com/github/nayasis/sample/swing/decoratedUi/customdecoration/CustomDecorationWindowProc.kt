@@ -1,6 +1,7 @@
 // Copyright 2020 Kalkidan Betre Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package com.github.nayasis.sample.swing.decoratedUi.customdecoration
 
+import com.github.nayasis.kotlin.basica.etc.Platforms
 import com.sun.jna.Native
 import com.sun.jna.platform.win32.BaseTSD.LONG_PTR
 import com.sun.jna.platform.win32.User32
@@ -10,12 +11,16 @@ import com.sun.jna.platform.win32.WinUser
 import com.sun.jna.platform.win32.WinUser.WindowProc
 import com.sun.jna.win32.W32APIOptions
 
+fun is64Bit(): Boolean = Platforms.jvm == "64"
+
 class CustomDecorationWindowProc: WindowProc {
+
     val WM_NCCALCSIZE = 0x0083
     val WM_NCHITTEST = 0x0084
     val INSTANCEEx: User32Ex
     var hwnd = HWND()
     var defWndProc: LONG_PTR? = null
+
     fun init(hwnd: HWND) {
         this.hwnd = hwnd
         defWndProc = if (is64Bit()) INSTANCEEx.SetWindowLongPtr(
@@ -30,30 +35,23 @@ class CustomDecorationWindowProc: WindowProc {
     }
 
     override fun callback(hwnd: HWND, uMsg: Int, wparam: WPARAM, lparam: LPARAM): LRESULT {
-        val lresult: LRESULT
         return when (uMsg) {
             WM_NCCALCSIZE -> LRESULT(0)
             WM_NCHITTEST -> {
-                lresult = BorderLessHitTest(hwnd, uMsg, wparam, lparam)
+                val lresult = BorderLessHitTest(hwnd, uMsg, wparam, lparam)
                 if (lresult.toInt() == LRESULT(0).toInt()) {
                     INSTANCEEx.CallWindowProc(defWndProc, hwnd, uMsg, wparam, lparam)!!
                 } else lresult
             }
             WinUser.WM_DESTROY -> {
-                if (is64Bit()) INSTANCEEx.SetWindowLongPtr(
-                    hwnd,
-                    User32Ex.GWLP_WNDPROC,
-                    defWndProc
-                ) else INSTANCEEx.SetWindowLong(
-                    hwnd,
-                    User32Ex.GWLP_WNDPROC,
-                    defWndProc
-                )
+                if (is64Bit())
+                    INSTANCEEx.SetWindowLongPtr(hwnd,User32Ex.GWLP_WNDPROC,defWndProc)
+                else
+                    INSTANCEEx.SetWindowLong(hwnd,User32Ex.GWLP_WNDPROC,defWndProc)
                 LRESULT(0)
             }
             else -> {
-                lresult = INSTANCEEx.CallWindowProc(defWndProc, hwnd, uMsg, wparam, lparam)!!
-                lresult
+                INSTANCEEx.CallWindowProc(defWndProc, hwnd, uMsg, wparam, lparam)!!
             }
         }
     }
@@ -107,19 +105,8 @@ class CustomDecorationWindowProc: WindowProc {
         return LRESULT(hitTests[uRow][uCol].toLong())
     }
 
-    companion object {
-        fun is64Bit(): Boolean {
-            val model = System.getProperty(
-                "sun.arch.data.model",
-                System.getProperty("com.ibm.vm.bitmode")
-            )
-            return if (model != null) {
-                "64" == model
-            } else false
-        }
-    }
-
     init {
         INSTANCEEx = Native.load("user32", User32Ex::class.java, W32APIOptions.DEFAULT_OPTIONS) as User32Ex
     }
+
 }

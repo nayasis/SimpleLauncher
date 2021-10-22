@@ -1,8 +1,8 @@
 package com.github.nayasis.sample.tornadofx.itemviewmodel.pojo.view
 
-import com.github.nayasis.sample.itemviewmodel.pojo.controller.MainController
-import com.github.nayasis.sample.itemviewmodel.pojo.model.Category
-import com.github.nayasis.sample.itemviewmodel.pojo.model.Entry
+import com.github.nayasis.sample.tornadofx.itemviewmodel.pojo.controller.MainController
+import com.github.nayasis.sample.tornadofx.itemviewmodel.pojo.model.Category
+import com.github.nayasis.sample.tornadofx.itemviewmodel.pojo.model.Entry
 import tornadofx.*
 
 class itemViewModelWithPojos : View("2 itemViewModels with POJO's") {

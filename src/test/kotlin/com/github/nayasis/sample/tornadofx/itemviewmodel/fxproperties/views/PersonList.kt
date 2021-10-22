@@ -1,7 +1,7 @@
 package com.github.nayasis.sample.tornadofx.itemviewmodel.fxproperties.views
 
-import com.github.nayasis.sample.itemviewmodel.fxproperties.controller.PersonController
-import com.github.nayasis.sample.itemviewmodel.fxproperties.model.Person
+import com.github.nayasis.sample.tornadofx.itemviewmodel.fxproperties.controller.PersonController
+import com.github.nayasis.sample.tornadofx.itemviewmodel.fxproperties.model.Person
 import tornadofx.*
 
 class PersonList : View() {

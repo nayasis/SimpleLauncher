@@ -1,6 +1,6 @@
 package com.github.nayasis.sample.tornadofx.spring
 
-import com.github.nayasis.sample.spring.view.SpringExampleView
+import com.github.nayasis.sample.tornadofx.spring.view.SpringExampleView
 import javafx.application.Application
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication

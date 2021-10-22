@@ -1,7 +1,7 @@
 package com.github.nayasis.sample.tornadofx.itemviewmodel.fxproperties
 
 import javafx.application.Application
-import com.github.nayasis.sample.itemviewmodel.fxproperties.views.ItemViewModelWithFxMainView
+import com.github.nayasis.sample.tornadofx.itemviewmodel.fxproperties.views.ItemViewModelWithFxMainView
 import tornadofx.App
 
 class WithFXPropertiesApp : App(ItemViewModelWithFxMainView::class)

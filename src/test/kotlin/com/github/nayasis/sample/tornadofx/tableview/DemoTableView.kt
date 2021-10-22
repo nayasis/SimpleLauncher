@@ -1,6 +1,6 @@
 package com.github.nayasis.sample.tornadofx.tableview
 
-import com.github.nayasis.sample.fxml.tableview.Person
+import com.github.nayasis.sample.tornadofx.fxml.tableview.Person
 import tornadofx.App
 import tornadofx.View
 import tornadofx.asObservable

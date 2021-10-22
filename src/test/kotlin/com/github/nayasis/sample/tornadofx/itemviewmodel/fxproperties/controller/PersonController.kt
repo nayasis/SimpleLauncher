@@ -1,9 +1,9 @@
 package com.github.nayasis.sample.tornadofx.itemviewmodel.fxproperties.controller
 
+import com.github.nayasis.sample.tornadofx.itemviewmodel.fxproperties.model.Person
 import javafx.collections.FXCollections
-import com.github.nayasis.sample.itemviewmodel.fxproperties.model.Person
-import com.github.nayasis.sample.itemviewmodel.fxproperties.model.PersonModel
-import com.github.nayasis.sample.itemviewmodel.fxproperties.model.PhoneNumber
+import com.github.nayasis.sample.tornadofx.itemviewmodel.fxproperties.model.PersonModel
+import com.github.nayasis.sample.tornadofx.itemviewmodel.fxproperties.model.PhoneNumber
 import tornadofx.Controller
 
 class PersonController : Controller() {

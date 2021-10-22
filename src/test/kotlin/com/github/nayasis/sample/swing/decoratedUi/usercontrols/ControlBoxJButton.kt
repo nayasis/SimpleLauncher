@@ -1,7 +1,7 @@
 // Copyright 2020 Kalkidan Betre Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package com.github.nayasis.sample.swing.decoratedUi.usercontrols
 
-import com.beranabyte.ui.theme.Theme
+import com.github.nayasis.sample.swing.decoratedUi.theme.DarkTheme
 import com.github.nayasis.sample.swing.decoratedUi.theme.Theme
 import java.awt.BasicStroke
 import java.awt.Graphics
@@ -12,15 +12,9 @@ import java.awt.event.MouseEvent
 import java.awt.event.MouseListener
 import javax.swing.JButton
 
-class ControlBoxJButton(controlBoxButtonType: ButtonType, theme: Theme): JButton(), MouseListener {
-    var controlBoxButtonType: ButtonType
-    private val theme: Theme
-    fun setControlBoxButtonType(controlBoxButtonType: ButtonType) {
-        this.controlBoxButtonType = controlBoxButtonType
-    }
+class ControlBoxJButton(var controlBoxButtonType: ButtonType, var theme: Theme = DarkTheme() ): JButton(), MouseListener {
 
-    val insets: Insets
-        get() = Insets(0, 0, 0, 0)
+    override fun getInsets(): Insets = Insets(0, 0, 0, 0)
 
     override fun paintComponent(g: Graphics) {
         super.paintComponent(g)
@@ -83,4 +77,5 @@ class ControlBoxJButton(controlBoxButtonType: ButtonType, theme: Theme): JButton
         this.controlBoxButtonType = controlBoxButtonType
         this.theme = theme
     }
+
 }

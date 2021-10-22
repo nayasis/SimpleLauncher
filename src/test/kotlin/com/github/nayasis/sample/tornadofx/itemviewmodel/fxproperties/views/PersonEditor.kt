@@ -1,8 +1,8 @@
 package com.github.nayasis.sample.tornadofx.itemviewmodel.fxproperties.views
 
 import javafx.scene.control.TableView
-import com.github.nayasis.sample.itemviewmodel.fxproperties.controller.PersonController
-import com.github.nayasis.sample.itemviewmodel.fxproperties.model.PhoneNumber
+import com.github.nayasis.sample.tornadofx.itemviewmodel.fxproperties.controller.PersonController
+import com.github.nayasis.sample.tornadofx.itemviewmodel.fxproperties.model.PhoneNumber
 import tornadofx.*
 
 class PersonEditor : View() {
