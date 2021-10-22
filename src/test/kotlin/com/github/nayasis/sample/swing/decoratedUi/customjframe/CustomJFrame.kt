@@ -8,7 +8,7 @@ import com.github.nayasis.sample.swing.decoratedUi.usercontrols.ButtonType
 import com.github.nayasis.sample.swing.decoratedUi.usercontrols.ControlBoxJButton
 import com.github.nayasis.sample.swing.decoratedUi.usercontrols.IconJPanel
 import com.sun.jna.Native
-import com.sun.jna.platform.win32.WinDef
+import com.sun.jna.platform.win32.WinDef.HWND
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Dimension
@@ -24,17 +24,17 @@ import javax.swing.JFrame
 import javax.swing.JPanel
 
 class CustomJFrame(val theme: Theme, title: String?): JFrame(title) {
-
     val windowProcEx: CustomDecorationWindowProc
     private var windowFrameType = WindowFrameType.NORMAL
     private var titleBar: JPanel? = null
     private var titleBarCustomContent: JPanel? = null
     private var controlBox: JPanel? = null
-    private var frameContentPane: JPanel = JPanel()
+    private var frameContentPane: JPanel? = null
     private var iconContainer: JPanel? = null
     private var closeBtn: ControlBoxJButton? = null
     private var minimizeBtn: ControlBoxJButton? = null
-    private var restoreButton: ControlBoxJButton? = null
+    var restoreButton: ControlBoxJButton? = null
+        private set
     private var closeBtnMouseAdapter: MouseAdapter? = null
     private var restoreBtnMouseAdapter: MouseAdapter? = null
     private var minimizeBtnMouseAdapter: MouseAdapter? = null
@@ -49,140 +49,131 @@ class CustomJFrame(val theme: Theme, title: String?): JFrame(title) {
         windowProcEx.init(hwnd)
     }
 
-    private val hwnd: WinDef.HWND
+    private val hwnd: HWND
         private get() {
-            val hwnd = WinDef.HWND()
-            hwnd.setPointer(Native.getComponentPointer(this))
+            val hwnd = HWND()
+            hwnd.pointer = Native.getComponentPointer(this)
             return hwnd
         }
 
-    fun getRestoreButton(): ControlBoxJButton? {
-        return restoreButton
-    }
-
     private fun initializeFrame() {
-        setLayout(BorderLayout())
-        frameContentPane.setLayout(BorderLayout())
-        frameContentPane.setOpaque(false)
+        layout = BorderLayout()
+        frameContentPane = JPanel()
+        frameContentPane!!.layout = BorderLayout()
+        frameContentPane!!.isOpaque = false
         setupFrameTitleBar()
         val clientContentPane = JPanel()
-        clientContentPane.setLayout(FlowLayout())
-        clientContentPane.setOpaque(false)
-        frameContentPane.add(clientContentPane)
-        setContentPane(frameContentPane)
-        setBackground(theme.defaultBackgroundColor)
+        clientContentPane.layout = FlowLayout()
+        clientContentPane.isOpaque = false
+        frameContentPane!!.add(clientContentPane)
+        contentPane = frameContentPane
+        background = theme.defaultBackgroundColor
         addComponentListener(object: ComponentAdapter() {
             override fun componentResized(e: ComponentEvent) {
                 super.componentResized(e)
-                val mainFrame = e.getSource() as CustomJFrame
-                if (mainFrame.getExtendedState() == JFrame.MAXIMIZED_BOTH) {
-                    CustomDecorationParameters.maximizedWindowFrameThickness = 12
-                    mainFrame.getRootPane().setBorder(
-                        BorderFactory.createLineBorder(
-                            mainFrame.getBackground(),
-                            CustomDecorationParameters.maximizedWindowFrameThickness
-                        )
+                val mainFrame = e.source as CustomJFrame
+                if (mainFrame.extendedState == MAXIMIZED_BOTH) {
+                    CustomDecorationParameters.maximizedWindowFrameThickness=(12)
+                    mainFrame.getRootPane().border = BorderFactory.createLineBorder(
+                        mainFrame.background,
+                        CustomDecorationParameters.maximizedWindowFrameThickness
                     )
-                    if (mainFrame.getRestoreButton() != null) {
-                        (mainFrame.getRestoreButton())?.controlBoxButtonType = ButtonType.RESTORE
+                    if (mainFrame.restoreButton != null) {
+                        mainFrame.restoreButton!!.controlBoxButtonType = (ButtonType.RESTORE)
                     }
                 } else {
-                    CustomDecorationParameters.maximizedWindowFrameThickness = 0
-                    mainFrame.getRootPane().setBorder(
-                        BorderFactory.createLineBorder(
-                            theme.frameBorderColor,
-                            CustomDecorationParameters.frameBorderThickness
-                        )
+                    CustomDecorationParameters.maximizedWindowFrameThickness = (0)
+                    mainFrame.getRootPane().border = BorderFactory.createLineBorder(
+                        theme.frameBorderColor,
+                        CustomDecorationParameters.frameBorderThickness
                     )
-                    if (mainFrame.getRestoreButton() != null && (mainFrame.getRestoreButton())?.controlBoxButtonType !== ButtonType.MAXIMIZE) {
-                        (mainFrame.getRestoreButton())?.controlBoxButtonType = ButtonType.MAXIMIZE
+                    if (mainFrame.restoreButton != null && mainFrame.restoreButton!!.controlBoxButtonType !== ButtonType.MAXIMIZE) {
+                        mainFrame.restoreButton!!.controlBoxButtonType=(ButtonType.MAXIMIZE)
                     }
                 }
             }
         })
         pack()
-        CustomDecorationParameters.controlBoxWidth = controlBox!!.getWidth() + 10
+        CustomDecorationParameters.controlBoxWidth = (controlBox!!.width + 10)
     }
 
     private fun setupFrameTitleBar() {
         if (windowFrameType === WindowFrameType.NONE) {
-            CustomDecorationParameters.titleBarHeight = 0
+            CustomDecorationParameters.titleBarHeight = (0)
         } else {
             titleBar = JPanel()
-            titleBar!!.setLayout(BorderLayout())
-            titleBar!!.setOpaque(false)
+            titleBar!!.layout = BorderLayout()
+            titleBar!!.isOpaque = false
             iconContainer = JPanel()
-            iconContainer!!.setOpaque(false)
+            iconContainer!!.isOpaque = false
             setupFrameControlBox()
             titleBar!!.add(controlBox, BorderLayout.EAST)
             titleBarCustomContent = JPanel()
-            titleBarCustomContent!!.setLayout(FlowLayout(3, 0, 0))
-            titleBarCustomContent!!.setOpaque(false)
+            titleBarCustomContent!!.layout = FlowLayout(3, 0, 0)
+            titleBarCustomContent!!.isOpaque = false
             titleBarCustomContent!!.add(iconContainer)
             titleBar!!.add(titleBarCustomContent, BorderLayout.WEST)
-            frameContentPane.add(titleBar, BorderLayout.NORTH)
+            frameContentPane!!.add(titleBar, BorderLayout.NORTH)
         }
     }
 
     private fun setupFrameControlBox() {
         controlBox = JPanel()
-        controlBox?.setOpaque(false)
+        controlBox!!.isOpaque = false
         if (windowFrameType === WindowFrameType.NORMAL) {
-            controlBox?.setLayout(GridLayout(1, 3, -1, 0))
+            controlBox!!.layout = GridLayout(1, 3, -1, 0)
             addMinimizeButton()
             addRestoreButton()
             addCloseButton()
         } else if (windowFrameType === WindowFrameType.TOOL) {
-            controlBox?.setLayout(GridLayout(1, 1, -1, 0))
+            controlBox!!.layout = GridLayout(1, 1, -1, 0)
             addCloseButton()
         }
     }
 
     private fun addCloseButton() {
         closeBtn = ControlBoxJButton(ButtonType.CLOSE, theme)
-        closeBtn?.setPreferredSize(Dimension(50, CustomDecorationParameters.titleBarHeight))
-        closeBtn?.setBackground(theme.defaultBackgroundColor)
+        closeBtn!!.preferredSize = Dimension(50, CustomDecorationParameters.titleBarHeight)
+        closeBtn!!.background = theme.defaultBackgroundColor
         closeBtnMouseAdapter = object: MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
                 System.exit(0)
             }
         }
-        closeBtn?.addMouseListener(closeBtnMouseAdapter)
-        controlBox?.add(closeBtn)
+        closeBtn!!.addMouseListener(closeBtnMouseAdapter)
+        controlBox!!.add(closeBtn)
     }
 
     private fun addRestoreButton() {
         restoreButton = ControlBoxJButton(ButtonType.MAXIMIZE, theme)
-        restoreButton?.setPreferredSize(Dimension(50, CustomDecorationParameters.titleBarHeight))
-        restoreButton?.setBackground(theme.defaultBackgroundColor)
+        restoreButton!!.preferredSize = Dimension(50, CustomDecorationParameters.titleBarHeight)
+        restoreButton!!.background = theme.defaultBackgroundColor
         restoreBtnMouseAdapter = object: MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
-                if (getExtendedState() == JFrame.MAXIMIZED_BOTH) setExtendedState(JFrame.NORMAL) else setExtendedState(
-                    JFrame.MAXIMIZED_BOTH
-                )
+                extendedState = if (extendedState == MAXIMIZED_BOTH) NORMAL else MAXIMIZED_BOTH
             }
         }
-        restoreButton?.addMouseListener(restoreBtnMouseAdapter)
-        controlBox?.add(restoreButton)
+        restoreButton!!.addMouseListener(restoreBtnMouseAdapter)
+        controlBox!!.add(restoreButton)
     }
 
     private fun addMinimizeButton() {
         minimizeBtn = ControlBoxJButton(ButtonType.MINIMIZE, theme)
-        minimizeBtn?.setPreferredSize(Dimension(50, CustomDecorationParameters.titleBarHeight))
-        minimizeBtn?.setBackground(theme.defaultBackgroundColor)
+        minimizeBtn!!.preferredSize = Dimension(50, CustomDecorationParameters.titleBarHeight)
+        minimizeBtn!!.background = theme.defaultBackgroundColor
         minimizeBtnMouseAdapter = object: MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
-                setExtendedState(JFrame.ICONIFIED)
+                extendedState = ICONIFIED
             }
         }
-        minimizeBtn?.addMouseListener(minimizeBtnMouseAdapter)
-        controlBox?.add(minimizeBtn)
+        minimizeBtn!!.addMouseListener(minimizeBtnMouseAdapter)
+        controlBox!!.add(minimizeBtn)
     }
 
     fun addUserControlsToTitleBar(component: Component?) {
-        titleBarCustomContent?.add(component)
+        titleBarCustomContent!!.add(component)
         pack()
-        CustomDecorationParameters.extraLeftReservedWidth = titleBarCustomContent!!.getWidth() + 10
+        CustomDecorationParameters.extraLeftReservedWidth = (titleBarCustomContent!!.width + 10)
     }
 
     val titleBarHeight: Int
@@ -192,37 +183,35 @@ class CustomJFrame(val theme: Theme, title: String?): JFrame(title) {
         }
 
     fun setIcon(image: Image?) {
-        iconContainer?.setLayout(FlowLayout(1, 0, 0))
-        iconContainer?.setPreferredSize(
-            Dimension(
-                CustomDecorationParameters.iconWidth,
-                CustomDecorationParameters.titleBarHeight
-            )
+        iconContainer!!.layout = FlowLayout(1, 0, 0)
+        iconContainer!!.preferredSize = Dimension(
+            CustomDecorationParameters.iconWidth,
+            CustomDecorationParameters.titleBarHeight
         )
         val iconJPanel = IconJPanel(image)
-        iconContainer?.add(iconJPanel)
+        iconContainer!!.add(iconJPanel)
         pack()
-        CustomDecorationParameters.extraLeftReservedWidth = titleBarCustomContent!!.getWidth() + 10
+        CustomDecorationParameters.extraLeftReservedWidth = titleBarCustomContent!!.width + 10
     }
 
     fun addJFrameCloseEventAdapter(mouseAdapter: MouseAdapter?) {
         if (closeBtn != null) {
-            closeBtn?.removeMouseListener(closeBtnMouseAdapter)
-            closeBtn?.addMouseListener(mouseAdapter)
+            closeBtn!!.removeMouseListener(closeBtnMouseAdapter)
+            closeBtn!!.addMouseListener(mouseAdapter)
         }
     }
 
     fun addJFrameRestoreEventAdapter(mouseAdapter: MouseAdapter?) {
         if (restoreButton != null) {
-            restoreButton?.removeMouseListener(closeBtnMouseAdapter)
-            restoreButton?.addMouseListener(mouseAdapter)
+            restoreButton!!.removeMouseListener(closeBtnMouseAdapter)
+            restoreButton!!.addMouseListener(mouseAdapter)
         }
     }
 
     fun addJFrameMinimizeEventAdapter(mouseAdapter: MouseAdapter?) {
         if (restoreButton != null) {
-            closeBtn?.removeMouseListener(closeBtnMouseAdapter)
-            closeBtn?.addMouseListener(mouseAdapter)
+            closeBtn!!.removeMouseListener(closeBtnMouseAdapter)
+            closeBtn!!.addMouseListener(mouseAdapter)
         }
     }
 
@@ -230,5 +219,4 @@ class CustomJFrame(val theme: Theme, title: String?): JFrame(title) {
         windowProcEx = CustomDecorationWindowProc()
         initializeFrame()
     }
-
 }
