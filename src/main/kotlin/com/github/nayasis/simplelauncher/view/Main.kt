@@ -126,15 +126,15 @@ class Main: View("application.title".message()) {
     init {
         Localizator(root)
         initEvent()
-        initSearchFilter()
         initTable()
     }
 
     override fun onBeforeShow() {
         ConfigService.stageMain?.let {
             it.excludeKlass.add(Button::class)
-            it.bind(currentStage!!)
+            it.bind(currentStage)
             menubarTop.repack()
+            initSearchFilter(it.tables[Main::tableMain.name]?.focusedRow)
         }
     }
 
@@ -333,7 +333,6 @@ class Main: View("application.title".message()) {
             Tooltip.install(buttonAddFile,it)
         }
 
-        buttonAddFile
         descExecPath.setOnDragOver { fnDraggable(it) }
         descExecPath.setOnDragDropped { e ->
             e.dragboard.files.firstOrNull()?.let {
@@ -404,12 +403,10 @@ class Main: View("application.title".message()) {
                     if( e.code == ESCAPE ) {
                         lastFocused = it
                         tableMain.requestFocus()
+                    } else if( e.code == TAB && ! e.isShiftDown && ! e.isControlDown ) {
+                        e.consume()
+                        (e.source as Node).fireEvent(toTabPressEvent(e))
                     }
-                }
-                it.addEventFilter(KEY_PRESSED) { e ->
-                    if( e.code != TAB || e.isShiftDown || e.isControlDown ) return@addEventFilter
-                    e.consume()
-                    (e.source as Node).fireEvent(getKeyEventTab(e))
                 }
             }
         }
@@ -424,19 +421,27 @@ class Main: View("application.title".message()) {
 
     }
 
-    private fun initSearchFilter() {
+    private fun initSearchFilter(focused: Int?) {
+        keywordMatcher.setKeyword(inputKeyword.text)
+        groupMatcher.setKeyword(inputGroup.text)
+        setSearchFilter()
+        focused?.let { tableMain.focus(it) }
+        setSearchEvent()
+    }
 
-        val searchFilter = {
-            val hasKeyword = inputKeyword.text.isNotBlank()
-            val hasGroup   = inputGroup.text.isNotBlank()
-            when {
-                !hasGroup && !hasKeyword -> links.predicate = {true}
-                !hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsAll) }
-                 hasGroup && !hasKeyword -> links.predicate = { groupMatcher.isMatch(it.wordsGroup) }
-                 hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsKeyword) && groupMatcher.isMatch(it.wordsGroup) }
-            }
-            printSearchResult()
+    private fun setSearchFilter() {
+        val hasKeyword = inputKeyword.text.isNotBlank()
+        val hasGroup   = inputGroup.text.isNotBlank()
+        when {
+            !hasGroup && !hasKeyword -> links.predicate = { true }
+            !hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsAll) }
+             hasGroup && !hasKeyword -> links.predicate = { groupMatcher.isMatch(it.wordsGroup) }
+             hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsKeyword) && groupMatcher.isMatch(it.wordsGroup) }
         }
+        printSearchResult()
+    }
+
+    private fun setSearchEvent() {
 
         var lastModified: LocalDateTime? = null
 
@@ -445,7 +450,7 @@ class Main: View("application.title".message()) {
                 lastModified = null
                 runLater {
                     listOf(inputKeyword,inputGroup).forEach { it.isDisable = true }
-                    searchFilter()
+                    setSearchFilter()
                     listOf(inputKeyword,inputGroup).forEach { it.isDisable = false }
                 }
             }
@@ -482,7 +487,7 @@ class Main: View("application.title".message()) {
         }
     }
 
-    private fun getKeyEventTab(event: KeyEvent) = KeyEvent(
+    private fun toTabPressEvent(event: KeyEvent) = KeyEvent(
         event.source,
         event.target,
         event.eventType,
@@ -618,18 +623,14 @@ class Main: View("application.title".message()) {
         buttonSave.isDisable = false
     }
 
-    fun printCommand(command: String? = null) {
-        runLater {
-            labelCmd.text = command ?: ""
-        }
+    fun printCommand(command: String? = null) = runLater {
+        labelCmd.text = command ?: ""
     }
 
     fun printStatus(status: String? = null) {
         labelStatus.text = status ?: ""
     }
 
-    fun printSearchResult() {
-        printStatus("msg.info.005".message().format(links.size, links.items.size) )
-    }
+    fun printSearchResult() = printStatus("msg.info.005".message().format(links.size, links.items.size) )
 
 }
