@@ -7,7 +7,7 @@ import java.awt.Image
 import javax.swing.JPanel
 
 class IconJPanel(image: Image?): JPanel() {
-    private val image: Image? = null
+    private var image: Image? = null
     public override fun paintComponent(g: Graphics) {
         if (image != null) g.drawImage(image, 0, 0, null)
     }

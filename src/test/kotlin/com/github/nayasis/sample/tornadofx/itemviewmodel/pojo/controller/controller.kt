@@ -1,9 +1,9 @@
 package com.github.nayasis.sample.tornadofx.itemviewmodel.pojo.controller
 
-import com.github.nayasis.sample.itemviewmodel.pojo.model.Category
-import com.github.nayasis.sample.itemviewmodel.pojo.model.CategoryModel
-import com.github.nayasis.sample.itemviewmodel.pojo.model.Entry
-import com.github.nayasis.sample.itemviewmodel.pojo.model.EntryModel
+import com.github.nayasis.sample.tornadofx.itemviewmodel.pojo.model.Category
+import com.github.nayasis.sample.tornadofx.itemviewmodel.pojo.model.CategoryModel
+import com.github.nayasis.sample.tornadofx.itemviewmodel.pojo.model.Entry
+import com.github.nayasis.sample.tornadofx.itemviewmodel.pojo.model.EntryModel
 import tornadofx.Controller
 
 class MainController : Controller() {

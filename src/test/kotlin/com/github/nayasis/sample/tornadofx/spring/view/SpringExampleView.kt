@@ -1,6 +1,6 @@
 package com.github.nayasis.sample.tornadofx.spring.view
 
-import com.github.nayasis.sample.spring.beans.HelloBean
+import com.github.nayasis.sample.tornadofx.spring.beans.HelloBean
 import tornadofx.*
 
 class SpringExampleView: View("Example View") {

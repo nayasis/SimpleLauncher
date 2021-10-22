@@ -1,6 +1,6 @@
 package com.github.nayasis.sample.tornadofx.login
 
-import com.github.nayasis.sample.login.Styles.Companion.loginScreen
+import com.github.nayasis.sample.tornadofx.login.Styles.Companion.loginScreen
 import javafx.animation.KeyFrame
 import javafx.animation.Timeline
 import javafx.beans.property.SimpleBooleanProperty
