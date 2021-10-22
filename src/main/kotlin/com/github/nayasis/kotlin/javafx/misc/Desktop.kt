@@ -1,11 +1,11 @@
 package com.github.nayasis.kotlin.javafx.misc
 
 import com.github.nayasis.kotlin.basica.etc.Platforms
+import com.github.nayasis.kotlin.basica.exec.Command
+import com.github.nayasis.kotlin.basica.exec.CommandExecutor
 import javafx.scene.image.Image
 import javafx.scene.input.Clipboard
 import javafx.scene.input.ClipboardContent
-import org.apache.commons.exec.CommandLine
-import org.apache.commons.exec.DefaultExecutor
 import java.awt.Font
 import java.awt.GraphicsEnvironment
 import java.awt.Toolkit
@@ -41,10 +41,8 @@ class Desktop { companion object {
 
     private fun execute(command: String, parameter: String? = null): Boolean {
         return try {
-            val commandline = CommandLine(command)
-            if( ! parameter.isNullOrEmpty() )
-                commandline.addArgument(parameter)
-            DefaultExecutor().execute(commandline)
+            val cli = Command(command).append(parameter)
+            CommandExecutor().run(cli)
             true
         } catch (e: Exception) {
             false
