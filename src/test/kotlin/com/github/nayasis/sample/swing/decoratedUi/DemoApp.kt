@@ -1,5 +1,6 @@
 package com.github.nayasis.sample.swing.decoratedUi
 
+import com.github.nayasis.kotlin.basica.core.klass.Classes
 import com.github.nayasis.sample.swing.decoratedUi.customjframe.CustomJFrame
 import com.github.nayasis.sample.swing.decoratedUi.customjframe.WindowFrameType
 import com.github.nayasis.sample.swing.decoratedUi.theme.DarkTheme
@@ -24,29 +25,22 @@ object DemoApp {
                 isVisible = true
             }
 
-            val jMenuBar = JMenuBar()
-            val fileMenu = JMenu("File")
-            val editMenu = JMenu("Edit")
-            val viewMenu = JMenu("View")
+            val menubar = JMenuBar().apply {
+                add(JMenu("File").apply {
+                    add(JMenuItem("Open"))
+                    add(JMenuItem("Close"))
+                })
+                add(JMenu("Edit").apply {
+                    add(JMenuItem("Copy"))
+                })
+                add(JMenu("View").apply {
+                    add(JMenuItem("Tools"))
+                })
+            }
 
-            val openMenu = JMenuItem("Open")
-            val closeMenu = JMenuItem("Close")
-            fileMenu.add(openMenu)
-            fileMenu.add(closeMenu)
+            frame.addUserControlsToTitleBar(menubar)
 
-            val copyMenu = JMenuItem("Copy")
-            editMenu.add(copyMenu)
-
-            val toolsMenu = JMenuItem("Tools")
-            viewMenu.add(toolsMenu)
-
-            jMenuBar.add(fileMenu)
-            jMenuBar.add(editMenu)
-            jMenuBar.add(viewMenu)
-            frame.addUserControlsToTitleBar(jMenuBar)
-
-            val imageIcon = ImageIcon("resources/image/appicon.png")
-            frame.setIcon(imageIcon.getImage())
+            frame.setIcon(ImageIcon(Classes.getResource("image/appicon.png")).image)
 
         })
     }
