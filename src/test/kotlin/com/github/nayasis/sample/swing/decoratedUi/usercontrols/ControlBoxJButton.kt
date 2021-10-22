@@ -1,7 +1,6 @@
 // Copyright 2020 Kalkidan Betre Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package com.github.nayasis.sample.swing.decoratedUi.usercontrols
 
-import com.github.nayasis.sample.swing.decoratedUi.theme.DarkTheme
 import com.github.nayasis.sample.swing.decoratedUi.theme.Theme
 import java.awt.BasicStroke
 import java.awt.Graphics
@@ -12,19 +11,21 @@ import java.awt.event.MouseEvent
 import java.awt.event.MouseListener
 import javax.swing.JButton
 
-class ControlBoxJButton(var controlBoxButtonType: ButtonType, var theme: Theme = DarkTheme() ): JButton(), MouseListener {
+class ControlBoxJButton(var controlBoxButtonType: ButtonType, val theme: Theme): JButton(), MouseListener {
 
-    override fun getInsets(): Insets = Insets(0, 0, 0, 0)
+    override fun getInsets(): Insets {
+        return Insets(0, 0, 0, 0)
+    }
 
-    override fun paintComponent(g: Graphics) {
+    public override fun paintComponent(g: Graphics) {
         super.paintComponent(g)
-        val width: Int = getWidth()
-        val height: Int = getHeight()
-        val g2d: Graphics2D = g.create() as Graphics2D
-        g2d.setColor(getBackground())
+        val width = width
+        val height = height
+        val g2d = g.create() as Graphics2D
+        g2d.color = background
         g2d.fillRect(0, 0, width, height)
-        g2d.setStroke(BasicStroke(1.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND))
-        g2d.setColor(theme.lightForegroundColor)
+        g2d.stroke = BasicStroke(1.0f, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND)
+        g2d.color = theme.lightForegroundColor
         var markStPt = Point(width / 2 - 5, height / 2 - 5)
         var markEnPt = Point(width / 2 + 5, height / 2 + 5)
         when (controlBoxButtonType) {
@@ -55,27 +56,23 @@ class ControlBoxJButton(var controlBoxButtonType: ButtonType, var theme: Theme =
 
     override fun mouseClicked(e: MouseEvent) {}
     override fun mousePressed(e: MouseEvent) {
-        if (controlBoxButtonType == ButtonType.CLOSE) setBackground(theme.closeButtonPressedColor) else setBackground(
+        if (controlBoxButtonType === ButtonType.CLOSE) background = theme.closeButtonPressedColor else background =
             theme.defaultButtonHoverColor
-        )
     }
 
     override fun mouseReleased(e: MouseEvent) {}
     override fun mouseEntered(e: MouseEvent) {
-        if (controlBoxButtonType == ButtonType.CLOSE) setBackground(theme.closeButtonHoverColor) else setBackground(
+        if (controlBoxButtonType === ButtonType.CLOSE) background = theme.closeButtonHoverColor else background =
             theme.defaultButtonHoverColor
-        )
     }
 
     override fun mouseExited(e: MouseEvent) {
-        setBackground(theme.defaultBackgroundColor)
+        background = theme.defaultBackgroundColor
     }
 
     init {
-        setOpaque(false)
+        isOpaque = false
         addMouseListener(this)
-        this.controlBoxButtonType = controlBoxButtonType
-        this.theme = theme
     }
 
 }
