@@ -1,6 +1,5 @@
 package com.github.nayasis.kotlin.spring.javafx.app
 
-import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.etc.error
 import com.github.nayasis.kotlin.basica.exception.rootCause
 import com.github.nayasis.kotlin.basica.model.Messages
