@@ -30,7 +30,9 @@ class CustomJFrame(val theme: Theme, title: String?): JFrame(title) {
     private var titleBarCustomContent: JPanel? = null
     private var controlBox: JPanel? = null
     private var frameContentPane: JPanel? = null
-    private var iconContainer: JPanel? = null
+
+    private var iconContainer = JPanel()
+
     private var closeBtn: ControlBoxJButton? = null
     private var minimizeBtn: ControlBoxJButton? = null
     var restoreButton: ControlBoxJButton? = null
@@ -182,14 +184,13 @@ class CustomJFrame(val theme: Theme, title: String?): JFrame(title) {
             return titleBarCustomContent!!.height
         }
 
-    fun setIcon(image: Image?) {
-        iconContainer!!.layout = FlowLayout(1, 0, 0)
-        iconContainer!!.preferredSize = Dimension(
+    fun setIcon(image: Image) {
+        iconContainer.layout = FlowLayout(1, 0, 0)
+        iconContainer.preferredSize = Dimension(
             CustomDecorationParameters.iconWidth,
             CustomDecorationParameters.titleBarHeight
         )
-        val iconJPanel = IconJPanel(image)
-        iconContainer!!.add(iconJPanel)
+        iconContainer.add(IconJPanel(image))
         pack()
         CustomDecorationParameters.extraLeftReservedWidth = titleBarCustomContent!!.width + 10
     }
