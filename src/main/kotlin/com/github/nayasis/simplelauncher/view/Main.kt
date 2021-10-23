@@ -243,7 +243,7 @@ class Main: View("application.title".message()) {
                         }
                     O -> buttonOpenFolder.let { if(!it.isDisable) it.fire() }
                     F -> buttonCopyFolder.let { if(!it.isDisable) it.fire() }
-                    I -> changeIcon()
+                    I -> if(!e.isShiftDown) changeIcon()
                 }
             }
         }
