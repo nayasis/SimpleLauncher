@@ -89,7 +89,7 @@ class LinkExecutor(
 
     private fun run(command: Command, wait: Boolean, showConsole: Boolean = false) {
         if( command.isEmpty() ) return
-//        logger.debug { ">> command : $command" }
+        logger.debug { ">> command : $command" }
         if( showConsole ) {
             val terminal = Terminal(command, onDone = { it.close() })
             if(wait) {
