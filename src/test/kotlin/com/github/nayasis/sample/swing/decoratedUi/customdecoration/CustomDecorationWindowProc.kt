@@ -21,6 +21,10 @@ class CustomDecorationWindowProc: WindowProc {
     var hwnd = HWND()
     var defWndProc: LONG_PTR? = null
 
+    init {
+        INSTANCEEx = Native.load("user32", User32Ex::class.java, W32APIOptions.DEFAULT_OPTIONS) as User32Ex
+    }
+
     fun init(hwnd: HWND) {
         this.hwnd = hwnd
         defWndProc = if (is64Bit()) INSTANCEEx.SetWindowLongPtr(
@@ -103,10 +107,6 @@ class CustomDecorationWindowProc: WindowProc {
             ), intArrayOf(HTLEFT, HTNOWHERE, HTRIGHT), intArrayOf(HTBOTTOMLEFT, HTBOTTOM, HTBOTTOMRIGHT)
         )
         return LRESULT(hitTests[uRow][uCol].toLong())
-    }
-
-    init {
-        INSTANCEEx = Native.load("user32", User32Ex::class.java, W32APIOptions.DEFAULT_OPTIONS) as User32Ex
     }
 
 }
