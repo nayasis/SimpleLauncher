@@ -2,29 +2,23 @@ package com.github.nayasis.kotlin.javafx.stage
 
 import com.github.nayasis.kotlin.basica.core.path.div
 import com.github.nayasis.kotlin.basica.core.path.userHome
-import com.github.nayasis.kotlin.basica.core.string.toFile
-import com.github.nayasis.kotlin.basica.core.validator.nvl
 import com.github.nayasis.kotlin.basica.etc.Platforms
 import com.github.nayasis.kotlin.basica.etc.error
-import javafx.scene.control.Alert
+import javafx.scene.control.*
 import javafx.scene.control.Alert.AlertType
-import javafx.scene.control.Button
-import javafx.scene.control.ButtonType
-import javafx.scene.control.TextArea
-import javafx.scene.control.TextInputDialog
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.Priority.ALWAYS
 import javafx.stage.DirectoryChooser
 import javafx.stage.FileChooser
-import javafx.stage.Modality.NONE
+import javafx.stage.FileChooser.ExtensionFilter
 import javafx.stage.Modality.WINDOW_MODAL
 import javafx.stage.Stage
+import javafx.stage.Window
 import mu.KotlinLogging
-import tornadofx.FXTask
-import tornadofx.runAsync
-import tornadofx.runLater
+import tornadofx.*
+import tornadofx.FileChooserMode.*
 import java.io.File
 import kotlin.Double.Companion.MAX_VALUE
 
@@ -108,34 +102,45 @@ class Dialog { companion object {
         return dialog
     }
 
-    fun filePicker(title: String = "", extensions: String = "", extensionDescription: String = "", initialDirectory: File?): FileChooser {
-        return FileChooser().apply {
+    fun filePicker(title: String = "", extension: String = "", description: String = "", initialDirectory: File? = null, mode: FileChooserMode = Single, owner: Window? = null, option: FileChooser.() -> Unit = {}): List<File> {
+        val chooser = FileChooser().apply {
             this.title = title
-            this.extensionFilters.add( FileChooser.ExtensionFilter(nvl(extensionDescription,extensions), extensions.split(",")) )
-            if( initialDirectory != null && initialDirectory.exists() && initialDirectory.canRead() ) {
-                this.initialDirectory = initialDirectory
+            this.extensionFilters.add( ExtensionFilter(description.ifEmpty{extension}, extension.split(",;")) )
+            this.initialDirectory = if( initialDirectory != null && initialDirectory.exists() && initialDirectory.canRead() ) {
+                initialDirectory
             } else {
-                this.initialDirectory = dirDesktop()
+                dirDesktop()
             }
         }
+        option(chooser)
+        return when(mode) {
+            Single -> {
+                val result = chooser.showOpenDialog(owner)
+                if (result == null) emptyList() else listOf(result)
+            }
+            Multi -> chooser.showOpenMultipleDialog(owner) ?: emptyList()
+            Save -> {
+                val result = chooser.showSaveDialog(owner)
+                if (result == null) emptyList() else listOf(result)
+            }
+            else -> emptyList()
+        }
+
+
     }
 
-    fun filePicker(title: String = "", extensions: String = "", extensionDescription: String = "", initialDirectory: String? = null): FileChooser =
-        filePicker(title,extensions, extensionDescription,initialDirectory?.toFile())
-
-    fun dirPicker(title: String = "", initialDirectory: File?): DirectoryChooser {
-        return DirectoryChooser().apply {
+    fun dirPicker(title: String = "", initialDirectory: File? = null, owner: Window? = null, option: DirectoryChooser.() -> Unit = {}): File? {
+        val chooser = DirectoryChooser().apply {
             this.title = title
-            if( initialDirectory != null && initialDirectory.exists() && initialDirectory.canRead() ) {
-                this.initialDirectory = initialDirectory
+            this.initialDirectory = if( initialDirectory != null && initialDirectory.exists() && initialDirectory.canRead() ) {
+                initialDirectory
             } else {
-                this.initialDirectory = dirDesktop()
+                dirDesktop()
             }
         }
+        option(chooser)
+        return chooser.showDialog(owner)
     }
-
-    fun dirPicker(title: String = "", initialDirectory: String? = null): DirectoryChooser =
-        dirPicker(title, initialDirectory?.toFile())
 
     private fun dirDesktop(): File {
         return userHome().let {
