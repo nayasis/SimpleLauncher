@@ -81,7 +81,7 @@ class CustomJFrame(val theme: Theme, title: String?): JFrame(title) {
                         CustomDecorationParameters.maximizedWindowFrameThickness
                     )
                     if (mainFrame.restoreButton != null) {
-                        mainFrame.restoreButton!!.controlBoxButtonType = (ButtonType.RESTORE)
+                        mainFrame.restoreButton!!.buttonType = (ButtonType.RESTORE)
                     }
                 } else {
                     CustomDecorationParameters.maximizedWindowFrameThickness = (0)
@@ -89,8 +89,8 @@ class CustomJFrame(val theme: Theme, title: String?): JFrame(title) {
                         theme.frameBorderColor,
                         CustomDecorationParameters.frameBorderThickness
                     )
-                    if (mainFrame.restoreButton != null && mainFrame.restoreButton!!.controlBoxButtonType !== ButtonType.MAXIMIZE) {
-                        mainFrame.restoreButton!!.controlBoxButtonType=(ButtonType.MAXIMIZE)
+                    if (mainFrame.restoreButton != null && mainFrame.restoreButton!!.buttonType !== ButtonType.MAXIMIZE) {
+                        mainFrame.restoreButton!!.buttonType=(ButtonType.MAXIMIZE)
                     }
                 }
             }
