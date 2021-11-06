@@ -205,15 +205,20 @@ class Main: View("application.title".message()) {
             drawDetail(change.list[0])
         }
 
-        tableMain.setOnKeyPressed { event ->
-            when(event.code) {
+        tableMain.setOnKeyPressed { e ->
+            when(e.code) {
                 ENTER -> tableMain.selectedItem?.let { linkExecutor.run(it) }
                 ESCAPE -> inputKeyword.requestFocus()
                 DELETE -> tableMain.selectedItem?.let{ deleteLink(it) }
                 TAB -> {
-                    if( ! event.isShiftDown ) {
-                        event.consume()
+                    if( ! e.isShiftDown ) {
+                        e.consume()
                         (if(lastFocused == null || lastFocused == tableMain) descGroupName else lastFocused)!!.requestFocus()
+                    }
+                }
+                C -> if(e.isControlDown) {
+                    tableMain.selectedItem?.let {
+                        linkExecutor.copyFolder(it)
                     }
                 }
             }

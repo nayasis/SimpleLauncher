@@ -77,7 +77,7 @@ dependencies {
 	// common
 //	implementation("com.github.nayasis:basica-kt:0.0.1-SNAPSHOT")
 	implementation("com.github.nayasis:basica-kt:develop-SNAPSHOT")
-//	implementation("com.github.nayasis:basica-kt:develop-SNAPSHOT"){ isChanging = true }
+//	implementation("com.github.nayasis:basica-kt:0.1.3")
 //	implementation("commons-io:commons-io:2.4")
 //	implementation("commons-cli:commons-cli:1.4")
 //	implementation("commons-codec:commons-codec:1.13")
