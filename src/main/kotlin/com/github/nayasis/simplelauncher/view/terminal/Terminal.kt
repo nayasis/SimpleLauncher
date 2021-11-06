@@ -32,7 +32,10 @@ class Terminal(
         command,
         { onDone?.let{ it(this) } },
         { e -> onFail?.let{ it(e,this) } },
-        { onSuccess?.let{ it(this) } },
+        {
+            title = "Done - $title"
+            onSuccess?.let{ it(this) }
+        },
         terminalConfig,
     )
 

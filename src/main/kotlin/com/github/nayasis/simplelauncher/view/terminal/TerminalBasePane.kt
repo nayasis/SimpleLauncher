@@ -111,7 +111,7 @@ abstract class TerminalBasePane(
     }
 
     private fun print(text: String) = runLater {
-        System.out.print(text)
+        kotlin.io.print(text)
         terminalIO.call("print", text)
     }
 
