@@ -30,12 +30,12 @@ class Terminal(
 
     private val terminal: TerminalPane = TerminalPane(
         command,
-        { onDone?.let{ it(this) } },
-        { e -> onFail?.let{ it(e,this) } },
         {
             title = "Done - $title"
-            onSuccess?.let{ it(this) }
+            onDone?.let{ it(this) }
         },
+        { e -> onFail?.let{ it(e,this) } },
+        { onSuccess?.let{ it(this) } },
         terminalConfig,
     )
 
