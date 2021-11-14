@@ -9,6 +9,7 @@ import javafx.scene.Scene
 import javafx.scene.paint.Color
 import javafx.stage.Stage
 import mu.KotlinLogging
+import tornadofx.*
 
 private val logger = KotlinLogging.logger {}
 
@@ -30,12 +31,12 @@ class Terminal(
 
     private val terminal: TerminalPane = TerminalPane(
         command,
-        { onDone?.let{ it(this) } },
-        { e -> onFail?.let{ it(e,this) } },
         {
-            title = "Done - $title"
-            onSuccess?.let{ it(this) }
+            runLater { title = "Done - $title" }
+            onDone?.let{ it(this) }
         },
+        { e -> onFail?.let{ it(e,this) } },
+        { onSuccess?.let{ it(this) } },
         terminalConfig,
     )
 
