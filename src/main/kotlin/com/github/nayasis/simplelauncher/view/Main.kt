@@ -218,6 +218,7 @@ class Main: View("application.title".message()) {
                 }
                 C -> if(e.isControlDown) {
                     tableMain.selectedItem?.let {
+                        e.consume()
                         linkExecutor.copyFolder(it)
                     }
                 }
@@ -239,16 +240,27 @@ class Main: View("application.title".message()) {
             if( e.isControlDown ) {
                 when(e.code) {
                     S -> buttonSave.let { if(!it.isDisable) it.fire() }
-                    D -> buttonDelete.let { if(!it.isDisable) it.fire() }
-                    C -> buttonCopy.let { if(!it.isDisable) it.fire() }
-                    N -> if( e.isShiftDown) {
+                    D -> buttonCopy.let { if(!it.isDisable) it.fire() }
+                    N -> {
+                        e.consume()
+                        if( e.isShiftDown) {
                             buttonAddFile.fireEvent(e)
                         } else {
                             buttonNew.let { if(!it.isDisable) it.fire() }
                         }
+                    }
                     O -> buttonOpenFolder.let { if(!it.isDisable) it.fire() }
-                    F -> buttonCopyFolder.let { if(!it.isDisable) it.fire() }
+                    C -> {
+                        e.consume()
+                        if( e.isShiftDown ) {
+                            buttonCopyFolder.let { if(!it.isDisable) it.fire() }
+                        }
+                    }
                     I -> if(!e.isShiftDown) changeIcon()
+                }
+            } else if (e.isShiftDown ) {
+                when(e.code) {
+                    DELETE -> buttonDelete.let { if(!it.isDisable) it.fire() }
                 }
             }
         }
