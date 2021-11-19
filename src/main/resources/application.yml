@@ -19,3 +19,5 @@ spring:
       hibernate:
         format_sql: true
         use_sql_comments: false
+  main:
+    lazy-initialization: true

@@ -1,6 +1,7 @@
 package com.github.nayasis.simplelauncher.view.terminal
 
 import com.github.nayasis.kotlin.basica.etc.error
+import com.github.nayasis.kotlin.basica.exec.Command
 import com.github.nayasis.kotlin.javafx.property.StageProperty
 import com.github.nayasis.kotlin.javafx.stage.addCloseRequest
 import com.github.nayasis.simplelauncher.service.ConfigService
@@ -8,12 +9,12 @@ import javafx.scene.Scene
 import javafx.scene.paint.Color
 import javafx.stage.Stage
 import mu.KotlinLogging
+import tornadofx.*
 
 private val logger = KotlinLogging.logger {}
 
 class Terminal(
-    command: String,
-    workingDirectory: String? = null,
+    command: Command,
     onDone:((Terminal) -> Unit)? = null,
     onFail:((Throwable,Terminal) -> Unit)? = null,
     onSuccess:((Terminal) -> Unit)? = null,
@@ -30,8 +31,10 @@ class Terminal(
 
     private val terminal: TerminalPane = TerminalPane(
         command,
-        workingDirectory,
-        { onDone?.let{ it(this) } },
+        {
+            runLater { title = "Done - $title" }
+            onDone?.let{ it(this) }
+        },
         { e -> onFail?.let{ it(e,this) } },
         { onSuccess?.let{ it(this) } },
         terminalConfig,
@@ -39,7 +42,7 @@ class Terminal(
 
     init {
         scene  = Scene(terminal)
-        title  = command
+        title  = command.toString()
         width  = 700.0
         height = 600.0
         addCloseRequest {

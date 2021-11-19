@@ -1,13 +1,10 @@
 package com.github.nayasis.simplelauncher.view.terminal
 
-import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.etc.Platforms
 import com.github.nayasis.kotlin.basica.exec.Command
 import com.github.nayasis.kotlin.basica.exec.CommandExecutor
-import com.github.nayasis.kotlin.javafx.stage.Dialog
 import mu.KotlinLogging
 import tornadofx.runAsync
-import tornadofx.runLater
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
@@ -19,15 +16,12 @@ private val logger = KotlinLogging.logger {}
  * https://github.com/javaterminal/TerminalFX
  */
 class TerminalPane(
-    val command: String,
-    workingDirectory: String? = null,
+    val command: Command,
     var onDone:(() -> Unit)? = null,
     var onFail: ((Throwable) -> Unit)? = null,
     var onSuccess: (() -> Unit)? = null,
     config: TerminalConfig,
 ): TerminalBasePane(config) {
-
-    val cmd = Command(command,workingDirectory)
 
     val executor = CommandExecutor().apply {
         onProcessFailed = { closeReader() }
@@ -48,7 +42,7 @@ class TerminalPane(
     }
 
     private fun runProcess() {
-        executor.run(cmd,null,null)
+        executor.run(command,null,null)
         outputReader = BufferedReader(InputStreamReader(executor.outputStream, Platforms.os.charset))
         errorReader  = BufferedReader(InputStreamReader(executor.errorStream, Platforms.os.charset))
         focusCursor()

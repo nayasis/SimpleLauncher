@@ -77,33 +77,33 @@ class LinkExecutor(
 
     }
 
-    private fun run(linkCmd: LinkCommand, wait: Boolean = false, onTerminal: Boolean = false) {
+    private fun run(linkCmd: LinkCommand, wait: Boolean = false) {
         with(linkCmd) {
-            commandPrev.tokenize("\n").forEach { run(it,workingDirectory,true,onTerminal) }
-            main.printCommand(toCommand())
-            run(toCommand(), workingDirectory, wait || showConsole)
-            commandNext.tokenize("\n").forEach { run(it,workingDirectory,true,onTerminal) }
+            val command = toCommand()
+            commandPrev.tokenize("\n").forEach { run(Command(it,workingDirectory),true,showConsole) }
+            main.printCommand("$command")
+            run(command, wait || showConsole, showConsole)
+            commandNext.tokenize("\n").forEach { run(Command(it,workingDirectory),true,showConsole) }
         }
     }
 
-    private fun run(command: String?, workingDirectory: String?, wait: Boolean, onTerminal: Boolean = false) {
-        if( command.isNullOrBlank() ) return
-        val cli = Command(command,workingDirectory).also { logger.debug { ">> command : $it" } }
-        if( onTerminal ) {
-            val terminal = Terminal("$cli", onDone = { it.close() })
+    private fun run(command: Command, wait: Boolean, showConsole: Boolean = false) {
+        if( command.isEmpty() ) return
+        logger.debug { ">> command : $command" }
+        if( showConsole ) {
+            val terminal = Terminal(command, onDone = { it.close() })
             if(wait) {
                 terminal.showAndWait()
             } else {
                 terminal.show()
             }
         } else {
-            val executor = CommandExecutor().run(cli)
-            if(wait) executor.waitFor()
+            CommandExecutor().run(command).also { if(wait) it.waitFor() }
         }
     }
 
     fun openFolder(link: Link) {
-        LinkCommand(link).path?.directory?.let {
+        link.toPath()?.directory?.let {
             if( it.notExists() ) {
                 Dialog.error("msg.err.005".message().format(it) )
             } else {
@@ -113,7 +113,7 @@ class LinkExecutor(
     }
 
     fun copyFolder(link: Link) {
-        val path = LinkCommand(link).path?.directory ?: link.path
+        val path = link.toPath()?.directory ?: link.path
         Desktop.clipboard.set(path.toString())
     }
 
