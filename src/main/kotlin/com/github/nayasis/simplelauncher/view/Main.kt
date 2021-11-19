@@ -557,7 +557,7 @@ class Main: View("application.title".message()) {
             addAll(linkRepository.findAllByOrderByTitle())
         }
 
-        val lastUsed = ArrayList(links.items).apply { sortByDescending { it.lastExecDate } }.mapNotNull { it.title }.take(20)
+        val lastUsed = ArrayList(links.items).apply { sortByDescending { it.lastExecDate } }.mapNotNull { it.title }.take(linkExecutor.history.size)
         linkExecutor.history.addAll(lastUsed)
 
         printSearchResult()
@@ -702,10 +702,11 @@ private val MOUSE_CLICK = MouseEvent(
 )
 
 class AutoCompletionText(
-    textField: TextField?,
-    suggestion: MutableCollection<String>?
+    val textField: TextField,
+    val suggestion: MutableCollection<String>
 ): AutoCompletionTextFieldBinding<String>(textField, SuggestionProvider.create(suggestion)) {
     fun show() {
+        super.setUserInput(textField.text)
         super.showPopup()
     }
 }
