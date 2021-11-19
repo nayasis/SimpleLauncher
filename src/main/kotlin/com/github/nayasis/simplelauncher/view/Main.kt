@@ -40,6 +40,7 @@ import javafx.scene.input.KeyCode.*
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.KeyEvent.KEY_PRESSED
 import javafx.scene.input.MouseButton
+import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.GridPane
@@ -244,7 +245,7 @@ class Main: View("application.title".message()) {
                     N -> {
                         e.consume()
                         if( e.isShiftDown) {
-                            buttonAddFile.fireEvent(e)
+                            buttonAddFile.fireEvent(MOUSE_CLICK)
                         } else {
                             buttonNew.let { if(!it.isDisable) it.fire() }
                         }
@@ -651,3 +652,24 @@ class Main: View("application.title".message()) {
     fun printSearchResult() = printStatus("msg.info.005".message().format(links.size, links.items.size) )
 
 }
+
+private val MOUSE_CLICK = MouseEvent(
+    MouseEvent.MOUSE_CLICKED,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    MouseButton.PRIMARY,
+    1,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    null
+)
