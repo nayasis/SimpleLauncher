@@ -29,6 +29,8 @@ import com.github.nayasis.simplelauncher.service.ConfigService
 import com.github.nayasis.simplelauncher.service.LinkExecutor
 import com.github.nayasis.simplelauncher.service.LinkService
 import com.github.nayasis.simplelauncher.service.TextMatcher
+import impl.org.controlsfx.autocompletion.AutoCompletionTextFieldBinding
+import impl.org.controlsfx.autocompletion.SuggestionProvider
 import javafx.beans.value.ObservableValue
 import javafx.collections.ListChangeListener
 import javafx.geometry.Pos
@@ -46,7 +48,10 @@ import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
+import javafx.util.Callback
 import mu.KotlinLogging
+import org.controlsfx.control.textfield.AutoCompletionBinding
+import org.controlsfx.control.textfield.TextFields
 import tornadofx.SortedFilteredList
 import tornadofx.View
 import tornadofx.asObservable
@@ -220,7 +225,7 @@ class Main: View("application.title".message()) {
                 C -> if(e.isControlDown) {
                     tableMain.selectedItem?.let {
                         e.consume()
-                        linkExecutor.copyFolder(it)
+                        linkService.copyFolder(it)
                     }
                 }
             }
@@ -331,8 +336,8 @@ class Main: View("application.title".message()) {
         buttonDelete.setOnAction { detail?.let{ deleteLink(it) } }
         buttonCopy.setOnAction { copyDetail() }
         buttonNew.setOnAction { createDetail() }
-        buttonOpenFolder.setOnAction { tableMain.selectedItem?.let { linkExecutor.openFolder(it) } }
-        buttonCopyFolder.setOnAction { tableMain.selectedItem?.let { linkExecutor.copyFolder(it) } }
+        buttonOpenFolder.setOnAction { tableMain.selectedItem?.let { linkService.openFolder(it) } }
+        buttonCopyFolder.setOnAction { tableMain.selectedItem?.let { linkService.copyFolder(it) } }
 
         descIcon.setOnMouseClicked { e ->
             if( e.button == MouseButton.PRIMARY && e.clickCount > 1 )
@@ -463,6 +468,8 @@ class Main: View("application.title".message()) {
 
         var lastModified: LocalDateTime? = null
 
+        var autoCompleterKeyword: AutoCompletionText? = null
+
         timer(period = 100) {
             if( lastModified != null && now().between(lastModified!!).toMillis() < 300 ) {
                 lastModified = null
@@ -481,6 +488,20 @@ class Main: View("application.title".message()) {
         inputGroup.textProperty().onChange{
             groupMatcher.setKeyword(it)
             lastModified = now()
+        }
+
+        inputKeyword.addEventFilter(KEY_PRESSED) { e ->
+            if( e.isAltDown ) {
+                if( e.code == DOWN && autoCompleterKeyword == null) {
+                    autoCompleterKeyword = AutoCompletionText(inputKeyword, linkExecutor.history)
+                    autoCompleterKeyword?.setOnAutoCompleted {
+                        autoCompleterKeyword?.dispose()
+                        autoCompleterKeyword = null
+                        setSearchFilter()
+                    }
+                    autoCompleterKeyword?.show()
+                }
+            }
         }
 
     }
@@ -530,11 +551,17 @@ class Main: View("application.title".message()) {
     }
 
     fun readLinks() {
+
         links.apply {
             clear()
             addAll(linkRepository.findAllByOrderByTitle())
         }
+
+        val lastUsed = ArrayList(links.items).apply { sortByDescending { it.lastExecDate } }.mapNotNull { it.title }.take(20)
+        linkExecutor.history.addAll(lastUsed)
+
         printSearchResult()
+
     }
 
     private fun clearDetail() {
@@ -673,3 +700,12 @@ private val MOUSE_CLICK = MouseEvent(
     false,
     null
 )
+
+class AutoCompletionText(
+    textField: TextField?,
+    suggestion: MutableCollection<String>?
+): AutoCompletionTextFieldBinding<String>(textField, SuggestionProvider.create(suggestion)) {
+    fun show() {
+        super.showPopup()
+    }
+}
