@@ -1,12 +1,8 @@
 package com.github.nayasis.simplelauncher.service
 
-import com.github.nayasis.kotlin.basica.core.path.*
-import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.core.string.tokenize
 import com.github.nayasis.kotlin.basica.exec.Command
 import com.github.nayasis.kotlin.basica.exec.CommandExecutor
-import com.github.nayasis.kotlin.javafx.misc.Desktop
-import com.github.nayasis.kotlin.javafx.misc.set
 import com.github.nayasis.kotlin.javafx.property.StageProperty
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.simplelauncher.common.Context.Companion.main
@@ -14,6 +10,7 @@ import com.github.nayasis.simplelauncher.jpa.entity.Link
 import com.github.nayasis.simplelauncher.view.terminal.Terminal
 import javafx.stage.Modality
 import mu.KotlinLogging
+import org.apache.commons.collections4.queue.CircularFifoQueue
 import org.springframework.stereotype.Service
 import tornadofx.runLater
 import java.io.File
@@ -26,7 +23,11 @@ class LinkExecutor(
     private val linkService: LinkService
 ) {
 
+    val history = CircularFifoQueue<String>(20)
+
     fun run(link: Link, files: Collection<File>? = null) {
+
+        link.title?.let { history.add(it) }
 
         linkService.save( link.apply {
             lastExecDate = LocalDateTime.now()
@@ -100,21 +101,6 @@ class LinkExecutor(
         } else {
             CommandExecutor().run(command).also { if(wait) it.waitFor() }
         }
-    }
-
-    fun openFolder(link: Link) {
-        link.toPath()?.directory?.let {
-            if( it.notExists() ) {
-                Dialog.error("msg.err.005".message().format(it) )
-            } else {
-                Desktop.open(it.toFile())
-            }
-        }
-    }
-
-    fun copyFolder(link: Link) {
-        val path = link.toPath()?.directory ?: link.path
-        Desktop.clipboard.set(path.toString())
     }
 
 }
