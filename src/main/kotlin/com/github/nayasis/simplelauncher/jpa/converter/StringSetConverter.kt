@@ -1,4 +1,4 @@
-package com.github.nayasis.simplelauncher.jpa.entity.converter
+package com.github.nayasis.simplelauncher.jpa.converter
 
 import com.github.nayasis.kotlin.basica.reflection.Reflector
 import javax.persistence.AttributeConverter

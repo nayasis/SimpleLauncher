@@ -3,16 +3,15 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
 
 	// kotlin
-	kotlin("jvm") version "1.4.32"
-	kotlin("plugin.serialization") version "1.4.32"
+	kotlin("jvm") version "1.5.21"
 
 	// spring
-	id("org.springframework.boot") version "2.3.5.RELEASE"
-	id("io.spring.dependency-management") version "1.0.10.RELEASE"
-	kotlin("plugin.jpa") version "1.4.20"
-	kotlin("plugin.noarg") version "1.4.20"
-	kotlin("plugin.allopen") version "1.4.20"
-	kotlin("plugin.spring") version "1.4.20"
+	id("org.springframework.boot") version "2.5.6"
+	id("io.spring.dependency-management") version "1.0.11.RELEASE"
+	kotlin("plugin.jpa") version "1.5.21"
+	kotlin("plugin.noarg") version "1.5.21"
+	kotlin("plugin.allopen") version "1.5.21"
+	kotlin("plugin.spring") version "1.5.21"
 
 	// javafx
 	application
@@ -25,19 +24,6 @@ allOpen {
 	annotation("javax.persistence.MappedSuperclass")
 	annotation("javax.persistence.Embeddable")
 }
-
-noArg {
-	annotation("javax.persistence.Entity")
-	annotation("javax.persistence.MappedSuperclass")
-	annotation("javax.persistence.Embeddable")
-	invokeInitializers = true
-}
-allOpen {
-	annotation("javax.persistence.Entity")
-	annotation("javax.persistence.MappedSuperclass")
-	annotation("javax.persistence.Embeddable")
-}
-
 noArg {
 	annotation("javax.persistence.Entity")
 	annotation("javax.persistence.MappedSuperclass")
@@ -62,7 +48,7 @@ java.sourceCompatibility = JavaVersion.VERSION_11
 
 configurations.all {
 	resolutionStrategy.cacheChangingModulesFor(  0, "seconds" )
-	resolutionStrategy.cacheDynamicVersionsFor(  5, "minutes" )
+	resolutionStrategy.cacheDynamicVersionsFor(  0, "minutes" )
 }
 
 repositories {
@@ -75,12 +61,9 @@ repositories {
 dependencies {
 
 	// common
-//	implementation("com.github.nayasis:basica-kt:0.0.1-SNAPSHOT")
-	implementation("com.github.nayasis:basica-kt:develop-SNAPSHOT")
-//	implementation("com.github.nayasis:basica-kt:0.1.3")
-//	implementation("commons-io:commons-io:2.4")
-//	implementation("commons-cli:commons-cli:1.4")
-//	implementation("commons-codec:commons-codec:1.13")
+	implementation("com.github.nayasis:basica-kt:0.1.3")
+	implementation("com.github.nayasis:basicafx-kt:0.1.0")
+//	implementation("com.github.nayasis:basicafx-kt:develop-SNAPSHOT"){ isChanging = true }
 	implementation("ch.qos.logback:logback-classic:1.2.3")
 
 	// basicafx
@@ -141,8 +124,7 @@ tasks.withType<Test> {
 tasks.withType<KotlinCompile> {
 	kotlinOptions {
 		freeCompilerArgs = listOf(
-			"-Xjsr305=strict",
-			"-Xuse-experimental=kotlinx.serialization.ExperimentalSerializationApi"
+			"-Xjsr305=strict"
 		)
 		jvmTarget = "11"
 	}
