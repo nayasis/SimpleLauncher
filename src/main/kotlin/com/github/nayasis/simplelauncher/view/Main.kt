@@ -126,15 +126,15 @@ class Main: View("application.title".message()) {
     init {
         Localizator(root)
         initEvent()
-        initSearchFilter()
         initTable()
     }
 
     override fun onBeforeShow() {
         ConfigService.stageMain?.let {
             it.excludeKlass.add(Button::class)
-            it.bind(currentStage!!)
+            it.bind(currentStage)
             menubarTop.repack()
+            initSearchFilter(it.tables[Main::tableMain.name]?.focusedRow)
         }
     }
 
@@ -174,7 +174,9 @@ class Main: View("application.title".message()) {
         colTitle.setComparator { o1, o2 -> o1.title.ifNull{""}.compareTo(o2.title.ifNull{""}) }
 
         colLastUsedDt.cellValue(Link::lastExecDate).cellFormat {
-            text = it?.toFormat("YYYY-MM-DD HH:MI:SS")
+            graphic = label {
+                text = it?.toFormat("YYYY-MM-DD HH:MI:SS")
+            }
             alignment = Pos.CENTER
         }
         colExecCount.cellValue(Link::executeCount).setAlign(Pos.CENTER_RIGHT)
@@ -203,15 +205,21 @@ class Main: View("application.title".message()) {
             drawDetail(change.list[0])
         }
 
-        tableMain.setOnKeyPressed { event ->
-            when(event.code) {
+        tableMain.setOnKeyPressed { e ->
+            when(e.code) {
                 ENTER -> tableMain.selectedItem?.let { linkExecutor.run(it) }
                 ESCAPE -> inputKeyword.requestFocus()
                 DELETE -> tableMain.selectedItem?.let{ deleteLink(it) }
                 TAB -> {
-                    if( ! event.isShiftDown ) {
-                        event.consume()
+                    if( ! e.isShiftDown ) {
+                        e.consume()
                         (if(lastFocused == null || lastFocused == tableMain) descGroupName else lastFocused)!!.requestFocus()
+                    }
+                }
+                C -> if(e.isControlDown) {
+                    tableMain.selectedItem?.let {
+                        e.consume()
+                        linkExecutor.copyFolder(it)
                     }
                 }
             }
@@ -232,16 +240,27 @@ class Main: View("application.title".message()) {
             if( e.isControlDown ) {
                 when(e.code) {
                     S -> buttonSave.let { if(!it.isDisable) it.fire() }
-                    D -> buttonDelete.let { if(!it.isDisable) it.fire() }
-                    C -> buttonCopy.let { if(!it.isDisable) it.fire() }
-                    N -> if( e.isShiftDown) {
+                    D -> buttonCopy.let { if(!it.isDisable) it.fire() }
+                    N -> {
+                        e.consume()
+                        if( e.isShiftDown) {
                             buttonAddFile.fireEvent(e)
                         } else {
                             buttonNew.let { if(!it.isDisable) it.fire() }
                         }
+                    }
                     O -> buttonOpenFolder.let { if(!it.isDisable) it.fire() }
-                    F -> buttonCopyFolder.let { if(!it.isDisable) it.fire() }
-                    I -> changeIcon()
+                    C -> {
+                        e.consume()
+                        if( e.isShiftDown ) {
+                            buttonCopyFolder.let { if(!it.isDisable) it.fire() }
+                        }
+                    }
+                    I -> if(!e.isShiftDown) changeIcon()
+                }
+            } else if (e.isShiftDown ) {
+                when(e.code) {
+                    DELETE -> buttonDelete.let { if(!it.isDisable) it.fire() }
                 }
             }
         }
@@ -331,7 +350,6 @@ class Main: View("application.title".message()) {
             Tooltip.install(buttonAddFile,it)
         }
 
-        buttonAddFile
         descExecPath.setOnDragOver { fnDraggable(it) }
         descExecPath.setOnDragDropped { e ->
             e.dragboard.files.firstOrNull()?.let {
@@ -389,13 +407,23 @@ class Main: View("application.title".message()) {
                 it.textProperty().onChange { buttonSave.isDisable = false }
             }
             children.filterIsInstance<CheckBox>().forEach {
+                it.addEventFilter(KEY_PRESSED) { e ->
+                    if( e.code == ESCAPE ) {
+                        lastFocused = it
+                        tableMain.requestFocus()
+                    }
+                }
                 it.selectedProperty().addListener { _, _, _ -> buttonSave.isDisable = false }
             }
             children.filterIsInstance<TextArea>().forEach {
                 it.addEventFilter(KEY_PRESSED) { e ->
-                    if( e.code != TAB || e.isShiftDown || e.isControlDown ) return@addEventFilter
-                    e.consume()
-                    (e.source as Node).fireEvent(getKeyEventTab(e))
+                    if( e.code == ESCAPE ) {
+                        lastFocused = it
+                        tableMain.requestFocus()
+                    } else if( e.code == TAB && ! e.isShiftDown && ! e.isControlDown ) {
+                        e.consume()
+                        (e.source as Node).fireEvent(toTabPressEvent(e))
+                    }
                 }
             }
         }
@@ -410,19 +438,27 @@ class Main: View("application.title".message()) {
 
     }
 
-    private fun initSearchFilter() {
+    private fun initSearchFilter(focused: Int?) {
+        keywordMatcher.setKeyword(inputKeyword.text)
+        groupMatcher.setKeyword(inputGroup.text)
+        setSearchFilter()
+        focused?.let { tableMain.focus(it) }
+        setSearchEvent()
+    }
 
-        val searchFilter = {
-            val hasKeyword = inputKeyword.text.isNotBlank()
-            val hasGroup   = inputGroup.text.isNotBlank()
-            when {
-                !hasGroup && !hasKeyword -> links.predicate = {true}
-                !hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsAll) }
-                 hasGroup && !hasKeyword -> links.predicate = { groupMatcher.isMatch(it.wordsGroup) }
-                 hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsKeyword) && groupMatcher.isMatch(it.wordsGroup) }
-            }
-            printSearchResult()
+    private fun setSearchFilter() {
+        val hasKeyword = inputKeyword.text.isNotBlank()
+        val hasGroup   = inputGroup.text.isNotBlank()
+        when {
+            !hasGroup && !hasKeyword -> links.predicate = { true }
+            !hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsAll) }
+             hasGroup && !hasKeyword -> links.predicate = { groupMatcher.isMatch(it.wordsGroup) }
+             hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsKeyword) && groupMatcher.isMatch(it.wordsGroup) }
         }
+        printSearchResult()
+    }
+
+    private fun setSearchEvent() {
 
         var lastModified: LocalDateTime? = null
 
@@ -431,7 +467,7 @@ class Main: View("application.title".message()) {
                 lastModified = null
                 runLater {
                     listOf(inputKeyword,inputGroup).forEach { it.isDisable = true }
-                    searchFilter()
+                    setSearchFilter()
                     listOf(inputKeyword,inputGroup).forEach { it.isDisable = false }
                 }
             }
@@ -468,7 +504,7 @@ class Main: View("application.title".message()) {
         }
     }
 
-    private fun getKeyEventTab(event: KeyEvent) = KeyEvent(
+    private fun toTabPressEvent(event: KeyEvent) = KeyEvent(
         event.source,
         event.target,
         event.eventType,
@@ -488,17 +524,6 @@ class Main: View("application.title".message()) {
                     it.add(descGridPane)
             } else {
                 it.remove(descGridPane)
-            }
-        }
-    }
-
-    fun showMenubar(show: Boolean) {
-        vboxTop.children.also {
-            if(show) {
-                if(menubarTop !in it)
-                    it.add(0,menubarTop)
-            } else {
-                it.remove(menubarTop)
             }
         }
     }
@@ -615,18 +640,14 @@ class Main: View("application.title".message()) {
         buttonSave.isDisable = false
     }
 
-    fun printCommand(command: String? = null) {
-        runLater {
-            labelCmd.text = command ?: ""
-        }
+    fun printCommand(command: String? = null) = runLater {
+        labelCmd.text = command ?: ""
     }
 
     fun printStatus(status: String? = null) {
         labelStatus.text = status ?: ""
     }
 
-    fun printSearchResult() {
-        printStatus("msg.info.005".message().format(links.size, links.items.size) )
-    }
+    fun printSearchResult() = printStatus("msg.info.005".message().format(links.size, links.items.size) )
 
 }
