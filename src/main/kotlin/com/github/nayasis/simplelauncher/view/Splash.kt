@@ -1,5 +1,8 @@
 package com.github.nayasis.simplelauncher.view
 
+import com.github.nayasis.kotlin.javafx.control.basic.bottomAnchor
+import com.github.nayasis.kotlin.javafx.control.basic.leftAnchor
+import com.github.nayasis.kotlin.javafx.control.basic.rightAnchor
 import com.github.nayasis.kotlin.javafx.preloader.CloseNotificator
 import com.github.nayasis.kotlin.javafx.preloader.NPreloader
 import com.github.nayasis.kotlin.javafx.preloader.ProgressNotificator
@@ -9,15 +12,9 @@ import com.github.nayasis.kotlin.tornadofx.extension.toScene
 import javafx.geometry.Pos
 import javafx.scene.control.Label
 import javafx.scene.control.ProgressBar
-import javafx.scene.layout.AnchorPane
 import javafx.stage.Stage
 import javafx.stage.StageStyle
-import tornadofx.View
-import tornadofx.anchorpane
-import tornadofx.label
-import tornadofx.progressbar
-import tornadofx.runLater
-import tornadofx.vbox
+import tornadofx.*
 
 class Splash: NPreloader() {
 
@@ -63,10 +60,10 @@ class PreloaderLayout: View() {
                 maxWidth = Double.MAX_VALUE
                 progress = 0.0
             }
-            label = label {  }
-            AnchorPane.setLeftAnchor(this, 0.0)
-            AnchorPane.setRightAnchor(this, 0.0)
-            AnchorPane.setBottomAnchor(this, 0.0)
+            label = label { ellipsisString = "..." }
+            leftAnchor = 0.0
+            rightAnchor = 0.0
+            bottomAnchor = 0.0
         }
     }
 

@@ -2,6 +2,7 @@ package com.github.nayasis.simplelauncher.service
 
 import com.github.nayasis.kotlin.basica.core.path.directory
 import com.github.nayasis.kotlin.basica.core.string.message
+import com.github.nayasis.kotlin.basica.core.string.toFile
 import com.github.nayasis.kotlin.basica.reflection.Reflector
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.simplelauncher.common.Context
@@ -11,6 +12,7 @@ import com.github.nayasis.simplelauncher.jpa.vo.JsonLink
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import tornadofx.*
 import java.io.File
 
 private val logger = KotlinLogging.logger{}
@@ -48,24 +50,29 @@ class LinkService(
     }
 
     fun openImportPicker(): File? =
-        openFilePicker("msg.info.004","*.sl","msg.info.011")
+        filePicker("msg.info.004","*.sl","msg.info.011")
 
     fun openExportPicker(): File? =
-        openFilePicker("msg.info.003","*.sl","msg.info.011")
+        filePicker("msg.info.003","*.sl","msg.info.011", FileChooserMode.Save)
 
     fun openIconPicker(): File? =
-        openFilePicker("msg.info.002","*.*","msg.info.012")
+        filePicker("msg.info.002","*.*","msg.info.012")
 
     fun openExecutorPicker(): File? =
-        openFilePicker("msg.info.001","*.*","msg.info.006")
+        filePicker("msg.info.001","*.*","msg.info.006")
 
-    private fun openFilePicker(title: String, extension: String, description: String): File? {
-        return Dialog.filePicker(title.message(), extension, description.message(), ConfigService.filePickerInitialDirectory)
-            .showOpenDialog(Context.main.primaryStage)
-            .also {
-                if( it != null )
-                    ConfigService.filePickerInitialDirectory = it.directory.path
-            }
+    private fun filePicker(title: String, extension: String, description: String, mode: FileChooserMode = FileChooserMode.Single): File? {
+        return Dialog.filePicker(
+            title = title.message(),
+            extension = extension,
+            description = description,
+            initialDirectory = ConfigService.filePickerInitialDirectory?.toFile(),
+            mode = mode,
+            owner = Context.main.primaryStage
+        ).firstOrNull().also {
+            if( it != null )
+                ConfigService.filePickerInitialDirectory = it.directory.path
+        }
     }
 
 }
