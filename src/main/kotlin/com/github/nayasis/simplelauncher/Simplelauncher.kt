@@ -1,8 +1,8 @@
 package com.github.nayasis.simplelauncher
 
 import ch.qos.logback.classic.Logger
+import com.github.nayasis.kotlin.javafx.spring.SpringFxApp
 import com.github.nayasis.kotlin.javafx.stage.loadDefaultIcon
-import com.github.nayasis.kotlin.spring.javafx.app.SpringFxApp
 import com.github.nayasis.simplelauncher.view.Main
 import com.github.nayasis.simplelauncher.view.Splash
 import javafx.stage.Stage

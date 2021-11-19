@@ -1,4 +1,4 @@
-package com.github.nayasis.kotlin.jna
+package com.github.nayasis.sample.jna
 
 import com.sun.jna.Native
 import com.sun.jna.NativeLong
