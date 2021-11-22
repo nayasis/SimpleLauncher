@@ -11,7 +11,6 @@ import com.github.nayasis.simplelauncher.view.CircularFifoSet
 import com.github.nayasis.simplelauncher.view.terminal.Terminal
 import javafx.stage.Modality
 import mu.KotlinLogging
-import org.apache.commons.collections4.queue.CircularFifoQueue
 import org.springframework.stereotype.Service
 import tornadofx.runLater
 import java.io.File
