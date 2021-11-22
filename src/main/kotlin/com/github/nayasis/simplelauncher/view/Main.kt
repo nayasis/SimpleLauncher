@@ -3,6 +3,8 @@
 package com.github.nayasis.simplelauncher.view
 
 import com.github.nayasis.kotlin.basica.core.extention.ifNull
+import com.github.nayasis.kotlin.basica.core.extention.isEmpty
+import com.github.nayasis.kotlin.basica.core.extention.isNotEmpty
 import com.github.nayasis.kotlin.basica.core.localdate.between
 import com.github.nayasis.kotlin.basica.core.localdate.toFormat
 import com.github.nayasis.kotlin.basica.core.string.message
@@ -491,15 +493,24 @@ class Main: View("application.title".message()) {
         }
 
         inputKeyword.addEventFilter(KEY_PRESSED) { e ->
-            if( e.isAltDown ) {
-                if( e.code == DOWN && autoCompleterKeyword == null) {
-                    autoCompleterKeyword = AutoCompletionText(inputKeyword, linkExecutor.history)
-                    autoCompleterKeyword?.setOnAutoCompleted {
-                        autoCompleterKeyword?.dispose()
-                        autoCompleterKeyword = null
-                        setSearchFilter()
+            if( e.code == ESCAPE ) {
+                autoCompleterKeyword?.dispose()
+                autoCompleterKeyword == null
+            } else if( e.isAltDown ) {
+                if( e.code == DOWN ) {
+                    if( autoCompleterKeyword == null ) {
+                        autoCompleterKeyword = AutoCompletionText(inputKeyword, linkExecutor.history)
+                        autoCompleterKeyword?.setOnAutoCompleted {
+                            autoCompleterKeyword?.dispose()
+                            autoCompleterKeyword = null
+                            setSearchFilter()
+                        }
+                        autoCompleterKeyword?.show()
                     }
-                    autoCompleterKeyword?.show()
+                } else if( e.code == LEFT ) {
+                    inputKeyword.text = linkExecutor.history.prev() ?: inputKeyword.text
+                } else if( e.code == RIGHT ) {
+                    inputKeyword.text = linkExecutor.history.next() ?: inputKeyword.text
                 }
             }
         }
@@ -557,7 +568,11 @@ class Main: View("application.title".message()) {
             addAll(linkRepository.findAllByOrderByTitle())
         }
 
-        val lastUsed = ArrayList(links.items).apply { sortByDescending { it.lastExecDate } }.mapNotNull { it.title }.take(linkExecutor.history.size)
+        val lastUsed = links.items.filter { it.title.isNotEmpty() }
+            .sortedWith(compareByDescending(Link::lastExecDate).thenByDescending(Link::title))
+            .take(linkExecutor.history.capacity)
+            .map {it.title!!}
+
         linkExecutor.history.addAll(lastUsed)
 
         printSearchResult()
@@ -703,9 +718,10 @@ private val MOUSE_CLICK = MouseEvent(
 
 class AutoCompletionText(
     val textField: TextField,
-    val suggestion: MutableCollection<String>
+    val suggestion: Collection<String>
 ): AutoCompletionTextFieldBinding<String>(textField, SuggestionProvider.create(suggestion)) {
     fun show() {
+        if(suggestion.isEmpty() || textField.text.isBlank() ) return
         super.setUserInput(textField.text)
         super.showPopup()
     }

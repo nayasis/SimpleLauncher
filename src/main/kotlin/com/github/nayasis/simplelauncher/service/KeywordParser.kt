@@ -142,11 +142,11 @@ class KeywordParser(capacity: Int = 20) {
     private fun toPattern(keyword: String?): Pattern? {
         if (keyword.isNullOrEmpty()) return null
         return try {
-            Pattern.compile(keyword.toLowerCase())
+            Pattern.compile(keyword.lowercase())
         } catch (e: Exception) {
 
             Pattern.compile(
-                keyword.toLowerCase().replace(PATTERN_REGEX, "")
+                keyword.lowercase().replace(PATTERN_REGEX, "")
             )
         }
     }

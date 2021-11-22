@@ -60,9 +60,6 @@ repositories {
 
 dependencies {
 
-//	implementation("org.jclarion:image4j:0.7")
-//	implementation("org.apache.httpcomponents:httpclient:4.5.8")
-
 	// application
 	implementation("com.github.nayasis:basica-kt:0.1.3")
 	implementation("com.github.nayasis:basicafx-kt:0.1.0")
@@ -71,7 +68,6 @@ dependencies {
 	implementation("org.controlsfx:controlsfx:11.1.0")
 	implementation( "com.github.vatbub:mslinks:1.0.6.2" )
 	implementation( "commons-cli:commons-cli:1.4" )
-	implementation("org.apache.commons:commons-collections4:4.4")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
 	implementation( "no.tornado:tornadofx:1.7.20" )
 //	implementation("ch.qos.logback:logback-classic:1.2.3")

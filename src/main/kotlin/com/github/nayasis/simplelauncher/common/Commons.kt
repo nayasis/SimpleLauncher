@@ -9,7 +9,7 @@ fun String.wrapDoubleQuote(): String {
 private val DELIMITERS = " \t\n!@#$%^&*()-_=+[{]}\\|;:'\",<.>/?".toCharArray()
 fun String.toKeyword(): Set<String> {
     return this
-        .toLowerCase()
+        .lowercase()
         .split(*DELIMITERS)
         .toSet()
 }
