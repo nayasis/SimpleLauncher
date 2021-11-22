@@ -7,6 +7,7 @@ import com.github.nayasis.kotlin.javafx.property.StageProperty
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.simplelauncher.common.Context.Companion.main
 import com.github.nayasis.simplelauncher.jpa.entity.Link
+import com.github.nayasis.simplelauncher.view.CircularFifoSet
 import com.github.nayasis.simplelauncher.view.terminal.Terminal
 import javafx.stage.Modality
 import mu.KotlinLogging
@@ -23,7 +24,7 @@ class LinkExecutor(
     private val linkService: LinkService
 ) {
 
-    val history = CircularFifoQueue<String>(20)
+    val history = CircularFifoSet<String>(20)
 
     fun run(link: Link, files: Collection<File>? = null) {
 

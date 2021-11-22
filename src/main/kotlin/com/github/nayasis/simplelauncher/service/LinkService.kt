@@ -23,6 +23,7 @@ private val logger = KotlinLogging.logger{}
 @Component
 class LinkService(
     private val linkRepository: LinkRepository,
+    private val linkExecutor: LinkExecutor,
 ) {
 
     @Transactional
@@ -43,11 +44,13 @@ class LinkService(
 
     @Transactional
     fun deleteAll() {
+        linkExecutor.history.clear()
         linkRepository.deleteAll()
     }
 
     @Transactional
     fun delete(link: Link) {
+        linkExecutor.history.remove(link.title ?: "")
         linkRepository.delete(link)
         Context.main.links.remove(link)
     }
