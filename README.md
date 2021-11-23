@@ -34,29 +34,26 @@ java -jar SimpleLauncher.jar clear
 
 ### Main catalog
 
-| shortcut       | description        |
-| -------------- | ------------------ |
-| Enter          | execute item       |
-| Delete         | delete item        |
+| shortcut       | description             |
+| -------------- | ------------------      |
+| Enter          | execute item            |
+| Delete         | delete item             |
+| Ctrl + **C**   | copy item's folder path |
 
 ### Launcher editor
 
 only works when Launcher editor is opened.
 
-| shortcut       | description             |
-| -------------- | ------------------      |
-| Ctrl + **N**   | new item                |
-| Ctrl + **D**   | delete item             |
-| Ctrl + **C**   | copy item               |
-| Ctrl + **S**   | save item               |
-| Ctrl + **F**   | copy item's folder path |
-| Ctrl + **O**   | open item's folder      |
-| Ctrl + **I**   | change item icon        |
-
-### Etc
-| shortcut       | description                 |
-| -------------- | ------------------          |
-| Ctrl + Shift + **N** | create link via file  |
+| shortcut             | description             |
+| --------------       | ------------------      |
+| Ctrl + **N**         | new item                |
+| Ctrl + Shift + **N** | create link via file    |
+| Shift + **DEL**      | delete item             |
+| Ctrl + **D**         | duplicate item          |
+| Ctrl + **S**         | save item               |
+| Ctrl + Shift + **C** | copy item's folder path |
+| Ctrl + **O**         | open item's folder      |
+| Ctrl + **I**         | change item icon        |
 
 ## Binding parameters
 
@@ -77,13 +74,12 @@ being injected when runs by file(or directory) dragging.
 
 ### Example
 
-ape2wav.exe "#{path}" "#{dir}\#{name}.wav"
+ape2wav.exe "#{path}" "#{dir}\\#{name}.wav"
 
 ## Contact
 
-FAQs  : https://github.com/nayasis/simpleLauncher2/issues
-
-email : [nayasis@gmail.com](mailto:nayasis@gmail.com)
+- issue : https://github.com/nayasis/SimpleLauncher/issues
+- email : [nayasis@gmail.com](mailto:nayasis@gmail.com)
 
 ## Development
 
