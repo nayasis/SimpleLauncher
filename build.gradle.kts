@@ -48,7 +48,7 @@ java.sourceCompatibility = JavaVersion.VERSION_11
 
 configurations.all {
 	resolutionStrategy.cacheChangingModulesFor(  0, "seconds" )
-	resolutionStrategy.cacheDynamicVersionsFor(  0, "minutes" )
+	resolutionStrategy.cacheDynamicVersionsFor(  5, "minutes" )
 }
 
 repositories {
@@ -62,8 +62,9 @@ dependencies {
 
 	// application
 	implementation("com.github.nayasis:basica-kt:0.1.3")
-//	implementation("com.github.nayasis:basicafx-kt:0.1.0")
-	implementation("com.github.nayasis:basicafx-kt:develop-SNAPSHOT"){ isChanging = true }
+	implementation("com.github.nayasis:basicafx-kt:0.1.1")
+//	implementation("com.github.nayasis:basicafx-kt:develop-SNAPSHOT"){ isChanging = true }
+//	implementation("com.github.nayasis:basicafx-kt:master-SNAPSHOT"){ isChanging = true }
 	implementation( "no.tornado:tornadofx:1.7.20" )
 	implementation("org.controlsfx:controlsfx:11.1.0")
 	implementation( "com.github.vatbub:mslinks:1.0.6.2" )
