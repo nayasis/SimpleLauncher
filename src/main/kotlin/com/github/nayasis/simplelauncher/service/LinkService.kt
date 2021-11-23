@@ -70,7 +70,7 @@ class LinkService(
         return Dialog.filePicker(
             title = title.message(),
             extension = extension,
-            description = description,
+            description = description.message(),
             initialDirectory = ConfigService.filePickerInitialDirectory?.toFile(),
             mode = mode,
             owner = Context.main.primaryStage
