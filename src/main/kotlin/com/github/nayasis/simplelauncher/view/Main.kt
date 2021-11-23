@@ -3,7 +3,6 @@
 package com.github.nayasis.simplelauncher.view
 
 import com.github.nayasis.kotlin.basica.core.extention.ifNull
-import com.github.nayasis.kotlin.basica.core.extention.isEmpty
 import com.github.nayasis.kotlin.basica.core.extention.isNotEmpty
 import com.github.nayasis.kotlin.basica.core.localdate.between
 import com.github.nayasis.kotlin.basica.core.localdate.toFormat
@@ -50,25 +49,16 @@ import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
-import javafx.util.Callback
 import mu.KotlinLogging
-import org.controlsfx.control.textfield.AutoCompletionBinding
-import org.controlsfx.control.textfield.TextFields
-import tornadofx.SortedFilteredList
-import tornadofx.View
-import tornadofx.asObservable
-import tornadofx.hbox
-import tornadofx.imageview
-import tornadofx.label
-import tornadofx.onChange
-import tornadofx.runLater
-import tornadofx.selectedItem
+import tornadofx.*
 import java.io.File
 import java.time.LocalDateTime
 import java.time.LocalDateTime.now
 import kotlin.concurrent.timer
 
 private val logger = KotlinLogging.logger {}
+
+private const val CLASS_AUTO_COMPLETER = "auto-completer"
 
 class Main: View("application.title".message()) {
 
@@ -351,12 +341,9 @@ class Main: View("application.title".message()) {
                 changeIcon(it)
             }
         }
-        Tooltip("btn.change.icon.tooltip".message()).let {
-            Tooltip.install(descIcon,it)
-        }
-        Tooltip("btn.addfile.tooltip".message()).let {
-            Tooltip.install(buttonAddFile,it)
-        }
+
+        descIcon.tooltip("btn.change.icon.tooltip".message())
+        buttonAddFile.tooltip("btn.addfile.tooltip".message())
 
         descExecPath.setOnDragOver { fnDraggable(it) }
         descExecPath.setOnDragDropped { e ->
@@ -470,8 +457,6 @@ class Main: View("application.title".message()) {
 
         var lastModified: LocalDateTime? = null
 
-        var autoCompleterKeyword: AutoCompletionText? = null
-
         timer(period = 100) {
             if( lastModified != null && now().between(lastModified!!).toMillis() < 300 ) {
                 lastModified = null
@@ -492,29 +477,38 @@ class Main: View("application.title".message()) {
             lastModified = now()
         }
 
-        inputKeyword.addEventFilter(KEY_PRESSED) { e ->
-            if( e.code == ESCAPE ) {
-                autoCompleterKeyword?.dispose()
-                autoCompleterKeyword == null
-            } else if( e.isAltDown ) {
-                if( e.code == DOWN ) {
-                    if( autoCompleterKeyword == null ) {
-                        autoCompleterKeyword = AutoCompletionText(inputKeyword, linkExecutor.history)
-                        autoCompleterKeyword?.setOnAutoCompleted {
-                            autoCompleterKeyword?.dispose()
-                            autoCompleterKeyword = null
-                            setSearchFilter()
+        applyAutoCompletion(inputKeyword, linkExecutor.history)
+
+    }
+
+    private fun applyAutoCompletion(textField: TextField, suggestion: CircularFifoSet<String>) {
+        var autoCompleter: AutoCompletionText? = null
+        textField.addEventFilter(KEY_PRESSED) { e ->
+            when {
+                e.code == ESCAPE -> {
+                    textField.removeClass(CLASS_AUTO_COMPLETER)
+                    autoCompleter?.dispose()
+                    autoCompleter = null
+                }
+                e.isAltDown -> {
+                    when (e.code) {
+                        DOWN -> if( autoCompleter == null ) {
+                            textField.addClass(CLASS_AUTO_COMPLETER)
+                            autoCompleter = AutoCompletionText(inputKeyword, suggestion)
+                            autoCompleter?.setOnAutoCompleted {
+                                textField.removeClass(CLASS_AUTO_COMPLETER)
+                                autoCompleter?.dispose()
+                                autoCompleter = null
+                                setSearchFilter()
+                            }
+                            autoCompleter?.show()
                         }
-                        autoCompleterKeyword?.show()
+                        LEFT  -> suggestion.prev()?.let { textField.text = it }
+                        RIGHT -> suggestion.next()?.let { textField.text = it }
                     }
-                } else if( e.code == LEFT ) {
-                    inputKeyword.text = linkExecutor.history.prev() ?: inputKeyword.text
-                } else if( e.code == RIGHT ) {
-                    inputKeyword.text = linkExecutor.history.next() ?: inputKeyword.text
                 }
             }
         }
-
     }
 
     private fun changeIcon() {
