@@ -15,5 +15,5 @@
 }
 
 .auto-completer {
-  -fx-border-color: red;
+  -fx-focus-color: #ff5c33;
 }
