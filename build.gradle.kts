@@ -33,7 +33,7 @@ noArg {
 }
 
 application {
-	mainClassName = "com.github.nayasis.simplelauncher.SimplelauncherKt"
+	mainClass.set("com.github.nayasis.simplelauncher.SimplelauncherKt")
 }
 
 javafx {
@@ -62,15 +62,14 @@ dependencies {
 
 	// application
 	implementation("com.github.nayasis:basica-kt:0.1.3")
-	implementation("com.github.nayasis:basicafx-kt:0.1.0")
-//	implementation("com.github.nayasis:basicafx-kt:develop-SNAPSHOT"){ isChanging = true }
+//	implementation("com.github.nayasis:basicafx-kt:0.1.0")
+	implementation("com.github.nayasis:basicafx-kt:develop-SNAPSHOT"){ isChanging = true }
 	implementation( "no.tornado:tornadofx:1.7.20" )
 	implementation("org.controlsfx:controlsfx:11.1.0")
 	implementation( "com.github.vatbub:mslinks:1.0.6.2" )
 	implementation( "commons-cli:commons-cli:1.4" )
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
 	implementation( "no.tornado:tornadofx:1.7.20" )
-//	implementation("ch.qos.logback:logback-classic:1.2.3")
 
 	// spring
 	implementation("org.springframework.boot:spring-boot-starter")
@@ -84,9 +83,6 @@ dependencies {
 	}
 
 	// db
-//	implementation("org.xerial:sqlite-jdbc:3.34.0")
-//	implementation("com.zsoltfabok:sqlite-dialect:1.0")
-//	implementation("com.github.gwenn:sqlite-dialect:0.1.0")
 	implementation("com.h2database:h2")
 
 	// kotlin
