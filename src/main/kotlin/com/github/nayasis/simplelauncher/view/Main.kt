@@ -3,6 +3,7 @@
 package com.github.nayasis.simplelauncher.view
 
 import com.github.nayasis.kotlin.basica.core.extention.ifNull
+import com.github.nayasis.kotlin.basica.core.extention.isNotEmpty
 import com.github.nayasis.kotlin.basica.core.localdate.between
 import com.github.nayasis.kotlin.basica.core.localdate.toFormat
 import com.github.nayasis.kotlin.basica.core.string.message
@@ -29,6 +30,8 @@ import com.github.nayasis.simplelauncher.service.ConfigService
 import com.github.nayasis.simplelauncher.service.LinkExecutor
 import com.github.nayasis.simplelauncher.service.LinkService
 import com.github.nayasis.simplelauncher.service.TextMatcher
+import impl.org.controlsfx.autocompletion.AutoCompletionTextFieldBinding
+import impl.org.controlsfx.autocompletion.SuggestionProvider
 import javafx.beans.value.ObservableValue
 import javafx.collections.ListChangeListener
 import javafx.geometry.Pos
@@ -40,27 +43,22 @@ import javafx.scene.input.KeyCode.*
 import javafx.scene.input.KeyEvent
 import javafx.scene.input.KeyEvent.KEY_PRESSED
 import javafx.scene.input.MouseButton
+import javafx.scene.input.MouseEvent
 import javafx.scene.input.TransferMode
 import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import javafx.scene.layout.VBox
 import mu.KotlinLogging
-import tornadofx.SortedFilteredList
-import tornadofx.View
-import tornadofx.asObservable
-import tornadofx.hbox
-import tornadofx.imageview
-import tornadofx.label
-import tornadofx.onChange
-import tornadofx.runLater
-import tornadofx.selectedItem
+import tornadofx.*
 import java.io.File
 import java.time.LocalDateTime
 import java.time.LocalDateTime.now
 import kotlin.concurrent.timer
 
 private val logger = KotlinLogging.logger {}
+
+private const val CLASS_AUTO_COMPLETER = "auto-completer"
 
 class Main: View("application.title".message()) {
 
@@ -76,7 +74,6 @@ class Main: View("application.title".message()) {
     val colLastUsedDt: TableColumn<Link,LocalDateTime?> by fxid()
     val colExecCount: TableColumn<Link,Int> by fxid()
 
-    val vboxTop: VBox by fxid()
     val menubarTop: MenuBar by fxid()
     val menuViewDesc: CheckMenuItem by fxid()
     val menuViewMenuBar: CheckMenuItem by fxid()
@@ -101,7 +98,7 @@ class Main: View("application.title".message()) {
     val descGridPane: GridPane by fxid()
     val descGroupName: TextField by fxid()
     val descShowConsole: CheckBox by fxid()
-    val descEachExecution: CheckBox by fxid()
+    val descSeqExecution: CheckBox by fxid()
     val descTitle: TextField by fxid()
     val descDescription: TextArea by fxid()
     val descIcon: ImageView by fxid()
@@ -219,7 +216,7 @@ class Main: View("application.title".message()) {
                 C -> if(e.isControlDown) {
                     tableMain.selectedItem?.let {
                         e.consume()
-                        linkExecutor.copyFolder(it)
+                        linkService.copyFolder(it)
                     }
                 }
             }
@@ -244,7 +241,7 @@ class Main: View("application.title".message()) {
                     N -> {
                         e.consume()
                         if( e.isShiftDown) {
-                            buttonAddFile.fireEvent(e)
+                            buttonAddFile.fireEvent(MOUSE_CLICK)
                         } else {
                             buttonNew.let { if(!it.isDisable) it.fire() }
                         }
@@ -330,8 +327,8 @@ class Main: View("application.title".message()) {
         buttonDelete.setOnAction { detail?.let{ deleteLink(it) } }
         buttonCopy.setOnAction { copyDetail() }
         buttonNew.setOnAction { createDetail() }
-        buttonOpenFolder.setOnAction { tableMain.selectedItem?.let { linkExecutor.openFolder(it) } }
-        buttonCopyFolder.setOnAction { tableMain.selectedItem?.let { linkExecutor.copyFolder(it) } }
+        buttonOpenFolder.setOnAction { tableMain.selectedItem?.let { linkService.openFolder(it) } }
+        buttonCopyFolder.setOnAction { tableMain.selectedItem?.let { linkService.copyFolder(it) } }
 
         descIcon.setOnMouseClicked { e ->
             if( e.button == MouseButton.PRIMARY && e.clickCount > 1 )
@@ -343,12 +340,9 @@ class Main: View("application.title".message()) {
                 changeIcon(it)
             }
         }
-        Tooltip("btn.change.icon.tooltip".message()).let {
-            Tooltip.install(descIcon,it)
-        }
-        Tooltip("btn.addfile.tooltip".message()).let {
-            Tooltip.install(buttonAddFile,it)
-        }
+
+        descIcon.tooltip("btn.change.icon.tooltip".message())
+        buttonAddFile.tooltip("btn.addfile.tooltip".message())
 
         descExecPath.setOnDragOver { fnDraggable(it) }
         descExecPath.setOnDragDropped { e ->
@@ -482,6 +476,38 @@ class Main: View("application.title".message()) {
             lastModified = now()
         }
 
+        applyAutoCompletion(inputKeyword, linkExecutor.history)
+
+    }
+
+    private fun applyAutoCompletion(textField: TextField, suggestion: CircularFifoSet<String>) {
+        var autoCompleter: AutoCompletionText? = null
+        textField.addEventFilter(KEY_PRESSED) { e ->
+            when {
+                e.code == ESCAPE -> {
+                    textField.removeClass(CLASS_AUTO_COMPLETER)
+                    autoCompleter?.dispose()
+                    autoCompleter = null
+                }
+                e.isAltDown -> {
+                    when (e.code) {
+                        DOWN -> if( autoCompleter == null ) {
+                            textField.addClass(CLASS_AUTO_COMPLETER)
+                            autoCompleter = AutoCompletionText(inputKeyword, suggestion)
+                            autoCompleter?.setOnAutoCompleted {
+                                textField.removeClass(CLASS_AUTO_COMPLETER)
+                                autoCompleter?.dispose()
+                                autoCompleter = null
+                                setSearchFilter()
+                            }
+                            autoCompleter?.show()
+                        }
+                        LEFT  -> suggestion.prev()?.let { textField.text = it }
+                        RIGHT -> suggestion.next()?.let { textField.text = it }
+                    }
+                }
+            }
+        }
     }
 
     private fun changeIcon() {
@@ -529,11 +555,21 @@ class Main: View("application.title".message()) {
     }
 
     fun readLinks() {
+
         links.apply {
             clear()
             addAll(linkRepository.findAllByOrderByTitle())
         }
+
+        val lastUsed = links.items.filter { it.title.isNotEmpty() }
+            .sortedWith(compareByDescending(Link::lastExecDate).thenByDescending(Link::title))
+            .take(linkExecutor.history.capacity)
+            .map {it.title!!}
+
+        linkExecutor.history.addAll(lastUsed)
+
         printSearchResult()
+
     }
 
     private fun clearDetail() {
@@ -547,7 +583,7 @@ class Main: View("application.title".message()) {
         with(detail!!) {
             descTitle.text               = title
             descShowConsole.isSelected   = showConsole
-            descEachExecution.isSelected = eachExecution
+            descSeqExecution.isSelected = eachExecution
             descGroupName.text           = group
             descDescription.text         = description
             descExecPath.text            = path
@@ -597,7 +633,7 @@ class Main: View("application.title".message()) {
             val isNew = it.id == 0L
             it.title         = descTitle.text?.trim()
             it.showConsole   = descShowConsole.isSelected
-            it.eachExecution = descEachExecution.isSelected
+            it.eachExecution = descSeqExecution.isSelected
             it.group         = descGroupName.text?.trim()
             it.description   = descDescription.text?.trim()
             it.path          = descExecPath.text?.trim()
@@ -650,4 +686,36 @@ class Main: View("application.title".message()) {
 
     fun printSearchResult() = printStatus("msg.info.005".message().format(links.size, links.items.size) )
 
+}
+
+private val MOUSE_CLICK = MouseEvent(
+    MouseEvent.MOUSE_CLICKED,
+    0.0,
+    0.0,
+    0.0,
+    0.0,
+    MouseButton.PRIMARY,
+    1,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    null
+)
+
+class AutoCompletionText(
+    val textField: TextField,
+    val suggestion: Collection<String>
+): AutoCompletionTextFieldBinding<String>(textField, SuggestionProvider.create(suggestion)) {
+    fun show() {
+        if(suggestion.isEmpty() || textField.text.isBlank() ) return
+        super.setUserInput(textField.text)
+        super.showPopup()
+    }
 }
