@@ -144,7 +144,6 @@ class KeywordParser(capacity: Int = 20) {
         return try {
             Pattern.compile(keyword.lowercase())
         } catch (e: Exception) {
-
             Pattern.compile(
                 keyword.lowercase().replace(PATTERN_REGEX, "")
             )
