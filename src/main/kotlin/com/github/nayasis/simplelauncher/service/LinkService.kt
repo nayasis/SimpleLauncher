@@ -1,9 +1,12 @@
 package com.github.nayasis.simplelauncher.service
 
 import com.github.nayasis.kotlin.basica.core.path.directory
+import com.github.nayasis.kotlin.basica.core.path.notExists
 import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.core.string.toFile
 import com.github.nayasis.kotlin.basica.reflection.Reflector
+import com.github.nayasis.kotlin.javafx.misc.Desktop
+import com.github.nayasis.kotlin.javafx.misc.set
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.jpa.entity.Link
@@ -40,11 +43,13 @@ class LinkService(
 
     @Transactional
     fun deleteAll() {
+        Context.linkExecutor.history.clear()
         linkRepository.deleteAll()
     }
 
     @Transactional
     fun delete(link: Link) {
+        Context.linkExecutor.history.remove(link.title ?: "")
         linkRepository.delete(link)
         Context.main.links.remove(link)
     }
@@ -65,7 +70,7 @@ class LinkService(
         return Dialog.filePicker(
             title = title.message(),
             extension = extension,
-            description = description,
+            description = description.message(),
             initialDirectory = ConfigService.filePickerInitialDirectory?.toFile(),
             mode = mode,
             owner = Context.main.primaryStage
@@ -73,6 +78,21 @@ class LinkService(
             if( it != null )
                 ConfigService.filePickerInitialDirectory = it.directory.path
         }
+    }
+
+    fun openFolder(link: Link) {
+        link.toPath()?.directory?.let {
+            if( it.notExists() ) {
+                Dialog.error("msg.err.005".message().format(it) )
+            } else {
+                Desktop.open(it.toFile())
+            }
+        }
+    }
+
+    fun copyFolder(link: Link) {
+        val path = link.toPath()?.directory ?: link.path
+        Desktop.clipboard.set(path.toString())
     }
 
 }

@@ -13,3 +13,7 @@
 #iconTitle {
   -fx-effect : dropshadow(three-pass-box, rgba(0,0,0,0.8), 2, 0, 0, 0)
 }
+
+.auto-completer {
+  -fx-focus-color: #ff5c33;
+}

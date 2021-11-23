@@ -26,7 +26,7 @@
 
 <AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="659.0" prefWidth="1000.0" stylesheets="@main.css" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
    <children>
-      <VBox fx:id="vboxTop" minWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+      <VBox minWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
             <MenuBar fx:id="menubarTop" prefHeight="15.0" prefWidth="919.0">
               <menus>
@@ -196,7 +196,7 @@
                            <children>
                               <TextField fx:id="descGroupName" />
                               <CheckBox fx:id="descShowConsole" mnemonicParsing="false" text="\%desc.showConsole" />
-                              <CheckBox fx:id="descEachExecution" mnemonicParsing="false" text="\%desc.eachExecution" />
+                              <CheckBox fx:id="descSeqExecution" mnemonicParsing="false" text="\%desc.execution.sequential" />
                            </children>
                         </HBox>
                         <TextField fx:id="descTitle" GridPane.columnIndex="1" GridPane.rowIndex="2" />

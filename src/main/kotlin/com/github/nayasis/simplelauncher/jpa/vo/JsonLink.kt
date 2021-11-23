@@ -35,7 +35,7 @@ data class JsonLink(
         commandNext  = entity.commandNext,
         description  = entity.description,
         icon         = entity.icon.encodeBase64(),
-        execCount = entity.executeCount,
+        execCount    = entity.executeCount,
         lastExecDate = entity.lastExecDate,
     )
 
