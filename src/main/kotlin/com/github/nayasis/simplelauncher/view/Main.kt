@@ -74,7 +74,6 @@ class Main: View("application.title".message()) {
     val colLastUsedDt: TableColumn<Link,LocalDateTime?> by fxid()
     val colExecCount: TableColumn<Link,Int> by fxid()
 
-    val vboxTop: VBox by fxid()
     val menubarTop: MenuBar by fxid()
     val menuViewDesc: CheckMenuItem by fxid()
     val menuViewMenuBar: CheckMenuItem by fxid()
@@ -99,7 +98,7 @@ class Main: View("application.title".message()) {
     val descGridPane: GridPane by fxid()
     val descGroupName: TextField by fxid()
     val descShowConsole: CheckBox by fxid()
-    val descEachExecution: CheckBox by fxid()
+    val descSeqExecution: CheckBox by fxid()
     val descTitle: TextField by fxid()
     val descDescription: TextArea by fxid()
     val descIcon: ImageView by fxid()
@@ -584,7 +583,7 @@ class Main: View("application.title".message()) {
         with(detail!!) {
             descTitle.text               = title
             descShowConsole.isSelected   = showConsole
-            descEachExecution.isSelected = eachExecution
+            descSeqExecution.isSelected = eachExecution
             descGroupName.text           = group
             descDescription.text         = description
             descExecPath.text            = path
@@ -634,7 +633,7 @@ class Main: View("application.title".message()) {
             val isNew = it.id == 0L
             it.title         = descTitle.text?.trim()
             it.showConsole   = descShowConsole.isSelected
-            it.eachExecution = descEachExecution.isSelected
+            it.eachExecution = descSeqExecution.isSelected
             it.group         = descGroupName.text?.trim()
             it.description   = descDescription.text?.trim()
             it.path          = descExecPath.text?.trim()
