@@ -1,9 +1,9 @@
 package com.github.nayasis.simplelauncher.service
 
 import com.github.nayasis.kotlin.basica.core.path.*
-import com.github.nayasis.kotlin.basica.core.string.format.DEFAULT_BINDER
-import com.github.nayasis.kotlin.basica.core.string.format.ExtractPattern
-import com.github.nayasis.kotlin.basica.core.string.format.Formatter
+import com.github.nayasis.kotlin.basica.core.string.DEFAULT_BINDER
+import com.github.nayasis.kotlin.basica.core.string.ExtractPattern
+import com.github.nayasis.kotlin.basica.core.string.Formatter
 import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.exec.Command
 import com.github.nayasis.simplelauncher.common.wrapDoubleQuote

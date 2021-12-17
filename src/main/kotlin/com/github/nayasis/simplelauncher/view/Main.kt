@@ -223,17 +223,19 @@ class Main: View("application.title".message()) {
                         }
                     }
                 }
-                setOnDragExited { event ->
+                setOnDragExited {
                     row.styleClass.remove(CLASS_ON_DRAG)
                 }
                 setOnDragDropped { event ->
-                    event.dragboard.let {
-                        if( it.hasFiles() ) {
-                            linkExecutor.run(row.item,it.files)
+                    event.run {
+                        dragboard.let {
+                            if( it.hasFiles() ) {
+                                linkExecutor.run(row.item,it.files)
+                            }
                         }
+                        isDropCompleted = true
+                        consume()
                     }
-                    event.isDropCompleted = true
-                    event.consume()
                 }
             }
         }
