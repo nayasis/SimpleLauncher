@@ -62,15 +62,15 @@ being injected when runs by file(or directory) dragging.
 
 | parameter      | description                 | example                |
 |----------------|-----------------------------|------------------------|
-| \#{path}       | file's full path            | \\usr\\path\\readme.md |
-| \#{path-unix}  | file's full path as unix    | /usr/path/readme.md    |
-| \#{dir}        | file's directory            | \\user\\path           |
-| \#{dir-unix}   | file's directory as unix    | /user/path             |
-| \#{file}       | file name                   | readme.md              |
-| \#{name}       | file name without extension | readme                 |
-| \#{ext}        | extension                   | md                     |
-| \#{home}       | user home directory         | \\home\\***user***     |
-| \#{home-unix}  | user home directory as unix | /home/***user***       |
+| \${path}       | file's full path            | \\usr\\path\\readme.md |
+| \${path-unix}  | file's full path as unix    | /usr/path/readme.md    |
+| \${dir}        | file's directory            | \\user\\path           |
+| \${dir-unix}   | file's directory as unix    | /user/path             |
+| \${file}       | file name                   | readme.md              |
+| \${name}       | file name without extension | readme                 |
+| \${ext}        | extension                   | md                     |
+| \${home}       | user home directory         | \\home\\***user***     |
+| \${home-unix}  | user home directory as unix | /home/***user***       |
 
 ### Example
 
