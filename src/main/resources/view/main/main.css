@@ -1,5 +1,14 @@
 .table-row-cell {
-  -fx-font-size: 11;
+  -fx-font-size: 11px;
+}
+
+.table-row-on-drag {
+  -fx-font-weight: bold;
+  -fx-background-color: darkseagreen;
+}
+
+.table-row-on-drag .table-row-cell {
+  -fx-text-fill : greenyellow;
 }
 
 .list-cell:empty {

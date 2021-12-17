@@ -48,7 +48,6 @@ import javafx.scene.input.TransferMode
 import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
-import javafx.scene.layout.VBox
 import mu.KotlinLogging
 import tornadofx.*
 import java.io.File
@@ -59,6 +58,7 @@ import kotlin.concurrent.timer
 private val logger = KotlinLogging.logger {}
 
 private const val CLASS_AUTO_COMPLETER = "auto-completer"
+private const val CLASS_ON_DRAG        = "table-row-on-drag"
 
 class Main: View("application.title".message()) {
 
@@ -155,17 +155,6 @@ class Main: View("application.title".message()) {
                 }
                 alignment = Pos.CENTER_LEFT
             }
-            setOnDragOver { fnDraggable(it) }
-            setOnDragDropped { event->
-                event.dragboard.let {
-                    if( it.hasFiles() ) {
-                        val link = tableRow.item as Link
-                        linkExecutor.run(link,it.files)
-                    }
-                }
-                event.isDropCompleted = true
-                event.consume()
-            }
         }
 
         colTitle.setComparator { o1, o2 -> o1.title.ifNull{""}.compareTo(o2.title.ifNull{""}) }
@@ -203,6 +192,7 @@ class Main: View("application.title".message()) {
         }
 
         tableMain.setOnKeyPressed { e ->
+            @Suppress("NON_EXHAUSTIVE_WHEN")
             when(e.code) {
                 ENTER -> tableMain.selectedItem?.let { linkExecutor.run(it) }
                 ESCAPE -> inputKeyword.requestFocus()
@@ -222,6 +212,34 @@ class Main: View("application.title".message()) {
             }
         }
 
+        tableMain.setRowFactory {
+            TableRow<Link>().apply {
+                val row = this
+                setOnDragOver { event ->
+                    if( row.isEmpty ) return@setOnDragOver
+                    if( hasFile(event) ) {
+                        if( ! row.styleClass.contains(CLASS_ON_DRAG) ) {
+                            row.styleClass.add(CLASS_ON_DRAG)
+                        }
+                    }
+                }
+                setOnDragExited {
+                    row.styleClass.remove(CLASS_ON_DRAG)
+                }
+                setOnDragDropped { event ->
+                    event.run {
+                        dragboard.let {
+                            if( it.hasFiles() ) {
+                                linkExecutor.run(row.item,it.files)
+                            }
+                        }
+                        isDropCompleted = true
+                        consume()
+                    }
+                }
+            }
+        }
+
         readLinks()
 
         currentStage?.requestFocus()
@@ -235,6 +253,7 @@ class Main: View("application.title".message()) {
         // global shortcut
         root.setOnKeyPressed { e ->
             if( e.isControlDown ) {
+                @Suppress("NON_EXHAUSTIVE_WHEN")
                 when(e.code) {
                     S -> buttonSave.let { if(!it.isDisable) it.fire() }
                     D -> buttonCopy.let { if(!it.isDisable) it.fire() }
@@ -256,6 +275,7 @@ class Main: View("application.title".message()) {
                     I -> if(!e.isShiftDown) changeIcon()
                 }
             } else if (e.isShiftDown ) {
+                @Suppress("NON_EXHAUSTIVE_WHEN")
                 when(e.code) {
                     DELETE -> buttonDelete.let { if(!it.isDisable) it.fire() }
                 }
@@ -334,7 +354,7 @@ class Main: View("application.title".message()) {
             if( e.button == MouseButton.PRIMARY && e.clickCount > 1 )
                 changeIcon()
         }
-        descIcon.setOnDragOver { fnDraggable(it) }
+        descIcon.setOnDragOver { hasFile(it) }
         descIcon.setOnDragDropped { e ->
             e.dragboard.files.firstOrNull()?.let {
                 changeIcon(it)
@@ -344,7 +364,7 @@ class Main: View("application.title".message()) {
         descIcon.tooltip("btn.change.icon.tooltip".message())
         buttonAddFile.tooltip("btn.addfile.tooltip".message())
 
-        descExecPath.setOnDragOver { fnDraggable(it) }
+        descExecPath.setOnDragOver { hasFile(it) }
         descExecPath.setOnDragDropped { e ->
             e.dragboard.files.firstOrNull()?.let {
                 detail?.setPath(it)
@@ -353,7 +373,7 @@ class Main: View("application.title".message()) {
             }
         }
 
-        buttonAddFile.setOnDragOver { fnDraggable(it) }
+        buttonAddFile.setOnDragOver { hasFile(it) }
         buttonAddFile.setOnDragDropped { e ->
             e.dragboard.files.forEach { file ->
                 drawDetailForAdd(Link(file))
@@ -490,6 +510,7 @@ class Main: View("application.title".message()) {
                     autoCompleter = null
                 }
                 e.isAltDown -> {
+                    @Suppress("NON_EXHAUSTIVE_WHEN")
                     when (e.code) {
                         DOWN -> if( autoCompleter == null ) {
                             textField.addClass(CLASS_AUTO_COMPLETER)
@@ -515,11 +536,13 @@ class Main: View("application.title".message()) {
         linkService.openIconPicker()?.let { changeIcon(it) }
     }
 
-    private fun fnDraggable(e: DragEvent) {
-        if (e.dragboard.hasFiles()) {
+    private fun hasFile(e: DragEvent): Boolean {
+        return if (e.dragboard.hasFiles()) {
             e.acceptTransferModes(TransferMode.COPY)
+            true
         } else {
-            e.consume()
+    //            e.consume()
+            false
         }
     }
 
