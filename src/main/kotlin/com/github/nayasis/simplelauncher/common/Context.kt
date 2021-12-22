@@ -3,6 +3,7 @@ package com.github.nayasis.simplelauncher.common
 import com.github.nayasis.simplelauncher.service.ConfigService
 import com.github.nayasis.simplelauncher.service.LinkExecutor
 import com.github.nayasis.simplelauncher.service.LinkService
+import com.github.nayasis.simplelauncher.view.Help
 import com.github.nayasis.simplelauncher.view.Main
 import tornadofx.FX
 import tornadofx.find
@@ -16,5 +17,6 @@ class Context { companion object {
     val linkService   by lazy { bean(LinkService::class)}
     val linkExecutor  by lazy { bean(LinkExecutor::class)}
     val main          by lazy { find(Main::class) }
+    val help          by lazy { find(Help::class) }
 
 }}

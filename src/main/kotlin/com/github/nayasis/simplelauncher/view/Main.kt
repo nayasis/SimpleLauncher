@@ -340,7 +340,8 @@ class Main: View("application.title".message()) {
         }
 
         menuHelp.setOnAction{
-            find<Help>().openWindow()
+            Context.help.openWindow()
+            Context.help.openWindow()
         }
 
         buttonSave.setOnAction { saveDetail() }
