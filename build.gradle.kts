@@ -43,7 +43,7 @@ javafx {
 }
 
 group = "com.github.nayasis"
-version = "0.0.1-SNAPSHOT"
+version = "0.1.1-SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_11
 
 configurations.all {
