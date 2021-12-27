@@ -26,3 +26,8 @@
 .auto-completer {
   -fx-focus-color: #ff5c33;
 }
+
+.pinned {
+  -fx-border-color: cornflowerblue;
+  -fx-border-width: 1px;
+}

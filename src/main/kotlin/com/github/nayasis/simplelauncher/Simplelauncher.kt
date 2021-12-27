@@ -16,24 +16,21 @@ import tornadofx.launch
 @SpringBootApplication
 class Simplelauncher: SpringFxApp(Main::class,DefaultStylesheet::class) {
 
-    override fun start(command: CommandLine) {
+    override fun onStart(command: CommandLine) {
         closePreloader()
         detachBootProgressAppender()
     }
 
     private fun detachBootProgressAppender() {
-        val springLogger = LoggerFactory.getLogger("org.springframework") as Logger
-        springLogger.detachAppender("capture")
+        val springLogger = LoggerFactory.getLogger("org.springframework") as Logger?
+        springLogger?.detachAppender("capture")
     }
 
-    override fun start(stage: Stage) {
+    override fun onStart(stage: Stage) {
         stage.apply {
             loadDefaultIcon()
-            super.start(this)
         }
     }
-
-    override fun setOptions(options: Options) {}
 
 }
 
