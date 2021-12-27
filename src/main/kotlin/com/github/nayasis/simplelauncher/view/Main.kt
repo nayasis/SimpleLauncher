@@ -335,8 +335,21 @@ class Main: View("application.title".message()) {
             }
         }
 
-        menuAlwaysOnTop.selectedProperty().addListener { _, _, flag ->
-            Context.main.primaryStage.isAlwaysOnTop = flag
+        val decorateAlwaysTop = Context.environment("simple-launcher.decorate-always-top","true").toBoolean()
+        menuAlwaysOnTop.selectedProperty().addListener { _, _, alwaysOnTop ->
+            primaryStage.isAlwaysOnTop = alwaysOnTop
+            if( decorateAlwaysTop ) {
+                title = when {
+                    alwaysOnTop -> {
+                        root.styleClass.add("pinned")
+                        "application.title.pinned".message()
+                    }
+                    else -> {
+                        root.styleClass.remove("pinned")
+                        "application.title".message()
+                    }
+                }
+            }
         }
 
         menuHelp.setOnAction{

@@ -1,4 +1,5 @@
 application.title          =  SimpleLauncher
+application.title.pinned   =  SimpleLauncher (pinned)
 menu.file                  =  파일
 menu.file.save             =  저장
 menu.file.import           =  불러오기
