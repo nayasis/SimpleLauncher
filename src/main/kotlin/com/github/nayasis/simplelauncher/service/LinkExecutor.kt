@@ -51,11 +51,12 @@ class LinkExecutor(
                         }
                     }
                 } else {
-                    val progress = Dialog.progress(link.title).apply { initModality(Modality.NONE) }
+                    val progress = Dialog.progress(link.title)
                     files.forEachIndexed { index, file ->
                         progress.updateProgress(index + 1, files.size)
                         progress.updateMessage(file.name)
                         val cmd = LinkCommand(link, file)
+                        logger.debug { ">> command : $cmd" }
                         Terminal(cmd.toCommand(),
                             onSuccess = { runLater { it.close() } },
                             onFail = { throwable, it ->
