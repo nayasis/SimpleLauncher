@@ -120,6 +120,9 @@ class Main: View("application.title".message()) {
 
     private var lastFocused: Node? = null
 
+    private val favicon       = resources.image("/image/icon/favicon.png")
+    private val faviconPinned = resources.image("/image/icon/favicon-pinned.png")
+
     init {
         Localizator(root)
         initEvent()
@@ -335,20 +338,11 @@ class Main: View("application.title".message()) {
             }
         }
 
-        val decorateAlwaysTop = Context.environment("simple-launcher.decorate-always-top","true").toBoolean()
         menuAlwaysOnTop.selectedProperty().addListener { _, _, alwaysOnTop ->
             primaryStage.isAlwaysOnTop = alwaysOnTop
-            if( decorateAlwaysTop ) {
-                title = when {
-                    alwaysOnTop -> {
-                        root.styleClass.add("pinned")
-                        "application.title.pinned".message()
-                    }
-                    else -> {
-                        root.styleClass.remove("pinned")
-                        "application.title".message()
-                    }
-                }
+            when {
+                alwaysOnTop -> setStageIcon(faviconPinned)
+                else        -> setStageIcon(favicon)
             }
         }
 

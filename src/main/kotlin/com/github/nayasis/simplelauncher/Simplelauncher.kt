@@ -7,7 +7,6 @@ import com.github.nayasis.simplelauncher.view.Main
 import com.github.nayasis.simplelauncher.view.Splash
 import javafx.stage.Stage
 import org.apache.commons.cli.CommandLine
-import org.apache.commons.cli.Options
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import tornadofx.Stylesheet
