@@ -1,5 +1,4 @@
 application.title          =  SimpleLauncher
-application.title.pinned   =  SimpleLauncher (pinned)
 menu.file                  =  File
 menu.file.save             =  Save
 menu.file.import           =  Import

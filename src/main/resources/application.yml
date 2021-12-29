@@ -21,5 +21,3 @@ spring:
         use_sql_comments: false
   main:
     lazy-initialization: true
-simple-launcher:
-  decorate-always-top: true
