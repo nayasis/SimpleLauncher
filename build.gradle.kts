@@ -62,7 +62,7 @@ repositories {
 dependencies {
 
 	// application
-	implementation("com.github.nayasis:basica-kt:0.1.6")
+	implementation("com.github.nayasis:basica-kt:0.1.7")
 	implementation("com.github.nayasis:basicafx-kt:0.1.5")
 //	implementation("com.github.nayasis:basicafx-kt:develop-SNAPSHOT"){ isChanging = true }
 //	implementation("com.github.nayasis:basicafx-kt:0.1.5-SNAPSHOT"){ isChanging = true }
