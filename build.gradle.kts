@@ -1,17 +1,13 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-
-	// kotlin
-	kotlin("jvm") version "1.5.21"
-
-	// spring
-	id("org.springframework.boot") version "2.5.6"
+	id("org.springframework.boot") version "2.6.3"
 	id("io.spring.dependency-management") version "1.0.11.RELEASE"
-	kotlin("plugin.jpa") version "1.5.21"
-	kotlin("plugin.noarg") version "1.5.21"
-	kotlin("plugin.allopen") version "1.5.21"
-	kotlin("plugin.spring") version "1.5.21"
+	kotlin("jvm") version "1.6.10"
+	kotlin("plugin.jpa") version "1.6.10"
+	kotlin("plugin.noarg") version "1.6.10"
+	kotlin("plugin.allopen") version "1.6.10"
+	kotlin("plugin.spring") version "1.6.10"
 
 	// javafx
 	application
@@ -43,12 +39,12 @@ javafx {
 }
 
 group = "com.github.nayasis"
-version = "0.1.1-SNAPSHOT"
+version = "0.1.2-SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_11
 
 configurations.all {
-	resolutionStrategy.cacheChangingModulesFor(  0, "seconds" )
-	resolutionStrategy.cacheDynamicVersionsFor(  5, "minutes" )
+	resolutionStrategy.cacheChangingModulesFor(0, "seconds")
+	resolutionStrategy.cacheDynamicVersionsFor(5, "minutes")
 }
 
 repositories {
@@ -56,22 +52,21 @@ repositories {
 	mavenCentral()
 	jcenter()
 	maven { url = uri("https://jitpack.io") }
-//	maven { url = uri("https://europe-maven.pkg.dev/jxbrowser/releases") }
 }
 
 dependencies {
 
 	// application
-	implementation("com.github.nayasis:basica-kt:0.1.7")
-	implementation("com.github.nayasis:basicafx-kt:0.1.5")
+	implementation("com.github.nayasis:basica-kt:0.1.15")
+	implementation("com.github.nayasis:basicafx-kt:0.1.9")
 //	implementation("com.github.nayasis:basicafx-kt:develop-SNAPSHOT"){ isChanging = true }
 //	implementation("com.github.nayasis:basicafx-kt:0.1.5-SNAPSHOT"){ isChanging = true }
-	implementation( "no.tornado:tornadofx:1.7.20" )
+	implementation("no.tornado:tornadofx:1.7.20")
 	implementation("org.controlsfx:controlsfx:11.1.0")
-	implementation( "com.github.vatbub:mslinks:1.0.6.2" )
-	implementation( "commons-cli:commons-cli:1.4" )
+	implementation("com.github.vatbub:mslinks:1.0.6.2")
+	implementation("commons-cli:commons-cli:1.4")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
-	implementation( "no.tornado:tornadofx:1.7.20" )
+	implementation("no.tornado:tornadofx:1.7.20")
 
 	// spring
 	implementation("org.springframework.boot:spring-boot-starter")
@@ -90,7 +85,7 @@ dependencies {
 	// kotlin
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-	implementation( "io.github.microutils:kotlin-logging:2.0.10" )
+	implementation("io.github.microutils:kotlin-logging:2.0.10")
 	implementation("au.com.console:kassava:2.1.0")
 
 	// test

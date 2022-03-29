@@ -82,8 +82,8 @@ class LinkCommand {
             this["file"]      = file.name
             this["name"]      = file.nameWithoutExtension
             this["ext"]       = file.extension
-            this["home"]      = userHome().pathString
-            this["home-unix"] = userHome().invariantSeparators
+            this["home"]      = Paths.userHome.pathString
+            this["home-unix"] = Paths.userHome.invariantSeparators
         }
     }
 
