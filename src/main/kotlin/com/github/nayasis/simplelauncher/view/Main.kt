@@ -7,6 +7,7 @@ import com.github.nayasis.kotlin.basica.core.extention.isNotEmpty
 import com.github.nayasis.kotlin.basica.core.localdate.between
 import com.github.nayasis.kotlin.basica.core.localdate.toFormat
 import com.github.nayasis.kotlin.basica.core.string.message
+import com.github.nayasis.kotlin.basica.etc.error
 import com.github.nayasis.kotlin.javafx.control.basic.allChildren
 import com.github.nayasis.kotlin.javafx.control.basic.repack
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
@@ -131,10 +132,14 @@ class Main: View("application.title".message()) {
 
     override fun onBeforeShow() {
         ConfigService.stageMain?.let {
-            it.excludeKlass.add(Button::class)
-            it.bind(currentStage)
-            menubarTop.repack()
-            initSearchFilter(it.tables[Main::tableMain.name]?.focusedRow)
+            try {
+                it.excludeKlass.add(Button::class)
+                it.bind(currentStage)
+                menubarTop.repack()
+                initSearchFilter(it.tables[Main::tableMain.name]?.focused?.row)
+            } catch (e: Throwable) {
+                logger.error(e)
+            }
         }
     }
 
