@@ -68,22 +68,7 @@ abstract class TerminalBasePane(
         }
         webView.prefHeightProperty().bind(heightProperty())
         webView.prefWidthProperty().bind(widthProperty())
-        webView.engine.loadContent(getContents())
-    }
-
-    private fun getContents(): String {
-        val script = "view/hterm/hterm_all.js".toResource()!!.readText()
-        return StringBuilder().apply {
-            "/view/hterm/hterm.html".toResource()!!.openStream().bufferedReader().readLines().forEach { line ->
-                if (("<script src=\"hterm_all.js\"></script>" == line)) {
-                    append("<script>")
-                    append(script)
-                    append("</script>")
-                } else {
-                    append(line)
-                }
-            }
-        }.toString()
+        webView.engine.load("/view/hterm/hterm.html".toResource()!!.toExternalForm())
     }
 
     override fun getPrefs(): String = Reflector.toJson(config,pretty=true)
