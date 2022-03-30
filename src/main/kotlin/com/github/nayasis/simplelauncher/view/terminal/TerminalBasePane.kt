@@ -1,6 +1,5 @@
 package com.github.nayasis.simplelauncher.view.terminal
 
-import com.github.nayasis.kotlin.basica.core.klass.Classes
 import com.github.nayasis.kotlin.basica.core.string.toResource
 import com.github.nayasis.kotlin.basica.reflection.Reflector
 import com.github.nayasis.kotlin.javafx.misc.Desktop
@@ -9,16 +8,11 @@ import javafx.beans.property.SimpleObjectProperty
 import javafx.concurrent.Task
 import javafx.scene.layout.Pane
 import javafx.scene.web.WebView
-import mu.KotlinLogging
 import netscape.javascript.JSObject
-import tornadofx.runAsync
-import tornadofx.runLater
+import tornadofx.*
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.Reader
-import java.io.Writer
-
-private val logger = KotlinLogging.logger {}
 
 abstract class TerminalBasePane(
     var config: TerminalConfig = TerminalConfig().apply {
@@ -133,9 +127,9 @@ abstract class TerminalBasePane(
     protected fun closeReader() {
         taskOutputReader?.cancel()
         taskErrorReader?.cancel()
-        runCatching { outputReader.close() }
-        runCatching { errorReader.close() }
-        runCatching { inputWriter.close() }
+        outputProperty.set(null)
+        errorProperty.set(null)
+        inputProperty.set(null)
         webView.engine.load(null)
     }
 
