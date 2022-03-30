@@ -7,13 +7,13 @@ interface TerminalIf {
     @WebkitCall
     fun command(command: String)
 
-    @WebkitCall
+    @WebkitCall(from="hterm")
     fun getPrefs(): String
 
     @WebkitCall
     fun updatePrefs(config: TerminalConfig)
 
-    @WebkitCall
+    @WebkitCall(from="hterm")
     fun resizeTerminal(columns: Int, rows: Int)
 
     @WebkitCall

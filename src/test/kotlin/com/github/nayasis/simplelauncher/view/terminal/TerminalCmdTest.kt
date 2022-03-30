@@ -16,7 +16,8 @@ fun main(args: Array<String>) {
 
 class TerminalCmdTest: App() {
     override fun start(stage: Stage) {
-        Terminal(Command("C:/app/SimpleLauncherApp/NSC Builder/NSCB.exe")).showAndWait()
+        Terminal(Command("C:/app/SimpleLauncherApp/NSC Builder/NSCB.bat")).showAndWait()
+//        Terminal(Command("cmd")).showAndWait()
         exitProcess(0)
     }
 }
