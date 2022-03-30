@@ -1,6 +1,7 @@
 package com.github.nayasis.simplelauncher.view.terminal
 
 import com.github.nayasis.kotlin.basica.core.klass.Classes
+import com.github.nayasis.kotlin.basica.core.string.toResource
 import com.github.nayasis.kotlin.basica.reflection.Reflector
 import com.github.nayasis.kotlin.javafx.misc.Desktop
 import com.github.nayasis.kotlin.javafx.misc.set
@@ -13,12 +14,15 @@ import netscape.javascript.JSObject
 import tornadofx.runAsync
 import tornadofx.runLater
 import java.io.BufferedReader
+import java.io.BufferedWriter
 import java.io.Reader
+import java.io.Writer
 
 private val logger = KotlinLogging.logger {}
 
 abstract class TerminalBasePane(
     var config: TerminalConfig = TerminalConfig().apply {
+        cursorBlink = true
         copyOnSelect = true
         enableClipboardNotice = false
     }
@@ -26,6 +30,7 @@ abstract class TerminalBasePane(
 
     private val outputProperty = SimpleObjectProperty<BufferedReader>()
     private val errorProperty  = SimpleObjectProperty<BufferedReader>()
+    private val inputProperty  = SimpleObjectProperty<BufferedWriter>()
 
     val webView = WebView()
     var interrupted = false
@@ -45,6 +50,12 @@ abstract class TerminalBasePane(
         get() = errorProperty.get()
         set(reader) {
             errorProperty.set(reader)
+        }
+
+    var inputWriter: BufferedWriter
+        get() = inputProperty.get()
+        set(writer) {
+            inputProperty.set(writer)
         }
 
     private val terminal: JSObject
@@ -67,9 +78,9 @@ abstract class TerminalBasePane(
     }
 
     private fun getContents(): String {
-        val script = Classes.getResourceStream("/view/hterm/hterm_all.js").bufferedReader().readText()
+        val script = "view/hterm/hterm_all.js".toResource()!!.readText()
         return StringBuilder().apply {
-            Classes.getResourceStream("/view/hterm/hterm.html").bufferedReader().readLines().forEach { line ->
+            "/view/hterm/hterm.html".toResource()!!.openStream().bufferedReader().readLines().forEach { line ->
                 if (("<script src=\"hterm_all.js\"></script>" == line)) {
                     append("<script>")
                     append(script)
@@ -111,7 +122,6 @@ abstract class TerminalBasePane(
     }
 
     private fun print(text: String) = runLater {
-        kotlin.io.print(text)
         terminalIO.call("print", text)
     }
 
@@ -120,15 +130,24 @@ abstract class TerminalBasePane(
         terminal.call("focus")
     }
 
-    fun closeReader() {
+    protected fun closeReader() {
         taskOutputReader?.cancel()
         taskErrorReader?.cancel()
         runCatching { outputReader.close() }
         runCatching { errorReader.close() }
+        runCatching { inputWriter.close() }
+        webView.engine.load(null)
     }
 
     override fun onTerminalInit() {}
-    override fun sendCommand(command: String) {}
+
+    override fun command(command: String) {
+        print(command)
+        inputWriter.run {
+            write(command)
+            flush()
+        }
+    }
 
 }
 

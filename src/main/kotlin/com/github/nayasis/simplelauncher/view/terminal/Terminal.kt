@@ -52,7 +52,7 @@ class Terminal(
             terminal.onSuccess = null
             terminal.webView.engine.load(null)
             runCatching {
-                terminal.destory()
+                terminal.close()
             }.onFailure { logger.error(it) }
         }
         ConfigService.stageTerminal?.let {
