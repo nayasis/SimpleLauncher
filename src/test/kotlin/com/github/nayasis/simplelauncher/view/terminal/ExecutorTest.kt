@@ -1,5 +1,6 @@
 package com.github.nayasis.simplelauncher.view.terminal
 
+import com.github.nayasis.kotlin.basica.exec.Command
 import com.github.nayasis.kotlin.basica.exec.CommandExecutor
 import com.github.nayasis.kotlin.javafx.property.StageProperty
 import com.github.nayasis.kotlin.javafx.stage.Dialog
@@ -39,7 +40,7 @@ class ExecutorTest: App() {
                 updateProgress(index + 1L, cmds.size.toLong())
                 val executor = CommandExecutor().apply {
                     onProcessFailed = { e -> Dialog.error(e) }
-                }.runOnSystemOut(cmd)
+                }.runOnSystemOut(Command(cmd))
                 executor.waitFor()
                 println(">> end : $cmd")
             }

@@ -6,7 +6,9 @@ import com.github.nayasis.kotlin.basica.exec.CommandExecutor
 import mu.KotlinLogging
 import tornadofx.runAsync
 import java.io.BufferedReader
+import java.io.BufferedWriter
 import java.io.InputStreamReader
+import java.io.OutputStreamWriter
 
 private val logger = KotlinLogging.logger {}
 
@@ -24,7 +26,7 @@ class TerminalPane(
 ): TerminalBasePane(config) {
 
     val executor = CommandExecutor().apply {
-        onProcessFailed = { closeReader() }
+        onProcessFailed = { close() }
     }
 
     override fun onTerminalReady() {
@@ -35,7 +37,7 @@ class TerminalPane(
             } catch (e: Throwable) {
                 runCatching { onFail?.let { it(e) } }
             } finally {
-                runCatching { closeReader() }
+                runCatching { close() }
                 runCatching { onDone?.let { it() } }
             }
         }
@@ -45,12 +47,14 @@ class TerminalPane(
         executor.run(command,null,null)
         outputReader = BufferedReader(InputStreamReader(executor.outputStream, Platforms.os.charset))
         errorReader  = BufferedReader(InputStreamReader(executor.errorStream, Platforms.os.charset))
+        inputWriter  = BufferedWriter(OutputStreamWriter(executor.inputStream, Platforms.os.charset))
         focusCursor()
         executor.waitFor()
     }
 
-    fun destory() {
+    fun close() {
         executor.destroy()
+        super.closeReader()
     }
 
 }

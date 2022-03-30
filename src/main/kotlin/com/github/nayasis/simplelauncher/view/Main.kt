@@ -200,7 +200,7 @@ class Main: View("application.title".message()) {
         }
 
         tableMain.setOnKeyPressed { e ->
-            @Suppress("NON_EXHAUSTIVE_WHEN")
+            @Suppress("NON_EXHAUSTIVE_WHEN_STATEMENT")
             when(e.code) {
                 ENTER -> tableMain.selectedItem?.let { linkExecutor.run(it) }
                 ESCAPE -> inputKeyword.requestFocus()
@@ -261,7 +261,7 @@ class Main: View("application.title".message()) {
         // global shortcut
         root.setOnKeyPressed { e ->
             if( e.isControlDown ) {
-                @Suppress("NON_EXHAUSTIVE_WHEN")
+                @Suppress("NON_EXHAUSTIVE_WHEN_STATEMENT")
                 when(e.code) {
                     S -> buttonSave.let { if(!it.isDisable) it.fire() }
                     D -> buttonCopy.let { if(!it.isDisable) it.fire() }
@@ -283,7 +283,7 @@ class Main: View("application.title".message()) {
                     I -> if(!e.isShiftDown) changeIcon()
                 }
             } else if (e.isShiftDown ) {
-                @Suppress("NON_EXHAUSTIVE_WHEN")
+                @Suppress("NON_EXHAUSTIVE_WHEN_STATEMENT")
                 when(e.code) {
                     DELETE -> buttonDelete.let { if(!it.isDisable) it.fire() }
                 }
@@ -523,7 +523,7 @@ class Main: View("application.title".message()) {
                     autoCompleter = null
                 }
                 e.isAltDown -> {
-                    @Suppress("NON_EXHAUSTIVE_WHEN")
+                    @Suppress("NON_EXHAUSTIVE_WHEN_STATEMENT")
                     when (e.code) {
                         DOWN -> if( autoCompleter == null ) {
                             textField.addClass(CLASS_AUTO_COMPLETER)

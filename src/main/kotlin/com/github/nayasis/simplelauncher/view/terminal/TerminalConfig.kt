@@ -10,57 +10,57 @@ import kotlin.reflect.full.memberProperties
 @JsonInclude(JsonInclude.Include.NON_NULL)
 class TerminalConfig {
 
-    @JsonProperty(value = "send-encoding")
+    @field:JsonProperty(value = "send-encoding")
     var sendEncoding = "raw"
 
-    @JsonProperty(value = "receive-encoding")
+    @field:JsonProperty(value = "receive-encoding")
     var receiveEncoding = "utf-8"
 
-    @JsonProperty("use-default-window-copy")
+    @field:JsonProperty("use-default-window-copy")
     var useDefaultWindowCopy = true
 
-    @JsonProperty("clear-selection-after-copy")
+    @field:JsonProperty("clear-selection-after-copy")
     var clearSelectionAfterCopy = true
 
-    @JsonProperty("copy-on-select")
+    @field:JsonProperty("copy-on-select")
     var copyOnSelect = true
 
-    @JsonProperty("ctrl-c-copy")
+    @field:JsonProperty("ctrl-c-copy")
     var ctrlCCopy = true
 
-    @JsonProperty("ctrl-v-paste")
+    @field:JsonProperty("ctrl-v-paste")
     var ctrlVPaste = true
 
-    @JsonProperty("cursor-color")
-    var cursorColor = "black"
+    @field:JsonProperty("cursor-color")
+    var cursorColor = "white"
 
-    @JsonProperty(value = "background-color")
+    @field:JsonProperty(value = "background-color")
     var backgroundColor = "white"
 
-    @JsonProperty("font-size")
+    @field:JsonProperty("font-size")
     var fontSize = 10
 
-    @JsonProperty(value = "foreground-color")
+    @field:JsonProperty(value = "foreground-color")
     var foregroundColor = "black"
 
-    @JsonProperty("cursor-blink")
+    @field:JsonProperty("cursor-blink")
     var cursorBlink = false
 
-    @JsonProperty("scrollbar-visible")
+    @field:JsonProperty("scrollbar-visible")
     var scrollbarVisible = true
 
-    @JsonProperty("enable-clipboard-notice")
+    @field:JsonProperty("enable-clipboard-notice")
     var enableClipboardNotice = false
 
-    @JsonProperty("scroll-wheel-move-multiplier")
+    @field:JsonProperty("scroll-wheel-move-multiplier")
     var scrollWhellMoveMultiplier = 0.1
 
-    @JsonProperty("font-family")
+    @field:JsonProperty("font-family")
     var fontFamily = """
          "DejaVu Sans Mono", "Everson Mono", FreeMono, "Menlo", "Terminal", monospace
        """.trim()
 
-    @JsonProperty(value = "user-css")
+    @field:JsonProperty(value = "user-css")
     var userCss = "data:text/plain;base64,eC1zY3JlZW4geyBjdXJzb3I6IGF1dG87IH0="
 
     @JsonIgnore
