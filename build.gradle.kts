@@ -52,6 +52,7 @@ repositories {
 	mavenCentral()
 	jcenter()
 	maven { url = uri("https://jitpack.io") }
+//	maven { url = uri("https://github.com/javaterminal/terminalfx/raw/master/releases") }
 }
 
 dependencies {
@@ -101,6 +102,15 @@ dependencies {
 	// JNA (windows)
 	testImplementation("net.java.dev.jna:jna:5.9.0")
 	testImplementation("net.java.dev.jna:jna-platform:5.9.0")
+
+//	implementation("com.kodedu.terminalfx:terminalfx:1.1.0")
+	implementation("org.jetbrains.jediterm:jediterm-pty:2.42")
+	implementation("org.jetbrains.pty4j:pty4j:0.12.7")
+	implementation("log4j:log4j:1.2.17")
+	implementation("com.google.guava:guava:31.1-jre")
+
+//	implementation("org.jetbrains.jediterm:jediterm:2.5")
+
 
 }
 
