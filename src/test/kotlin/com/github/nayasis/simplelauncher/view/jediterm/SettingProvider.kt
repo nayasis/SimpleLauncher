@@ -6,7 +6,7 @@ import com.jediterm.terminal.ui.TerminalActionPresentation
 import com.jediterm.terminal.ui.settings.DefaultSettingsProvider
 import java.awt.Font
 import java.awt.event.InputEvent
-import java.awt.event.KeyEvent.*
+import java.awt.event.KeyEvent.VK_INSERT
 import javax.swing.KeyStroke
 
 class SettingProvider: DefaultSettingsProvider() {
