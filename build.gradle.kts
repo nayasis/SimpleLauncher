@@ -108,6 +108,7 @@ dependencies {
 	implementation("org.jetbrains.pty4j:pty4j:0.12.7")
 	implementation("log4j:log4j:1.2.17")
 	implementation("com.google.guava:guava:31.1-jre")
+	implementation("com.formdev:flatlaf:0.20")
 
 //	implementation("org.jetbrains.jediterm:jediterm:2.5")
 

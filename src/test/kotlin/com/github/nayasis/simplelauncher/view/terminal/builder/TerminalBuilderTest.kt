@@ -1,7 +1,6 @@
 package com.github.nayasis.simplelauncher.view.terminal.builder
 
 import javafx.stage.Stage
-import jdk.internal.org.jline.terminal.TerminalBuilder
 import tornadofx.App
 import tornadofx.View
 import tornadofx.launch

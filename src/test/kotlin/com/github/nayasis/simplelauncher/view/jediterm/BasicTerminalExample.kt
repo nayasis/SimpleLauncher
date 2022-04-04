@@ -3,7 +3,6 @@ package com.github.nayasis.simplelauncher.view.jediterm
 import com.jediterm.terminal.Questioner
 import com.jediterm.terminal.TtyConnector
 import com.jediterm.terminal.ui.JediTermWidget
-import com.jediterm.terminal.ui.settings.DefaultSettingsProvider
 import java.io.IOException
 import java.io.PipedReader
 import java.io.PipedWriter
