@@ -9,7 +9,8 @@ import javafx.concurrent.Task
 import javafx.scene.layout.Pane
 import javafx.scene.web.WebView
 import netscape.javascript.JSObject
-import tornadofx.*
+import tornadofx.runAsync
+import tornadofx.runLater
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.Reader
@@ -22,9 +23,9 @@ abstract class TerminalBasePane(
     }
 ): TerminalIf, Pane() {
 
-    private val outputProperty = SimpleObjectProperty<BufferedReader>()
-    private val errorProperty  = SimpleObjectProperty<BufferedReader>()
-    private val inputProperty  = SimpleObjectProperty<BufferedWriter>()
+    private val outputProperty = SimpleObjectProperty<BufferedReader?>()
+    private val errorProperty  = SimpleObjectProperty<BufferedReader?>()
+    private val inputProperty  = SimpleObjectProperty<BufferedWriter?>()
 
     val webView = WebView()
     var interrupted = false
@@ -32,21 +33,21 @@ abstract class TerminalBasePane(
     var rows: Int = 1000
 
     var taskOutputReader: Task<*>? = null
-    var taskErrorReader: Task<*>? = null
+    var taskOutputError: Task<*>? = null
 
-    var outputReader: BufferedReader
+    var outputReader: BufferedReader?
         get() = outputProperty.get()
         set(reader) {
             outputProperty.set(reader)
         }
 
-    var errorReader: BufferedReader
+    var errorReader: BufferedReader?
         get() = errorProperty.get()
         set(reader) {
             errorProperty.set(reader)
         }
 
-    var inputWriter: BufferedWriter
+    var inputWriter: BufferedWriter?
         get() = inputProperty.get()
         set(writer) {
             inputProperty.set(writer)
@@ -62,7 +63,7 @@ abstract class TerminalBasePane(
     init {
         children.add(webView)
         outputProperty.addListener { _, _, reader -> taskOutputReader = runAsync { print(reader) } }
-        errorProperty.addListener { _, _, reader -> taskErrorReader = runAsync { print(reader) } }
+        errorProperty.addListener { _, _, reader -> taskOutputError = runAsync { print(reader) } }
         webView.engine.loadWorker.stateProperty().addListener { _, _, _ ->
             window.setMember( "app", this )
         }
@@ -111,7 +112,10 @@ abstract class TerminalBasePane(
 
     protected fun closeReader() {
         taskOutputReader?.cancel()
-        taskErrorReader?.cancel()
+        taskOutputError?.cancel()
+        outputReader?.close()
+        errorReader?.close()
+        inputWriter?.close()
         outputProperty.set(null)
         errorProperty.set(null)
         inputProperty.set(null)
@@ -122,7 +126,7 @@ abstract class TerminalBasePane(
 
     override fun command(command: String) {
         print(command)
-        inputWriter.run {
+        inputWriter?.run {
             write(command)
             flush()
         }
