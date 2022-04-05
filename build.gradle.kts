@@ -58,9 +58,9 @@ repositories {
 dependencies {
 
 	// application
-//	implementation("com.github.nayasis:basica-kt:0.1.15")
+//	implementation("com.github.nayasis:basica-kt:0.1.17")
 	implementation("com.github.nayasis:basica-kt:develop-SNAPSHOT"){ isChanging = true }
-	implementation("com.github.nayasis:basicafx-kt:0.1.9")
+	implementation("com.github.nayasis:basicafx-kt:0.1.10")
 //	implementation("com.github.nayasis:basicafx-kt:develop-SNAPSHOT"){ isChanging = true }
 //	implementation("com.github.nayasis:basicafx-kt:0.1.5-SNAPSHOT"){ isChanging = true }
 	implementation("no.tornado:tornadofx:1.7.20")

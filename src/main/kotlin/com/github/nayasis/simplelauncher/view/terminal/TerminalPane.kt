@@ -1,5 +1,7 @@
 package com.github.nayasis.simplelauncher.view.terminal
 
+import com.github.nayasis.kotlin.basica.core.extention.ifNotEmpty
+import com.github.nayasis.kotlin.basica.core.string.toFile
 import com.github.nayasis.kotlin.basica.etc.Platforms
 import com.github.nayasis.kotlin.basica.exec.Command
 import com.github.nayasis.kotlin.basica.exec.CommandExecutor
@@ -25,36 +27,51 @@ class TerminalPane(
     config: TerminalConfig,
 ): TerminalBasePane(config) {
 
-    val executor = CommandExecutor().apply {
-        onProcessFailed = { close() }
-    }
+//    var executor: CommandExecutor? = null
+
+    lateinit var process: Process
 
     override fun onTerminalReady() {
         runAsync {
             try {
                 runProcess()
-                runCatching{ onSuccess?.let{it()} }
+                runCatching{ onSuccess?.invoke() }
             } catch (e: Throwable) {
-                runCatching { onFail?.let { it(e) } }
+                runCatching { onFail?.invoke(e) }
             } finally {
-                runCatching { close() }
-                runCatching { onDone?.let { it() } }
+                runCatching { onDone?.invoke() }
             }
         }
     }
 
     private fun runProcess() {
-        executor.run(command,null,null)
-        outputReader = BufferedReader(InputStreamReader(executor.outputStream, Platforms.os.charset))
-        errorReader  = BufferedReader(InputStreamReader(executor.errorStream, Platforms.os.charset))
-        inputWriter  = BufferedWriter(OutputStreamWriter(executor.inputStream, Platforms.os.charset))
+//        executor = command.run(redirect = false,{},{})
+//        executor = command.run({},{})
+//        outputReader = BufferedReader(InputStreamReader(executor!!.output, Platforms.os.charset))
+//        inputWriter  = BufferedWriter(OutputStreamWriter(executor!!.input, Platforms.os.charset))
+//        focusCursor()
+//        executor!!.waitFor()
+
+        process = run(command)
+        outputReader = BufferedReader(InputStreamReader(process.inputStream, Platforms.os.charset))
+        inputWriter  = BufferedWriter(OutputStreamWriter(process.outputStream, Platforms.os.charset))
+
         focusCursor()
-        executor.waitFor()
+
+//        process.waitFor()
+
     }
 
     fun close() {
-        executor.destroy()
+//        executor?.destroy()
         super.closeReader()
+    }
+
+    private fun run(command: Command): Process {
+        return ProcessBuilder(command.command).apply {
+            environment().putAll(command.environment)
+            command.workingDirectory?.toFile().ifNotEmpty { if (it.exists()) directory(it) }
+        }.start()
     }
 
 }
