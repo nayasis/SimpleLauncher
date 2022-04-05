@@ -25,35 +25,31 @@ class TerminalPane(
     config: TerminalConfig,
 ): TerminalBasePane(config) {
 
-    val executor = CommandExecutor().apply {
-        onProcessFailed = { close() }
-    }
+    private lateinit var executor: CommandExecutor
 
     override fun onTerminalReady() {
         runAsync {
             try {
                 runProcess()
-                runCatching{ onSuccess?.let{it()} }
+                runCatching{ onSuccess?.invoke() }
             } catch (e: Throwable) {
-                runCatching { onFail?.let { it(e) } }
+                runCatching { onFail?.invoke(e) }
             } finally {
-                runCatching { close() }
-                runCatching { onDone?.let { it() } }
+                runCatching { executor.destroy() }
+                runCatching { onDone?.invoke() }
             }
         }
     }
 
     private fun runProcess() {
-        executor.run(command,null,null)
-        outputReader = BufferedReader(InputStreamReader(executor.outputStream, Platforms.os.charset))
-        errorReader  = BufferedReader(InputStreamReader(executor.errorStream, Platforms.os.charset))
-        inputWriter  = BufferedWriter(OutputStreamWriter(executor.inputStream, Platforms.os.charset))
+        executor = command.run(false)
+        outputReader = BufferedReader(InputStreamReader(executor.output, Platforms.os.charset))
+        inputWriter  = BufferedWriter(OutputStreamWriter(executor.input, Platforms.os.charset))
         focusCursor()
         executor.waitFor()
     }
 
     fun close() {
-        executor.destroy()
         super.closeReader()
     }
 
