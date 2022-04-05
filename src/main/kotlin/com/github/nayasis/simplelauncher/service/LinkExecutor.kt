@@ -100,7 +100,7 @@ class LinkExecutor(
                 terminal.show()
             }
         } else {
-            CommandExecutor().run(command).also { if(wait) it.waitFor() }
+            command.run().also { if(wait) it.waitFor() }
         }
     }
 
