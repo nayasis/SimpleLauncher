@@ -1,5 +1,6 @@
 package com.github.nayasis.simplelauncher.view.jediterm
 
+import com.github.nayasis.kotlin.basica.exec.Command
 import com.jediterm.pty.PtyProcessTtyConnector
 import com.jediterm.terminal.TtyConnector
 import com.jediterm.terminal.ui.JediTermWidget
@@ -39,21 +40,16 @@ fun createTerminalWidget(): JediTermWidget {
 }
 
 private fun createTtyConnector(): TtyConnector? {
-    return try {
-        var envs = System.getenv()
-        val command: Array<String>
-        if (UIUtil.isWindows) {
-            command = arrayOf("cmd.exe")
-        } else {
-            command = arrayOf("/bin/bash", "--login")
-            envs = HashMap(System.getenv())
-            envs["TERM"] = "xterm-256color"
-        }
-        val process: PtyProcess = PtyProcessBuilder().setCommand(command).setEnvironment(envs).start()
-        PtyProcessTtyConnector(process, StandardCharsets.UTF_8)
-    } catch (e: Exception) {
-        throw IllegalStateException(e)
-    }
+        val process = ProcessBuilder("cmd.exe").apply {
+//            redirectOutput(ProcessBuilder.Redirect.INHERIT)
+//            redirectError(ProcessBuilder.Redirect.INHERIT)
+//            redirectInput(ProcessBuilder.Redirect.INHERIT)
+        }.start()
+//    val process = Command("cmd.exe").run(null,null).process!!
+//        val process = PtyProcessBuilder(arrayOf("cmd.exe")).start()
+
+    return PureProcessTtyConnector(process, StandardCharsets.UTF_8)
+
 }
 
 
