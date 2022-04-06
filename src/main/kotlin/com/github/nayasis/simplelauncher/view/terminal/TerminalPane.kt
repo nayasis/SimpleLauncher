@@ -1,8 +1,11 @@
 package com.github.nayasis.simplelauncher.view.terminal
 
+import com.github.nayasis.kotlin.basica.core.extention.ifNotEmpty
 import com.github.nayasis.kotlin.basica.etc.Platforms
 import com.github.nayasis.kotlin.basica.exec.Command
 import com.github.nayasis.kotlin.basica.exec.CommandExecutor
+import com.pty4j.PtyProcess
+import com.pty4j.PtyProcessBuilder
 import mu.KotlinLogging
 import tornadofx.runAsync
 import java.io.BufferedReader
@@ -23,7 +26,7 @@ class TerminalPane(
     var onFail: ((Throwable) -> Unit)? = null,
     var onSuccess: (() -> Unit)? = null,
     config: TerminalConfig,
-): TerminalBasePane(config) {
+): TerminalView(config) {
 
     private lateinit var executor: CommandExecutor
 
@@ -44,6 +47,7 @@ class TerminalPane(
     private fun runProcess() {
         executor = command.run(false)
         outputReader = BufferedReader(InputStreamReader(executor.output, Platforms.os.charset))
+        errorReader = BufferedReader(InputStreamReader(executor.output, Platforms.os.charset))
         inputWriter  = BufferedWriter(OutputStreamWriter(executor.input, Platforms.os.charset))
         focusCursor()
         executor.waitFor()
@@ -51,6 +55,14 @@ class TerminalPane(
 
     fun close() {
         super.closeReader()
+    }
+
+
+    private fun toPtyProcess(command: Command): PtyProcess {
+        return PtyProcessBuilder(command.command.toTypedArray()).apply{
+            setEnvironment(command.environment)
+            command.workingDirectory.ifNotEmpty { setDirectory(it) }
+        }.start()
     }
 
 }
