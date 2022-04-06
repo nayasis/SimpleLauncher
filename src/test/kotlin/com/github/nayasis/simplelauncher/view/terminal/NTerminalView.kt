@@ -109,7 +109,6 @@ open class NTerminalView(
         }
     }
 
-
     @WebkitCall
     open fun onTerminalReady() {
         thread() {
@@ -150,5 +149,3 @@ open class NTerminalView(
     }
 
 }
-
-annotation class WebkitCall(val from: String = "")

@@ -4,6 +4,7 @@ import com.github.nayasis.kotlin.basica.etc.error
 import com.github.nayasis.kotlin.basica.exec.Command
 import com.github.nayasis.kotlin.javafx.property.StageProperty
 import com.github.nayasis.kotlin.javafx.stage.addCloseRequest
+import com.github.nayasis.kotlin.javafx.stage.loadDefaultIcon
 import com.github.nayasis.simplelauncher.service.ConfigService
 import javafx.scene.Scene
 import javafx.scene.paint.Color
@@ -31,20 +32,22 @@ class Terminal(
 
     private val terminal = TerminalPane(
         command,
-        {
-            runLater { title = "Done - $title" }
-            onDone?.let{ it(this) }
-        },
-        { e -> onFail?.let{ it(e,this) } },
-        { onSuccess?.let{ it(this) } },
+        {runLater {
+            title = "Done - $title"
+            onDone?.invoke(this)
+        }},
+        { e -> onFail?.invoke(e,this) },
+        { onSuccess?.invoke(this) },
         terminalConfig,
     )
 
     init {
+
         scene  = Scene(terminal)
         title  = command.toString()
         width  = 700.0
         height = 600.0
+
         addCloseRequest {
             ConfigService.stageTerminal = StageProperty(this)
             terminal.onDone = null
@@ -55,9 +58,10 @@ class Terminal(
                 terminal.close()
             }.onFailure { logger.error(it) }
         }
-        ConfigService.stageTerminal?.let {
-            it.bind(this)
-        }
+
+        ConfigService.stageTerminal?.bind(this)
+        loadDefaultIcon()
+
     }
 
 }
