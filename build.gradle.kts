@@ -58,17 +58,17 @@ repositories {
 dependencies {
 
 	// application
-//	implementation("com.github.nayasis:basica-kt:0.1.17")
-	implementation("com.github.nayasis:basica-kt:develop-SNAPSHOT"){ isChanging = true }
-	implementation("com.github.nayasis:basicafx-kt:0.1.9")
+	implementation("com.github.nayasis:basica-kt:0.1.17")
+//	implementation("com.github.nayasis:basica-kt:develop-SNAPSHOT"){ isChanging = true }
+	implementation("com.github.nayasis:basicafx-kt:0.1.10")
 //	implementation("com.github.nayasis:basicafx-kt:develop-SNAPSHOT"){ isChanging = true }
-//	implementation("com.github.nayasis:basicafx-kt:0.1.5-SNAPSHOT"){ isChanging = true }
 	implementation("no.tornado:tornadofx:1.7.20")
 	implementation("org.controlsfx:controlsfx:11.1.0")
 	implementation("com.github.vatbub:mslinks:1.0.6.2")
 	implementation("commons-cli:commons-cli:1.4")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
 	implementation("no.tornado:tornadofx:1.7.20")
+	implementation("org.jetbrains.pty4j:pty4j:0.12.7")
 
 	// spring
 	implementation("org.springframework.boot:spring-boot-starter")
@@ -99,19 +99,14 @@ dependencies {
 	testImplementation("org.junit.jupiter:junit-jupiter-engine:5.3.1")
 	testImplementation("ch.qos.logback:logback-classic:1.2.3")
 
+	testImplementation("org.jetbrains.jediterm:jediterm-pty:2.42")
+	testImplementation("log4j:log4j:1.2.17")
+	testImplementation("com.google.guava:guava:31.1-jre")
+	testImplementation("com.formdev:flatlaf:0.20")
+
 	// JNA (windows)
 	testImplementation("net.java.dev.jna:jna:5.9.0")
 	testImplementation("net.java.dev.jna:jna-platform:5.9.0")
-
-//	implementation("com.kodedu.terminalfx:terminalfx:1.1.0")
-	implementation("org.jetbrains.jediterm:jediterm-pty:2.42")
-	implementation("org.jetbrains.pty4j:pty4j:0.12.7")
-	implementation("log4j:log4j:1.2.17")
-	implementation("com.google.guava:guava:31.1-jre")
-	implementation("com.formdev:flatlaf:0.20")
-
-//	implementation("org.jetbrains.jediterm:jediterm:2.5")
-
 
 }
 
