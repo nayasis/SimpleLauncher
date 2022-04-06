@@ -38,10 +38,11 @@ class ExecutorTest: App() {
                 println(">> start :$cmd")
                 updateMessage("$cmd")
                 updateProgress(index + 1L, cmds.size.toLong())
-                val executor = CommandExecutor().apply {
-                    onProcessFailed = { e -> Dialog.error(e) }
-                }.runOnSystemOut(Command(cmd))
-                executor.waitFor()
+                try {
+                    Command(cmd).runOnSystemOut().waitFor()
+                } catch (e: Throwable) {
+                    Dialog.error(e)
+                }
                 println(">> end : $cmd")
             }
             println(">> Done")

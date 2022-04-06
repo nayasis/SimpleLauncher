@@ -1,13 +1,9 @@
 package com.github.nayasis.simplelauncher.view.terminal
 
 import com.github.nayasis.kotlin.basica.exec.Command
-import com.github.nayasis.kotlin.javafx.property.StageProperty
-import com.github.nayasis.kotlin.javafx.stage.Dialog
-import com.github.nayasis.simplelauncher.service.ConfigService
 import javafx.stage.Stage
 import tornadofx.App
 import tornadofx.launch
-import tornadofx.runLater
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
@@ -27,7 +23,8 @@ class TerminalTest: App() {
 //        val cd = "d:/download/test/cso"
 //        val terminal = Terminal(config()).setCommand("${cd}/CisoPlus.exe -com -l9 ${cd}/disc.iso ${cd}/disc.cso",cd).apply {this.stage = stage}
 
-        Terminal(Command(cmd)).showAndWait()
+//        Terminal(Command(cmd)).showAndWait()
+        Terminal(Command("cmd")).showAndWait()
 
         exitProcess(0)
 
