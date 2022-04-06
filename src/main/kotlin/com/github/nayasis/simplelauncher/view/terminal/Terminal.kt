@@ -29,7 +29,7 @@ class Terminal(
     },
 ): Stage() {
 
-    private val terminal: TerminalPane = TerminalPane(
+    private val terminal = TerminalPane(
         command,
         {
             runLater { title = "Done - $title" }

@@ -7,14 +7,25 @@ import com.github.nayasis.kotlin.javafx.misc.set
 import javafx.beans.property.ReadOnlyIntegerWrapper
 import javafx.beans.property.SimpleObjectProperty
 import javafx.scene.layout.Pane
+import javafx.scene.paint.Color
 import javafx.scene.web.WebView
+import mu.KotlinLogging
 import netscape.javascript.JSObject
 import tornadofx.runLater
 import java.io.Reader
 import java.util.concurrent.CountDownLatch
+import kotlin.concurrent.thread
 
-open class TerminalView(
+private val logger = KotlinLogging.logger {}
+
+open class NTerminalView(
     var config: TerminalConfig = TerminalConfig().apply {
+        backgroundColor = Color.rgb(16, 16, 16).toHex()
+        foregroundColor = Color.rgb(240, 240, 240).toHex()
+        cursorColor = Color.rgb(255, 0, 0, 0.5).toHex()
+        scrollbarVisible = false
+        scrollWhellMoveMultiplier = 0.5
+        fontSize = 12
         cursorBlink = true
         copyOnSelect = true
         enableClipboardNotice = false
@@ -25,22 +36,21 @@ open class TerminalView(
     private var errorReaderProperty = SimpleObjectProperty<Reader>()
 
     private val webView = WebView()
+    protected val countDownLatch = CountDownLatch(1)
 
-    private val columnsProperty = ReadOnlyIntegerWrapper(150)
-    private val rowsProperty    = ReadOnlyIntegerWrapper(10)
-
-    private val countDownLatch = CountDownLatch(1)
+    val columnsProperty = ReadOnlyIntegerWrapper(150)
+    val rowsProperty    = ReadOnlyIntegerWrapper(10)
 
     var inputReader: Reader
         get() = inputReaderProperty.get()
-        set(reader) {
-            inputReaderProperty.set(reader)
+        set(value) {
+            inputReaderProperty.set(value)
         }
 
     var errorReader: Reader
         get() = errorReaderProperty.get()
-        set(reader) {
-            errorReaderProperty.set(reader)
+        set(value) {
+            errorReaderProperty.set(value)
         }
 
     var row: Int
@@ -59,8 +69,8 @@ open class TerminalView(
         get() = webView.engine.executeScript("window") as JSObject
 
     init {
-        inputReaderProperty.addListener { _, _, reader -> runLater{ print(reader) } }
-        errorReaderProperty.addListener { _, _, reader -> runLater{ print(reader) } }
+        inputReaderProperty.addListener { _, _, reader -> thread(){ printReader(reader) } }
+        errorReaderProperty.addListener { _, _, reader -> thread(){ printReader(reader) } }
         webView.engine.loadWorker.stateProperty().addListener { _, _, _ -> window.setMember("app", this) }
         webView.prefHeightProperty().bind(heightProperty())
         webView.prefWidthProperty().bind(widthProperty())
@@ -94,14 +104,15 @@ open class TerminalView(
     @WebkitCall
     fun onTerminalInit() {
         runLater {
+            logger.debug { ">> is it called ??" }
             children.add(webView)
         }
     }
 
 
     @WebkitCall
-    fun onTerminalReady() {
-        runLater {
+    open fun onTerminalReady() {
+        thread() {
             focusCursor()
             countDownLatch.countDown()
         }
@@ -123,7 +134,9 @@ open class TerminalView(
 
     private fun print(text: String) {
         countDownLatch.await()
-        terminalIO.call("print", text)
+        runLater {
+            terminalIO.call("print", text)
+        }
     }
 
     @WebkitCall(from = "hterm")
@@ -137,3 +150,5 @@ open class TerminalView(
     }
 
 }
+
+annotation class WebkitCall(val from: String = "")
