@@ -1,15 +1,15 @@
 package com.github.nayasis.simplelauncher.service
 
 import com.github.nayasis.kotlin.basica.core.string.tokenize
+import com.github.nayasis.kotlin.basica.etc.error
 import com.github.nayasis.kotlin.basica.exec.Command
-import com.github.nayasis.kotlin.basica.exec.CommandExecutor
 import com.github.nayasis.kotlin.javafx.property.StageProperty
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.simplelauncher.common.Context.Companion.main
+import com.github.nayasis.simplelauncher.common.runPty
 import com.github.nayasis.simplelauncher.jpa.entity.Link
 import com.github.nayasis.simplelauncher.view.CircularFifoSet
 import com.github.nayasis.simplelauncher.view.terminal.Terminal
-import javafx.stage.Modality
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 import tornadofx.runLater
@@ -95,13 +95,19 @@ class LinkExecutor(
         if( showConsole ) {
 //            val terminal = Terminal(command, onDone = { it.close() })
             val terminal = Terminal(command)
-            if(wait) {
-                terminal.showAndWait()
-            } else {
-                terminal.show()
-            }
+            terminal.showAndWait()
+//            if(wait) {
+//                terminal.showAndWait()
+//            } else {
+//                terminal.show()
+//            }
         } else {
-            command.run().also { if(wait) it.waitFor() }
+            try {
+                command.runPty().also { if(wait) it.waitFor() }
+            } catch (e: Exception) {
+                logger.error(e)
+                throw e
+            }
         }
     }
 

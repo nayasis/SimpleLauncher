@@ -33,7 +33,7 @@ class Terminal(
     private val terminalPane = TerminalPane(
         command,
         {runLater {
-            title = "Done - $title"
+//            title = "Done - $title"
             onDone?.invoke(this)
         }},
         { e -> onFail?.invoke(e,this) },

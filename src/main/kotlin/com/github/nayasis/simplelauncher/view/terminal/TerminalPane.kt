@@ -1,13 +1,12 @@
 package com.github.nayasis.simplelauncher.view.terminal
 
-import com.github.nayasis.kotlin.basica.core.extention.ifNotEmpty
 import com.github.nayasis.kotlin.basica.etc.Platforms
 import com.github.nayasis.kotlin.basica.exec.Command
+import com.github.nayasis.simplelauncher.common.runPty
 import com.pty4j.PtyProcess
-import com.pty4j.PtyProcessBuilder
 import com.pty4j.WinSize
 import mu.KotlinLogging
-import tornadofx.runAsync
+import tornadofx.*
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.InputStreamReader
@@ -38,7 +37,7 @@ class TerminalPane(
             } catch (e: Throwable) {
                 runCatching { onFail?.invoke(e) }
             } finally {
-                runCatching { close() }
+//                runCatching { close() }
                 runCatching { onDone?.invoke() }
             }
         }
@@ -46,10 +45,10 @@ class TerminalPane(
 
     private fun initialize() {
 
-        process      = toPtyProcess(command)
-        inputReader  = BufferedReader(InputStreamReader(process.inputStream, Platforms.os.charset))
-        errorReader  = BufferedReader(InputStreamReader(process.errorStream, Platforms.os.charset))
-        outputWriter = BufferedWriter(OutputStreamWriter(process.outputStream, Platforms.os.charset))
+        process      = command.runPty()
+        inputReader  = BufferedReader(InputStreamReader(process.inputStream, Charsets.UTF_8))
+        errorReader  = BufferedReader(InputStreamReader(process.errorStream, Charsets.UTF_8))
+        outputWriter = BufferedWriter(OutputStreamWriter(process.outputStream, Charsets.UTF_8))
 
         columnsProperty.addListener { _, _, _ -> updateWinSize() }
         rowsProperty.addListener { _, _, _ -> updateWinSize() }
@@ -71,13 +70,6 @@ class TerminalPane(
         process.inputStream.close()
         process.errorStream.close()
         process.outputStream.close()
-    }
-
-    private fun toPtyProcess(command: Command): PtyProcess {
-        return PtyProcessBuilder(command.command.toTypedArray()).apply{
-            setEnvironment(command.environment)
-            command.workingDirectory.ifNotEmpty { setDirectory(it) }
-        }.start()
     }
 
 }
