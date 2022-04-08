@@ -24,7 +24,9 @@ class TerminalTest: App() {
 //        val terminal = Terminal(config()).setCommand("${cd}/CisoPlus.exe -com -l9 ${cd}/disc.iso ${cd}/disc.cso",cd).apply {this.stage = stage}
 
 //        Terminal(Command(cmd)).showAndWait()
-        Terminal(Command("cmd")).showAndWait()
+//        Terminal(Command("cmd")).showAndWait()
+//        Terminal(Command("C:/app/SimpleLauncherApp/NSC Builder/NSCB.exe")).showAndWait()
+        Terminal(Command("cmd").apply { workingDirectory = "C:/app/SimpleLauncherApp/NSC Builder" }).showAndWait()
 
         exitProcess(0)
 
