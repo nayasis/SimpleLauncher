@@ -93,7 +93,8 @@ class LinkExecutor(
         if( command.isEmpty() ) return
         logger.debug { ">> command : $command" }
         if( showConsole ) {
-            val terminal = Terminal(command, onDone = { it.close() })
+//            val terminal = Terminal(command, onDone = { it.close() })
+            val terminal = Terminal(command)
             if(wait) {
                 terminal.showAndWait()
             } else {

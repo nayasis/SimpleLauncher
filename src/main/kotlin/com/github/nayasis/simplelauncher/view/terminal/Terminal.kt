@@ -10,7 +10,7 @@ import javafx.scene.Scene
 import javafx.scene.paint.Color
 import javafx.stage.Stage
 import mu.KotlinLogging
-import tornadofx.*
+import tornadofx.runLater
 
 private val logger = KotlinLogging.logger {}
 
@@ -20,17 +20,17 @@ class Terminal(
     onFail:((Throwable,Terminal) -> Unit)? = null,
     onSuccess:((Terminal) -> Unit)? = null,
     terminalConfig: TerminalConfig = TerminalConfig().apply {
-        backgroundColor = Color.rgb(16, 16, 16).toHex()
-        foregroundColor = Color.rgb(240, 240, 240).toHex()
-        cursorColor = Color.rgb(255, 0, 0, 0.5).toHex()
-        scrollbarVisible = false
-        fontSize = 12
+        backgroundColor           = Color.rgb(16, 16, 16).toHex()
+        foregroundColor           = Color.rgb(240, 240, 240).toHex()
+        cursorColor               = Color.rgb(255, 0, 0, 0.5).toHex()
+        scrollbarVisible          = false
+        fontSize                  = 12
         scrollWhellMoveMultiplier = 3.0
-        enableClipboardNotice = false
+        enableClipboardNotice     = false
     },
 ): Stage() {
 
-    private val terminal = TerminalPane(
+    private val terminalPane = TerminalPane(
         command,
         {runLater {
             title = "Done - $title"
@@ -43,19 +43,18 @@ class Terminal(
 
     init {
 
-        scene  = Scene(terminal)
+        scene  = Scene(terminalPane)
         title  = command.toString()
         width  = 700.0
         height = 600.0
 
         addCloseRequest {
             ConfigService.stageTerminal = StageProperty(this)
-            terminal.onDone = null
-            terminal.onFail = null
-            terminal.onSuccess = null
-            terminal.webView.engine.load(null)
+            terminalPane.onDone    = null
+            terminalPane.onFail    = null
+            terminalPane.onSuccess = null
             runCatching {
-                terminal.close()
+                terminalPane.close()
             }.onFailure { logger.error(it) }
         }
 

@@ -3,9 +3,9 @@ package com.github.nayasis.simplelauncher.view.terminal
 import com.github.nayasis.kotlin.basica.core.extention.ifNotEmpty
 import com.github.nayasis.kotlin.basica.etc.Platforms
 import com.github.nayasis.kotlin.basica.exec.Command
-import com.github.nayasis.kotlin.basica.exec.CommandExecutor
 import com.pty4j.PtyProcess
 import com.pty4j.PtyProcessBuilder
+import com.pty4j.WinSize
 import mu.KotlinLogging
 import tornadofx.runAsync
 import java.io.BufferedReader
@@ -22,41 +22,56 @@ private val logger = KotlinLogging.logger {}
  */
 class TerminalPane(
     val command: Command,
-    var onDone:(() -> Unit)? = null,
-    var onFail: ((Throwable) -> Unit)? = null,
-    var onSuccess: (() -> Unit)? = null,
+    var onDone:(() -> Unit)?,
+    var onFail: ((Throwable) -> Unit)?,
+    var onSuccess: (() -> Unit)?,
     config: TerminalConfig,
 ): TerminalView(config) {
 
-    private lateinit var executor: CommandExecutor
+    private lateinit var process: PtyProcess
 
     override fun onTerminalReady() {
         runAsync {
             try {
-                runProcess()
+                initialize()
                 runCatching{ onSuccess?.invoke() }
             } catch (e: Throwable) {
                 runCatching { onFail?.invoke(e) }
             } finally {
-                runCatching { executor.destroy() }
+                runCatching { close() }
                 runCatching { onDone?.invoke() }
             }
         }
     }
 
-    private fun runProcess() {
-        executor = command.run(false)
-        outputReader = BufferedReader(InputStreamReader(executor.output, Platforms.os.charset))
-        errorReader = BufferedReader(InputStreamReader(executor.output, Platforms.os.charset))
-        inputWriter  = BufferedWriter(OutputStreamWriter(executor.input, Platforms.os.charset))
+    private fun initialize() {
+
+        process      = toPtyProcess(command)
+        inputReader  = BufferedReader(InputStreamReader(process.inputStream, Platforms.os.charset))
+        errorReader  = BufferedReader(InputStreamReader(process.errorStream, Platforms.os.charset))
+        outputWriter = BufferedWriter(OutputStreamWriter(process.outputStream, Platforms.os.charset))
+
+        columnsProperty.addListener { _, _, _ -> updateWinSize() }
+        rowsProperty.addListener { _, _, _ -> updateWinSize() }
+
         focusCursor()
-        executor.waitFor()
+        countDownLatch.countDown()
+
+        process.waitFor()
+
     }
 
-    fun close() {
-        super.closeReader()
+    private fun updateWinSize() {
+        process.winSize = WinSize(column,row)
     }
 
+    override fun close() {
+        super.close()
+        process.destroyForcibly()
+        process.inputStream.close()
+        process.errorStream.close()
+        process.outputStream.close()
+    }
 
     private fun toPtyProcess(command: Command): PtyProcess {
         return PtyProcessBuilder(command.command.toTypedArray()).apply{

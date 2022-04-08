@@ -20,31 +20,29 @@ abstract class TerminalView(
     var config: TerminalConfig
 ): TerminalIf, Pane() {
 
-    private val outputProperty = SimpleObjectProperty<Reader?>()
-    private val errorProperty  = SimpleObjectProperty<Reader?>()
-    private val inputProperty  = SimpleObjectProperty<Writer?>()
+    private val inputReaderProperty  = SimpleObjectProperty<Reader?>()
+    private val errorReaderProperty  = SimpleObjectProperty<Reader?>()
+    private val outputWriterProperty = SimpleObjectProperty<Writer?>()
 
-    val columnsProperty = ReadOnlyIntegerWrapper(150)
-    val rowsProperty    = ReadOnlyIntegerWrapper(10)
+    val columnsProperty = ReadOnlyIntegerWrapper(2000)
+    val rowsProperty    = ReadOnlyIntegerWrapper(1000)
 
     private val webView = WebView()
     protected val countDownLatch = CountDownLatch(1)
 
-    var interrupted = false
-    var columns: Int = 2000
-    var rows: Int = 1000
+//    var interrupted = false
 
-    var outputReader: Reader?
-        get() = outputProperty.get()
-        set(value) = outputProperty.set(value)
+    var inputReader: Reader?
+        get() = inputReaderProperty.get()
+        set(value) = inputReaderProperty.set(value)
 
     var errorReader: Reader?
-        get() = errorProperty.get()
-        set(value) = errorProperty.set(value)
+        get() = errorReaderProperty.get()
+        set(value) = errorReaderProperty.set(value)
 
-    var inputWriter: Writer?
-        get() = inputProperty.get()
-        set(value) = inputProperty.set(value)
+    var outputWriter: Writer?
+        get() = outputWriterProperty.get()
+        set(value) = outputWriterProperty.set(value)
 
     var row: Int
         get() = rowsProperty.get()
@@ -64,13 +62,13 @@ abstract class TerminalView(
         get() = webView.engine.executeScript("window") as JSObject
 
     init {
-        outputProperty.addListener { _, _, reader -> thread() { print(reader) } }
-        errorProperty.addListener  { _, _, reader -> thread() { print(reader) } }
+        inputReaderProperty.addListener  { _, _, reader -> reader?.let{ thread() { printReader(it) } } }
+        errorReaderProperty.addListener  { _, _, reader -> reader?.let{ thread() { printReader(it) } } }
+        webView.prefHeightProperty().bind(heightProperty())
+        webView.prefWidthProperty().bind(widthProperty())
         webView.engine.loadWorker.stateProperty().addListener { _,_,_ ->
             window.setMember( "app", this )
         }
-        webView.prefHeightProperty().bind(heightProperty())
-        webView.prefWidthProperty().bind(widthProperty())
         webView.engine.load("/view/hterm/hterm.html".toResource()!!.toExternalForm())
     }
 
@@ -104,13 +102,13 @@ abstract class TerminalView(
 
     override fun copy(text: String) = Desktop.clipboard.set(text)
 
-    private fun print(reader: Reader) {
-        var nRead: Int
+    private fun printReader(reader: Reader) {
+        var n: Int
         val data = CharArray(1 * 1024)
         runCatching {
-            while (reader.read(data, 0, data.size).also { nRead = it } != -1) {
-                val sb = StringBuilder(nRead)
-                sb.append(data, 0, nRead)
+            while (reader.read(data, 0, data.size).also { n = it } != -1) {
+                val sb = StringBuilder(n)
+                sb.append(data, 0, n)
                 print(sb.toString())
             }
         }
@@ -121,7 +119,10 @@ abstract class TerminalView(
         terminalIO.call("print", text)
     }
 
-    protected fun closeReader() {
+    open fun close() {
+        inputReaderProperty.set(null)
+        errorReaderProperty.set(null)
+        outputWriterProperty.set(null)
         webView.engine.load(null)
     }
 
@@ -130,7 +131,7 @@ abstract class TerminalView(
         commandQueue.put(command)
         thread() {
             commandQueue.poll().let { cmd ->
-                inputWriter?.run {
+                outputWriter?.run {
                     write(cmd)
                     flush()
                 }
