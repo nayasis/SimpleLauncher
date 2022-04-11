@@ -5,7 +5,7 @@ import javafx.scene.paint.Color
 interface TerminalIf {
 
     @WebkitCall
-    fun command(command: String?)
+    fun command(command: String)
 
     @WebkitCall(from="hterm")
     fun getPrefs(): String

@@ -88,7 +88,7 @@ abstract class TerminalView(
 
     override fun getPrefs(): String = Reflector.toJson(config,pretty=true)
 
-    override fun updatePrefs(config: TerminalConfig) {
+    fun updatePrefs(config: TerminalConfig) {
         if(this.config == config) return
         this.config = config
         runLater {
