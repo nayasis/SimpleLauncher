@@ -19,9 +19,9 @@ private val logger = KotlinLogging.logger {}
  */
 class TerminalPane(
     val command: Command,
-    var onDone:(() -> Unit)? = null,
-    var onFail: ((Throwable) -> Unit)? = null,
-    var onSuccess: (() -> Unit)? = null,
+    var onDone:(() -> Unit)?,
+    var onFail: ((Throwable) -> Unit)?,
+    var onSuccess: (() -> Unit)?,
     config: TerminalConfig,
 ): TerminalView(config) {
 
