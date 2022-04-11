@@ -55,9 +55,7 @@ class Terminal(
                 terminal.close()
             }.onFailure { logger.error(it) }
         }
-        ConfigService.stageTerminal?.let {
-            it.bind(this)
-        }
+        ConfigService.stageTerminal?.bind(this)
     }
 
 }

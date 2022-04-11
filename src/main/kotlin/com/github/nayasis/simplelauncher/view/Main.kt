@@ -5,7 +5,7 @@ package com.github.nayasis.simplelauncher.view
 import com.github.nayasis.kotlin.basica.core.extention.ifNull
 import com.github.nayasis.kotlin.basica.core.extention.isNotEmpty
 import com.github.nayasis.kotlin.basica.core.localdate.between
-import com.github.nayasis.kotlin.basica.core.localdate.toFormat
+import com.github.nayasis.kotlin.basica.core.localdate.toString
 import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.etc.error
 import com.github.nayasis.kotlin.javafx.control.basic.allChildren
@@ -169,7 +169,7 @@ class Main: View("application.title".message()) {
 
         colLastUsedDt.cellValue(Link::lastExecDate).cellFormat {
             graphic = label {
-                text = it?.toFormat("YYYY-MM-DD HH:MI:SS")
+                text = it?.toString("YYYY-MM-DD HH:MI:SS")
             }
             alignment = Pos.CENTER
         }
