@@ -23,11 +23,9 @@ class TerminalPane(
     var onFail: ((Throwable) -> Unit)? = null,
     var onSuccess: (() -> Unit)? = null,
     config: TerminalConfig,
-): TerminalBasePane(config) {
+): TerminalView(config) {
 
-    val executor = CommandExecutor().apply {
-        onProcessFailed = { close() }
-    }
+    private lateinit var executor: CommandExecutor
 
     override fun onTerminalReady() {
         runAsync {
@@ -44,10 +42,10 @@ class TerminalPane(
     }
 
     private fun runProcess() {
-        executor.run(command,null,null)
-        outputReader = BufferedReader(InputStreamReader(executor.outputStream, Platforms.os.charset))
-        errorReader  = BufferedReader(InputStreamReader(executor.errorStream, Platforms.os.charset))
-        inputWriter  = BufferedWriter(OutputStreamWriter(executor.inputStream, Platforms.os.charset))
+        executor = command.runProcess(false)
+        outputReader = BufferedReader(InputStreamReader(executor.output, Platforms.os.charset))
+        errorReader  = BufferedReader(InputStreamReader(executor.error, Platforms.os.charset))
+        inputWriter  = BufferedWriter(OutputStreamWriter(executor.input, Platforms.os.charset))
         focusCursor()
         executor.waitFor()
     }

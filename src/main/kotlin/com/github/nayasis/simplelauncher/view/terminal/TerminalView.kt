@@ -1,6 +1,5 @@
 package com.github.nayasis.simplelauncher.view.terminal
 
-import com.github.nayasis.kotlin.basica.core.klass.Classes
 import com.github.nayasis.kotlin.basica.core.string.toResource
 import com.github.nayasis.kotlin.basica.reflection.Reflector
 import com.github.nayasis.kotlin.javafx.misc.Desktop
@@ -16,16 +15,11 @@ import tornadofx.runLater
 import java.io.BufferedReader
 import java.io.BufferedWriter
 import java.io.Reader
-import java.io.Writer
 
 private val logger = KotlinLogging.logger {}
 
-abstract class TerminalBasePane(
-    var config: TerminalConfig = TerminalConfig().apply {
-        cursorBlink = true
-        copyOnSelect = true
-        enableClipboardNotice = false
-    }
+abstract class TerminalView(
+    var config: TerminalConfig
 ): TerminalIf, Pane() {
 
     private val outputProperty = SimpleObjectProperty<BufferedReader>()
@@ -33,7 +27,6 @@ abstract class TerminalBasePane(
     private val inputProperty  = SimpleObjectProperty<BufferedWriter>()
 
     val webView = WebView()
-    var interrupted = false
     var columns: Int = 2000
     var rows: Int = 1000
 
@@ -74,7 +67,8 @@ abstract class TerminalBasePane(
         }
         webView.prefHeightProperty().bind(heightProperty())
         webView.prefWidthProperty().bind(widthProperty())
-        webView.engine.loadContent(getContents())
+        webView.engine.load("/view/hterm/hterm.html".toResource()!!.toExternalForm())
+//        webView.engine.loadContent(getContents())
     }
 
     private fun getContents(): String {
@@ -122,7 +116,9 @@ abstract class TerminalBasePane(
     }
 
     private fun print(text: String) = runLater {
-        terminalIO.call("print", text)
+        runCatching {
+            terminalIO.call("print", text)
+        }
     }
 
     fun focusCursor() = runLater {
