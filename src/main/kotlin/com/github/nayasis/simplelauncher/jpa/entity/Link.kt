@@ -21,6 +21,7 @@ import mslinks.ShellLink
 import mu.KotlinLogging
 import org.hibernate.annotations.DynamicUpdate
 import java.io.File
+import java.io.Serializable
 import java.nio.file.Path
 import java.time.LocalDateTime
 import javax.persistence.Column
@@ -36,7 +37,7 @@ const val ICON_IMAGE_TYPE = "png"
 
 @Entity
 @DynamicUpdate
-class Link: Cloneable {
+class Link: Cloneable, Serializable {
 
     @Id @GeneratedValue
     var id: Long = 0
