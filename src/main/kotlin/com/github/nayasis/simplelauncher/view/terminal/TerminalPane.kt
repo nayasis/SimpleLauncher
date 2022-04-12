@@ -42,9 +42,8 @@ class TerminalPane(
     }
 
     private fun runProcess() {
-        executor = command.runProcess(false)
+        executor = command.runProcess()
         outputReader = BufferedReader(InputStreamReader(executor.output, Platforms.os.charset))
-        errorReader  = BufferedReader(InputStreamReader(executor.error, Platforms.os.charset))
         inputWriter  = BufferedWriter(OutputStreamWriter(executor.input, Platforms.os.charset))
         focusCursor()
         executor.waitFor()
