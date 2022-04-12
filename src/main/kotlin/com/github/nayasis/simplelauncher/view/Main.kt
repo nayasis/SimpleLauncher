@@ -5,8 +5,9 @@ package com.github.nayasis.simplelauncher.view
 import com.github.nayasis.kotlin.basica.core.extention.ifNull
 import com.github.nayasis.kotlin.basica.core.extention.isNotEmpty
 import com.github.nayasis.kotlin.basica.core.localdate.between
-import com.github.nayasis.kotlin.basica.core.localdate.toFormat
+import com.github.nayasis.kotlin.basica.core.localdate.toString
 import com.github.nayasis.kotlin.basica.core.string.message
+import com.github.nayasis.kotlin.basica.etc.error
 import com.github.nayasis.kotlin.javafx.control.basic.allChildren
 import com.github.nayasis.kotlin.javafx.control.basic.repack
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
@@ -120,6 +121,9 @@ class Main: View("application.title".message()) {
 
     private var lastFocused: Node? = null
 
+    private val favicon       = resources.image("/image/icon/favicon.png")
+    private val faviconPinned = resources.image("/image/icon/favicon-pinned.png")
+
     init {
         Localizator(root)
         initEvent()
@@ -128,10 +132,14 @@ class Main: View("application.title".message()) {
 
     override fun onBeforeShow() {
         ConfigService.stageMain?.let {
-            it.excludeKlass.add(Button::class)
-            it.bind(currentStage)
-            menubarTop.repack()
-            initSearchFilter(it.tables[Main::tableMain.name]?.focusedRow)
+            try {
+                it.excludeKlass.add(Button::class)
+                it.bind(currentStage)
+                menubarTop.repack()
+                initSearchFilter(it.tables[Main::tableMain.name]?.focused?.row)
+            } catch (e: Throwable) {
+                logger.error(e)
+            }
         }
     }
 
@@ -161,7 +169,7 @@ class Main: View("application.title".message()) {
 
         colLastUsedDt.cellValue(Link::lastExecDate).cellFormat {
             graphic = label {
-                text = it?.toFormat("YYYY-MM-DD HH:MI:SS")
+                text = it?.toString("YYYY-MM-DD HH:MI:SS")
             }
             alignment = Pos.CENTER
         }
@@ -192,7 +200,7 @@ class Main: View("application.title".message()) {
         }
 
         tableMain.setOnKeyPressed { e ->
-            @Suppress("NON_EXHAUSTIVE_WHEN")
+            @Suppress("NON_EXHAUSTIVE_WHEN_STATEMENT")
             when(e.code) {
                 ENTER -> tableMain.selectedItem?.let { linkExecutor.run(it) }
                 ESCAPE -> inputKeyword.requestFocus()
@@ -253,7 +261,7 @@ class Main: View("application.title".message()) {
         // global shortcut
         root.setOnKeyPressed { e ->
             if( e.isControlDown ) {
-                @Suppress("NON_EXHAUSTIVE_WHEN")
+                @Suppress("NON_EXHAUSTIVE_WHEN_STATEMENT")
                 when(e.code) {
                     S -> buttonSave.let { if(!it.isDisable) it.fire() }
                     D -> buttonCopy.let { if(!it.isDisable) it.fire() }
@@ -275,7 +283,7 @@ class Main: View("application.title".message()) {
                     I -> if(!e.isShiftDown) changeIcon()
                 }
             } else if (e.isShiftDown ) {
-                @Suppress("NON_EXHAUSTIVE_WHEN")
+                @Suppress("NON_EXHAUSTIVE_WHEN_STATEMENT")
                 when(e.code) {
                     DELETE -> buttonDelete.let { if(!it.isDisable) it.fire() }
                 }
@@ -335,12 +343,17 @@ class Main: View("application.title".message()) {
             }
         }
 
-        menuAlwaysOnTop.selectedProperty().addListener { _, _, flag ->
-            Context.main.primaryStage.isAlwaysOnTop = flag
+        menuAlwaysOnTop.selectedProperty().addListener { _, _, alwaysOnTop ->
+            primaryStage.isAlwaysOnTop = alwaysOnTop
+            when {
+                alwaysOnTop -> setStageIcon(faviconPinned)
+                else        -> setStageIcon(favicon)
+            }
         }
 
         menuHelp.setOnAction{
-            find<Help>().openWindow()
+            Context.help.openWindow()
+            Context.help.openWindow()
         }
 
         buttonSave.setOnAction { saveDetail() }
@@ -510,7 +523,7 @@ class Main: View("application.title".message()) {
                     autoCompleter = null
                 }
                 e.isAltDown -> {
-                    @Suppress("NON_EXHAUSTIVE_WHEN")
+                    @Suppress("NON_EXHAUSTIVE_WHEN_STATEMENT")
                     when (e.code) {
                         DOWN -> if( autoCompleter == null ) {
                             textField.addClass(CLASS_AUTO_COMPLETER)
