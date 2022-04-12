@@ -1,6 +1,6 @@
 package com.github.nayasis.simplelauncher.view.terminal
 
-import com.github.nayasis.kotlin.basica.core.klass.Classes
+import com.github.nayasis.kotlin.basica.core.string.toResource
 import com.github.nayasis.kotlin.basica.reflection.Reflector
 import com.github.nayasis.kotlin.javafx.misc.Desktop
 import com.github.nayasis.kotlin.javafx.misc.set
@@ -13,27 +13,21 @@ import netscape.javascript.JSObject
 import tornadofx.runAsync
 import tornadofx.runLater
 import java.io.BufferedReader
+import java.io.BufferedWriter
 import java.io.Reader
 
 private val logger = KotlinLogging.logger {}
 
-abstract class TerminalBasePane(
-    var config: TerminalConfig = TerminalConfig().apply {
-        copyOnSelect = true
-        enableClipboardNotice = false
-    }
+abstract class TerminalView(
+    var config: TerminalConfig
 ): TerminalIf, Pane() {
 
     private val outputProperty = SimpleObjectProperty<BufferedReader>()
-    private val errorProperty  = SimpleObjectProperty<BufferedReader>()
+    private val inputProperty  = SimpleObjectProperty<BufferedWriter>()
 
     val webView = WebView()
-    var interrupted = false
     var columns: Int = 2000
     var rows: Int = 1000
-
-    var taskOutputReader: Task<*>? = null
-    var taskErrorReader: Task<*>? = null
 
     var outputReader: BufferedReader
         get() = outputProperty.get()
@@ -41,10 +35,10 @@ abstract class TerminalBasePane(
             outputProperty.set(reader)
         }
 
-    var errorReader: BufferedReader
-        get() = errorProperty.get()
-        set(reader) {
-            errorProperty.set(reader)
+    var inputWriter: BufferedWriter
+        get() = inputProperty.get()
+        set(writer) {
+            inputProperty.set(writer)
         }
 
     private val terminal: JSObject
@@ -55,35 +49,18 @@ abstract class TerminalBasePane(
         get() = webView.engine.executeScript("window") as JSObject
 
     init {
-        children.add(webView)
-        outputProperty.addListener { _, _, reader -> taskOutputReader = runAsync { print(reader) } }
-        errorProperty.addListener { _, _, reader -> taskErrorReader = runAsync { print(reader) } }
+        outputProperty.addListener { _, _, reader -> runAsync { print(reader) } }
         webView.engine.loadWorker.stateProperty().addListener { _, _, _ ->
             window.setMember( "app", this )
         }
         webView.prefHeightProperty().bind(heightProperty())
         webView.prefWidthProperty().bind(widthProperty())
-        webView.engine.loadContent(getContents())
-    }
-
-    private fun getContents(): String {
-        val script = Classes.getResourceStream("/view/hterm/hterm_all.js").bufferedReader().readText()
-        return StringBuilder().apply {
-            Classes.getResourceStream("/view/hterm/hterm.html").bufferedReader().readLines().forEach { line ->
-                if (("<script src=\"hterm_all.js\"></script>" == line)) {
-                    append("<script>")
-                    append(script)
-                    append("</script>")
-                } else {
-                    append(line)
-                }
-            }
-        }.toString()
+        webView.engine.load("/view/hterm/hterm.html".toResource()!!.toExternalForm())
     }
 
     override fun getPrefs(): String = Reflector.toJson(config,pretty=true)
 
-    override fun updatePrefs(config: TerminalConfig) {
+    fun updatePrefs(config: TerminalConfig) {
         if(this.config == config) return
         this.config = config
         runLater {
@@ -111,8 +88,9 @@ abstract class TerminalBasePane(
     }
 
     private fun print(text: String) = runLater {
-        kotlin.io.print(text)
-        terminalIO.call("print", text)
+        runCatching {
+            terminalIO.call("print", text)
+        }
     }
 
     fun focusCursor() = runLater {
@@ -120,15 +98,25 @@ abstract class TerminalBasePane(
         terminal.call("focus")
     }
 
-    fun closeReader() {
-        taskOutputReader?.cancel()
-        taskErrorReader?.cancel()
+    protected fun closeReader() {
         runCatching { outputReader.close() }
-        runCatching { errorReader.close() }
+        runCatching { inputWriter .close() }
+        webView.engine.load(null)
     }
 
-    override fun onTerminalInit() {}
-    override fun sendCommand(command: String) {}
+    override fun onTerminalInit() {
+        runLater {
+            children.add(webView)
+        }
+    }
+
+    override fun command(command: String) {
+        print(command)
+        inputWriter.run {
+            write(command)
+            flush()
+        }
+    }
 
 }
 

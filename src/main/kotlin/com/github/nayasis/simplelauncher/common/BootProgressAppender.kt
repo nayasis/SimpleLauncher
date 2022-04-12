@@ -6,12 +6,10 @@ import com.github.nayasis.kotlin.javafx.spring.SpringFxApp
 
 class BootProgressAppender: AppenderBase<ILoggingEvent>() {
 
-    companion object {
-        var i = 0
-    }
+    private var i = 0
 
     override fun append(event: ILoggingEvent) {
-        SpringFxApp.notifyProgress(++i,8,event.formattedMessage)
+        SpringFxApp.notifyProgress(++i,6, event.formattedMessage)
     }
 
 }

@@ -6,7 +6,9 @@ import com.github.nayasis.kotlin.basica.exec.CommandExecutor
 import mu.KotlinLogging
 import tornadofx.runAsync
 import java.io.BufferedReader
+import java.io.BufferedWriter
 import java.io.InputStreamReader
+import java.io.OutputStreamWriter
 
 private val logger = KotlinLogging.logger {}
 
@@ -17,15 +19,13 @@ private val logger = KotlinLogging.logger {}
  */
 class TerminalPane(
     val command: Command,
-    var onDone:(() -> Unit)? = null,
-    var onFail: ((Throwable) -> Unit)? = null,
-    var onSuccess: (() -> Unit)? = null,
+    var onDone:(() -> Unit)?,
+    var onFail: ((Throwable) -> Unit)?,
+    var onSuccess: (() -> Unit)?,
     config: TerminalConfig,
-): TerminalBasePane(config) {
+): TerminalView(config) {
 
-    val executor = CommandExecutor().apply {
-        onProcessFailed = { closeReader() }
-    }
+    private lateinit var executor: CommandExecutor
 
     override fun onTerminalReady() {
         runAsync {
@@ -35,22 +35,23 @@ class TerminalPane(
             } catch (e: Throwable) {
                 runCatching { onFail?.let { it(e) } }
             } finally {
-                runCatching { closeReader() }
+                runCatching { close() }
                 runCatching { onDone?.let { it() } }
             }
         }
     }
 
     private fun runProcess() {
-        executor.run(command,null,null)
-        outputReader = BufferedReader(InputStreamReader(executor.outputStream, Platforms.os.charset))
-        errorReader  = BufferedReader(InputStreamReader(executor.errorStream, Platforms.os.charset))
+        executor = command.runProcess()
+        outputReader = BufferedReader(InputStreamReader(executor.output, Platforms.os.charset))
+        inputWriter  = BufferedWriter(OutputStreamWriter(executor.input, Platforms.os.charset))
         focusCursor()
         executor.waitFor()
     }
 
-    fun destory() {
+    fun close() {
         executor.destroy()
+        super.closeReader()
     }
 
 }
