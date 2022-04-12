@@ -32,13 +32,13 @@ class TerminalConfig {
     var ctrlVPaste = true
 
     @JsonProperty("cursor-color")
-    var cursorColor = "black"
+    var cursorColor = "white"
 
     @JsonProperty(value = "background-color")
     var backgroundColor = "white"
 
     @JsonProperty("font-size")
-    var fontSize = 10
+    var fontSize = 8
 
     @JsonProperty(value = "foreground-color")
     var foregroundColor = "black"

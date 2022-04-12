@@ -7,7 +7,6 @@ import com.github.nayasis.simplelauncher.view.Main
 import com.github.nayasis.simplelauncher.view.Splash
 import javafx.stage.Stage
 import org.apache.commons.cli.CommandLine
-import org.apache.commons.cli.Options
 import org.slf4j.LoggerFactory
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import tornadofx.Stylesheet
@@ -16,24 +15,21 @@ import tornadofx.launch
 @SpringBootApplication
 class Simplelauncher: SpringFxApp(Main::class,DefaultStylesheet::class) {
 
-    override fun start(command: CommandLine) {
+    override fun onStart(command: CommandLine) {
         closePreloader()
         detachBootProgressAppender()
     }
 
     private fun detachBootProgressAppender() {
-        val springLogger = LoggerFactory.getLogger("org.springframework") as Logger
-        springLogger.detachAppender("capture")
+        val springLogger = LoggerFactory.getLogger("org.springframework") as Logger?
+        springLogger?.detachAppender("capture")
     }
 
-    override fun start(stage: Stage) {
+    override fun onStart(stage: Stage) {
         stage.apply {
             loadDefaultIcon()
-            super.start(this)
         }
     }
-
-    override fun setOptions(options: Options) {}
 
 }
 

@@ -4,8 +4,8 @@ import com.github.nayasis.kotlin.basica.core.path.notExists
 import com.github.nayasis.kotlin.basica.core.path.readText
 import com.github.nayasis.kotlin.basica.core.path.writeText
 import com.github.nayasis.kotlin.basica.reflection.Reflector
+import com.github.nayasis.kotlin.javafx.property.SizeProperty
 import com.github.nayasis.kotlin.javafx.property.StageProperty
-import org.springframework.stereotype.Component
 import java.nio.file.Paths
 import kotlin.reflect.jvm.jvmName
 
@@ -29,6 +29,12 @@ class ConfigService { companion object {
         get() = this[::stageTerminal.name]?.let { Reflector.toObject(it) }
         set(value) {
             field = value.also { this[::stageTerminal.name] = Reflector.toJson(it) }
+        }
+
+    var stageHelp: SizeProperty? = null
+        get() = this[::stageHelp.name]?.let { Reflector.toObject(it) }
+        set(value) {
+            field = value.also { this[::stageHelp.name] = Reflector.toJson(it) }
         }
 
     private val config = loadConfig()
