@@ -23,26 +23,16 @@ abstract class TerminalView(
 ): TerminalIf, Pane() {
 
     private val outputProperty = SimpleObjectProperty<BufferedReader>()
-    private val errorProperty  = SimpleObjectProperty<BufferedReader>()
     private val inputProperty  = SimpleObjectProperty<BufferedWriter>()
 
     val webView = WebView()
     var columns: Int = 2000
     var rows: Int = 1000
 
-    var taskOutputReader: Task<*>? = null
-    var taskErrorReader: Task<*>? = null
-
     var outputReader: BufferedReader
         get() = outputProperty.get()
         set(reader) {
             outputProperty.set(reader)
-        }
-
-    var errorReader: BufferedReader
-        get() = errorProperty.get()
-        set(reader) {
-            errorProperty.set(reader)
         }
 
     var inputWriter: BufferedWriter
@@ -59,31 +49,13 @@ abstract class TerminalView(
         get() = webView.engine.executeScript("window") as JSObject
 
     init {
-        children.add(webView)
-        outputProperty.addListener { _, _, reader -> taskOutputReader = runAsync { print(reader) } }
-        errorProperty.addListener { _, _, reader -> taskErrorReader = runAsync { print(reader) } }
+        outputProperty.addListener { _, _, reader -> runAsync { print(reader) } }
         webView.engine.loadWorker.stateProperty().addListener { _, _, _ ->
             window.setMember( "app", this )
         }
         webView.prefHeightProperty().bind(heightProperty())
         webView.prefWidthProperty().bind(widthProperty())
         webView.engine.load("/view/hterm/hterm.html".toResource()!!.toExternalForm())
-//        webView.engine.loadContent(getContents())
-    }
-
-    private fun getContents(): String {
-        val script = "view/hterm/hterm_all.js".toResource()!!.readText()
-        return StringBuilder().apply {
-            "/view/hterm/hterm.html".toResource()!!.openStream().bufferedReader().readLines().forEach { line ->
-                if (("<script src=\"hterm_all.js\"></script>" == line)) {
-                    append("<script>")
-                    append(script)
-                    append("</script>")
-                } else {
-                    append(line)
-                }
-            }
-        }.toString()
     }
 
     override fun getPrefs(): String = Reflector.toJson(config,pretty=true)
@@ -127,15 +99,16 @@ abstract class TerminalView(
     }
 
     protected fun closeReader() {
-        taskOutputReader?.cancel()
-        taskErrorReader?.cancel()
         runCatching { outputReader.close() }
-        runCatching { errorReader.close() }
-        runCatching { inputWriter.close() }
+        runCatching { inputWriter .close() }
         webView.engine.load(null)
     }
 
-    override fun onTerminalInit() {}
+    override fun onTerminalInit() {
+        runLater {
+            children.add(webView)
+        }
+    }
 
     override fun command(command: String) {
         print(command)
