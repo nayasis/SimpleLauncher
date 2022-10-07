@@ -527,7 +527,7 @@ class Main: View("application.title".message()) {
                     when (e.code) {
                         DOWN -> if( autoCompleter == null ) {
                             textField.addClass(CLASS_AUTO_COMPLETER)
-                            autoCompleter = AutoCompletionText(inputKeyword, suggestion)
+                            autoCompleter = AutoCompletionText(textField, suggestion)
                             autoCompleter?.setOnAutoCompleted {
                                 textField.removeClass(CLASS_AUTO_COMPLETER)
                                 autoCompleter?.dispose()
