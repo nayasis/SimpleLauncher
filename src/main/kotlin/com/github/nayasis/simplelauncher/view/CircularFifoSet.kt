@@ -6,9 +6,10 @@ import com.github.nayasis.kotlin.basica.core.extention.isEmpty
 class CircularFifoSet<T>(val capacity: Int = 128): Collection<T> {
 
     private val map = FifoCache<T,Boolean>(capacity)
-    private var currentIndex : Int? = null
 
-    constructor(collection: Collection<T>): this(collection.size) {
+    var cursor: Int? = null
+
+    constructor(collection: Collection<T>, capacity: Int = collection.size): this(capacity) {
         addAll(collection)
     }
 
@@ -40,7 +41,7 @@ class CircularFifoSet<T>(val capacity: Int = 128): Collection<T> {
 
     fun clear() {
         map.evict()
-        currentIndex = null
+        cursor = null
     }
 
     override fun iterator(): Iterator<T> = map.keySet().iterator()
@@ -49,7 +50,7 @@ class CircularFifoSet<T>(val capacity: Int = 128): Collection<T> {
         if( ! contains(element) ) return false
         map.evict(element)
         if( isEmpty() )
-            currentIndex = null
+            cursor = null
         return true
     }
 
@@ -57,7 +58,7 @@ class CircularFifoSet<T>(val capacity: Int = 128): Collection<T> {
         elements.forEach { remove(it) }
     }
 
-    fun get(index: Int): T? {
+    operator fun get(index: Int): T? {
         if( isEmpty() ) return null
         var idx = index % size
         if( idx < 0 ) {
@@ -68,14 +69,14 @@ class CircularFifoSet<T>(val capacity: Int = 128): Collection<T> {
 
     fun next(): T? {
         if( isEmpty() ) return null
-        currentIndex = if( currentIndex == null ) 0 else currentIndex!! + 1
-        return get(currentIndex!!)
+        cursor = if( cursor == null ) 0 else cursor!! + 1
+        return get(cursor!!)
     }
 
     fun prev(): T? {
         if( isEmpty() ) return null
-        currentIndex = if( currentIndex == null ) 0 else currentIndex!! - 1
-        return get(currentIndex!!)
+        cursor = if( cursor == null ) 0 else cursor!! - 1
+        return get(cursor!!)
     }
 
 }
