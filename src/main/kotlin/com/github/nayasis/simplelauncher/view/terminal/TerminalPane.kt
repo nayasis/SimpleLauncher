@@ -2,7 +2,6 @@ package com.github.nayasis.simplelauncher.view.terminal
 
 import com.github.nayasis.kotlin.basica.etc.Platforms
 import com.github.nayasis.kotlin.basica.exec.Command
-import com.github.nayasis.kotlin.basica.exec.CommandExecutor
 import mu.KotlinLogging
 import tornadofx.runAsync
 import java.io.BufferedReader
@@ -25,7 +24,7 @@ class TerminalPane(
     config: TerminalConfig,
 ): TerminalView(config) {
 
-    private lateinit var executor: CommandExecutor
+    private lateinit var process: Process
 
     override fun onTerminalReady() {
         runAsync {
@@ -42,15 +41,15 @@ class TerminalPane(
     }
 
     private fun runProcess() {
-        executor = command.runProcess()
-        outputReader = BufferedReader(InputStreamReader(executor.output, Platforms.os.charset))
-        inputWriter  = BufferedWriter(OutputStreamWriter(executor.input, Platforms.os.charset))
+        process = command.runProcess()
+        outputReader = BufferedReader(InputStreamReader(process.inputStream, Platforms.os.charset))
+        inputWriter  = BufferedWriter(OutputStreamWriter(process.outputStream, Platforms.os.charset))
         focusCursor()
-        executor.waitFor()
+        process.waitFor()
     }
 
     fun close() {
-        executor.destroy()
+        process.destroy()
         super.closeReader()
     }
 
