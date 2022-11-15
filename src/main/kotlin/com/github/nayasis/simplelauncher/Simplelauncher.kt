@@ -1,52 +1,46 @@
 package com.github.nayasis.simplelauncher
 
-import ch.qos.logback.classic.Logger
+import com.github.nayasis.kotlin.basica.net.Networks
 import com.github.nayasis.kotlin.javafx.spring.SpringFxApp
-import com.github.nayasis.kotlin.javafx.stage.loadDefaultIcon
+import com.github.nayasis.simplelauncher.common.BootLogger
 import com.github.nayasis.simplelauncher.view.Main
 import com.github.nayasis.simplelauncher.view.Splash
-import javafx.stage.Stage
+import mu.KotlinLogging
 import org.apache.commons.cli.CommandLine
-import org.slf4j.LoggerFactory
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.SpringBootApplication
-import tornadofx.Stylesheet
+import org.springframework.context.ApplicationContextInitializer
 import tornadofx.launch
+import java.util.*
+
+private val logger = KotlinLogging.logger {}
 
 @SpringBootApplication
-class Simplelauncher: SpringFxApp(Main::class,DefaultStylesheet::class) {
+class Simplelauncher: SpringFxApp(Main::class) {
+
+    @Value("\${simplalauncher.locale}")
+    var locale: String = ""
+
+    private var bootLogger: BootLogger? = BootLogger()
 
     override fun onStart(command: CommandLine) {
-        closePreloader()
-        detachBootProgressAppender()
+        Locale.setDefault(Locale.forLanguageTag(locale))
+        bootLogger?.close()
+        bootLogger = null
     }
 
-    private fun detachBootProgressAppender() {
-        val springLogger = LoggerFactory.getLogger("org.springframework") as Logger?
-        springLogger?.detachAppender("capture")
-    }
-
-    override fun onStart(stage: Stage) {
-        stage.apply {
-            loadDefaultIcon()
-        }
+    override fun setInitializers(): List<ApplicationContextInitializer<*>>? {
+        return bootLogger?.getInitializer()?.let { listOf(it) }
     }
 
 }
 
 fun main(args: Array<String>) {
-
-    SpringFxApp.loadMessage("/message/**.prop")
-    SpringFxApp.loadDefaultIcon("/image/icon/favicon.png")
-    SpringFxApp.setPreloader(Splash::class)
-
-    launch<Simplelauncher>(*args)
-
-}
-
-class DefaultStylesheet : Stylesheet() {
-    init {
-        root {
-            fontFamily = "Arial"
-        }
+    Networks.trustAllCerts()
+    SpringFxApp.run{
+        loadMessage("/message/**.prop")
+        loadDefaultIcon("/image/icon/favicon.png")
+        setPreloader(Splash::class)
     }
+    launch<Simplelauncher>(*args)
 }

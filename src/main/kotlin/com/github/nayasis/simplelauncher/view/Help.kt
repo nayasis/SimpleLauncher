@@ -3,7 +3,7 @@ package com.github.nayasis.simplelauncher.view
 import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.net.Networks
 import com.github.nayasis.kotlin.javafx.property.SizeProperty
-import com.github.nayasis.simplelauncher.service.ConfigService
+import com.github.nayasis.simplelauncher.common.Context
 import javafx.scene.web.WebView
 import mu.KotlinLogging
 import tornadofx.View
@@ -14,11 +14,6 @@ import tornadofx.webview
 private val logger = KotlinLogging.logger {}
 
 class Help: View("stage.help".message()) {
-
-    init {
-        // accept https url
-        Networks.trustAllCerts()
-    }
 
     lateinit var webview: WebView
 
@@ -35,11 +30,11 @@ class Help: View("stage.help".message()) {
     }
 
     override fun onBeforeShow() {
-        ConfigService.stageHelp?.bind(currentStage!!)
+        Context.config.stageHelp?.bind(currentStage!!)
     }
 
     override fun onUndock() {
-        with(ConfigService) {
+        Context.config.run {
             stageHelp = SizeProperty(currentStage)
             save()
         }
