@@ -1,3 +1,7 @@
+.root * {
+  -fx-font: 11px Arial;
+}
+
 .table-row-cell {
   -fx-font-size: 11px;
 }
