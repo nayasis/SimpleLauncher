@@ -4,7 +4,7 @@
 
 ***Simple Launcher*** is designed to launch all of your application simply and to search easily.
 
-It accepts executable command or relative path to run so you could customize your own application launcher independent with OS.
+You could use configurable command (include relative path) so customize your own application launcher regardless of any OS.
 
 ![screenshot](https://github.com/nayasis/simpleLauncher/blob/master/doc/screenshot.jpg?raw=true)
 
@@ -17,6 +17,22 @@ It accepts executable command or relative path to run so you could customize you
 ```shell
 java -jar SimpleLauncher.jar clear
 ```
+
+### For Windows user
+
+There is executable wrapper for window user.
+- [32bit executable wrapper](https://github.com/nayasis/simpleLauncher/blob/master/work/WinRun4J/32/wrapper.zip?raw=true)
+- [64bit executable wrapper](https://github.com/nayasis/simpleLauncher/blob/master/work/WinRun4J/64/wrapper.zip?raw=true)
+
+Extract executable wrapper on same directory with ***simplelauncher.jar***
+```shell
+simplelauncher.exe
+simplelauncher.ini
+simplelauncher.jar
+```
+Run ***simplelauncher.exe***
+
+
 ## Shortcuts
 
 ### Menu
@@ -55,7 +71,7 @@ Only works when Link editor is opened.
 | Ctrl + **O**         | open item's folder      |
 | Ctrl + **I**         | change item icon        |
 
-![link editor](https://github.com/nayasis/simpleLauncher/blob/master/doc/linkeditor.jpg?raw=true)
+![link editor](https://github.com/nayasis/simpleLauncher/blob/master/doc/link-editor.jpg?raw=true)
 
 ### Keyword history
 
@@ -67,13 +83,13 @@ Enter history mode by pressing ***Alt + Down***.
 
 ![history mode](https://github.com/nayasis/simpleLauncher/blob/master/doc/keyword-historymode.jpg?raw=true)
 
-| shortcut             | description                    |
-| --------------       | ------------------             |
-| Alt + **Left**       | previous link executed         |
-| Alt + **Right**      | next link executed             |
-| any key              | auto completed executed links  |
+#### keyword history functions
 
-![autocompleted links](https://github.com/nayasis/simpleLauncher/blob/master/doc/keyword-autocomplete.jpg?raw=true)
+| shortcut         | description             |
+| --------------   | ------------------      |
+| Alt + **Left**   | previous link executed  |
+| Alt + **Right**  | next link executed      |
+| any key          | filter executed links ![autocompleted links](https://github.com/nayasis/simpleLauncher/blob/master/doc/keyword-autocomplete.jpg?raw=true)  |
 
 ## Binding parameters
 
@@ -95,11 +111,6 @@ being injected when runs by file(or directory) dragging.
 ### Example
 
 ape2wav.exe "${path}" "${dir}\\${name}.wav"
-
-## Contact
-
-- issue : https://github.com/nayasis/SimpleLauncher/issues
-- email : [nayasis@gmail.com](mailto:nayasis@gmail.com)
 
 ## Development
 
@@ -123,4 +134,7 @@ java -jar simplelauncher.jar
 ```
 
 
+## Contact
 
+- issue : https://github.com/nayasis/SimpleLauncher/issues
+- email : [nayasis@gmail.com](mailto:nayasis@gmail.com)
