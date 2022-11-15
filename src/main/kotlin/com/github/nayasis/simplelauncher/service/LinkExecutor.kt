@@ -4,9 +4,9 @@ import com.github.nayasis.kotlin.basica.core.string.tokenize
 import com.github.nayasis.kotlin.basica.exec.Command
 import com.github.nayasis.kotlin.javafx.property.StageProperty
 import com.github.nayasis.kotlin.javafx.stage.Dialog
+import com.github.nayasis.simplelauncher.common.Context.Companion.config
 import com.github.nayasis.simplelauncher.common.Context.Companion.main
 import com.github.nayasis.simplelauncher.jpa.entity.Link
-import com.github.nayasis.simplelauncher.view.CircularFifoSet
 import com.github.nayasis.simplelauncher.view.terminal.Terminal
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
@@ -21,11 +21,9 @@ class LinkExecutor(
     private val linkService: LinkService
 ) {
 
-    val history = CircularFifoSet<String>(20)
-
     fun run(link: Link, files: Collection<File>? = null) {
 
-        link.title?.let { history.add(it) }
+        link.title?.let { config.historyKeyword.add(it) }
 
         linkService.save( link.apply {
             lastExecDate = LocalDateTime.now()
@@ -42,8 +40,8 @@ class LinkExecutor(
                 if( ! link.showConsole ) {
                     Dialog.progress(link.title) {
                         files.forEachIndexed { index, file ->
-                            updateProgress(index + 1L,files.size.toLong())
-                            updateMessage(file.name)
+                            it.updateProgress(index + 1,files.size)
+                            it.updateMessage(file.name)
                             run(LinkCommand(link, file),wait=true)
                         }
                     }
@@ -55,7 +53,7 @@ class LinkExecutor(
                         val cmd = LinkCommand(link, file)
                         logger.debug { ">> command : $cmd" }
                         Terminal(cmd.toCommand(),
-                            onStart = { ConfigService.stageTerminal?.bind(it) },
+                            onStart = { config.stageTerminal?.bind(it) },
                             onSuccess = { runLater { it.close() } },
                             onFail = { throwable, it ->
                                 runLater {
@@ -63,7 +61,7 @@ class LinkExecutor(
                                     it.close()
                                 }
                             },
-                            onDone = { ConfigService.stageTerminal = StageProperty(it) }
+                            onDone = { config.stageTerminal = StageProperty(it) }
                         ).showAndWait()
                     }
                     progress.close()
