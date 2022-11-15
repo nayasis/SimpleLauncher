@@ -40,9 +40,9 @@ java -jar SimpleLauncher.jar clear
 | Delete         | delete item             |
 | Ctrl + **C**   | copy item's folder path |
 
-### Launcher editor
+### Link editor
 
-only works when Launcher editor is opened.
+Only works when Link editor is opened.
 
 | shortcut             | description             |
 | --------------       | ------------------      |
@@ -54,6 +54,26 @@ only works when Launcher editor is opened.
 | Ctrl + Shift + **C** | copy item's folder path |
 | Ctrl + **O**         | open item's folder      |
 | Ctrl + **I**         | change item icon        |
+
+![link editor](https://github.com/nayasis/simpleLauncher/blob/master/doc/linkeditor.jpg?raw=true)
+
+### Keyword history
+
+When keyword focused
+
+![keyword focused](https://github.com/nayasis/simpleLauncher/blob/master/doc/keyword-focused.jpg?raw=true)
+
+Enter history mode by pressing ***Alt + Down***.
+
+![history mode](https://github.com/nayasis/simpleLauncher/blob/master/doc/keyword-historymode.jpg?raw=true)
+
+| shortcut             | description                    |
+| --------------       | ------------------             |
+| Alt + **Left**       | previous link executed         |
+| Alt + **Right**      | next link executed             |
+| any key              | auto completed executed links  |
+
+![autocompleted links](https://github.com/nayasis/simpleLauncher/blob/master/doc/keyword-autocomplete.jpg?raw=true)
 
 ## Binding parameters
 
@@ -97,7 +117,7 @@ gradle bootRun
 gradle bootJar
 ```
 JAR file will be created in <u>${Project Directory}**/build/libs**</u>  
-It can be run like follow.
+It could be run like below.
 ```shell
 java -jar simplelauncher.jar
 ```
