@@ -21,8 +21,8 @@ java -jar SimpleLauncher.jar clear
 ### For Windows user
 
 There is executable wrapper for window user.
-- [32bit executable wrapper](https://github.com/nayasis/SimpleLauncher/blob/master/work/wrapper/WinRun4J/32/wrapper.zip)
-- [64bit executable wrapper](https://github.com/nayasis/SimpleLauncher/blob/master/work/wrapper/WinRun4J/64/wrapper.zip)
+- [32bit executable wrapper](https://github.com/nayasis/SimpleLauncher/blob/master/work/wrapper/WinRun4J/32/wrapper.zip?raw=true)
+- [64bit executable wrapper](https://github.com/nayasis/SimpleLauncher/blob/master/work/wrapper/WinRun4J/64/wrapper.zip?raw=true)
 
 Extract executable wrapper on same directory with ***simplelauncher.jar***
 ```shell
