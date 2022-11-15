@@ -61,6 +61,7 @@ private val logger = KotlinLogging.logger {}
 
 private const val CLASS_AUTO_COMPLETER = "auto-completer"
 private const val CLASS_ON_DRAG        = "table-row-on-drag"
+private const val DEFAULT_LINK_EDITOR_WIDTH = 400.0
 
 class Main: View("application.title".message()) {
 
@@ -323,7 +324,11 @@ class Main: View("application.title".message()) {
             (tableMain.parent as HBox).children.also {
                 if(show && descGridPane !in it) {
                     it.add(descGridPane)
+                    currentStage?.let { stage -> stage.width += if(descGridPane.width <= 0) DEFAULT_LINK_EDITOR_WIDTH else descGridPane.width }
                 } else {
+                    if(descGridPane.width > 0 ) {
+                        currentStage?.let { stage -> stage.width -= descGridPane.width }
+                    }
                     it.remove(descGridPane)
                 }
             }
