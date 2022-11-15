@@ -97,14 +97,14 @@ class KeywordParser(capacity: Int = 20) {
                     }
                     buffer.push(NOT)
                 }
-                "(" -> {
+                "(","[","{" -> {
                     if (prev is String || prev === BRACE_CLOSE) {
                         buffer.push(AND)
                     }
                     buffer.push(BRACE_OPEN)
                     braces++
                 }
-                ")" -> {
+                ")","]","}" -> {
                     if (prev === BRACE_OPEN) {
                         buffer.pop()
                     } else {
@@ -154,10 +154,14 @@ class KeywordParser(capacity: Int = 20) {
 
 private enum class Operator(val priority: Int) {
 
-    AND(1), OR(1), NOT(5),
+    NOT(5),
+    AND(2),
+    OR(1),
 
     // operator가 아니라서, -1로 제외시킴
-    BRACE_OPEN(-1), BRACE_CLOSE(-1);
+    BRACE_OPEN(-1),
+    BRACE_CLOSE(-1),
+    ;
 
 }
 
@@ -172,9 +176,20 @@ class Keyword: ArrayList<Any>() {
         for (token in this) {
             when {
                 token is Pattern -> stack.push(fn(token))
-                token === NOT -> stack.push(!stack.pop()!!)
-                token === AND -> stack.push(stack.pop()!! && stack.pop()!!)
-                token === OR  -> stack.push(stack.pop()!! || stack.pop()!!)
+                token === NOT -> {
+                    val a = stack.pop()
+                    stack.push(! a)
+                }
+                token === AND -> {
+                    val a = stack.pop()
+                    val b = stack.pop()
+                    stack.push(a && b)
+                }
+                token === OR  -> {
+                    val a = stack.pop()
+                    val b = stack.pop()
+                    stack.push(a || b)
+                }
             }
         }
         return stack.pop()!!

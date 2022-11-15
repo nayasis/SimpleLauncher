@@ -1,17 +1,20 @@
 package com.github.nayasis.simplelauncher.jpa.entity
 
 import com.github.nayasis.kotlin.basica.core.extention.ifEmpty
-import com.github.nayasis.kotlin.basica.core.path.Paths
-import com.github.nayasis.kotlin.basica.core.path.div
-import com.github.nayasis.kotlin.basica.core.path.exists
-import com.github.nayasis.kotlin.basica.core.path.invariantSeparators
-import com.github.nayasis.kotlin.basica.core.path.pathString
-import com.github.nayasis.kotlin.basica.core.path.toRelativeOrSelf
+import com.github.nayasis.kotlin.basica.core.io.Paths
+import com.github.nayasis.kotlin.basica.core.io.div
+import com.github.nayasis.kotlin.basica.core.io.exists
+import com.github.nayasis.kotlin.basica.core.io.invariantSeparators
+import com.github.nayasis.kotlin.basica.core.io.pathString
+import com.github.nayasis.kotlin.basica.core.io.toRelativeOrSelf
 import com.github.nayasis.kotlin.basica.core.string.invariantSeparators
+import com.github.nayasis.kotlin.basica.core.string.toFile
 import com.github.nayasis.kotlin.basica.core.string.toPath
 import com.github.nayasis.kotlin.basica.etc.Platforms
 import com.github.nayasis.kotlin.basica.etc.error
-import com.github.nayasis.kotlin.javafx.misc.Images
+import com.github.nayasis.kotlin.javafx.misc.toBinary
+import com.github.nayasis.kotlin.javafx.misc.toIconImage
+import com.github.nayasis.kotlin.javafx.misc.toImage
 import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.common.ICON_NEW
 import com.github.nayasis.simplelauncher.common.toKeyword
@@ -94,11 +97,12 @@ class Link: Cloneable, Serializable {
     var lastExecDate: LocalDateTime? = null
 
     constructor()
+    constructor(file: Path): this(file.toFile())
     constructor(file: File) {
         title = file.nameWithoutExtension
         setPath(file)
         setIcon(file)
-        if(file.isDirectory) {
+        if(file.isDirectory()) {
             if( Platforms.isWindows) {
                 commandPrefix = "cmd /c explorer"
             }
@@ -132,7 +136,7 @@ class Link: Cloneable, Serializable {
         description = link.name
 
         try {
-            link.iconLocation.ifEmpty { path }.let { setIcon(File(it)) }
+            link.iconLocation.ifEmpty { path }.let { setIcon(it!!.toFile()) }
         } catch (e: Throwable) {
             logger.error(e)
         }
@@ -140,23 +144,21 @@ class Link: Cloneable, Serializable {
     }
 
     fun setIcon(file: File): Image? {
-        return Images.toIconImage(file).firstOrNull()?.let {
+        return file.toIconImage().firstOrNull()?.let {
             setIcon(it)
             it
         }
     }
 
     fun setIcon(image: Image) {
-        icon = Images.toBinary(image, ICON_IMAGE_TYPE)
+        icon = image.toBinary(ICON_IMAGE_TYPE)
     }
 
     fun getIconImage(): Image {
-        if( icon == null || icon!!.isEmpty() )
-            return Images.toImage(ICON_NEW)!!
-        return try {
-            Images.toImage(icon ?: ICON_NEW)!!
+        return if (icon == null || icon!!.isEmpty()) ICON_NEW.toImage()!! else try {
+            icon.toImage()!!
         } catch (e: Exception) {
-            Images.toImage(ICON_NEW)!!
+            ICON_NEW.toImage()!!
         }
     }
 
