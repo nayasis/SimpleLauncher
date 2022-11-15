@@ -3,12 +3,12 @@
 package com.github.nayasis.simplelauncher.view
 
 import com.github.nayasis.kotlin.basica.core.extention.ifNull
-import com.github.nayasis.kotlin.basica.core.extention.isNotEmpty
 import com.github.nayasis.kotlin.basica.core.localdate.between
 import com.github.nayasis.kotlin.basica.core.localdate.toString
 import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.etc.error
 import com.github.nayasis.kotlin.javafx.control.basic.allChildren
+import com.github.nayasis.kotlin.javafx.control.basic.hmargin
 import com.github.nayasis.kotlin.javafx.control.basic.repack
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValueByDefault
@@ -21,13 +21,14 @@ import com.github.nayasis.kotlin.javafx.geometry.Insets
 import com.github.nayasis.kotlin.javafx.misc.Desktop
 import com.github.nayasis.kotlin.javafx.misc.set
 import com.github.nayasis.kotlin.javafx.property.StageProperty
+import com.github.nayasis.kotlin.javafx.spring.SpringFxApp.Companion.closePreloader
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.kotlin.javafx.stage.Localizator
+import com.github.nayasis.kotlin.javafx.stage.loadDefaultIcon
 import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.common.ICON_NEW
 import com.github.nayasis.simplelauncher.jpa.entity.Link
 import com.github.nayasis.simplelauncher.jpa.repository.LinkRepository
-import com.github.nayasis.simplelauncher.service.ConfigService
 import com.github.nayasis.simplelauncher.service.LinkExecutor
 import com.github.nayasis.simplelauncher.service.LinkService
 import com.github.nayasis.simplelauncher.service.TextMatcher
@@ -131,21 +132,26 @@ class Main: View("application.title".message()) {
     }
 
     override fun onBeforeShow() {
-        ConfigService.stageMain?.let {
+        currentStage?.loadDefaultIcon()
+        Context.config.stageMain?.let {
             try {
                 it.excludeKlass.add(Button::class)
                 it.bind(currentStage)
                 menubarTop.repack()
-                initSearchFilter(it.tables[Main::tableMain.name]?.focused?.row)
+                initSearchFilter(Context.config.lastFocusedRow)
             } catch (e: Throwable) {
                 logger.error(e)
             }
         }
+        closePreloader()
     }
 
     override fun onUndock() {
-        ConfigService.stageMain = StageProperty(currentStage!!)
-        ConfigService.save()
+        Context.config.run {
+            lastFocusedRow = tableMain.focused?.row
+            stageMain = StageProperty(currentStage!!)
+            save()
+        }
     }
 
     private fun initTable() {
@@ -155,11 +161,11 @@ class Main: View("application.title".message()) {
             graphic = hbox {
                 imageview {
                     image = it.getIconImage()
-                    HBox.setMargin( this, Insets(0,0,0,2) )
+                    hmargin = Insets(0,0,0,2)
                 }
                 label {
                     text = it.title ?: ""
-                    HBox.setMargin( this, Insets(0,0,0,5) )
+                    hmargin = Insets(0,0,0,5)
                 }
                 alignment = Pos.CENTER_LEFT
             }
@@ -325,7 +331,7 @@ class Main: View("application.title".message()) {
 
         menuViewMenuBar.selectedProperty().addListener { _, _, show ->
             menubarTop.let {
-                it.isVisible = !show
+                it.isVisible = show
                 it.repack()
             }
         }
@@ -509,11 +515,11 @@ class Main: View("application.title".message()) {
             lastModified = now()
         }
 
-        applyAutoCompletion(inputKeyword, linkExecutor.history)
+        applyAutoCompletion(inputKeyword, Context.config.historyKeyword)
 
     }
 
-    private fun applyAutoCompletion(textField: TextField, suggestion: CircularFifoSet<String>) {
+    private fun applyAutoCompletion(textField: TextField, suggestion: HistorySet<String>) {
         var autoCompleter: AutoCompletionText? = null
         textField.addEventFilter(KEY_PRESSED) { e ->
             when {
@@ -546,7 +552,7 @@ class Main: View("application.title".message()) {
 
     private fun changeIcon() {
         if( detail == null ) return
-        linkService.openIconPicker()?.let { changeIcon(it) }
+        linkService.openIconPicker()?.let { changeIcon(it.toFile()) }
     }
 
     private fun hasFile(e: DragEvent): Boolean {
@@ -591,21 +597,11 @@ class Main: View("application.title".message()) {
     }
 
     fun readLinks() {
-
         links.apply {
             clear()
             addAll(linkRepository.findAllByOrderByTitle())
         }
-
-        val lastUsed = links.items.filter { it.title.isNotEmpty() }
-            .sortedWith(compareByDescending(Link::lastExecDate).thenByDescending(Link::title))
-            .take(linkExecutor.history.capacity)
-            .map {it.title!!}
-
-        linkExecutor.history.addAll(lastUsed)
-
         printSearchResult()
-
     }
 
     private fun clearDetail() {
@@ -747,8 +743,8 @@ private val MOUSE_CLICK = MouseEvent(
 
 class AutoCompletionText(
     val textField: TextField,
-    val suggestion: Collection<String>
-): AutoCompletionTextFieldBinding<String>(textField, SuggestionProvider.create(suggestion)) {
+    val suggestion: HistorySet<String>
+): AutoCompletionTextFieldBinding<String>(textField, SuggestionProvider.create(suggestion.toList())) {
     fun show() {
         if(suggestion.isEmpty() || textField.text.isBlank() ) return
         super.setUserInput(textField.text)

@@ -154,10 +154,14 @@ class KeywordParser(capacity: Int = 20) {
 
 private enum class Operator(val priority: Int) {
 
-    AND(1), OR(1), NOT(5),
+    NOT(5),
+    AND(2),
+    OR(1),
 
     // operator가 아니라서, -1로 제외시킴
-    BRACE_OPEN(-1), BRACE_CLOSE(-1);
+    BRACE_OPEN(-1),
+    BRACE_CLOSE(-1),
+    ;
 
 }
 

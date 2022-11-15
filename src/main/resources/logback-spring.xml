@@ -7,25 +7,6 @@
     </encoder>
   </appender>
 
-  <!-- DO NOT delete : Splash progress capture -->
-  <appender name="capture" class="com.github.nayasis.simplelauncher.common.BootProgressAppender"/>
-  <logger name="org.springframework" level="info">
-    <appender-ref ref="capture" />
-  </logger>
-
-<!--  <timestamp key="byDate" datePattern="yyyy-MM-dd"/>-->
-<!--  <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">-->
-<!--    <Append>true</Append>-->
-<!--    <file>log/${byDate}.log</file>-->
-<!--    <encoder>-->
-<!--      <pattern>%d{HH:mm:ss.SSS} %-5level [%12(%.-12(%t))] %50(\(%F:%L\)) %msg%n</pattern>-->
-<!--    </encoder>-->
-<!--    <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">-->
-<!--      <fileNamePattern>log/${byDate}.log.%d{HH}</fileNamePattern>-->
-<!--      <maxHistory>7</maxHistory>-->
-<!--    </rollingPolicy>-->
-<!--  </appender>-->
-
   <logger name="org.hibernate.SQL" level="trace"/>
   <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="trace"/>
   <logger name="com.github.nayasis.simplelauncher" level="debug"/>
