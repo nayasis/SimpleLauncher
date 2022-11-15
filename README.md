@@ -94,7 +94,7 @@ being injected when runs by file(or directory) dragging.
 
 ### Example
 
-ape2wav.exe "#{path}" "#{dir}\\#{name}.wav"
+ape2wav.exe "${path}" "${dir}\\${name}.wav"
 
 ## Contact
 
