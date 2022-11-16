@@ -21,5 +21,5 @@ spring:
         use_sql_comments: false
   main:
     lazy-initialization: true
-simplalauncher:
-  locale: ko
+#simplalauncher:
+#  locale: ko
