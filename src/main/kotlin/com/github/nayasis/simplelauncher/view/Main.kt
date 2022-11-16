@@ -149,7 +149,7 @@ class Main: View("application.title".message()) {
 
     override fun onUndock() {
         Context.config.run {
-            lastFocusedRow = tableMain.focused?.row
+            lastFocusedRow = tableMain.focused.row
             stageMain = StageProperty(currentStage!!)
             save()
         }
