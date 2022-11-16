@@ -4,7 +4,7 @@
 
 ***Simple Launcher*** is designed to launch all of your application simply and to search easily.
 
-You could use configurable command (include relative path) so customize your own application launcher regardless of any OS.
+You could use configurable command (include relative path) and parameters.
 
 ![screenshot](https://github.com/nayasis/simpleLauncher/blob/master/doc/screenshot.jpg?raw=true)
 
