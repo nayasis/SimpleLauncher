@@ -139,11 +139,11 @@ class Main: View("application.title".message()) {
                 it.excludeKlass.add(Button::class)
                 it.bind(currentStage)
                 menubarTop.repack()
-                initSearchFilter(Context.config.lastFocusedRow)
             } catch (e: Throwable) {
                 logger.error(e)
             }
         }
+        initSearchFilter(Context.config.lastFocusedRow)
         closePreloader()
     }
 
