@@ -4,7 +4,7 @@
 
 ***Simple Launcher*** is designed to launch all of your application simply and to search easily.
 
-You could use configurable command (include relative path) so customize your own application launcher regardless of any OS.
+You could use configurable command (include relative path) and parameters.
 
 ![screenshot](https://github.com/nayasis/simpleLauncher/blob/master/doc/screenshot.jpg?raw=true)
 
@@ -21,8 +21,8 @@ java -jar SimpleLauncher.jar clear
 ### For Windows user
 
 There is executable wrapper for window user.
-- [32bit executable wrapper](https://github.com/nayasis/SimpleLauncher/blob/master/work/wrapper/WinRun4J/32/wrapper.zip)
-- [64bit executable wrapper](https://github.com/nayasis/SimpleLauncher/blob/master/work/wrapper/WinRun4J/64/wrapper.zip)
+- [32bit executable wrapper](https://github.com/nayasis/SimpleLauncher/blob/master/work/wrapper/WinRun4J/32/wrapper.zip?raw=true)
+- [64bit executable wrapper](https://github.com/nayasis/SimpleLauncher/blob/master/work/wrapper/WinRun4J/64/wrapper.zip?raw=true)
 
 Extract executable wrapper on same directory with ***simplelauncher.jar***
 ```shell
@@ -90,6 +90,7 @@ Enter history mode by pressing ***Alt + Down***.
 | Alt + **Left**   | previous link executed  |
 | Alt + **Right**  | next link executed      |
 | any key          | filter executed links ![autocompleted links](https://github.com/nayasis/simpleLauncher/blob/master/doc/keyword-autocomplete.jpg?raw=true)  |
+| Esc              | exit history mode       |
 
 ## Binding parameters
 
