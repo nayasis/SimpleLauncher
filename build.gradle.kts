@@ -33,7 +33,7 @@ application {
 }
 
 javafx {
-	version = "13"
+	version = "17"
 	modules = listOf("javafx.graphics","javafx.controls","javafx.fxml","javafx.web","javafx.swing")
 //	configuration = "compileOnly"
 }
@@ -57,10 +57,10 @@ repositories {
 dependencies {
 
 	// application
-	implementation("com.github.nayasis:basica-kt:0.2.13")
+	implementation("com.github.nayasis:basica-kt:0.2.14")
 //	implementation("com.github.nayasis:basica-kt:develop-SNAPSHOT"){ isChanging = true }
-	implementation("com.github.nayasis:basicafx-kt:0.1.17")
-//	implementation("com.github.nayasis:basicafx-kt:develop-SNAPSHOT"){ isChanging = true }
+//	implementation("com.github.nayasis:basicafx-kt:0.1.17")
+	implementation("com.github.nayasis:basicafx-kt:develop-SNAPSHOT"){ isChanging = true }
 //	implementation("com.github.nayasis:basicafx-kt:0.1.13-SNAPSHOT"){ isChanging = true }
 	implementation("no.tornado:tornadofx:1.7.20")
 	implementation("org.controlsfx:controlsfx:11.1.0")

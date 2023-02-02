@@ -5,7 +5,6 @@ import com.github.nayasis.kotlin.basica.reflection.Reflector
 import com.github.nayasis.kotlin.javafx.misc.Desktop
 import com.github.nayasis.kotlin.javafx.misc.set
 import javafx.beans.property.SimpleObjectProperty
-import javafx.concurrent.Task
 import javafx.scene.layout.Pane
 import javafx.scene.web.WebView
 import mu.KotlinLogging

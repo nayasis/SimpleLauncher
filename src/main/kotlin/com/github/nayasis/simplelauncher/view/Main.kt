@@ -1,4 +1,4 @@
-@file:Suppress("MemberVisibilityCanBePrivate")
+@file:Suppress("MemberVisibilityCanBePrivate","JAVA_MODULE_DOES_NOT_EXPORT_PACKAGE")
 
 package com.github.nayasis.simplelauncher.view
 
