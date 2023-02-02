@@ -2,7 +2,7 @@ package com.github.nayasis.simplelauncher.service
 
 import com.github.nayasis.kotlin.basica.core.io.Paths
 import com.github.nayasis.kotlin.basica.core.io.directory
-import com.github.nayasis.kotlin.basica.core.io.invariantSeparators
+import com.github.nayasis.kotlin.basica.core.io.invariantPath
 import com.github.nayasis.kotlin.basica.core.io.pathString
 import com.github.nayasis.kotlin.basica.core.string.DEFAULT_BINDER
 import com.github.nayasis.kotlin.basica.core.string.ExtractPattern
@@ -86,7 +86,7 @@ class LinkCommand {
             this["name"]      = file.nameWithoutExtension
             this["ext"]       = file.extension
             this["home"]      = Paths.userHome.pathString
-            this["home-unix"] = Paths.userHome.invariantSeparators
+            this["home-unix"] = Paths.userHome.invariantPath
         }
     }
 
@@ -97,9 +97,9 @@ class LinkCommand {
 
     fun toCommand(): Command {
         return Command(workingDirectory=workingDirectory)
-            .appendParsing(commandPrefix)
-            .append(path)
-            .appendParsing(argument)
+            .append(commandPrefix)
+            .appendRaw(path)
+            .append(argument)
             .also { if(it.isEmpty()) throw IllegalArgumentException("msg.err.007".message().format(title)) }
     }
 
