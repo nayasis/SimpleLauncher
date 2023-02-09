@@ -2,36 +2,40 @@
 
 ## Introduction
 
-***Simple Launcher*** is designed to launch all of your application simply and to search easily.
-
-You could use configurable command (include relative path) so customize your own application launcher regardless of any OS.
+***Simple Launcher*** is designed to launch all of your application simply and to search easily.  
+You are free to use **relative path** or **configurable command** to manage your own application launch commands.
 
 ![screenshot](https://github.com/nayasis/simpleLauncher/blob/master/doc/screenshot.jpg?raw=true)
 
 ## Requirements
-
 - Java 11 above
-- JavaFX 13 above
 
-## Execution
+## Build
+#### 1. Download source
 ```shell
-java -jar SimpleLauncher.jar clear
+git clone https://github.com/nayasis/SimpleLauncher.git
 ```
 
-### For Windows user
-
-There is executable wrapper for window user.
-- [32bit executable wrapper](https://github.com/nayasis/SimpleLauncher/blob/master/work/wrapper/WinRun4J/32/wrapper.zip)
-- [64bit executable wrapper](https://github.com/nayasis/SimpleLauncher/blob/master/work/wrapper/WinRun4J/64/wrapper.zip)
-
-Extract executable wrapper on same directory with ***simplelauncher.jar***
-```shell
-simplelauncher.exe
-simplelauncher.ini
-simplelauncher.jar
+#### 2. Build
 ```
-Run ***simplelauncher.exe***
+gradlew runtime
+```
+- You could also launch application directly.
+  ```shell
+  gradlew bootRun
+  ```
+  
+#### 3. Execution
+- Application would be compiled in directory [./build/image] including JRE.
+- Launch application like this.
+```shell
+cd ./build/image/bin
+simplelauncher
+```
 
+#### 4. For Windows
+- Provide EXE application on [release page](https://github.com/nayasis/SimpleLauncher/releases).
+  - Wrapped by [WinRun4J](https://winrun4j.sourceforge.net)
 
 ## Shortcuts
 
