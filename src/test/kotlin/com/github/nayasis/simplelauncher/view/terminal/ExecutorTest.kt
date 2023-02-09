@@ -1,14 +1,10 @@
 package com.github.nayasis.simplelauncher.view.terminal
 
 import com.github.nayasis.kotlin.basica.exec.Command
-import com.github.nayasis.kotlin.basica.exec.CommandExecutor
-import com.github.nayasis.kotlin.javafx.property.StageProperty
 import com.github.nayasis.kotlin.javafx.stage.Dialog
-import com.github.nayasis.simplelauncher.service.ConfigService
 import javafx.stage.Stage
 import tornadofx.App
 import tornadofx.launch
-import tornadofx.runLater
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
@@ -33,13 +29,14 @@ class ExecutorTest: App() {
 //        }
 //        println(">> Done")
 
+
         Dialog.progress("test") {
             cmds.forEachIndexed { index, cmd ->
                 println(">> start :$cmd")
-                updateMessage("$cmd")
-                updateProgress(index + 1L, cmds.size.toLong())
+                it.updateMessage("$cmd")
+                it.updateProgress(index + 1L, cmds.size.toLong())
                 try {
-                    Command(cmd).runOnSystemOut().waitFor()
+                    Command(cmd).run().waitFor()
                 } catch (e: Throwable) {
                     Dialog.error(e)
                 }
