@@ -3,7 +3,7 @@ package com.github.nayasis.simplelauncher.view.terminal
 import com.github.nayasis.kotlin.basica.exec.Command
 import com.github.nayasis.kotlin.javafx.property.StageProperty
 import com.github.nayasis.kotlin.javafx.stage.Dialog
-import com.github.nayasis.simplelauncher.service.ConfigService
+import com.github.nayasis.simplelauncher.service.Config
 import javafx.stage.Modality
 import javafx.stage.Stage
 import tornadofx.App
@@ -44,7 +44,7 @@ class TerminalProgressTest: App() {
                     }
                 },
                 onDone = {
-                    ConfigService.stageTerminal = StageProperty(it)
+                    println("DONE !!")
                 }
             ).showAndWait()
 
