@@ -19,7 +19,7 @@ private val logger = KotlinLogging.logger {}
 class Simplelauncher: SpringFxApp(Main::class) {
 
     @Value("\${simplalauncher.locale:}")
-    var locale: String = ""
+    var locale = ""
 
     private var bootLogger: BootLogger? = BootLogger()
 
