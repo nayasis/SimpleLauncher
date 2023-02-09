@@ -94,6 +94,7 @@ Enter history mode by pressing ***Alt + Down***.
 | Alt + **Left**   | previous link executed  |
 | Alt + **Right**  | next link executed      |
 | any key          | filter executed links ![autocompleted links](https://github.com/nayasis/simpleLauncher/blob/master/doc/keyword-autocomplete.jpg?raw=true)  |
+| Esc              | exit history mode       |
 
 ## Binding parameters
 
