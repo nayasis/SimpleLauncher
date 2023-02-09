@@ -4,7 +4,7 @@ import com.github.nayasis.kotlin.basica.core.extention.ifEmpty
 import com.github.nayasis.kotlin.basica.core.io.Paths
 import com.github.nayasis.kotlin.basica.core.io.div
 import com.github.nayasis.kotlin.basica.core.io.exists
-import com.github.nayasis.kotlin.basica.core.io.invariantSeparators
+import com.github.nayasis.kotlin.basica.core.io.invariantPath
 import com.github.nayasis.kotlin.basica.core.io.pathString
 import com.github.nayasis.kotlin.basica.core.io.toRelativeOrSelf
 import com.github.nayasis.kotlin.basica.core.string.invariantSeparators
@@ -121,7 +121,7 @@ class Link: Cloneable, Serializable {
 
     fun setPath(file: File) {
         path = file.invariantSeparatorsPath
-        relativePath = file.toPath().toRelativeOrSelf(Paths.applicationRoot).invariantSeparators
+        relativePath = file.toPath().toRelativeOrSelf(Paths.applicationRoot).invariantPath
     }
 
     private fun resolveMicrosoftLnk(file: File) {
