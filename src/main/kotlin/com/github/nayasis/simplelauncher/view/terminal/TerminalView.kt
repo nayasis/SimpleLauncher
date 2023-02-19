@@ -9,6 +9,7 @@ import javafx.scene.layout.Pane
 import javafx.scene.web.WebView
 import mu.KotlinLogging
 import netscape.javascript.JSObject
+import tornadofx.add
 import tornadofx.runAsync
 import tornadofx.runLater
 import java.io.BufferedReader
@@ -54,7 +55,11 @@ abstract class TerminalView(
         }
         webView.prefHeightProperty().bind(heightProperty())
         webView.prefWidthProperty().bind(widthProperty())
-        webView.engine.load("/view/hterm/hterm.html".toResource()!!.toExternalForm())
+        val url = "/view/hterm/hterm.html".toResource()!!.toExternalForm()
+        logger.debug { ">> url : $url" }
+        webView.engine.load(url)
+        this.add(webView)
+//        webView.engine.load("/view/test.html".toResource()!!.toString())
     }
 
     override fun getPrefs(): String = Reflector.toJson(config,pretty=true)
