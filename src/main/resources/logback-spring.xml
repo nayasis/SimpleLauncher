@@ -10,6 +10,7 @@
   <logger name="org.hibernate.SQL" level="trace"/>
   <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="trace"/>
   <logger name="com.github.nayasis.simplelauncher" level="debug"/>
+  <logger name="com.jediterm.terminal.emulator" level="error"/>
 
   <root level="info">
     <appender-ref ref="console" />
