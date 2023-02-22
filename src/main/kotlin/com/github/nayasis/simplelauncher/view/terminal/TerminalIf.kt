@@ -4,22 +4,22 @@ import javafx.scene.paint.Color
 
 interface TerminalIf {
 
-    @WebkitCall
+//    @WebkitCall
     fun command(command: String)
 
-    @WebkitCall(from="hterm")
+//    @WebkitCall(from="hterm")
     fun getPrefs(): String
 
-    @WebkitCall(from="hterm")
+//    @WebkitCall(from="hterm")
     fun resizeTerminal(columns: Int, rows: Int)
 
-    @WebkitCall
+//    @WebkitCall
     fun onTerminalInit()
 
-    @WebkitCall
+//    @WebkitCall
     fun onTerminalReady()
 
-    @WebkitCall
+//    @WebkitCall
     fun copy(text: String)
 
 }
