@@ -1,5 +1,8 @@
 package com.github.nayasis.simplelauncher.view.terminal
 
+import com.github.nayasis.kotlin.basica.core.io.delete
+import com.github.nayasis.kotlin.basica.core.io.exists
+import com.github.nayasis.kotlin.basica.core.io.isDirectory
 import com.github.nayasis.kotlin.basica.core.string.toResource
 import com.github.nayasis.kotlin.basica.reflection.Reflector
 import com.github.nayasis.kotlin.javafx.misc.Desktop
@@ -9,14 +12,20 @@ import javafx.scene.layout.Pane
 import javafx.scene.web.WebView
 import mu.KotlinLogging
 import netscape.javascript.JSObject
-import tornadofx.add
 import tornadofx.runAsync
 import tornadofx.runLater
 import java.io.BufferedReader
 import java.io.BufferedWriter
+import java.io.IOException
 import java.io.Reader
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+import java.util.*
 
 private val logger = KotlinLogging.logger {}
+
+private var tempDirectory: Path? = null
 
 abstract class TerminalView(
     var config: TerminalConfig
@@ -49,19 +58,60 @@ abstract class TerminalView(
         get() = webView.engine.executeScript("window") as JSObject
 
     init {
+
+        Runtime.getRuntime().addShutdownHook(object: Thread() {
+            override fun run() {
+                try {
+                    if(tempDirectory.exists()) {
+                        tempDirectory?.delete()
+                    }
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                }
+            }
+        })
+
+        initializeResources()
+
         outputProperty.addListener { _, _, reader -> runAsync { print(reader) } }
         webView.engine.loadWorker.stateProperty().addListener { _, _, _ ->
             window.setMember( "app", this )
         }
         webView.prefHeightProperty().bind(heightProperty())
         webView.prefWidthProperty().bind(widthProperty())
-        val url = "/view/hterm/hterm.html".toResource()!!.toExternalForm()
-        logger.debug { ">> url : $url" }
-        webView.engine.load(url)
-        this.add(webView)
+
+        val htmlPath: Path = tempDirectory!!.resolve("hterm.html")
+        webView.engine.load(htmlPath.toUri().toString())
+
+//        val url = "/view/hterm/hterm.html".toResource()!!.toExternalForm()
+//        logger.debug { ">> url : $url" }
+//        webView.engine.load(url)
+//        this.add(webView)
 //        webView.engine.load("/view/test.html".toResource()!!.toString())
     }
 
+    private fun initializeResources() {
+
+        if(!tempDirectory.isDirectory()) {
+            tempDirectory?.delete()
+            tempDirectory = Files.createTempDirectory("simplelauncher")
+        }
+
+        val htmlPath = tempDirectory!!.resolve("hterm.html")
+        if (Files.notExists(htmlPath)) {
+            TerminalView::class.java.getResourceAsStream("/hterm.html").use { html ->
+                Files.copy( html, htmlPath, StandardCopyOption.REPLACE_EXISTING )
+            }
+        }
+        val htermJsPath = tempDirectory!!.resolve("hterm_all.js")
+        if (Files.notExists(htermJsPath)) {
+            TerminalView::class.java.getResourceAsStream("/hterm_all.js").use { html ->
+                Files.copy( html, htermJsPath, StandardCopyOption.REPLACE_EXISTING )
+            }
+        }
+    }
+
+    @WebkitCall(from = "hterm")
     override fun getPrefs(): String = Reflector.toJson(config,pretty=true)
 
     fun updatePrefs(config: TerminalConfig) {
@@ -72,6 +122,7 @@ abstract class TerminalView(
         }
     }
 
+    @WebkitCall(from = "hterm")
     override fun resizeTerminal(columns: Int, rows: Int) {
         this.columns = columns
         this.rows    = rows
@@ -108,8 +159,10 @@ abstract class TerminalView(
         webView.engine.load(null)
     }
 
+    @WebkitCall
     override fun onTerminalInit() {
         runLater {
+            focusCursor()
             children.add(webView)
         }
     }
