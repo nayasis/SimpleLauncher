@@ -54,13 +54,14 @@ repositories {
 
 dependencies {
 
-	implementation("com.github.nayasis:basica-kt:0.2.15")
+	implementation("com.github.nayasis:basica-kt:0.2.16")
 	implementation("com.github.nayasis:basicafx-kt:0.1.18")
 	implementation("no.tornado:tornadofx:1.7.20") {
 		exclude("org.jetbrains.kotlin")
 	}
 	implementation("org.controlsfx:controlsfx:11.1.0")
 	implementation("com.github.vatbub:mslinks:1.0.6.2")
+	implementation("com.github.nayasis:terminalfx-kt:0.0.1-SNAPSHOT"){ isChanging = true }
 	implementation("commons-cli:commons-cli:1.4")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
 	implementation("ch.qos.logback:logback-classic:1.2.9")

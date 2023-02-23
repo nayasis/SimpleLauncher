@@ -1,4 +1,4 @@
-package com.github.nayasis.simplelauncher.view.terminal
+package com.github.nayasis.simplelauncher.view.terminal.old
 
 import com.github.nayasis.kotlin.basica.etc.Platforms
 import com.github.nayasis.kotlin.basica.exec.Command
@@ -16,13 +16,13 @@ private val logger = KotlinLogging.logger {}
  *
  * https://github.com/javaterminal/TerminalFX
  */
-class TerminalPane(
+class TerminalPaneOld(
     val command: Command,
     var onDone:(() -> Unit)?,
     var onFail: ((Throwable) -> Unit)?,
     var onSuccess: (() -> Unit)?,
-    config: TerminalConfig,
-): TerminalView(config) {
+    config: TerminalConfigOld,
+): TerminalViewOld(config) {
 
     private lateinit var process: Process
 

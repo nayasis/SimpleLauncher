@@ -1,9 +1,8 @@
 package com.github.nayasis.simplelauncher.view.terminal
 
 import com.github.nayasis.kotlin.basica.exec.Command
-import com.github.nayasis.kotlin.javafx.property.StageProperty
 import com.github.nayasis.kotlin.javafx.stage.Dialog
-import com.github.nayasis.simplelauncher.service.Config
+import com.github.nayasis.simplelauncher.view.terminal.old.TerminalOld
 import javafx.stage.Modality
 import javafx.stage.Stage
 import tornadofx.App
@@ -32,7 +31,7 @@ class TerminalProgressTest: App() {
             progress.updateMessage( "$i / $max")
             progress.updateProgress(i.toLong(),max.toLong())
 
-            Terminal(
+            TerminalOld(
                 Command(cmd),
                 onSuccess = {
                     runLater { it.close() }
