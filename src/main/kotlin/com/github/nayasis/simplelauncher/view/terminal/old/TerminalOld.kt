@@ -1,4 +1,4 @@
-package com.github.nayasis.simplelauncher.view.terminal
+package com.github.nayasis.simplelauncher.view.terminal.old
 
 import com.github.nayasis.kotlin.basica.etc.error
 import com.github.nayasis.kotlin.basica.exec.Command
@@ -11,13 +11,13 @@ import tornadofx.*
 
 private val logger = KotlinLogging.logger {}
 
-class Terminal(
+class TerminalOld(
     command: Command,
-    onStart: ((Terminal) -> Unit)? = null,
-    onDone: ((Terminal) -> Unit)? = null,
-    onFail: ((Throwable,Terminal) -> Unit)? = null,
-    onSuccess: ((Terminal) -> Unit)? = null,
-    terminalConfig: TerminalConfig = TerminalConfig().apply {
+    onStart: ((TerminalOld) -> Unit)? = null,
+    onDone: ((TerminalOld) -> Unit)? = null,
+    onFail: ((Throwable, TerminalOld) -> Unit)? = null,
+    onSuccess: ((TerminalOld) -> Unit)? = null,
+    terminalConfig: TerminalConfigOld = TerminalConfigOld().apply {
         backgroundColor = Color.rgb(16, 16, 16).toHex()
         foregroundColor = Color.rgb(240, 240, 240).toHex()
         cursorColor = Color.rgb(255, 0, 0, 0.5).toHex()
@@ -28,7 +28,7 @@ class Terminal(
     },
 ): Stage() {
 
-    private val terminal: TerminalPane = TerminalPane(
+    private val terminal: TerminalPaneOld = TerminalPaneOld(
         command,
         {
             runLater { title = "Done - $title" }

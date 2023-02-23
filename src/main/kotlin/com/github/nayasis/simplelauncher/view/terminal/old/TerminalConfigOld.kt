@@ -1,4 +1,4 @@
-package com.github.nayasis.simplelauncher.view.terminal
+package com.github.nayasis.simplelauncher.view.terminal.old
 
 import au.com.console.kassava.kotlinEquals
 import au.com.console.kassava.kotlinHashCode
@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import kotlin.reflect.full.memberProperties
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
-class TerminalConfig {
+class TerminalConfigOld {
 
     @JsonProperty(value = "send-encoding")
     var sendEncoding = "raw"
@@ -69,8 +69,8 @@ class TerminalConfig {
     @JsonIgnore
     var unixTerminalStarter = "/bin/bash -i"
 
-    override fun equals(other: Any?) = kotlinEquals(other,TerminalConfig::class.memberProperties.toTypedArray())
+    override fun equals(other: Any?) = kotlinEquals(other, TerminalConfigOld::class.memberProperties.toTypedArray())
 
-    override fun hashCode(): Int = kotlinHashCode(properties = TerminalConfig::class.memberProperties.toTypedArray())
+    override fun hashCode(): Int = kotlinHashCode(properties = TerminalConfigOld::class.memberProperties.toTypedArray())
 
 }

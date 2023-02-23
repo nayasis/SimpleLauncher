@@ -1,9 +1,8 @@
-package com.github.nayasis.simplelauncher.view.terminal
+package com.github.nayasis.simplelauncher.view.terminal.old
 
 import com.github.nayasis.kotlin.basica.core.io.delete
 import com.github.nayasis.kotlin.basica.core.io.exists
 import com.github.nayasis.kotlin.basica.core.io.isDirectory
-import com.github.nayasis.kotlin.basica.core.string.toResource
 import com.github.nayasis.kotlin.basica.reflection.Reflector
 import com.github.nayasis.kotlin.javafx.misc.Desktop
 import com.github.nayasis.kotlin.javafx.misc.set
@@ -21,14 +20,13 @@ import java.io.Reader
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
-import java.util.*
 
 private val logger = KotlinLogging.logger {}
 
 private var tempDirectory: Path? = null
 
-abstract class TerminalView(
-    var config: TerminalConfig
+abstract class TerminalViewOld(
+    var config: TerminalConfigOld
 ): TerminalIf, Pane() {
 
     private val outputProperty = SimpleObjectProperty<BufferedReader>()
@@ -99,13 +97,13 @@ abstract class TerminalView(
 
         val htmlPath = tempDirectory!!.resolve("hterm.html")
         if (Files.notExists(htmlPath)) {
-            TerminalView::class.java.getResourceAsStream("/hterm.html").use { html ->
+            TerminalViewOld::class.java.getResourceAsStream("/hterm.html").use { html ->
                 Files.copy( html, htmlPath, StandardCopyOption.REPLACE_EXISTING )
             }
         }
         val htermJsPath = tempDirectory!!.resolve("hterm_all.js")
         if (Files.notExists(htermJsPath)) {
-            TerminalView::class.java.getResourceAsStream("/hterm_all.js").use { html ->
+            TerminalViewOld::class.java.getResourceAsStream("/hterm_all.js").use { html ->
                 Files.copy( html, htermJsPath, StandardCopyOption.REPLACE_EXISTING )
             }
         }
@@ -114,7 +112,7 @@ abstract class TerminalView(
     @WebkitCall(from = "hterm")
     override fun getPrefs(): String = Reflector.toJson(config,pretty=true)
 
-    fun updatePrefs(config: TerminalConfig) {
+    fun updatePrefs(config: TerminalConfigOld) {
         if(this.config == config) return
         this.config = config
         runLater {
