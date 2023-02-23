@@ -1,4 +1,4 @@
-package com.github.nayasis.simplelauncher.view.terminal
+package com.github.nayasis.simplelauncher.view.terminal.old
 
 import javafx.scene.paint.Color
 

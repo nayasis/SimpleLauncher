@@ -2,6 +2,7 @@ package com.github.nayasis.simplelauncher.view.terminal
 
 import com.github.nayasis.kotlin.basica.core.io.Paths
 import com.github.nayasis.kotlin.basica.exec.Command
+import com.github.nayasis.simplelauncher.view.terminal.old.TerminalOld
 import com.pty4j.PtyProcessBuilder
 import com.pty4j.util.PtyUtil
 import javafx.stage.Stage
@@ -25,7 +26,7 @@ class Pty4j: App() {
 
 
 //        Terminal(Command("C:/app/SimpleLauncherApp/NSC Builder/NSCB.bat")).showAndWait()
-        Terminal(Command("cmd /c dir")).showAndWait()
+        TerminalOld(Command("cmd /c dir")).showAndWait()
         exitProcess(0)
     }
 

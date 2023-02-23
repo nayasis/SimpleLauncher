@@ -1,6 +1,7 @@
 package com.github.nayasis.simplelauncher.view.terminal
 
 import com.github.nayasis.kotlin.basica.exec.Command
+import com.github.nayasis.simplelauncher.view.terminal.old.TerminalOld
 import javafx.stage.Stage
 import tornadofx.App
 import tornadofx.launch
@@ -13,7 +14,7 @@ fun main(args: Array<String>) {
 class TerminalCmdTest: App() {
     override fun start(stage: Stage) {
 //        Terminal(Command("C:/app/SimpleLauncherApp/NSC Builder/NSCB.bat")).showAndWait()
-        Terminal(Command("cmd /c dir")).showAndWait()
+        TerminalOld(Command("cmd /c dir")).showAndWait()
         exitProcess(0)
     }
 }
