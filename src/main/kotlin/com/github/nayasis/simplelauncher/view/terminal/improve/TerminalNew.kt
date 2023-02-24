@@ -31,6 +31,7 @@ class TerminalNew(
             scrollWheelMoveMultiplier = 3.0
             enableClipboardNotice = false
             scrollbarVisible = false
+            size = config.terminalSize
         },
         command = command.command,
         workingDirectory = command.workingDirectory,
@@ -58,9 +59,9 @@ class TerminalNew(
         setOnShown {
             config.stageTerminal?.bind(this)
         }
-
         setOnCloseRequest {
             config.stageTerminal = StageProperty(this)
+            config.terminalSize = terminal.terminalSize
             terminal.onDone = null
             terminal.onFail = null
             terminal.onSuccess = null
