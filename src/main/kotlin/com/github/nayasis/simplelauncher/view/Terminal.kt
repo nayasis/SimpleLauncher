@@ -1,10 +1,10 @@
-package com.github.nayasis.simplelauncher.view.terminal.improve
+package com.github.nayasis.simplelauncher.view
 
 import com.github.nayasis.kotlin.basica.etc.error
 import com.github.nayasis.kotlin.basica.exec.Command
 import com.github.nayasis.kotlin.javafx.property.StageProperty
+import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.common.Context.Companion.config
-import com.github.nayasis.terminalfx.kt.Terminal
 import com.github.nayasis.terminalfx.kt.config.TerminalConfig
 import com.github.nayasis.terminalfx.kt.config.toHex
 import javafx.scene.Scene
@@ -14,15 +14,14 @@ import mu.KotlinLogging
 import tornadofx.runLater
 
 private val logger = KotlinLogging.logger {}
-
-class TerminalNew(
+class Terminal(
     command: Command,
-    var onDone: ((terminal: TerminalNew) -> Unit)? = null,
+    var onDone: ((terminal: Terminal) -> Unit)? = null,
     var onFail: ((error: Throwable) -> Unit)? = null,
-    var onSuccess: ((terminal: TerminalNew) -> Unit)? = null,
+    var onSuccess: ((terminal: Terminal) -> Unit)? = null,
 ): Stage() {
 
-    val terminal = Terminal(
+    val terminal = com.github.nayasis.terminalfx.kt.Terminal(
         config = TerminalConfig().apply {
             cursorColor = "white"
             foregroundColor = Color.rgb(200, 200, 200).toHex()
@@ -35,7 +34,7 @@ class TerminalNew(
         },
         command = command.command,
         workingDirectory = command.workingDirectory,
-        onSuccess =  { _, _ ->
+        onSuccess = { _, _ ->
             onSuccess?.invoke(this)
         },
         onFail = { _, error ->
@@ -50,12 +49,10 @@ class TerminalNew(
     )
 
     init {
-
         scene  = Scene(terminal)
         title  = "$command"
         width  = 700.0
         height = 600.0
-
         setOnShown {
             config.stageTerminal?.bind(this)
         }
@@ -69,7 +66,6 @@ class TerminalNew(
                 terminal.close()
             }.onFailure { logger.error(it) }
         }
-
     }
 
 }

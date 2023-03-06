@@ -3,13 +3,11 @@ package com.github.nayasis.simplelauncher.service
 import com.github.nayasis.kotlin.basica.core.string.tokenize
 import com.github.nayasis.kotlin.basica.exec.Command
 import com.github.nayasis.kotlin.javafx.misc.runSync
-import com.github.nayasis.kotlin.javafx.property.StageProperty
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.simplelauncher.common.Context.Companion.config
 import com.github.nayasis.simplelauncher.common.Context.Companion.main
 import com.github.nayasis.simplelauncher.jpa.entity.Link
-import com.github.nayasis.simplelauncher.view.terminal.improve.TerminalNew
-import com.github.nayasis.simplelauncher.view.terminal.old.TerminalOld
+import com.github.nayasis.simplelauncher.view.Terminal
 import mu.KotlinLogging
 import org.springframework.stereotype.Service
 import tornadofx.runLater
@@ -54,7 +52,7 @@ class LinkExecutor(
                         progress.updateMessage(file.name)
                         val cmd = LinkCommand(link, file)
                         logger.debug { ">> command : $cmd" }
-                        TerminalNew(cmd.toCommand(),
+                        Terminal(cmd.toCommand(),
                             onFail = { throwable ->
                                 runSync {
                                     Dialog.error(throwable)
@@ -90,7 +88,7 @@ class LinkExecutor(
         if( command.isEmpty() ) return
         logger.debug { ">> command : $command" }
         if( showConsole ) {
-            val terminal = TerminalNew(command)
+            val terminal = Terminal(command)
             if(wait) {
                 terminal.showAndWait()
             } else {
