@@ -32,7 +32,7 @@ application {
 }
 
 javafx {
-	version = "19"
+	version = "19.0.2.1"
 	modules = listOf("javafx.graphics","javafx.controls","javafx.fxml","javafx.web","javafx.swing")
 }
 
@@ -54,13 +54,14 @@ repositories {
 
 dependencies {
 
-	implementation("com.github.nayasis:basica-kt:0.2.15")
+	implementation("com.github.nayasis:basica-kt:0.2.16")
 	implementation("com.github.nayasis:basicafx-kt:0.1.18")
 	implementation("no.tornado:tornadofx:1.7.20") {
 		exclude("org.jetbrains.kotlin")
 	}
 	implementation("org.controlsfx:controlsfx:11.1.0")
 	implementation("com.github.vatbub:mslinks:1.0.6.2")
+	implementation("com.github.nayasis:terminalfx-kt:0.1.1")
 	implementation("commons-cli:commons-cli:1.4")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
 	implementation("ch.qos.logback:logback-classic:1.2.9")
@@ -91,6 +92,11 @@ dependencies {
 	// JNA (windows)
 	testImplementation("net.java.dev.jna:jna:5.9.0")
 	testImplementation("net.java.dev.jna:jna-platform:5.9.0")
+
+	testImplementation("org.jetbrains.pty4j:pty4j:0.12.10")
+	testImplementation("com.github.nayasis.jediterm:jediterm-ui:2.5.1")
+	testImplementation("com.github.nayasis.jediterm:jediterm-core:2.5.1")
+	testImplementation("com.github.nayasis.jediterm:jediterm-pty:2.5.1")
 
 }
 
