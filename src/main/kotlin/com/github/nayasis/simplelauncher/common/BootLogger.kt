@@ -33,7 +33,7 @@ class BootProgressAppender: AppenderBase<ILoggingEvent>() {
     var i = 0
     override fun append(event: ILoggingEvent) {
         val rate = 1.0 * ++i / 6 * 0.9
-        SpringFxApp.notifyProgress(rate,event.formattedMessage)
+        SpringFxApp.notifyProgress(rate, event.formattedMessage)
     }
     override fun getName(): String = "capture"
 }
