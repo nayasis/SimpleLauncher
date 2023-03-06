@@ -591,17 +591,6 @@ class Main: View("application.title".message()) {
         event.isMetaDown
     )
 
-    fun showDetail(show: Boolean) {
-        (tableMain.parent as HBox).children.also {
-            if(show) {
-                if( descGridPane !in it )
-                    it.add(descGridPane)
-            } else {
-                it.remove(descGridPane)
-            }
-        }
-    }
-
     fun readLinks() {
         links.apply {
             clear()
@@ -638,6 +627,9 @@ class Main: View("application.title".message()) {
     }
 
     fun drawDetailForAdd(link: Link?) {
+        // expand editor
+        menuViewDesc.isSelected = true
+
         drawDetail(link)
         buttonNew.isDisable    = false
         buttonDelete.isDisable = true
