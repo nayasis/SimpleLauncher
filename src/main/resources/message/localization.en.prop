@@ -64,6 +64,6 @@ msg.warn.001               =  Only 1 file allowed to register.
 msg.confirm.001            =  Confirm to delete ?\n\n%s
 msg.confirm.002            =  Confirm to initialize ?\n\n(All links will be deleted.)
 
-msg.err.003                =  Error on running program.
+msg.err.003                =  Error on running program.\n\n%s
 msg.err.005                =  There is no directory.\n\n(%s)
 msg.err.007                =  There is no command. (%s)
