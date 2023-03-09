@@ -8,11 +8,4 @@ fun String.wrapDoubleQuote(): String {
     return "\"${this.replace("\"", "\\\"")}\""
 }
 
-private val DELIMITERS = " \t\n!@#$%^&*()-_=+[{]}\\|;:`~'\",<>/?".toCharArray()
-fun String.toKeyword(): Set<String> {
-    return this
-        .lowercase()
-        .split(*DELIMITERS)
-        .filter { it.isNotEmpty() }
-        .toSet()
-}
+fun String.toKeyword(): Set<String> = makeKeywords(this)

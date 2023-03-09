@@ -566,7 +566,6 @@ class Main: View("application.title".message()) {
             e.acceptTransferModes(TransferMode.COPY)
             true
         } else {
-    //            e.consume()
             false
         }
     }

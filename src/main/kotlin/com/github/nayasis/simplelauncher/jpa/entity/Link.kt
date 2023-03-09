@@ -33,6 +33,7 @@ import javax.persistence.Entity
 import javax.persistence.GeneratedValue
 import javax.persistence.Id
 import javax.persistence.Lob
+import javax.validation.constraints.Size
 
 private val logger = KotlinLogging.logger {}
 
@@ -46,15 +47,19 @@ class Link: Cloneable, Serializable {
     var id: Long = 0
 
     @Column
+    @Size(max = 1000)
     var title: String? = null
 
     @Column(name="a_group")
+    @Size(max = 1000)
     var group: String? = null
 
     @Column
+    @Size(max = 4000)
     var path: String? = null
 
     @Column
+    @Size(max = 4000)
     var relativePath: String? = null
 
     @Column
@@ -67,18 +72,25 @@ class Link: Cloneable, Serializable {
     var argument: String? = null
 
     @Column
+    @Size(max = 4000)
     var commandPrefix: String? = null
 
     @Column
+    @Size(max = 10000)
     var commandPrev: String? = null
 
     @Column
+    @Size(max = 10000)
     var commandNext: String? = null
 
     @Column(name="desc") @Lob
     var description: String? = null
 
-    @Column @Lob @Convert(converter = StringSetConverter::class)
+    @Column
+    @Size(max = 1000)
+    var tag: String? = null
+
+    @Column @Lob
     var wordsAll: Set<String>? = null
 
     @Column @Lob
