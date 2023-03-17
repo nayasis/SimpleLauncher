@@ -39,6 +39,7 @@ javafx {
 group = "com.github.nayasis"
 version = "0.1.3"
 java.sourceCompatibility = JavaVersion.VERSION_11
+java.targetCompatibility = JavaVersion.VERSION_11
 
 configurations.all {
 	resolutionStrategy.cacheChangingModulesFor(0, "seconds")
@@ -54,8 +55,9 @@ repositories {
 
 dependencies {
 
-	implementation("com.github.nayasis:basica-kt:0.2.16")
-	implementation("com.github.nayasis:basicafx-kt:0.1.18")
+	implementation("com.github.nayasis:basica-kt:0.2.18")
+//	implementation("com.github.nayasis:basicafx-kt:0.1.18")
+	implementation("com.github.nayasis:basicafx-kt:develop-SNAPSHOT"){ isChanging = true }
 	implementation("no.tornado:tornadofx:1.7.20") {
 		exclude("org.jetbrains.kotlin")
 	}
@@ -79,7 +81,7 @@ dependencies {
 
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-	implementation("io.github.microutils:kotlin-logging:2.0.10")
+	implementation("io.github.microutils:kotlin-logging:3.0.5")
 	implementation("au.com.console:kassava:2.1.0")
 
 	testImplementation("de.jensd:fontawesomefx:8.9")
