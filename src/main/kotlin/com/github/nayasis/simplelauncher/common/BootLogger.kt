@@ -16,9 +16,7 @@ class BootLogger {
     fun getInitializer(): ApplicationContextInitializer<ConfigurableApplicationContext> {
         return ApplicationContextInitializer<ConfigurableApplicationContext> {
             captureAppender.start()
-            progressLogger.apply {
-                addAppender(captureAppender)
-            }
+            progressLogger.addAppender(captureAppender)
         }
     }
 
