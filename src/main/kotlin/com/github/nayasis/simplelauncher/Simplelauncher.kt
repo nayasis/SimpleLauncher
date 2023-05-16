@@ -5,15 +5,12 @@ import com.github.nayasis.kotlin.javafx.spring.SpringFxApp
 import com.github.nayasis.simplelauncher.common.BootLogger
 import com.github.nayasis.simplelauncher.view.Main
 import com.github.nayasis.simplelauncher.view.Splash
-import mu.KotlinLogging
 import org.apache.commons.cli.CommandLine
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.context.ApplicationContextInitializer
 import tornadofx.launch
 import java.util.*
-
-private val logger = KotlinLogging.logger {}
 
 @SpringBootApplication
 class Simplelauncher: SpringFxApp(Main::class) {

@@ -5,7 +5,7 @@ plugins {
 	id("org.springframework.boot") version "2.6.3"
 	id("io.spring.dependency-management") version "1.0.11.RELEASE"
 	id("org.openjfx.javafxplugin") version "0.0.10"
-	id("org.beryx.runtime") version "1.12.5"
+	id("org.beryx.runtime") version "1.12.6"
 	kotlin("jvm") version "1.8.10"
 	kotlin("plugin.jpa") version "1.8.10"
 	kotlin("plugin.noarg") version "1.8.10"
@@ -39,6 +39,7 @@ javafx {
 group = "com.github.nayasis"
 version = "0.1.3"
 java.sourceCompatibility = JavaVersion.VERSION_11
+java.targetCompatibility = JavaVersion.VERSION_11
 
 configurations.all {
 	resolutionStrategy.cacheChangingModulesFor(0, "seconds")
@@ -52,19 +53,22 @@ repositories {
 	maven { url = uri("https://jitpack.io") }
 }
 
+//val javaFXOptions = the<org.openjfx.gradle.JavaFXOptions>()
+
 dependencies {
 
-	implementation("com.github.nayasis:basica-kt:0.2.16")
-	implementation("com.github.nayasis:basicafx-kt:0.1.18")
+	implementation("com.github.nayasis:basica-kt:0.2.22")
+	implementation("com.github.nayasis:basicafx-kt:0.1.20")
 	implementation("no.tornado:tornadofx:1.7.20") {
 		exclude("org.jetbrains.kotlin")
 	}
 	implementation("org.controlsfx:controlsfx:11.1.0")
 	implementation("com.github.vatbub:mslinks:1.0.6.2")
-	implementation("com.github.nayasis:terminalfx-kt:0.1.1")
+	implementation("com.github.nayasis:terminalfx-kt:0.1.2")
 	implementation("commons-cli:commons-cli:1.4")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
 	implementation("ch.qos.logback:logback-classic:1.2.9")
+
 
 	implementation("org.springframework.boot:spring-boot-starter")
 	implementation("org.springframework.boot:spring-boot-starter-aop")
@@ -79,7 +83,7 @@ dependencies {
 
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-	implementation("io.github.microutils:kotlin-logging:2.0.10")
+	implementation("io.github.microutils:kotlin-logging:3.0.5")
 	implementation("au.com.console:kassava:2.1.0")
 
 	testImplementation("de.jensd:fontawesomefx:8.9")
@@ -114,7 +118,9 @@ tasks.withType<KotlinCompile> {
 }
 
 runtime {
-	options.set( listOf("--strip-debug", "--compress", "2", "--no-header-files", "--no-man-pages") )
+	options.set(listOf("--strip-debug", "--compress", "2", "--no-header-files", "--no-man-pages"))
+	additive.set(true)
+	modules.addAll("jdk.crypto.cryptoki")
 	launcher {
 		noConsole = true
 	}
