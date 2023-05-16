@@ -7,6 +7,36 @@ You are free to use **relative path** or **configurable command** to manage your
 
 ![screenshot](https://github.com/nayasis/simpleLauncher/blob/master/doc/screenshot.jpg?raw=true)
 
+## Requirements
+- Java 11 above
+
+## Build
+#### 1. Download source
+```shell
+git clone https://github.com/nayasis/SimpleLauncher.git
+```
+
+#### 2. Build
+```
+gradlew runtime
+```
+- You could also launch application directly.
+  ```shell
+  gradlew bootRun
+  ```
+  
+#### 3. Execution
+- Application would be compiled in directory [./build/image] including JRE.
+- Launch application like this.
+```shell
+cd ./build/image/bin
+simplelauncher
+```
+
+#### 4. For Windows
+- Provide EXE application on [release page](https://github.com/nayasis/SimpleLauncher/releases).
+  - Wrapped by [WinRun4J](https://winrun4j.sourceforge.net)
+
 ## Shortcuts
 
 ### Menu
@@ -89,42 +119,25 @@ ape2wav.exe "${path}" "${dir}\\${name}.wav"
 
 ## Development
 
-This is **SpringBoot** application and run through **Spring Boot Loader**.
+### Gradle
 
-#### 1. equirements
-- Java 11
-- JavaFx 19
+This is **SpringBoot** application and run through **Spring Boot Loader**. 
 
-#### 2. Download source
+#### Run from source
 ```shell
-git clone https://github.com/nayasis/SimpleLauncher.git
+gradle bootRun
 ```
 
-#### 3. Build
-```
-gradlew runtime
-```
-- You could also launch application directly.
-  ```shell
-  gradlew bootRun
-  ```
-
-#### 4. Execution
-- Application would be compiled in directory [./build/image] including JRE.
-- Launch application like this.
+#### Build
 ```shell
-cd ./build/image/bin
-simplelauncher
+gradle bootJar
 ```
-
-#### 5. For Windows
-- Provide EXE application on [release page](https://github.com/nayasis/SimpleLauncher/releases).
-  - Wrapped by [WinRun4J](https://winrun4j.sourceforge.net)
-
-#### 6. Run from source
+JAR file will be created in <u>${Project Directory}**/build/libs**</u>  
+It could be run like below.
 ```shell
-gradlew bootRun
+java -jar simplelauncher.jar
 ```
+
 
 ## Contact
 
