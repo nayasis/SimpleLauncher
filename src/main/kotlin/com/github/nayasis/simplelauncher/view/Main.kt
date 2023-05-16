@@ -56,6 +56,7 @@ import java.io.File
 import java.time.LocalDateTime
 import java.time.LocalDateTime.now
 import kotlin.concurrent.timer
+import kotlin.system.exitProcess
 
 private val logger = KotlinLogging.logger {}
 
@@ -153,6 +154,7 @@ class Main: View("application.title".message()) {
             stageMain = StageProperty(currentStage!!)
             save()
         }
+        exitProcess(0)
     }
 
     private fun initTable() {
