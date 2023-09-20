@@ -2,7 +2,7 @@
 
 package com.github.nayasis.simplelauncher.view
 
-import com.github.nayasis.kotlin.basica.core.extention.ifNull
+import com.github.nayasis.kotlin.basica.core.extension.ifNull
 import com.github.nayasis.kotlin.basica.core.localdate.between
 import com.github.nayasis.kotlin.basica.core.localdate.toString
 import com.github.nayasis.kotlin.basica.core.string.message
@@ -20,6 +20,7 @@ import com.github.nayasis.kotlin.javafx.control.tableview.visibleRows
 import com.github.nayasis.kotlin.javafx.geometry.Insets
 import com.github.nayasis.kotlin.javafx.misc.Desktop
 import com.github.nayasis.kotlin.javafx.misc.set
+import com.github.nayasis.kotlin.javafx.misc.toImage
 import com.github.nayasis.kotlin.javafx.property.StageProperty
 import com.github.nayasis.kotlin.javafx.spring.SpringFxApp.Companion.closePreloader
 import com.github.nayasis.kotlin.javafx.stage.Dialog
@@ -27,8 +28,8 @@ import com.github.nayasis.kotlin.javafx.stage.Localizator
 import com.github.nayasis.kotlin.javafx.stage.loadDefaultIcon
 import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.common.ICON_NEW
-import com.github.nayasis.simplelauncher.jpa.entity.Link
-import com.github.nayasis.simplelauncher.jpa.repository.LinkRepository
+import com.github.nayasis.simplelauncher.model.Link
+import com.github.nayasis.simplelauncher.model.Links
 import com.github.nayasis.simplelauncher.service.LinkExecutor
 import com.github.nayasis.simplelauncher.service.LinkService
 import com.github.nayasis.simplelauncher.service.TextMatcher
@@ -51,6 +52,7 @@ import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import mu.KotlinLogging
+import org.jetbrains.exposed.sql.SortOrder
 import tornadofx.*
 import java.io.File
 import java.time.LocalDateTime
@@ -66,7 +68,6 @@ private const val DEFAULT_LINK_EDITOR_WIDTH = 400.0
 
 class Main: View("application.title".message()) {
 
-    val linkRepository: LinkRepository by di()
     val linkService: LinkService by di()
     val linkExecutor: LinkExecutor by di()
 
@@ -163,7 +164,7 @@ class Main: View("application.title".message()) {
         colTitle.cellValueByDefault().cellFormat {
             graphic = hbox {
                 imageview {
-                    image = it.getIconImage()
+                    image = it.icon
                     hmargin = Insets(0,0,0,2)
                 }
                 label {
@@ -176,7 +177,7 @@ class Main: View("application.title".message()) {
 
         colTitle.setComparator { o1, o2 -> o1.title.ifNull{""}.compareTo(o2.title.ifNull{""}) }
 
-        colLastUsedDt.cellValue(Link::lastExecDate).cellFormat {
+        colLastUsedDt.cellValue(Link::executedAt).cellFormat {
             graphic = label {
                 text = it?.toString("YYYY-MM-DD HH:MI:SS")
             }
@@ -403,14 +404,14 @@ class Main: View("application.title".message()) {
         buttonAddFile.setOnDragOver { hasFile(it) }
         buttonAddFile.setOnDragDropped { e ->
             e.dragboard.files.forEach { file ->
-                drawDetailForAdd(Link(file))
+                drawDetailForAdd(Link.new{}.of(file))
                 currentStage?.requestFocus()
             }
         }
         buttonAddFile.setOnMouseClicked { e ->
             if( e.button == MouseButton.PRIMARY ) {
-                linkService.openExecutorPicker()?.let { file ->
-                    drawDetailForAdd(Link(file))
+                linkService.openExecutorPicker()?.let { path ->
+                    drawDetailForAdd(Link.new{}.of(path.toFile()))
                 }
             }
         }
@@ -490,11 +491,10 @@ class Main: View("application.title".message()) {
     private fun setSearchFilter() {
         val hasKeyword = inputKeyword.text.isNotBlank()
         val hasGroup   = inputGroup.text.isNotBlank()
-        when {
-            !hasGroup && !hasKeyword -> links.predicate = { true }
-            !hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsAll) }
-             hasGroup && !hasKeyword -> links.predicate = { groupMatcher.isMatch(it.wordsGroup) }
-             hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsKeyword) && groupMatcher.isMatch(it.wordsGroup) }
+        links.predicate = {
+            val inKeyword = ! hasKeyword || keywordMatcher.isMatch(it.keywordTitle)
+            val inGroup   = ! hasGroup   || groupMatcher.isMatch(it.keywordGroup)
+            inKeyword && inGroup
         }
         printSearchResult()
     }
@@ -596,23 +596,41 @@ class Main: View("application.title".message()) {
     fun readLinks() {
         links.apply {
             clear()
-            addAll(linkRepository.findAllByOrderByTitle())
+            Link.all().orderBy(Links.title to SortOrder.ASC).toList().let {
+                addAll(it)
+            }
         }
         printSearchResult()
     }
 
     private fun clearDetail() {
-        drawDetail(Link())
-        buttonSave.isDisable = false
+
+        descTitle.text               = null
+        descShowConsole.isSelected   = false
+        descSeqExecution.isSelected  = false
+        descGroupName.text           = null
+        descDescription.text         = null
+        descExecPath.text            = null
+        descArg.text                 = null
+        descCmdPrefix.text           = null
+        descCmdPrev.text             = null
+        descCmdNext.text             = null
+        descIcon.image               = null
+
+        buttonNew.isDisable    = false
+        buttonDelete.isDisable = false
+        buttonCopy.isDisable   = false
+        buttonSave.isDisable   = false
+
     }
 
     fun drawDetail(link: Link?) {
-        if( link == null || (link.id != 0L && detail?.id == link.id) ) return
+        if( link == null || detail?.id == link.id ) return
         detail = link
         with(detail!!) {
             descTitle.text               = title
             descShowConsole.isSelected   = showConsole
-            descSeqExecution.isSelected = eachExecution
+            descSeqExecution.isSelected  = executeEach
             descGroupName.text           = group
             descDescription.text         = description
             descExecPath.text            = path
@@ -620,7 +638,7 @@ class Main: View("application.title".message()) {
             descCmdPrefix.text           = commandPrefix
             descCmdPrev.text             = commandPrev
             descCmdNext.text             = commandNext
-            descIcon.image               = getIconImage()
+            descIcon.image               = icon
         }
         buttonNew.isDisable    = false
         buttonDelete.isDisable = false
@@ -662,10 +680,10 @@ class Main: View("application.title".message()) {
 
     fun saveDetail() {
         detail?.let {
-            val isNew = it.id == 0L
+            val isNew = (it.id.value == 0L)
             it.title         = descTitle.text?.trim()
             it.showConsole   = descShowConsole.isSelected
-            it.eachExecution = descSeqExecution.isSelected
+            it.executeEach   = descSeqExecution.isSelected
             it.group         = descGroupName.text?.trim()
             it.description   = descDescription.text?.trim()
             it.path          = descExecPath.text?.trim()
@@ -673,7 +691,7 @@ class Main: View("application.title".message()) {
             it.commandPrefix = descCmdPrefix.text?.trim()
             it.commandPrev   = descCmdPrev.text
             it.commandNext   = descCmdNext.text
-            it.setIcon(descIcon.image)
+            it.icon          = descIcon.image
             linkService.save(it)
             if(isNew) {
                 links.add(it)
@@ -690,8 +708,8 @@ class Main: View("application.title".message()) {
     }
 
     fun copyDetail() {
-        if( detail == null || detail?.id == 0L ) return
-        drawDetail( detail!!.clone().apply { id = 0L } )
+        if( detail != null && detail?.id?._value == null ) return
+        drawDetail( detail!!.clone() )
         descTitle.requestFocus()
         printStatus("msg.info.014".message())
         buttonDelete.isDisable = true
@@ -700,7 +718,7 @@ class Main: View("application.title".message()) {
     }
 
     fun createDetail() {
-        drawDetail(Link().apply { icon = ICON_NEW })
+        drawDetail(Link.new { icon = ICON_NEW.toImage() })
         descGroupName.requestFocus()
         printStatus("msg.info.015".message())
         buttonDelete.isDisable = true

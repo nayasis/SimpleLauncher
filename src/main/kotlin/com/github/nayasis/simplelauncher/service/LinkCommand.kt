@@ -10,7 +10,7 @@ import com.github.nayasis.kotlin.basica.core.string.Formatter
 import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.exec.Command
 import com.github.nayasis.simplelauncher.common.wrapDoubleQuote
-import com.github.nayasis.simplelauncher.jpa.entity.Link
+import com.github.nayasis.simplelauncher.model.Link
 import java.io.File
 
 private val PATTERN_KEYWORD = ExtractPattern("\\$\\{([^\\s{}].*?)}".toPattern())

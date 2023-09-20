@@ -1,6 +1,6 @@
 package com.github.nayasis.simplelauncher.common
 
-import com.github.nayasis.kotlin.basica.core.extention.ifEmpty
+import com.github.nayasis.kotlin.basica.core.extension.ifEmpty
 import com.github.nayasis.kotlin.javafx.spring.SpringFxApp.Companion.environment
 import com.github.nayasis.simplelauncher.service.Config
 import com.github.nayasis.simplelauncher.service.LinkExecutor
