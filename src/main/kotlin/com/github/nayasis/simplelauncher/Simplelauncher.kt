@@ -12,32 +12,32 @@ import org.springframework.context.ApplicationContextInitializer
 import tornadofx.launch
 import java.util.*
 
-@SpringBootApplication
-class Simplelauncher: SpringFxApp(Main::class) {
-
-    @Value("\${simplalauncher.locale:}")
-    var locale = ""
-
-    private var bootLogger: BootLogger? = BootLogger()
-
-    override fun onStart(command: CommandLine) {
-        Locale.setDefault(Locale.forLanguageTag(locale))
-        bootLogger?.close()
-        bootLogger = null
-    }
-
-    override fun setInitializers(): List<ApplicationContextInitializer<*>>? {
-        return bootLogger?.getInitializer()?.let { listOf(it) }
-    }
-
-}
+//@SpringBootApplication
+//class Simplelauncher: SpringFxApp(Main::class) {
+//
+//    @Value("\${simplalauncher.locale:}")
+//    var locale = ""
+//
+//    private var bootLogger: BootLogger? = BootLogger()
+//
+//    override fun onStart(command: CommandLine) {
+//        Locale.setDefault(Locale.forLanguageTag(locale))
+//        bootLogger?.close()
+//        bootLogger = null
+//    }
+//
+//    override fun setInitializers(): List<ApplicationContextInitializer<*>>? {
+//        return bootLogger?.getInitializer()?.let { listOf(it) }
+//    }
+//
+//}
 
 fun main(args: Array<String>) {
-    Networks.trustAllCerts()
+    Networks.ignoreCerts()
     SpringFxApp.run{
         loadMessage("/message/**.prop")
         loadDefaultIcon("/image/icon/favicon.png")
         setPreloader(Splash::class)
     }
-    launch<Simplelauncher>(*args)
+//    launch<Simplelauncher>(*args)
 }

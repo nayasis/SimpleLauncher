@@ -3,23 +3,23 @@ package com.github.nayasis.simplelauncher.jpa.vo
 import com.github.nayasis.kotlin.basica.annotation.NoArg
 import com.github.nayasis.kotlin.basica.core.string.decodeBase64
 import com.github.nayasis.kotlin.basica.core.string.encodeBase64
-import com.github.nayasis.simplelauncher.jpa.entity.Link
+import com.github.nayasis.simplelauncher.model.Link
 import java.time.LocalDateTime
 
 @NoArg
 data class JsonLink(
-    var title: String? = null,
-    var group: String? = null,
-    var path: String? = null,
-    var relativePath: String? = null,
-    var showConsole: Boolean = false,
-    var option: String? = null,
-    var optionPrefix: String? = null,
-    var commandPrev: String? = null,
-    var commandNext: String? = null,
-    var description: String? = null,
-    var icon: String? = null,
-    var execCount: Int = 0,
+    var title: String?               = null,
+    var group: String?               = null,
+    var path: String?                = null,
+    var relativePath: String?        = null,
+    var showConsole: Boolean         = false,
+    var option: String?              = null,
+    var optionPrefix: String?        = null,
+    var commandPrev: String?         = null,
+    var commandNext: String?         = null,
+    var description: String?         = null,
+    var icon: String?                = null,
+    var execCount: Int               = 0,
     var lastExecDate: LocalDateTime? = null,
 ) {
 
@@ -36,12 +36,12 @@ data class JsonLink(
         description  = entity.description,
         icon         = entity.icon.encodeBase64(),
         execCount    = entity.executeCount,
-        lastExecDate = entity.lastExecDate,
+        lastExecDate = entity.executedAt,
     )
 
-    fun toLink(): Link {
+    fun createNew(): Link {
         val it = this
-        return Link().apply {
+        return Link.new {
             title         = it.title
             group         = it.group
             path          = toNewParameter(it.path)
@@ -59,20 +59,20 @@ data class JsonLink(
         }
     }
 
-    private fun toNewParameter(string: String?): String? {
-        val convert = mapOf(
-            "filepath" to "path",
-            "dir" to "dir",
-            "filename" to "file",
-            "name" to "name",
-            "ext" to "ext",
-            "home" to "home",
-        )
-        var text = string
-        convert.forEach{ old, new ->
-            text = text?.replace("#{$old}", "\${$new}" )
-        }
-        return text
-    }
+}
 
+private fun toNewParameter(string: String?): String? {
+    val convert = mapOf(
+        "filepath" to "path",
+        "dir"      to "dir",
+        "filename" to "file",
+        "name"     to "name",
+        "ext"      to "ext",
+        "home"     to "home",
+    )
+    var text = string
+    convert.forEach{ old, new ->
+        text = text?.replace("#{$old}", "\${$new}" )
+    }
+    return text
 }
