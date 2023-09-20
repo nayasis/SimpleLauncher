@@ -6,17 +6,15 @@ import com.github.nayasis.kotlin.javafx.misc.runSync
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.simplelauncher.common.Context.Companion.config
 import com.github.nayasis.simplelauncher.common.Context.Companion.main
-import com.github.nayasis.simplelauncher.jpa.entity.Link
+import com.github.nayasis.simplelauncher.model.Link
 import com.github.nayasis.simplelauncher.view.Terminal
 import mu.KotlinLogging
-import org.springframework.stereotype.Service
 import tornadofx.runLater
 import java.io.File
 import java.time.LocalDateTime
 
 private val logger = KotlinLogging.logger{}
 
-@Service
 class LinkExecutor(
     private val linkService: LinkService
 ) {
@@ -26,7 +24,7 @@ class LinkExecutor(
         link.title?.let { config.historyKeyword.add(it) }
 
         linkService.save( link.apply {
-            lastExecDate = LocalDateTime.now()
+            executedAt = LocalDateTime.now()
             executeCount++
         })
         main.tableMain.refresh()
@@ -36,7 +34,7 @@ class LinkExecutor(
         } else if( files.size == 1 ) {
             runLater { run(LinkCommand(link,files.first())) }
         } else {
-            if( link.eachExecution ) {
+            if( link.executeEach ) {
                 if( ! link.showConsole ) {
                     Dialog.progress(link.title) {
                         files.forEachIndexed { index, file ->

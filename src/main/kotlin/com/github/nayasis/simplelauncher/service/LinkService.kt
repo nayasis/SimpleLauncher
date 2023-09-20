@@ -12,50 +12,60 @@ import com.github.nayasis.kotlin.javafx.misc.Desktop
 import com.github.nayasis.kotlin.javafx.misc.set
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.simplelauncher.common.Context
-import com.github.nayasis.simplelauncher.jpa.entity.Link
-import com.github.nayasis.simplelauncher.jpa.repository.LinkRepository
 import com.github.nayasis.simplelauncher.jpa.vo.JsonLink
+import com.github.nayasis.simplelauncher.model.Link
+import com.github.nayasis.simplelauncher.model.Links
 import mu.KotlinLogging
+import org.jetbrains.exposed.sql.deleteAll
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import tornadofx.FileChooserMode
-import java.io.File
 import java.nio.file.Path
 
 private val logger = KotlinLogging.logger{}
 
 @Component
-class LinkService(
-    private val linkRepository: LinkRepository,
-) {
+class LinkService {
 
-    @Transactional
     fun save(link: Link) {
-        linkRepository.save(link.generateKeyword())
+        transaction {
+            link.generateKeyword()
+            commit()
+        }
     }
 
     @Transactional
     fun importData(file: Path) {
-        val links = file.readText().let { Reflector.toObject<List<JsonLink>>(it) }.map { it.toLink() }
-        linkRepository.saveAll(links)
+        val jsonLinks = file.readText().let { Reflector.toObject<List<JsonLink>>(it) }
+        transaction {
+            jsonLinks.forEach { it.createNew() }
+            commit()
+        }
     }
 
     fun exportData(file: Path) {
-        val jsonLinks = linkRepository.findAllByOrderByTitle().map { JsonLink(it) }
+        val jsonLinks = Link.all().map { JsonLink(it) }
         file.writeText( Reflector.toJson(jsonLinks, pretty = true))
     }
 
-    @Transactional
     fun deleteAll() {
         Context.config.historyKeyword.clear()
-        linkRepository.deleteAll()
+        transaction {
+            Links.deleteAll()
+            commit()
+        }
     }
 
     @Transactional
     fun delete(link: Link) {
         Context.config.historyKeyword.remove(link.title ?: "")
-        linkRepository.delete(link)
-        Context.main.links.remove(link)
+        transaction {
+            Link.findById(link.id)?.delete()
+            Context.main.links.remove(link)
+            commit()
+        }
     }
 
     fun openImportPicker(): Path? =
