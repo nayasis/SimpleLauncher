@@ -64,6 +64,7 @@ dependencies {
 
 	implementation("org.yaml:snakeyaml:2.2")
 
+	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.7.3")
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 	implementation("org.jetbrains.exposed:exposed-core:0.43.0")
 	implementation("org.jetbrains.exposed:exposed-dao:0.43.0")
