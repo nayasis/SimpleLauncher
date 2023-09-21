@@ -5,10 +5,10 @@ test: This is test on SnakeYaml.
 logging:
   pattern:
     console: "%d{HH:mm:ss.SSS} %highlight(%-5level) %green([%12(%.-12(%t))]) %yellow(%50(\\(%F:%L\\))) %msg%n"
-#  level:
-#    root: info
-#    org.hibernate.SQL: error
-#    org.hibernate.type.descriptor.sql.BasicBinder: error
-#    com.github.nayasis: debug
-#    com.github.nayasis.simplelauncher: debug
-#    com.jediterm.terminal.emulator: error
+  level:
+    root: info
+    org.hibernate.SQL: error
+    org.hibernate.type.descriptor.sql.BasicBinder: error
+    com.github.nayasis: debug
+    com.github.nayasis.simplelauncher: debug
+    com.jediterm.terminal.emulator: error
