@@ -12,12 +12,11 @@ import com.github.nayasis.kotlin.javafx.misc.Desktop
 import com.github.nayasis.kotlin.javafx.misc.set
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.simplelauncher.common.Context
-import com.github.nayasis.simplelauncher.jpa.vo.JsonLink
+import com.github.nayasis.simplelauncher.model.vo.JsonLink
 import com.github.nayasis.simplelauncher.model.Link
 import com.github.nayasis.simplelauncher.model.Links
 import mu.KotlinLogging
 import org.jetbrains.exposed.sql.deleteAll
-import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional

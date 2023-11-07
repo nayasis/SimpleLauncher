@@ -53,6 +53,7 @@ import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import mu.KotlinLogging
 import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.transactions.transaction
 import tornadofx.*
 import java.io.File
 import java.time.LocalDateTime
@@ -596,8 +597,10 @@ class Main: View("application.title".message()) {
     fun readLinks() {
         links.apply {
             clear()
-            Link.all().orderBy(Links.title to SortOrder.ASC).toList().let {
-                addAll(it)
+            transaction {
+                Link.all().orderBy(Links.title to SortOrder.ASC).toList()
+            }.let { links ->
+                addAll(links)
             }
         }
         printSearchResult()
