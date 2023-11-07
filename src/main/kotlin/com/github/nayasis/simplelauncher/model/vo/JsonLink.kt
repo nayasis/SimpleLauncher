@@ -1,4 +1,4 @@
-package com.github.nayasis.simplelauncher.jpa.vo
+package com.github.nayasis.simplelauncher.model.vo
 
 import com.github.nayasis.kotlin.basica.annotation.NoArg
 import com.github.nayasis.kotlin.basica.core.string.decodeBase64
@@ -34,7 +34,7 @@ data class JsonLink(
         commandPrev  = entity.commandPrev,
         commandNext  = entity.commandNext,
         description  = entity.description,
-        icon         = entity.icon.encodeBase64(),
+        icon         = entity.icon?.encodeBase64(),
         execCount    = entity.executeCount,
         lastExecDate = entity.executedAt,
     )
@@ -52,7 +52,7 @@ data class JsonLink(
             commandPrev   = toNewParameter(it.commandPrev)
             commandNext   = toNewParameter(it.commandNext)
             description   = it.description
-            icon          = it.icon.decodeBase64()
+            icon          = it.icon?.decodeBase64()
             executeCount  = it.execCount
             lastExecDate  = it.lastExecDate
             generateKeyword()

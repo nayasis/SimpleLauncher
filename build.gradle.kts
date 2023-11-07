@@ -66,17 +66,17 @@ dependencies {
 
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.7.3")
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-	implementation("org.jetbrains.exposed:exposed-core:0.43.0")
-	implementation("org.jetbrains.exposed:exposed-dao:0.43.0")
-	implementation("org.jetbrains.exposed:exposed-java-time:0.43.0")
-	runtimeOnly("org.jetbrains.exposed:exposed-jdbc:0.43.0")
+	implementation("org.jetbrains.exposed:exposed-core:0.44.1")
+	implementation("org.jetbrains.exposed:exposed-dao:0.44.1")
+	implementation("org.jetbrains.exposed:exposed-java-time:0.44.1")
+	implementation("org.jetbrains.exposed:exposed-jdbc:0.44.1")
 
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-	implementation("com.github.nayasis:basica-kt:develop-SNAPSHOT"){ isChanging = true }
-	implementation("com.github.nayasis:basicafx-kt:develop-SNAPSHOT"){ isChanging = true }
 
-//	implementation("com.github.nayasis:basica-kt:0.2.22")
+	implementation("com.github.nayasis:basica-kt:0.3.1")
+//	implementation("com.github.nayasis:basica-kt:develop-SNAPSHOT"){ isChanging = true }
 //	implementation("com.github.nayasis:basicafx-kt:0.1.20")
+	implementation("com.github.nayasis:basicafx-kt:develop-SNAPSHOT"){ isChanging = true }
 	implementation("no.tornado:tornadofx:1.7.20") {
 		exclude("org.jetbrains.kotlin")
 	}
