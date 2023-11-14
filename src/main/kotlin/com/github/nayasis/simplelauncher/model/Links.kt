@@ -1,6 +1,7 @@
 package com.github.nayasis.simplelauncher.model
 
 import au.com.console.kassava.kotlinToString
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.github.nayasis.kotlin.basica.core.extension.ifEmpty
 import com.github.nayasis.kotlin.basica.core.extension.ifNotEmpty
 import com.github.nayasis.kotlin.basica.core.io.Paths
@@ -23,16 +24,13 @@ import mslinks.ShellLink
 import mu.KotlinLogging
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
-import org.jetbrains.exposed.sql.VarCharColumnType
 import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.javatime.datetime
-import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.statements.UpdateBuilder
 import org.jetbrains.exposed.sql.statements.api.ExposedBlob
 import org.jetbrains.exposed.sql.update
 import java.io.File
 import java.nio.file.Path
-import java.sql.Clob
 import java.time.LocalDateTime
 import kotlin.io.path.div
 
@@ -90,6 +88,7 @@ data class Link(
         generateKeyword()
     }
 
+    @JsonIgnore
     fun setPath(file: File) {
         this.path = file.invariantSeparatorsPath
         relativePath = file.toPath().toRelativeOrSelf(Paths.applicationRoot).invariantPath
@@ -136,10 +135,12 @@ data class Link(
         }.onFailure { e -> logger.error(e) }
     }
 
+    @JsonIgnore
     fun setIcon(file: File): Image? {
         return runCatching { file.toIconImage().firstOrNull() }.getOrNull().also { icon = it }
     }
 
+    @JsonIgnore
     fun toPath(): Path? {
 
         var p = path?.toPath() ?: return null
@@ -216,23 +217,7 @@ data class Link(
     }
 }
 
-fun <T> Table.jsonb(name: String, length: Int, fromJson: (String) -> T) = registerColumn<T>(name,JsonbColumnType(length, fromJson))
-
-class JsonbColumnType<T>(length: Int, private val fromJson: (String) -> T) : VarCharColumnType(colLength = length) {
-    override fun notNullValueToDB(value: Any): Any {
-        return Reflector.toJson(value)
-    }
-    override fun valueFromDB(value: Any): Any {
-        val text = when (value) {
-            is Clob -> value.characterStream.readText()
-            is ByteArray -> String(value)
-            else -> value.toString()
-        }
-        return fromJson.invoke(text) as Any
-    }
-}
-
-fun UpdateBuilder<*>.from(entity: Link): Unit {
+fun UpdateBuilder<*>.from(entity: Link) {
     if(entity.id > 0) this[Links.id] = entity.id
     this[Links.title]         = entity.title
     this[Links.group]         = entity.group

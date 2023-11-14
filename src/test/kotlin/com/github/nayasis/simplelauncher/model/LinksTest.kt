@@ -1,5 +1,6 @@
 package com.github.nayasis.simplelauncher.model
 
+import com.github.nayasis.kotlin.basica.reflection.Reflector
 import com.github.nayasis.kotlin.javafx.misc.toImage
 import com.github.nayasis.simplelauncher.common.ICON_NEW
 import mu.KotlinLogging
@@ -43,6 +44,18 @@ class LinksTest {
             val read = Links.select { Links.id eq created.id }.singleOrNull()?.toLink()
             logger.debug { ">> read: $read" }
         }
+    }
+
+    @Test
+    fun toJson() {
+        val list = listOf(
+            Link(1, "A", icon = ICON_NEW.toImage()),
+            Link(2, "B", icon = ICON_NEW.toImage()),
+            Link(3, "C", icon = ICON_NEW.toImage()),
+            Link(4, "D", icon = ICON_NEW.toImage()),
+        )
+        val json = Reflector.toJson(list, pretty = true)
+        println(json)
     }
 
 }

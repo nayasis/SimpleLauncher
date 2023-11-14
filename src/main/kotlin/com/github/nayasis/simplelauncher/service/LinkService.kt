@@ -15,6 +15,7 @@ import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.model.Link
 import com.github.nayasis.simplelauncher.model.Links
 import com.github.nayasis.simplelauncher.model.from
+import com.github.nayasis.simplelauncher.model.save
 import com.github.nayasis.simplelauncher.model.toLink
 import com.github.nayasis.simplelauncher.model.vo.JsonLink
 import mu.KotlinLogging
@@ -34,7 +35,7 @@ class LinkService {
 
     fun save(link: Link) {
         transaction {
-            Links.insert { it.from(link) }
+            Links.save(link)
             commit()
         }
     }
@@ -57,7 +58,10 @@ class LinkService {
     }
 
     fun exportData(file: Path) {
-        val dbLinks = Links.selectAll().map { it.toLink() }
+        val dbLinks = transaction {
+            Links.selectAll().map { it.toLink() }.map { JsonLink(it) }
+        }
+        logger.debug { dbLinks }
         file.writeText( Reflector.toJson(dbLinks, pretty = true))
     }
 
