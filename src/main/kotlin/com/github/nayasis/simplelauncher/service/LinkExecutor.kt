@@ -5,6 +5,7 @@ import com.github.nayasis.kotlin.basica.exec.Command
 import com.github.nayasis.kotlin.javafx.misc.runSync
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.simplelauncher.common.Context.Companion.config
+import com.github.nayasis.simplelauncher.common.Context.Companion.linkService
 import com.github.nayasis.simplelauncher.common.Context.Companion.main
 import com.github.nayasis.simplelauncher.model.Link
 import com.github.nayasis.simplelauncher.view.Terminal
@@ -15,9 +16,7 @@ import java.time.LocalDateTime
 
 private val logger = KotlinLogging.logger{}
 
-class LinkExecutor(
-    private val linkService: LinkService
-) {
+class LinkExecutor{
 
     fun run(link: Link, files: Collection<File>? = null) {
 
