@@ -3,7 +3,11 @@ package com.github.nayasis.simplelauncher.model.vo
 import com.github.nayasis.kotlin.basica.annotation.NoArg
 import com.github.nayasis.kotlin.basica.core.string.decodeBase64
 import com.github.nayasis.kotlin.basica.core.string.encodeBase64
+import com.github.nayasis.kotlin.javafx.misc.toBinary
+import com.github.nayasis.kotlin.javafx.misc.toImage
+import com.github.nayasis.simplelauncher.model.ICON_IMAGE_TYPE
 import com.github.nayasis.simplelauncher.model.Link
+import javafx.scene.image.Image
 import java.time.LocalDateTime
 
 @NoArg
@@ -20,7 +24,9 @@ data class JsonLink(
     var description: String?         = null,
     var icon: String?                = null,
     var execCount: Int               = 0,
-    var lastExecDate: LocalDateTime? = null,
+    var executedAt: LocalDateTime?   = null,
+    var createdAt: LocalDateTime?    = null,
+    var updatedAt: LocalDateTime?    = null,
 ) {
 
     constructor(entity: Link): this(
@@ -34,45 +40,31 @@ data class JsonLink(
         commandPrev  = entity.commandPrev,
         commandNext  = entity.commandNext,
         description  = entity.description,
-        icon         = entity.icon?.encodeBase64(),
+        icon         = entity.icon?.toBinary(ICON_IMAGE_TYPE)?.encodeBase64(),
         execCount    = entity.executeCount,
-        lastExecDate = entity.executedAt,
+        executedAt   = entity.executedAt,
+        createdAt    = entity.createdAt,
+        updatedAt    = entity.updatedAt,
     )
 
-    fun createNew(): Link {
-        val it = this
-        return Link.new {
-            title         = it.title
-            group         = it.group
-            path          = toNewParameter(it.path)
-            relativePath  = it.relativePath
-            showConsole   = it.showConsole
-            argument      = toNewParameter(it.option)
-            commandPrefix = toNewParameter(it.optionPrefix)
-            commandPrev   = toNewParameter(it.commandPrev)
-            commandNext   = toNewParameter(it.commandNext)
-            description   = it.description
-            icon          = it.icon?.decodeBase64()
-            executeCount  = it.execCount
-            lastExecDate  = it.lastExecDate
-            generateKeyword()
-        }
+    fun toLink(): Link {
+        return this.let { Link(
+            title         = it.title,
+            group         = it.group,
+            path          = it.path,
+            relativePath  = it.relativePath,
+            showConsole   = it.showConsole,
+            argument      = it.option,
+            commandPrefix = it.optionPrefix,
+            commandPrev   = it.commandPrev,
+            commandNext   = it.commandNext,
+            description   = it.description,
+            icon          = runCatching { it.icon?.decodeBase64<ByteArray>()?.toImage() }.getOrNull(),
+            executeCount  = it.execCount,
+            executedAt    = it.executedAt,
+            createdAt     = it.createdAt ?: LocalDateTime.now(),
+            updatedAt     = it.updatedAt ?: LocalDateTime.now(),
+        )}
     }
 
-}
-
-private fun toNewParameter(string: String?): String? {
-    val convert = mapOf(
-        "filepath" to "path",
-        "dir"      to "dir",
-        "filename" to "file",
-        "name"     to "name",
-        "ext"      to "ext",
-        "home"     to "home",
-    )
-    var text = string
-    convert.forEach{ old, new ->
-        text = text?.replace("#{$old}", "\${$new}" )
-    }
-    return text
 }
