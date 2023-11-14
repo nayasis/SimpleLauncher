@@ -14,8 +14,11 @@ import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValueByDefault
 import com.github.nayasis.kotlin.javafx.control.tableview.column.setAlign
 import com.github.nayasis.kotlin.javafx.control.tableview.focus
+import com.github.nayasis.kotlin.javafx.control.tableview.focusBy
 import com.github.nayasis.kotlin.javafx.control.tableview.focused
+import com.github.nayasis.kotlin.javafx.control.tableview.scrollBy
 import com.github.nayasis.kotlin.javafx.control.tableview.select
+import com.github.nayasis.kotlin.javafx.control.tableview.selectBy
 import com.github.nayasis.kotlin.javafx.control.tableview.visibleRows
 import com.github.nayasis.kotlin.javafx.geometry.Insets
 import com.github.nayasis.kotlin.javafx.misc.Desktop
@@ -116,8 +119,6 @@ class Main: View("application.title".message()) {
 
     var detail: Link? = null
 
-    val links = SortedFilteredList(mutableListOf<Link>().asObservable())
-
     val keywordMatcher = TextMatcher()
     val groupMatcher = TextMatcher()
 
@@ -183,7 +184,7 @@ class Main: View("application.title".message()) {
         }
         colExecCount.cellValue(Link::executeCount).setAlign(Pos.CENTER_RIGHT)
 
-        links.bindTo(tableMain)
+        linkService.links.bindTo(tableMain)
 
 //        colGroup.remainingWidth()
 //        colTitle.remainingWidth()
@@ -247,6 +248,8 @@ class Main: View("application.title".message()) {
                     event.run {
                         dragboard.let {
                             if( it.hasFiles() ) {
+                                tableMain.focusBy(row.item)
+                                logger.debug { ">> focused row index : ${tableMain.focused}" }
                                 linkExecutor.run(row.item,it.files)
                             }
                         }
@@ -317,7 +320,6 @@ class Main: View("application.title".message()) {
         menuDeleteAll.setOnAction {
             if(Dialog.confirm("msg.confirm.002".message())) {
                 linkService.deleteAll()
-                links.clear()
                 clearDetail()
             }
         }
@@ -489,7 +491,7 @@ class Main: View("application.title".message()) {
     private fun setSearchFilter() {
         val hasKeyword = inputKeyword.text.isNotBlank()
         val hasGroup   = inputGroup.text.isNotBlank()
-        links.predicate = {
+        linkService.links.predicate = {
             val inKeyword = ! hasKeyword || keywordMatcher.isMatch(it.keywordTitle)
             val inGroup   = ! hasGroup   || groupMatcher.isMatch(it.keywordGroup)
             inKeyword && inGroup
@@ -592,10 +594,7 @@ class Main: View("application.title".message()) {
     )
 
     fun readLinks() {
-        links.apply {
-            clear()
-            addAll(linkService.getAll())
-        }
+        linkService.loadAll()
         printSearchResult()
     }
 
@@ -665,7 +664,6 @@ class Main: View("application.title".message()) {
         val prev = tableMain.focused
 
         linkService.delete(link)
-        links.remove(link)
 
         clearDetail()
         tableMain.select(prev.row)
@@ -676,7 +674,7 @@ class Main: View("application.title".message()) {
 
     fun saveDetail() {
         detail?.let {
-            val isNew = (it.id <= 0)
+
             it.title         = descTitle.text?.trim()
             it.showConsole   = descShowConsole.isSelected
             it.executeEach   = descSeqExecution.isSelected
@@ -688,15 +686,16 @@ class Main: View("application.title".message()) {
             it.commandPrev   = descCmdPrev.text
             it.commandNext   = descCmdNext.text
             it.icon          = descIcon.image
+
             linkService.save(it)
-            if(isNew) {
-                links.add(it)
-                tableMain.refresh()
+
+            runLater {
+                tableMain.selectBy(it)
+                tableMain.scrollBy(it)
                 printSearchResult()
-            } else {
-                tableMain.refresh()
+                printStatus("msg.info.013".message())
             }
-            printStatus("msg.info.013".message())
+
             buttonDelete.isDisable = false
             buttonCopy.isDisable = false
             buttonSave.isDisable = true
@@ -730,7 +729,10 @@ class Main: View("application.title".message()) {
         labelStatus.text = status ?: ""
     }
 
-    fun printSearchResult() = printStatus("msg.info.005".message().format(links.size, links.items.size) )
+    fun printSearchResult() = printStatus("msg.info.005".message().format(
+        linkService.links.size,
+        linkService.links.items.size
+    ))
 
 }
 

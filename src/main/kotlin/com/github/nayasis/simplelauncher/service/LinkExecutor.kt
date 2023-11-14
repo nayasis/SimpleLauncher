@@ -2,6 +2,8 @@ package com.github.nayasis.simplelauncher.service
 
 import com.github.nayasis.kotlin.basica.core.string.tokenize
 import com.github.nayasis.kotlin.basica.exec.Command
+import com.github.nayasis.kotlin.javafx.control.tableview.focus
+import com.github.nayasis.kotlin.javafx.control.tableview.focused
 import com.github.nayasis.kotlin.javafx.misc.runSync
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.simplelauncher.common.Context.Companion.config
@@ -22,51 +24,52 @@ class LinkExecutor{
 
         link.title?.let { config.historyKeyword.add(it) }
 
-        linkService.save( link.apply {
-            executedAt = LocalDateTime.now()
-            executeCount++
-        })
-        main.tableMain.refresh()
+        linkService.save( link.apply { executedAt = LocalDateTime.now() })
+        runLater { main.tableMain.refresh() }
 
-        if( files.isNullOrEmpty() ) {
-            runLater { run(LinkCommand(link)) }
-        } else if( files.size == 1 ) {
-            runLater { run(LinkCommand(link,files.first())) }
-        } else {
-            if( link.executeEach ) {
-                if( ! link.showConsole ) {
-                    Dialog.progress(link.title) {
-                        files.forEachIndexed { index, file ->
-                            it.updateProgress(index + 1,files.size)
-                            it.updateMessage(file.name)
-                            run(LinkCommand(link, file),wait=true)
+        runLater {
+            if( files.isNullOrEmpty() ) {
+                run(LinkCommand(link))
+            } else if( files.size == 1 ) {
+                run(LinkCommand(link,files.first()))
+            } else {
+                if( link.executeEach ) {
+                    if( ! link.showConsole ) {
+                        Dialog.progress(link.title) {
+                            files.forEachIndexed { index, file ->
+                                it.updateProgress(index + 1,files.size)
+                                it.updateMessage(file.name)
+                                run(LinkCommand(link, file),wait=true)
+                            }
                         }
+                    } else {
+                        val progress = Dialog.progress(link.title)
+                        files.forEachIndexed { index, file ->
+                            progress.updateProgress(index + 1, files.size)
+                            progress.updateMessage(file.name)
+                            val cmd = LinkCommand(link, file)
+                            logger.debug { ">> command : $cmd" }
+                            Terminal(cmd.toCommand(),
+                                onFail = { throwable ->
+                                    runSync {
+                                        Dialog.error(throwable)
+                                    }
+                                },
+                                onDone = {
+                                    runLater {
+                                        it.close()
+                                    }
+                                }
+                            ).showAndWait()
+                        }
+                        progress.close()
                     }
                 } else {
-                    val progress = Dialog.progress(link.title)
-                    files.forEachIndexed { index, file ->
-                        progress.updateProgress(index + 1, files.size)
-                        progress.updateMessage(file.name)
-                        val cmd = LinkCommand(link, file)
-                        logger.debug { ">> command : $cmd" }
-                        Terminal(cmd.toCommand(),
-                            onFail = { throwable ->
-                                runSync {
-                                    Dialog.error(throwable)
-                                }
-                            },
-                            onDone = {
-                                runLater {
-                                    it.close()
-                                }
-                            }
-                        ).showAndWait()
-                    }
-                    progress.close()
+                    run(LinkCommand(link,files),false)
                 }
-            } else {
-                runLater { run(LinkCommand(link,files),false) }
             }
+            linkService.save( link.apply { executeCount++ })
+            runLater { main.tableMain.refresh() }
         }
 
     }
@@ -74,10 +77,10 @@ class LinkExecutor{
     private fun run(linkCmd: LinkCommand, wait: Boolean = false) {
         with(linkCmd) {
             val command = toCommand()
-            commandPrev.tokenize("\n").forEach { run(Command(it,workingDirectory),true,showConsole) }
+            commandPrev.tokenize("\n").forEach { run(Command(it,workingDirectory),true) }
             main.printCommand("$command")
             run(command, wait || showConsole, showConsole)
-            commandNext.tokenize("\n").forEach { run(Command(it,workingDirectory),true,showConsole) }
+            commandNext.tokenize("\n").forEach { run(Command(it,workingDirectory),true) }
         }
     }
 
