@@ -4,46 +4,44 @@ import au.com.console.kassava.kotlinToString
 import com.github.nayasis.kotlin.basica.core.extension.ifEmpty
 import com.github.nayasis.kotlin.basica.core.extension.ifNotEmpty
 import com.github.nayasis.kotlin.basica.core.io.Paths
-import com.github.nayasis.kotlin.basica.core.io.div
 import com.github.nayasis.kotlin.basica.core.io.exists
 import com.github.nayasis.kotlin.basica.core.io.invariantPath
-import com.github.nayasis.kotlin.basica.core.io.pathString
 import com.github.nayasis.kotlin.basica.core.io.toRelativeOrSelf
 import com.github.nayasis.kotlin.basica.core.string.ifNotBlank
-import com.github.nayasis.kotlin.basica.core.string.invariantSeparators
-import com.github.nayasis.kotlin.basica.core.string.toFile
 import com.github.nayasis.kotlin.basica.core.string.toPath
 import com.github.nayasis.kotlin.basica.etc.Platforms
 import com.github.nayasis.kotlin.basica.etc.error
 import com.github.nayasis.kotlin.basica.reflection.Reflector
+import com.github.nayasis.kotlin.javafx.misc.copy
 import com.github.nayasis.kotlin.javafx.misc.toBinary
 import com.github.nayasis.kotlin.javafx.misc.toIconImage
 import com.github.nayasis.kotlin.javafx.misc.toImage
 import com.github.nayasis.simplelauncher.common.Context
-import com.github.nayasis.simplelauncher.common.ICON_NEW
 import com.github.nayasis.simplelauncher.common.toKeyword
 import javafx.scene.image.Image
 import mslinks.ShellLink
 import mu.KotlinLogging
-import org.jetbrains.exposed.dao.Entity
-import org.jetbrains.exposed.dao.LongEntity
-import org.jetbrains.exposed.dao.LongEntityClass
-import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.dao.id.LongIdTable
+import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.VarCharColumnType
+import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.javatime.datetime
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.statements.UpdateBuilder
 import org.jetbrains.exposed.sql.statements.api.ExposedBlob
+import org.jetbrains.exposed.sql.update
 import java.io.File
 import java.nio.file.Path
 import java.sql.Clob
 import java.time.LocalDateTime
+import kotlin.io.path.div
 
 private val logger = KotlinLogging.logger {}
 
 const val ICON_IMAGE_TYPE = "png"
 
-object Links: LongIdTable("TB_LINK_TEST") {
+object Links: Table("TB_LINK_TEST") {
+    val id            = long("id").autoIncrement()
     val title         = varchar("title", 300).nullable()
     val group         = varchar("a_group", 255).nullable()
     val path          = varchar("path", 2000).nullable()
@@ -55,68 +53,87 @@ object Links: LongIdTable("TB_LINK_TEST") {
     val commandPrev   = varchar("command_prev", 2000).nullable()
     val commandNext   = varchar("command_next", 2000).nullable()
     val description   = text("desc").nullable()
-    val hashtag       = jsonb<LinkedHashSet<String>>("hashtag", 2000, { Reflector.toObject(it) }).default(LinkedHashSet())
+    val hashtag       = varchar("hashtag", 2000).nullable()
     val icon          = blob("icon").nullable()
     val executeCount  = integer("exe_count").default(0)
-    val executedAt    = datetime("executed_at").default(LocalDateTime.now())
+    val executedAt    = datetime("executed_at").nullable()
     val createdAt     = datetime("created_at").default(LocalDateTime.now())
     val updatedAt     = datetime("updated_at").default(LocalDateTime.now())
+    override val primaryKey = PrimaryKey(arrayOf(id, title),"pk_$tableName")
 }
 
-class Link(id: EntityID<Long>): LongEntity(id) {
+data class Link(
+    var id: Long = 0,
+    var title: String? = null,
+    var group: String? = null,
+    var path: String? = null,
+    var relativePath: String? = null,
+    var showConsole: Boolean = false,
+    var executeEach: Boolean = true,
+    var argument: String? = null,
+    var icon: Image? = null,
+    var commandPrefix: String? = null,
+    var commandPrev: String? = null,
+    var commandNext: String? = null,
+    var description: String? = null,
+    var hashtag: LinkedHashSet<String>? = null,
+    var executeCount: Int = 0,
+    var executedAt: LocalDateTime? = null,
+    var createdAt: LocalDateTime = LocalDateTime.now(),
+    var updatedAt: LocalDateTime = LocalDateTime.now(),
+) {
 
-    companion object: LongEntityClass<Link>(Links)
+    val keywordTitle: HashSet<String> = HashSet()
+    val keywordGroup: HashSet<String> = HashSet()
 
-    var title          by Links.title
-    var group          by Links.group
-    var path           by Links.path
-    var relativePath   by Links.relativePath
-    var showConsole    by Links.showConsole
-    var executeEach    by Links.executeEach
-    var argument       by Links.argument
-    var commandPrefix  by Links.commandPrefix
-    var commandPrev    by Links.commandPrev
-    var commandNext    by Links.commandNext
-    var description    by Links.description
-    var hashtag        by Links.hashtag
-    var executeCount   by Links.executeCount
-    var executedAt     by Links.executedAt
-    var createdAt      by Links.createdAt
-    var updatedAt      by Links.updatedAt
-
-    @field:Transient
-    var keywordTitle  = HashSet<String>()
-    @field:Transient
-    var keywordGroup  = HashSet<String>()
-
-    private var _icon by Links.icon
-
-    var icon: Image?
-        get() = _icon?.bytes?.ifNotEmpty { runCatching { it.toImage() }.getOrNull() } ?: ICON_NEW.toImage()
-        set(value) {
-            _icon = value?.let { ExposedBlob(it.toBinary(ICON_IMAGE_TYPE)) }
-        }
+    init {
+        generateKeyword()
+    }
 
     fun setPath(file: File) {
-        path = file.invariantSeparatorsPath
+        this.path = file.invariantSeparatorsPath
         relativePath = file.toPath().toRelativeOrSelf(Paths.applicationRoot).invariantPath
     }
 
-    private fun setFromMicrosoftLink(link: File) {
+    constructor(file: File): this(
+        title = file.nameWithoutExtension,
+    ) {
+        setIcon(file)
+        setPath(file)
+        when {
+            file.isDirectory() && Platforms.isWindows -> {
+                commandPrefix = "cmd /c explorer"
+            }
+            else -> {
+                when(file.extension) {
+                    "lnk" -> {
+                        if(Platforms.isWindows) {
+                            bindLink(file)
+                        }
+                    }
+                    "jar" -> {
+                        commandPrefix = "java -jar"
+                    }
+                    "xls", "xlsx" -> {
+                        if(Platforms.isWindows) {
+                            commandPrefix = "cmd /c start excel"
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun bindLink(link: File) {
         if( ! Platforms.isWindows ) return
         val link = ShellLink(link)
-
-        relativePath = link.relativePath.invariantSeparators()
-        path = link.linkInfo.localBasePath.invariantSeparators()
+        path = link.linkInfo.localBasePath
+        relativePath = link.relativePath
         argument = link.cmdArgs
         description = link.name
-
-        try {
-            link.iconLocation.ifEmpty { path }.let { setIcon(it!!.toFile()) }
-        } catch (e: Throwable) {
-            logger.error(e)
-        }
-
+        runCatching {
+            link.iconLocation.ifEmpty { path }?.toPath()?.let { setIcon(it.toFile()) }
+        }.onFailure { e -> logger.error(e) }
     }
 
     fun setIcon(file: File): Image? {
@@ -124,75 +141,56 @@ class Link(id: EntityID<Long>): LongEntity(id) {
     }
 
     fun toPath(): Path? {
-        runCatching {
-            var p = path!!.toPath()
-            if( p.exists() ) return p
-            p = Paths.applicationRoot / path.ifEmpty{""}
-            if( p.exists() ) return p
-            p = Paths.applicationRoot / relativePath.ifEmpty{""}
-            if( p.exists() ) {
-                path = p.pathString
-                val self = this
-                TODO("update to db ?")
-                Context.linkService.save(this)
-                return p
-            }
+
+        var p = path?.toPath() ?: return null
+        if(p.exists()) return p
+
+        p = Paths.applicationRoot / path.ifEmpty { "" }
+        if(p.exists()) return p
+
+        p = Paths.applicationRoot / relativePath.ifEmpty { "" }
+        if(p.exists()) {
+            path = p.invariantPath
+            Context.linkService.save(this)
+            return p
         }
+
         return null
+
     }
 
-    fun generateKeyword() {
-        listOf(keywordTitle,keywordGroup).forEach { it.clear() }
-        title.ifNotBlank { keywordTitle.addAll(it.toKeyword()) }
-        group.ifNotBlank { keywordGroup.addAll(it.toKeyword()) }
-        keywordTitle.addAll(hashtag)
-    }
-
-    fun of(file: File): Link {
-        title = file.nameWithoutExtension
-        setPath(file)
-        setIcon(file)
-        if(file.isDirectory()) {
-            if( Platforms.isWindows) {
-                commandPrefix = "cmd /c explorer"
-            }
-        } else {
-            when(file.extension) {
-                "lnk" -> setFromMicrosoftLink(file)
-                "jar" -> commandPrefix = "java -jar"
-                "xls", "xlsx" -> {
-                    if(Platforms.isWindows) {
-                        commandPrefix = "cmd /c start excel"
-                    }
-                }
-            }
+    fun generateKeyword(): Link {
+        keywordTitle.run {
+            clear()
+            title.ifNotBlank { addAll(it.toKeyword()) }
+            hashtag.ifNotEmpty { addAll(it) }
+        }
+        keywordGroup.run {
+            group.ifNotBlank { addAll(it.toKeyword()) }
         }
         return this
     }
 
     fun clone(): Link {
-        val self = this
-        return Link.new {
-            title         = self.title
-            group         = self.group
-            path          = self.path
-            relativePath  = self.relativePath
-            showConsole   = self.showConsole
-            executeEach   = self.executeEach
-            argument      = self.argument
-            commandPrefix = self.commandPrefix
-            commandPrev   = self.commandPrev
-            commandNext   = self.commandNext
-            description   = self.description
-            hashtag       = self.hashtag.let { LinkedHashSet(it) }
-            executeCount  = self.executeCount
-            executedAt    = self.executedAt
-            createdAt     = self.createdAt
-            updatedAt     = self.updatedAt
-            _icon         = self._icon?.bytes?.clone()?.let { ExposedBlob(it) }
-            keywordTitle.apply { clear() }.apply { addAll(self.keywordTitle) }
-            keywordGroup.apply { clear() }.apply { addAll(self.keywordGroup) }
-        }
+        return this.let { Link(
+            title         = it.title,
+            group         = it.group,
+            path          = it.path,
+            relativePath  = it.relativePath,
+            showConsole   = it.showConsole,
+            executeEach   = it.executeEach,
+            argument      = it.argument,
+            icon          = it.icon?.copy(),
+            commandPrefix = it.commandPrefix,
+            commandPrev   = it.commandPrev,
+            commandNext   = it.commandNext,
+            description   = it.description,
+            hashtag       = it.hashtag?.let { LinkedHashSet(it) },
+            executeCount  = it.executeCount,
+            executedAt    = it.executedAt,
+            createdAt     = it.createdAt,
+            updatedAt     = it.updatedAt,
+        )}
     }
 
     override fun toString(): String {
@@ -218,7 +216,7 @@ class Link(id: EntityID<Long>): LongEntity(id) {
     }
 }
 
-fun <T> Table.jsonb(name: String, length: Int, fromJson: (String) -> T) = Links.registerColumn<T>(name,JsonbColumnType(length, fromJson))
+fun <T> Table.jsonb(name: String, length: Int, fromJson: (String) -> T) = registerColumn<T>(name,JsonbColumnType(length, fromJson))
 
 class JsonbColumnType<T>(length: Int, private val fromJson: (String) -> T) : VarCharColumnType(colLength = length) {
     override fun notNullValueToDB(value: Any): Any {
@@ -234,5 +232,55 @@ class JsonbColumnType<T>(length: Int, private val fromJson: (String) -> T) : Var
     }
 }
 
-val Entity<*>.isNew: Boolean
-    get() = this.id._value == null
+fun UpdateBuilder<*>.from(entity: Link): Unit {
+    if(entity.id > 0) this[Links.id] = entity.id
+    this[Links.title]         = entity.title
+    this[Links.group]         = entity.group
+    this[Links.path]          = entity.path
+    this[Links.relativePath]  = entity.relativePath
+    this[Links.showConsole]   = entity.showConsole
+    this[Links.executeEach]   = entity.executeEach
+    this[Links.argument]      = entity.argument
+    this[Links.commandPrefix] = entity.commandPrefix
+    this[Links.commandPrev]   = entity.commandPrev
+    this[Links.commandNext]   = entity.commandNext
+    this[Links.hashtag]       = entity.hashtag?.let { Reflector.toJson(it) }
+    this[Links.icon]          = entity.icon?.toBinary(ICON_IMAGE_TYPE)?.let { ExposedBlob(it) }
+    this[Links.executeCount]  = entity.executeCount
+    this[Links.executedAt]    = entity.executedAt
+    this[Links.createdAt]     = entity.createdAt
+    this[Links.updatedAt]     = entity.updatedAt
+}
+
+fun ResultRow.toLink(): Link {
+    return this.let { row ->Link(
+        id            = row[Links.id],
+        title         = row[Links.title],
+        group         = row[Links.group],
+        path          = row[Links.path],
+        relativePath  = row[Links.relativePath],
+        showConsole   = row[Links.showConsole],
+        executeEach   = row[Links.executeEach],
+        argument      = row[Links.argument],
+        commandPrefix = row[Links.commandPrefix],
+        commandPrev   = row[Links.commandPrev],
+        commandNext   = row[Links.commandNext],
+        description   = row[Links.description],
+        hashtag       = row[Links.hashtag]?.let { Reflector.toObject(it) },
+        icon          = row[Links.icon]?.bytes?.toImage(),
+        executeCount  = row[Links.executeCount],
+        executedAt    = row[Links.executedAt],
+        createdAt     = row[Links.createdAt],
+        updatedAt     = row[Links.updatedAt],
+    )}
+}
+
+fun Links.save(link: Link) {
+    if(link.id <= 0) {
+        insert { it.from(link) }.let { row ->
+            link.id = row[id]
+        }
+    } else {
+        update { it.from(link) }
+    }
+}

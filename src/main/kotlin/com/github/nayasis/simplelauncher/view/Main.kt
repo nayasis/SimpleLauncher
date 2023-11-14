@@ -29,7 +29,6 @@ import com.github.nayasis.kotlin.javafx.stage.loadDefaultIcon
 import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.common.ICON_NEW
 import com.github.nayasis.simplelauncher.model.Link
-import com.github.nayasis.simplelauncher.model.Links
 import com.github.nayasis.simplelauncher.service.LinkExecutor
 import com.github.nayasis.simplelauncher.service.LinkService
 import com.github.nayasis.simplelauncher.service.TextMatcher
@@ -52,8 +51,6 @@ import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import mu.KotlinLogging
-import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.transactions.transaction
 import tornadofx.*
 import java.io.File
 import java.time.LocalDateTime
@@ -405,14 +402,14 @@ class Main: View("application.title".message()) {
         buttonAddFile.setOnDragOver { hasFile(it) }
         buttonAddFile.setOnDragDropped { e ->
             e.dragboard.files.forEach { file ->
-                drawDetailForAdd(Link.new{}.of(file))
+                drawDetailForAdd(Link(file))
                 currentStage?.requestFocus()
             }
         }
         buttonAddFile.setOnMouseClicked { e ->
             if( e.button == MouseButton.PRIMARY ) {
                 linkService.openExecutorPicker()?.let { path ->
-                    drawDetailForAdd(Link.new{}.of(path.toFile()))
+                    drawDetailForAdd(Link(path.toFile()))
                 }
             }
         }
@@ -597,11 +594,7 @@ class Main: View("application.title".message()) {
     fun readLinks() {
         links.apply {
             clear()
-            transaction {
-                Link.all().orderBy(Links.title to SortOrder.ASC).toList()
-            }.let { links ->
-                addAll(links)
-            }
+            addAll(linkService.getAll())
         }
         printSearchResult()
     }
@@ -683,7 +676,7 @@ class Main: View("application.title".message()) {
 
     fun saveDetail() {
         detail?.let {
-            val isNew = (it.id.value == 0L)
+            val isNew = (it.id <= 0)
             it.title         = descTitle.text?.trim()
             it.showConsole   = descShowConsole.isSelected
             it.executeEach   = descSeqExecution.isSelected
@@ -711,7 +704,7 @@ class Main: View("application.title".message()) {
     }
 
     fun copyDetail() {
-        if( detail != null && detail?.id?._value == null ) return
+        if( detail == null || detail!!.id <= 0 ) return
         drawDetail( detail!!.clone() )
         descTitle.requestFocus()
         printStatus("msg.info.014".message())
@@ -721,7 +714,7 @@ class Main: View("application.title".message()) {
     }
 
     fun createDetail() {
-        drawDetail(Link.new { icon = ICON_NEW.toImage() })
+        drawDetail(Link( icon = ICON_NEW.toImage() ))
         descGroupName.requestFocus()
         printStatus("msg.info.015".message())
         buttonDelete.isDisable = true
