@@ -81,6 +81,9 @@ data class Link(
     var updatedAt: LocalDateTime = LocalDateTime.now(),
 ) {
 
+    val isNew: Boolean
+        get() = id <= 0
+
     val keywordTitle: HashSet<String> = HashSet()
     val keywordGroup: HashSet<String> = HashSet()
 
@@ -137,7 +140,9 @@ data class Link(
 
     @JsonIgnore
     fun setIcon(file: File): Image? {
-        return runCatching { file.toIconImage().firstOrNull() }.getOrNull().also { icon = it }
+        return runCatching {
+            file.toIconImage().firstOrNull()
+        }.getOrNull().also { icon = it }
     }
 
     @JsonIgnore
@@ -152,7 +157,7 @@ data class Link(
         p = Paths.applicationRoot / relativePath.ifEmpty { "" }
         if(p.exists()) {
             path = p.invariantPath
-            Context.linkService.save(this)
+            Context.linkService.save(this, false)
             return p
         }
 
@@ -266,6 +271,10 @@ fun Links.save(link: Link) {
             link.id = row[id]
         }
     } else {
-        update { it.from(link) }
+        update({
+            Links.id eq link.id
+        }) {
+            it.from(link)
+        }
     }
 }

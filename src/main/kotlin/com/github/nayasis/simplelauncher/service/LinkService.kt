@@ -12,6 +12,7 @@ import com.github.nayasis.kotlin.javafx.misc.Desktop
 import com.github.nayasis.kotlin.javafx.misc.set
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.simplelauncher.common.Context
+import com.github.nayasis.simplelauncher.main
 import com.github.nayasis.simplelauncher.model.Link
 import com.github.nayasis.simplelauncher.model.Links
 import com.github.nayasis.simplelauncher.model.from
@@ -27,16 +28,28 @@ import org.jetbrains.exposed.sql.insert
 import org.jetbrains.exposed.sql.selectAll
 import org.jetbrains.exposed.sql.transactions.transaction
 import tornadofx.FileChooserMode
+import tornadofx.SortedFilteredList
+import tornadofx.asObservable
+import tornadofx.runLater
 import java.nio.file.Path
 
 private val logger = KotlinLogging.logger{}
 
 class LinkService {
 
-    fun save(link: Link) {
+    val links = SortedFilteredList(mutableListOf<Link>().asObservable())
+
+    fun save(link: Link, refreshTable: Boolean = true) {
+        if(link.isNew)
+            links.add(link)
         transaction {
             Links.save(link)
             commit()
+        }
+        if(refreshTable) {
+            runLater {
+                Context.main.tableMain.refresh()
+            }
         }
     }
 
@@ -50,10 +63,12 @@ class LinkService {
         }
     }
 
-
-    fun getAll(): List<Link> {
-        return transaction {
+    fun loadAll() {
+        links.clear()
+        transaction {
             Links.selectAll().orderBy(Links.title, SortOrder.ASC).map { it.toLink() }
+        }.let {
+            links.addAll(it)
         }
     }
 
@@ -69,6 +84,7 @@ class LinkService {
         Context.config.historyKeyword.clear()
         transaction {
             Links.deleteAll()
+            links.clear()
             commit()
         }
     }
@@ -76,8 +92,8 @@ class LinkService {
     fun delete(link: Link) {
         Context.config.historyKeyword.remove(link.title ?: "")
         transaction {
-            Links.deleteWhere { Links.id eq (link.id ?: 0L) }
-            Context.main.links.remove(link)
+            Links.deleteWhere { Links.id eq link.id }
+            links.remove(link)
             commit()
         }
     }
