@@ -4,7 +4,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
 	application
 	id("org.springframework.boot") version "2.6.3"
-	id("io.spring.dependency-management") version "1.0.11.RELEASE"
+//	id("io.spring.dependency-management") version "1.0.11.RELEASE"
 	id("org.openjfx.javafxplugin") version "0.0.14"
 	id("org.beryx.runtime") version "1.12.6"
 	kotlin("jvm") version "1.8.20"
@@ -33,7 +33,7 @@ application {
 }
 
 javafx {
-	version = "20"
+	version = "19.0.2.1"
 	modules = listOf("javafx.graphics","javafx.controls","javafx.fxml","javafx.web","javafx.swing")
 }
 
@@ -41,8 +41,8 @@ group = "com.github.nayasis"
 version = "0.1.5"
 
 java {
-	sourceCompatibility = JavaVersion.VERSION_17
-	targetCompatibility = JavaVersion.VERSION_17
+	sourceCompatibility = JavaVersion.VERSION_11
+	targetCompatibility = JavaVersion.VERSION_11
 }
 
 configurations.all {
@@ -62,8 +62,6 @@ repositories {
 
 dependencies {
 
-	implementation("org.yaml:snakeyaml:2.2")
-
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.7.3")
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 	implementation("org.jetbrains.exposed:exposed-core:0.44.1")
@@ -71,12 +69,11 @@ dependencies {
 	implementation("org.jetbrains.exposed:exposed-java-time:0.44.1")
 	implementation("org.jetbrains.exposed:exposed-jdbc:0.44.1")
 
-	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-
 	implementation("com.github.nayasis:basica-kt:0.3.1")
 //	implementation("com.github.nayasis:basica-kt:develop-SNAPSHOT"){ isChanging = true }
 //	implementation("com.github.nayasis:basicafx-kt:0.1.20")
-	implementation("com.github.nayasis:basicafx-kt:develop-SNAPSHOT"){ isChanging = true }
+//	implementation("com.github.nayasis:basicafx-kt:develop-SNAPSHOT"){ isChanging = true }
+	implementation("com.github.nayasis:basicafx-kt:0.2.1-SNAPSHOT")
 	implementation("no.tornado:tornadofx:1.7.20") {
 		exclude("org.jetbrains.kotlin")
 	}
@@ -85,25 +82,25 @@ dependencies {
 	implementation("com.github.nayasis:terminalfx-kt:0.1.2")
 	implementation("commons-cli:commons-cli:1.4")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
-	implementation("ch.qos.logback:logback-classic:1.2.9")
+	implementation("ch.qos.logback:logback-classic:1.4.11")
 
-	implementation("org.springframework.boot:spring-boot-starter")
-	implementation("org.springframework.boot:spring-boot-starter-aop")
-	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-	implementation("org.springframework.boot:spring-boot-starter-cache")
-	implementation("org.springframework.boot:spring-boot-starter-validation")
-	testImplementation("org.springframework.boot:spring-boot-starter-test") {
-		exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
-		exclude(group="com.vaadin.external.google",module="android-json")
-	}
-	implementation("com.h2database:h2")
+//	implementation("org.springframework.boot:spring-boot-starter")
+//	implementation("org.springframework.boot:spring-boot-starter-aop")
+//	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+//	implementation("org.springframework.boot:spring-boot-starter-cache")
+//	implementation("org.springframework.boot:spring-boot-starter-validation")
+//	testImplementation("org.springframework.boot:spring-boot-starter-test") {
+//		exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
+//		exclude(group="com.vaadin.external.google",module="android-json")
+//	}
+	implementation("com.h2database:h2:2.2.224")
 
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("io.github.microutils:kotlin-logging:3.0.5")
 	implementation("au.com.console:kassava:2.1.0")
 
-	testImplementation("de.jensd:fontawesomefx:8.9")
+	testImplementation("de.jeans:fontawesomefx:8.9")
 	testImplementation("org.apache.pdfbox:pdfbox:2.0.24")
 	testImplementation("com.levigo.jbig2:levigo-jbig2-imageio:2.0")
 	testImplementation("org.apache.httpcomponents:httpclient:4.5.13")
@@ -134,7 +131,7 @@ tasks.withType<KotlinCompile> {
 		freeCompilerArgs = listOf(
 			"-Xjsr305=strict"
 		)
-		jvmTarget = "17"
+		jvmTarget = "11"
 	}
 }
 

@@ -36,7 +36,6 @@ class Help: View("stage.help".message()) {
     override fun onUndock() {
         Context.config.run {
             stageHelp = SizeProperty(currentStage)
-            save()
         }
     }
 

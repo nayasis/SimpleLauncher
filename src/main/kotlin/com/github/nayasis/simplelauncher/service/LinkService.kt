@@ -10,6 +10,7 @@ import com.github.nayasis.kotlin.basica.core.string.toPath
 import com.github.nayasis.kotlin.basica.reflection.Reflector
 import com.github.nayasis.kotlin.javafx.misc.Desktop
 import com.github.nayasis.kotlin.javafx.misc.set
+import com.github.nayasis.kotlin.javafx.preloader.NPreloader
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.main
@@ -19,19 +20,21 @@ import com.github.nayasis.simplelauncher.model.from
 import com.github.nayasis.simplelauncher.model.save
 import com.github.nayasis.simplelauncher.model.toLink
 import com.github.nayasis.simplelauncher.model.vo.JsonLink
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.deleteAll
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.greater
+import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import org.jetbrains.exposed.sql.transactions.transaction
 import tornadofx.FileChooserMode
 import tornadofx.SortedFilteredList
 import tornadofx.asObservable
 import tornadofx.runLater
 import java.nio.file.Path
+import java.util.LinkedList
 
 private val logger = KotlinLogging.logger{}
 

@@ -24,14 +24,16 @@ import com.github.nayasis.kotlin.javafx.geometry.Insets
 import com.github.nayasis.kotlin.javafx.misc.Desktop
 import com.github.nayasis.kotlin.javafx.misc.set
 import com.github.nayasis.kotlin.javafx.misc.toImage
+import com.github.nayasis.kotlin.javafx.preloader.NPreloader
 import com.github.nayasis.kotlin.javafx.property.StageProperty
-import com.github.nayasis.kotlin.javafx.spring.SpringFxApp.Companion.closePreloader
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.kotlin.javafx.stage.Localizator
 import com.github.nayasis.kotlin.javafx.stage.loadDefaultIcon
 import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.common.ICON_NEW
 import com.github.nayasis.simplelauncher.model.Link
+import com.github.nayasis.simplelauncher.model.Links
+import com.github.nayasis.simplelauncher.model.toLink
 import com.github.nayasis.simplelauncher.service.LinkExecutor
 import com.github.nayasis.simplelauncher.service.LinkService
 import com.github.nayasis.simplelauncher.service.TextMatcher
@@ -53,11 +55,28 @@ import javafx.scene.input.TransferMode
 import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.javafx.JavaFx
+import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
+import org.jetbrains.exposed.dao.id.EntityID
+import org.jetbrains.exposed.sql.FieldSet
+import org.jetbrains.exposed.sql.Op
+import org.jetbrains.exposed.sql.ResultRow
+import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.SortOrder.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.greater
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.isAutoInc
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.selectAllBatched
+import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import tornadofx.*
 import java.io.File
 import java.time.LocalDateTime
 import java.time.LocalDateTime.now
+import java.util.*
 import kotlin.concurrent.timer
 import kotlin.system.exitProcess
 
@@ -134,6 +153,7 @@ class Main: View("application.title".message()) {
     }
 
     override fun onBeforeShow() {
+        logger.debug { ">> start before show" }
         currentStage?.loadDefaultIcon()
         Context.config.stageMain?.let {
             try {
@@ -145,14 +165,14 @@ class Main: View("application.title".message()) {
             }
         }
         initSearchFilter(Context.config.lastFocusedRow)
-        closePreloader()
+        readLinks()
+        logger.debug { ">> end before show" }
     }
 
     override fun onUndock() {
         Context.config.run {
             lastFocusedRow = tableMain.focused.row
             stageMain = StageProperty(currentStage!!)
-            save()
         }
         exitProcess(0)
     }
@@ -249,7 +269,6 @@ class Main: View("application.title".message()) {
                         dragboard.let {
                             if( it.hasFiles() ) {
                                 tableMain.focusBy(row.item)
-                                logger.debug { ">> focused row index : ${tableMain.focused}" }
                                 linkExecutor.run(row.item,it.files)
                             }
                         }
@@ -259,8 +278,6 @@ class Main: View("application.title".message()) {
                 }
             }
         }
-
-        readLinks()
 
         currentStage?.requestFocus()
 
@@ -568,7 +585,6 @@ class Main: View("application.title".message()) {
             e.acceptTransferModes(TransferMode.COPY)
             true
         } else {
-    //            e.consume()
             false
         }
     }
@@ -594,8 +610,25 @@ class Main: View("application.title".message()) {
     )
 
     fun readLinks() {
-        linkService.loadAll()
-        printSearchResult()
+        linkService.links.clear()
+        val list = LinkedList<Link>()
+        var cnt = 0
+
+        runBlocking(Dispatchers.IO) {
+            suspendedTransactionAsync(Dispatchers.JavaFx) {
+                Links.select(Op.TRUE).orderBy(Links.title, ASC).iterator().forEach { row ->
+                    logger.debug { ">> cnt: ${++cnt}" }
+                    NPreloader.notifyProgress(cnt, 42, row.toLink().title)
+                    list.add(row.toLink())
+                    delay(10)
+                }
+                linkService.links.addAll(list)
+                printSearchResult()
+                logger.debug { ">> read all links !" }
+                NPreloader.close()
+            }
+        }
+
     }
 
     private fun clearDetail() {
