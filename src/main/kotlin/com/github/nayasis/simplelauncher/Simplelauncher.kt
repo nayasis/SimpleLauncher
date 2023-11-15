@@ -1,89 +1,92 @@
 package com.github.nayasis.simplelauncher
 
-import com.github.nayasis.kotlin.basica.etc.error
-import com.github.nayasis.kotlin.basica.exception.rootCause
+import com.github.nayasis.kotlin.basica.core.extension.ifNotEmpty
 import com.github.nayasis.kotlin.basica.model.Messages
 import com.github.nayasis.kotlin.basica.net.Networks
+import com.github.nayasis.kotlin.javafx.app.FxApp
 import com.github.nayasis.kotlin.javafx.preloader.NPreloader
-import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.kotlin.javafx.stage.Stages
-import com.github.nayasis.simplelauncher.common.Environment
+import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.common.LoggerConfig
-import com.github.nayasis.simplelauncher.common.SimpleDiContainer
 import com.github.nayasis.simplelauncher.model.Links
 import com.github.nayasis.simplelauncher.service.LinkExecutor
 import com.github.nayasis.simplelauncher.service.LinkService
 import com.github.nayasis.simplelauncher.view.Main
 import com.github.nayasis.simplelauncher.view.Splash
-import javafx.application.Platform
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.javafx.JavaFx
+import kotlinx.coroutines.javafx.JavaFxDispatcher
+import kotlinx.coroutines.javafx.awaitPulse
+import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import org.h2.Driver
+import org.apache.commons.cli.CommandLine
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
-import tornadofx.App
-import tornadofx.FX
 import tornadofx.launch
+import tornadofx.runAsync
 import tornadofx.runLater
-import kotlin.reflect.KClass
-import kotlin.reflect.jvm.jvmName
+import java.util.*
+import kotlin.coroutines.CoroutineContext
 
 private val logger = KotlinLogging.logger {}
 
 fun main(args: Array<String>) {
-
-    FX.dicontainer = SimpleDiContainer().apply {
-        set(LinkService())
-        set(LinkExecutor())
-        set(Environment(args))
-    }
-
     Networks.ignoreCerts()
     Messages.loadFromResource("/message/**.prop")
-    Stages.defaultIcons.add("/image/icon/favicon.png")
-    LoggerConfig(Environment((args))).initialize()
-    setPreloader(Splash::class)
-    setupDefaultExceptionHandler()
-    connectDb()
-    try {
-        launch<Simplelauncher>(args)
-    } catch (e: Exception) {
-        logger.error(e)
+    NPreloader.set(Splash::class)
+    launch<Simplelauncher>(args)
+}
+
+class Simplelauncher: FxApp(Main::class)  {
+
+    override fun onStart(command: CommandLine) {
+        logger.debug { ">> start on start" }
+        LoggerConfig(environment).initialize()
+        Stages.defaultIcons.add("/image/icon/favicon.png")
+        environment.get<String>("simplelauncher.locale").ifNotEmpty { locale ->
+            Locale.setDefault(Locale.forLanguageTag(locale))
+        }
+        logger.debug { ">> initialized" }
+        NPreloader.notifyProgress(0.1, "initialized")
+//        runLater {
+//            NPreloader.notifyProgress(0.1, "initialized")
+//            logger.debug { ">> preloader: initialized " }
+//        }
+        connectDb()
+        logger.debug { ">> db connected" }
+        NPreloader.notifyProgress(0.2, "db connected")
+//        runLater {
+//            NPreloader.notifyProgress(0.2, "db connected")
+//            logger.debug { ">> preloader: db connected" }
+//        }
+        ctx.apply {
+            set(LinkService())
+            set(LinkExecutor())
+        }
+//        runAsync {
+//            Context.linkService.loadAll()
+//        }
+        logger.debug { ">> end on start" }
     }
-}
 
-class Simplelauncher: App(Main::class) {
+    override fun onStop() {
+        Context.config.save()
+    }
 
-}
-
-fun setPreloader(preloader: KClass<out NPreloader>) {
-    System.setProperty("javafx.preloader", preloader.jvmName)
-    System.setProperty("java.awt.headless", "false")
-}
-
-fun setupDefaultExceptionHandler() {
-    Thread.setDefaultUncaughtExceptionHandler { _, e ->
-        if (Platform.isFxApplicationThread()) {
-            runCatching {
-                runLater {
-                    Dialog.error(e.rootCause)
-                }
-            }.onFailure { logger.error(it) }
-        } else {
-            logger.error(e)
+    private fun connectDb() {
+        Database.connect(
+            url      = environment.get("simplelauncher.datasource.url") ?: "",
+            driver   = environment.get("simplelauncher.datasource.driver-class") ?: "",
+            user     = environment.get("simplelauncher.datasource.user") ?: "",
+            password = environment.get("simplelauncher.datasource.password") ?: "",
+        )
+        transaction {
+            SchemaUtils.create(Links)
         }
     }
 }
 
-private fun connectDb() {
-    Database.connect(
-        url      = "jdbc:h2:file:./db/simplelauncher",
-        driver   = Driver::class.qualifiedName!!,
-//        user     = "user",
-//        password = "1234",
-    )
-    transaction {
-        SchemaUtils.create(Links)
-    }
-
-}

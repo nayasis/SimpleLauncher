@@ -1,26 +1,10 @@
-spring:
-  output:
-    ansi:
-      enabled: always
+simplelauncher:
+#  locale: ko
   datasource:
     url: jdbc:h2:file:./db/simplelauncher
-    driver-class-name: org.h2.Driver
-    type: com.zaxxer.hikari.HikariDataSource
-    hikari:
-      auto-commit: false
-      minimum-idle: 1
-      maximum-pool-size: 3
-      connection-timeout: 600000
-  jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        format_sql: true
-        use_sql_comments: false
-  main:
-    lazy-initialization: true
+    driver-class: org.h2.Driver
+#    user:
+#    password:
 logging:
   pattern:
     console: "%d{HH:mm:ss.SSS} %highlight(%-5level) %green([%12(%.-12(%t))]) %yellow(%50(\\(%F:%L\\))) %msg%n"
