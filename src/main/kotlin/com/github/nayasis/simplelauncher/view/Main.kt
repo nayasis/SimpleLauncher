@@ -71,6 +71,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.isAutoInc
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAllBatched
+import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import tornadofx.*
 import java.io.File
@@ -614,7 +615,7 @@ class Main: View("application.title".message()) {
         val list = LinkedList<Link>()
         var cnt = 0
 
-        runBlocking(Dispatchers.IO) {
+        runBlocking {
             suspendedTransactionAsync(Dispatchers.JavaFx) {
                 Links.select(Op.TRUE).orderBy(Links.title, ASC).iterator().forEach { row ->
                     logger.debug { ">> cnt: ${++cnt}" }
@@ -627,6 +628,9 @@ class Main: View("application.title".message()) {
                 logger.debug { ">> read all links !" }
                 NPreloader.close()
             }
+//            suspendedTransactionAsync(Dispatchers.JavaFx) {
+//
+//            }
         }
 
     }
