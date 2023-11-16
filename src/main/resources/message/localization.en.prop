@@ -33,6 +33,7 @@ table.lastUsedDt            = Last used
 table.execCount             = Count
 desc.groupName              = Group
 desc.title                  = Title
+desc.hashtag                = Hashtag
 desc.execPath               = Path
 desc.arg                    = Argument
 desc.execCmdPrefix          = Command prefix
