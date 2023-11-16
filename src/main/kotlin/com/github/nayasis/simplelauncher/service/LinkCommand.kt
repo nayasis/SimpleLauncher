@@ -100,7 +100,7 @@ class LinkCommand {
             .append(commandPrefix)
             .appendRaw(path)
             .append(argument)
-            .also { if(it.isEmpty()) throw IllegalArgumentException("msg.err.007".message().format(title)) }
+            .also { if(it.isEmpty()) throw IllegalArgumentException("msg.error.no.command".message().format(title)) }
     }
 
 }
