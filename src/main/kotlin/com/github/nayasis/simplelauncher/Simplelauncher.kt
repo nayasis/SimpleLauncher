@@ -7,8 +7,11 @@ import com.github.nayasis.kotlin.javafx.app.FxApp
 import com.github.nayasis.kotlin.javafx.preloader.NPreloader
 import com.github.nayasis.kotlin.javafx.stage.Stages
 import com.github.nayasis.simplelauncher.common.Context
+import com.github.nayasis.simplelauncher.common.Context.Companion.linkService
 import com.github.nayasis.simplelauncher.common.LoggerConfig
+import com.github.nayasis.simplelauncher.model.Link
 import com.github.nayasis.simplelauncher.model.Links
+import com.github.nayasis.simplelauncher.model.toLink
 import com.github.nayasis.simplelauncher.service.LinkExecutor
 import com.github.nayasis.simplelauncher.service.LinkService
 import com.github.nayasis.simplelauncher.view.Main
@@ -17,6 +20,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.javafx.JavaFx
 import kotlinx.coroutines.javafx.JavaFxDispatcher
 import kotlinx.coroutines.javafx.awaitPulse
@@ -24,7 +28,11 @@ import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import org.apache.commons.cli.CommandLine
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.Op
 import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import org.jetbrains.exposed.sql.transactions.transaction
 import tornadofx.launch
 import tornadofx.runAsync
@@ -41,36 +49,25 @@ fun main(args: Array<String>) {
     launch<Simplelauncher>(args)
 }
 
-class Simplelauncher: FxApp(Main::class)  {
+class Simplelauncher: FxApp(Main::class), CoroutineScope  {
+
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.JavaFx
 
     override fun onStart(command: CommandLine) {
-        logger.debug { ">> start on start" }
         LoggerConfig(environment).initialize()
         Stages.defaultIcons.add("/image/icon/favicon.png")
         environment.get<String>("simplelauncher.locale").ifNotEmpty { locale ->
             Locale.setDefault(Locale.forLanguageTag(locale))
         }
         logger.debug { ">> initialized" }
-        NPreloader.notifyProgress(0.1, "initialized")
-//        runLater {
-//            NPreloader.notifyProgress(0.1, "initialized")
-//            logger.debug { ">> preloader: initialized " }
-//        }
         connectDb()
         logger.debug { ">> db connected" }
-        NPreloader.notifyProgress(0.2, "db connected")
-//        runLater {
-//            NPreloader.notifyProgress(0.2, "db connected")
-//            logger.debug { ">> preloader: db connected" }
-//        }
         ctx.apply {
             set(LinkService())
             set(LinkExecutor())
         }
-//        runAsync {
-//            Context.linkService.loadAll()
-//        }
-        logger.debug { ">> end on start" }
+        logger.debug { ">> bean initialized" }
     }
 
     override fun onStop() {

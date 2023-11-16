@@ -100,7 +100,7 @@ dependencies {
 	implementation("io.github.microutils:kotlin-logging:3.0.5")
 	implementation("au.com.console:kassava:2.1.0")
 
-	testImplementation("de.jeans:fontawesomefx:8.9")
+	implementation("de.jensd:fontawesomefx:8.9")
 	testImplementation("org.apache.pdfbox:pdfbox:2.0.24")
 	testImplementation("com.levigo.jbig2:levigo-jbig2-imageio:2.0")
 	testImplementation("org.apache.httpcomponents:httpclient:4.5.13")
@@ -119,6 +119,7 @@ dependencies {
 	testImplementation("io.kotest:kotest-runner-junit5:5.7.2")
 	testImplementation("io.kotest:kotest-property:5.7.2")
 	testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+	testImplementation("org.yaml:snakeyaml:2.2")
 
 }
 

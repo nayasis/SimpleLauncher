@@ -22,6 +22,7 @@ import com.github.nayasis.kotlin.javafx.control.tableview.selectBy
 import com.github.nayasis.kotlin.javafx.control.tableview.visibleRows
 import com.github.nayasis.kotlin.javafx.geometry.Insets
 import com.github.nayasis.kotlin.javafx.misc.Desktop
+import com.github.nayasis.kotlin.javafx.misc.runSync
 import com.github.nayasis.kotlin.javafx.misc.set
 import com.github.nayasis.kotlin.javafx.misc.toImage
 import com.github.nayasis.kotlin.javafx.preloader.NPreloader
@@ -29,11 +30,10 @@ import com.github.nayasis.kotlin.javafx.property.StageProperty
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.kotlin.javafx.stage.Localizator
 import com.github.nayasis.kotlin.javafx.stage.loadDefaultIcon
+import com.github.nayasis.kotlin.javafx.stage.progress.ProgressDialog
 import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.common.ICON_NEW
 import com.github.nayasis.simplelauncher.model.Link
-import com.github.nayasis.simplelauncher.model.Links
-import com.github.nayasis.simplelauncher.model.toLink
 import com.github.nayasis.simplelauncher.service.LinkExecutor
 import com.github.nayasis.simplelauncher.service.LinkService
 import com.github.nayasis.simplelauncher.service.TextMatcher
@@ -55,30 +55,17 @@ import javafx.scene.input.TransferMode
 import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.javafx.JavaFx
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import mu.KotlinLogging
-import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.sql.FieldSet
-import org.jetbrains.exposed.sql.Op
-import org.jetbrains.exposed.sql.ResultRow
-import org.jetbrains.exposed.sql.SortOrder
-import org.jetbrains.exposed.sql.SortOrder.*
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.greater
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.isAutoInc
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.selectAllBatched
-import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
-import org.jetbrains.exposed.sql.transactions.experimental.suspendedTransactionAsync
 import tornadofx.*
 import java.io.File
 import java.time.LocalDateTime
 import java.time.LocalDateTime.now
-import java.util.*
 import kotlin.concurrent.timer
+import kotlin.coroutines.CoroutineContext
 import kotlin.system.exitProcess
 
 private val logger = KotlinLogging.logger {}
@@ -87,7 +74,10 @@ private const val CLASS_AUTO_COMPLETER = "auto-completer"
 private const val CLASS_ON_DRAG        = "table-row-on-drag"
 private const val DEFAULT_LINK_EDITOR_WIDTH = 400.0
 
-class Main: View("application.title".message()) {
+class Main: View("application.title".message()), CoroutineScope {
+
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.JavaFx
 
     val linkService: LinkService by di()
     val linkExecutor: LinkExecutor by di()
@@ -165,9 +155,21 @@ class Main: View("application.title".message()) {
                 logger.error(e)
             }
         }
+
         initSearchFilter(Context.config.lastFocusedRow)
-        readLinks()
+
+        runSync {
+            val total = linkService.countAll()
+            linkService.loadAll { i, link ->
+                NPreloader.notifyProgress(i+1, total, link.title)
+            }
+        }
+
+        printSearchResult()
+        NPreloader.close()
+
         logger.debug { ">> end before show" }
+
     }
 
     override fun onUndock() {
@@ -322,21 +324,32 @@ class Main: View("application.title".message()) {
 
         menuImportData.setOnAction {
             linkService.openImportPicker()?.let { file ->
-                linkService.importData(file)
-                readLinks()
-                Dialog.alert( "msg.info.009".message().format(file) )
+                runSync {
+                    launch {
+                        linkService.importData(file)
+                        val total = linkService.countAll()
+                        ProgressDialog("msg.link.reload".message()).runSync {
+                            linkService.loadAll { i, link ->
+                                it.updateMessage(link.title)
+                                it.updateProgress(i + 1, total)
+                                it.updateSubMessageAsProgress()
+                            }
+                        }
+                        Dialog.alert( "msg.success.import".message().format(file) )
+                    }
+                }
             }
         }
 
         menuExportData.setOnAction {
             linkService.openExportPicker()?.let { file ->
                 linkService.exportData(file)
-                Dialog.alert( "msg.info.010".message().format(file) )
+                Dialog.alert( "msg.success.export".message().format(file) )
             }
         }
 
         menuDeleteAll.setOnAction {
-            if(Dialog.confirm("msg.confirm.002".message())) {
+            if(Dialog.confirm("msg.confirm.delete.all".message())) {
                 linkService.deleteAll()
                 clearDetail()
             }
@@ -610,33 +623,8 @@ class Main: View("application.title".message()) {
         event.isMetaDown
     )
 
-    fun readLinks() {
-        linkService.links.clear()
-        val list = LinkedList<Link>()
-        var cnt = 0
-
-        runBlocking {
-            suspendedTransactionAsync(Dispatchers.JavaFx) {
-                Links.select(Op.TRUE).orderBy(Links.title, ASC).iterator().forEach { row ->
-                    logger.debug { ">> cnt: ${++cnt}" }
-                    NPreloader.notifyProgress(cnt, 42, row.toLink().title)
-                    list.add(row.toLink())
-                    delay(10)
-                }
-                linkService.links.addAll(list)
-                printSearchResult()
-                logger.debug { ">> read all links !" }
-                NPreloader.close()
-            }
-//            suspendedTransactionAsync(Dispatchers.JavaFx) {
-//
-//            }
-        }
-
-    }
-
     private fun clearDetail() {
-
+        // reset description
         descTitle.text               = null
         descShowConsole.isSelected   = false
         descSeqExecution.isSelected  = false
@@ -648,12 +636,11 @@ class Main: View("application.title".message()) {
         descCmdPrev.text             = null
         descCmdNext.text             = null
         descIcon.image               = null
-
+        // reset button status
         buttonNew.isDisable    = false
         buttonDelete.isDisable = false
         buttonCopy.isDisable   = false
         buttonSave.isDisable   = false
-
     }
 
     fun drawDetail(link: Link?) {
@@ -696,7 +683,7 @@ class Main: View("application.title".message()) {
 
         val summary = if( ! link.group.isNullOrEmpty() ) "[${link.group}] ${link.title}" else "${link.title}"
 
-        if( ! Dialog.confirm("msg.confirm.001".message().format(summary)) ) return
+        if( ! Dialog.confirm("msg.confirm.delete".message().format(summary)) ) return
 
         val prev = tableMain.focused
 
@@ -730,7 +717,7 @@ class Main: View("application.title".message()) {
                 tableMain.selectBy(it)
                 tableMain.scrollBy(it)
                 printSearchResult()
-                printStatus("msg.info.013".message())
+                printStatus("msg.alert.save.link".message())
             }
 
             buttonDelete.isDisable = false
@@ -743,7 +730,7 @@ class Main: View("application.title".message()) {
         if( detail == null || detail!!.id <= 0 ) return
         drawDetail( detail!!.clone() )
         descTitle.requestFocus()
-        printStatus("msg.info.014".message())
+        printStatus("msg.alert.copy.link".message())
         buttonDelete.isDisable = true
         buttonCopy.isDisable = true
         buttonSave.isDisable = false
@@ -752,7 +739,7 @@ class Main: View("application.title".message()) {
     fun createDetail() {
         drawDetail(Link( icon = ICON_NEW.toImage() ))
         descGroupName.requestFocus()
-        printStatus("msg.info.015".message())
+        printStatus("msg.alert.create.link".message())
         buttonDelete.isDisable = true
         buttonCopy.isDisable = true
         buttonSave.isDisable = false
@@ -766,7 +753,7 @@ class Main: View("application.title".message()) {
         labelStatus.text = status ?: ""
     }
 
-    fun printSearchResult() = printStatus("msg.info.005".message().format(
+    fun printSearchResult() = printStatus("msg.status.filter".message().format(
         linkService.links.size,
         linkService.links.items.size
     ))
