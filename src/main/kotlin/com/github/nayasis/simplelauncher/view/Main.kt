@@ -79,8 +79,8 @@ class Main: View("application.title".message()), CoroutineScope {
     override val coroutineContext: CoroutineContext
         get() = Dispatchers.JavaFx
 
-    val linkService: LinkService by di()
-    val linkExecutor: LinkExecutor by di()
+    private val linkService: LinkService by di()
+    private val linkExecutor: LinkExecutor by di()
 
     override val root: AnchorPane by fxml("/view/main/main.fxml")
 
@@ -116,6 +116,7 @@ class Main: View("application.title".message()), CoroutineScope {
     val descShowConsole: CheckBox by fxid()
     val descSeqExecution: CheckBox by fxid()
     val descTitle: TextField by fxid()
+    val descHashtag: TextField by fxid()
     val descDescription: TextArea by fxid()
     val descIcon: ImageView by fxid()
     val descExecPath: TextField by fxid()
@@ -626,6 +627,7 @@ class Main: View("application.title".message()), CoroutineScope {
     private fun clearDetail() {
         // reset description
         descTitle.text               = null
+        descHashtag.text                 = null
         descShowConsole.isSelected   = false
         descSeqExecution.isSelected  = false
         descGroupName.text           = null
@@ -648,6 +650,7 @@ class Main: View("application.title".message()), CoroutineScope {
         detail = link
         with(detail!!) {
             descTitle.text               = title
+            descHashtag.text                 = hashtag
             descShowConsole.isSelected   = showConsole
             descSeqExecution.isSelected  = executeEach
             descGroupName.text           = group
@@ -700,6 +703,7 @@ class Main: View("application.title".message()), CoroutineScope {
         detail?.let {
 
             it.title         = descTitle.text?.trim()
+            it.hashtag       = descHashtag.text?.trim()
             it.showConsole   = descShowConsole.isSelected
             it.executeEach   = descSeqExecution.isSelected
             it.group         = descGroupName.text?.trim()
@@ -711,7 +715,7 @@ class Main: View("application.title".message()), CoroutineScope {
             it.commandNext   = descCmdNext.text
             it.icon          = descIcon.image
 
-            linkService.save(it)
+            linkService.save(it.indexing())
 
             runLater {
                 tableMain.selectBy(it)

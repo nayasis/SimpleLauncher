@@ -33,6 +33,7 @@ table.lastUsedDt            = 사용일자
 table.execCount             = 실행수
 desc.groupName              = 그룹
 desc.title                  = 타이틀
+desc.hashtag                = 해시태그
 desc.execPath               = 경로
 desc.arg                    = 인자
 desc.execCmdPrefix          = 선행 명령어

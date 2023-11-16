@@ -74,7 +74,7 @@ data class Link(
     var commandPrev: String? = null,
     var commandNext: String? = null,
     var description: String? = null,
-    var hashtag: LinkedHashSet<String>? = null,
+    var hashtag: String? = null,
     var executeCount: Int = 0,
     var executedAt: LocalDateTime? = null,
     var createdAt: LocalDateTime = LocalDateTime.now(),
@@ -88,7 +88,7 @@ data class Link(
     val keywordGroup: HashSet<String> = HashSet()
 
     init {
-        generateKeyword()
+        indexing()
     }
 
     @JsonIgnore
@@ -165,11 +165,11 @@ data class Link(
 
     }
 
-    fun generateKeyword(): Link {
+    fun indexing(): Link {
         keywordTitle.run {
             clear()
             title.ifNotBlank { addAll(it.toKeyword()) }
-            hashtag.ifNotEmpty { addAll(it) }
+            hashtag.ifNotEmpty { addAll(it.toKeyword()) }
         }
         keywordGroup.run {
             group.ifNotBlank { addAll(it.toKeyword()) }
@@ -191,7 +191,7 @@ data class Link(
             commandPrev   = it.commandPrev,
             commandNext   = it.commandNext,
             description   = it.description,
-            hashtag       = it.hashtag?.let { LinkedHashSet(it) },
+            hashtag       = it.hashtag,
             executeCount  = it.executeCount,
             executedAt    = it.executedAt,
             createdAt     = it.createdAt,
