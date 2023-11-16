@@ -21,6 +21,7 @@ import com.github.nayasis.simplelauncher.model.save
 import com.github.nayasis.simplelauncher.model.toLink
 import com.github.nayasis.simplelauncher.model.vo.JsonLink
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.jetbrains.exposed.dao.id.EntityID
@@ -66,12 +67,25 @@ class LinkService {
         }
     }
 
-    fun loadAll() {
-        links.clear()
+    fun countAll(): Long {
+        return transaction {
+            Links.selectAll().count()
+        }
+    }
+
+    fun loadAll(worker: ((index: Int, link: Link) -> Unit)? = null) {
+        var i = 0
+        val links = LinkedList<Link>()
         transaction {
-            Links.selectAll().orderBy(Links.title, SortOrder.ASC).map { it.toLink() }
-        }.let {
-            links.addAll(it)
+            Links.selectAll().orderBy(Links.title, SortOrder.ASC).iterator().forEach { row ->
+                val link = row.toLink()
+                links.add(link)
+                worker?.let { it.invoke(++i, link) }
+            }
+        }
+        this.links.run {
+            clear()
+            addAll(links)
         }
     }
 
@@ -102,16 +116,16 @@ class LinkService {
     }
 
     fun openImportPicker(): Path? =
-        filePicker("msg.info.004","*.sl","msg.info.011")
+        filePicker("msg.file.import","*.sl","msg.file.import.description")
 
     fun openExportPicker(): Path? =
-        filePicker("msg.info.003","*.sl","msg.info.011", FileChooserMode.Save)
+        filePicker("msg.file.export","*.sl","msg.file.import.description", FileChooserMode.Save)
 
     fun openIconPicker(): Path? =
-        filePicker("msg.info.002","*.*","msg.info.012")
+        filePicker("msg.file.icon","*.*","msg.file.icon.description")
 
     fun openExecutorPicker(): Path? =
-        filePicker("msg.info.001","*.*","msg.info.006")
+        filePicker("msg.file.add","*.*","msg.file.add.description")
 
     private fun filePicker(title: String, extension: String, description: String, mode: FileChooserMode = FileChooserMode.Single): Path? {
         return Dialog.filePicker(
@@ -130,7 +144,7 @@ class LinkService {
     fun openFolder(link: Link) {
         link.toPath()?.directory?.let {
             if( it.notExists() ) {
-                Dialog.error("msg.err.005".message().format(it) )
+                Dialog.error("msg.error.no.directory".message().format(it) )
             } else {
                 Desktop.open(it.toFile())
             }
