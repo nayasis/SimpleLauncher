@@ -126,9 +126,9 @@ data class Link(
         }
     }
 
-    private fun bindLink(link: File) {
+    private fun bindLink(file: File) {
         if( ! Platforms.isWindows ) return
-        val link = ShellLink(link)
+        val link = ShellLink(file)
         path = link.linkInfo.localBasePath
         relativePath = link.relativePath
         argument = link.cmdArgs

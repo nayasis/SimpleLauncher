@@ -1,17 +1,13 @@
-import org.gradle.internal.impldep.org.fusesource.jansi.AnsiRenderer.test
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
 	application
-	id("org.springframework.boot") version "2.6.3"
-//	id("io.spring.dependency-management") version "1.0.11.RELEASE"
 	id("org.openjfx.javafxplugin") version "0.0.14"
 	id("org.beryx.runtime") version "1.12.6"
 	kotlin("jvm") version "1.8.20"
 	kotlin("plugin.jpa") version "1.8.20"
 	kotlin("plugin.noarg") version "1.8.20"
 	kotlin("plugin.allopen") version "1.8.20"
-	kotlin("plugin.spring") version "1.8.20"
 }
 
 allOpen {
@@ -58,14 +54,11 @@ repositories {
 	maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
 }
 
-//val javaFXOptions = the<org.openjfx.gradle.JavaFXOptions>()
-
 dependencies {
 
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.7.3")
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 	implementation("org.jetbrains.exposed:exposed-core:0.44.1")
-//	implementation("org.jetbrains.exposed:exposed-dao:0.44.1")
 	implementation("org.jetbrains.exposed:exposed-java-time:0.44.1")
 	implementation("org.jetbrains.exposed:exposed-jdbc:0.44.1")
 
@@ -84,15 +77,6 @@ dependencies {
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
 	implementation("ch.qos.logback:logback-classic:1.4.11")
 
-//	implementation("org.springframework.boot:spring-boot-starter")
-//	implementation("org.springframework.boot:spring-boot-starter-aop")
-//	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-//	implementation("org.springframework.boot:spring-boot-starter-cache")
-//	implementation("org.springframework.boot:spring-boot-starter-validation")
-//	testImplementation("org.springframework.boot:spring-boot-starter-test") {
-//		exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
-//		exclude(group="com.vaadin.external.google",module="android-json")
-//	}
 	implementation("com.h2database:h2:2.2.224")
 
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
