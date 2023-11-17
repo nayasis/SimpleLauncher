@@ -25,7 +25,7 @@ import com.github.nayasis.kotlin.javafx.misc.Desktop
 import com.github.nayasis.kotlin.javafx.misc.runSync
 import com.github.nayasis.kotlin.javafx.misc.set
 import com.github.nayasis.kotlin.javafx.misc.toImage
-import com.github.nayasis.kotlin.javafx.preloader.NPreloader
+import com.github.nayasis.kotlin.javafx.preloader.BasePreloader
 import com.github.nayasis.kotlin.javafx.property.StageProperty
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.kotlin.javafx.stage.Localizator
@@ -162,12 +162,12 @@ class Main: View("application.title".message()), CoroutineScope {
         runSync {
             val total = linkService.countAll()
             linkService.loadAll { i, link ->
-                NPreloader.notifyProgress(i+1, total, link.title)
+                BasePreloader.notifyProgress(i+1, total, link.title)
             }
         }
 
         printSearchResult()
-        NPreloader.close()
+        BasePreloader.close()
 
         logger.debug { ">> end before show" }
 
@@ -177,6 +177,7 @@ class Main: View("application.title".message()), CoroutineScope {
         Context.config.run {
             lastFocusedRow = tableMain.focused.row
             stageMain = StageProperty(currentStage!!)
+            save()
         }
         exitProcess(0)
     }
@@ -328,14 +329,15 @@ class Main: View("application.title".message()), CoroutineScope {
                 runSync {
                     launch {
                         linkService.importData(file)
-                        val total = linkService.countAll()
-                        ProgressDialog("msg.link.reload".message()).runSync {
-                            linkService.loadAll { i, link ->
-                                it.updateMessage(link.title)
-                                it.updateProgress(i + 1, total)
-                                it.updateSubMessageAsProgress()
-                            }
-                        }
+                        linkService.loadAll()
+//                        val total = linkService.countAll()
+//                        ProgressDialog("msg.link.reload".message()).runSync {
+//                            linkService.loadAll { i, link ->
+//                                it.updateMessage(link.title)
+//                                it.updateProgress(i + 1, total)
+//                                it.updateSubMessageAsProgress()
+//                            }
+//                        }
                         Dialog.alert( "msg.success.import".message().format(file) )
                     }
                 }
