@@ -4,23 +4,7 @@ plugins {
 	application
 	id("org.openjfx.javafxplugin") version "0.0.14"
 	id("org.beryx.runtime") version "1.12.6"
-	kotlin("jvm") version "1.8.20"
-	kotlin("plugin.jpa") version "1.8.20"
-	kotlin("plugin.noarg") version "1.8.20"
-	kotlin("plugin.allopen") version "1.8.20"
-}
-
-allOpen {
-	annotation("javax.persistence.Entity")
-	annotation("javax.persistence.MappedSuperclass")
-	annotation("javax.persistence.Embeddable")
-}
-noArg {
-	annotation("javax.persistence.Entity")
-	annotation("javax.persistence.MappedSuperclass")
-	annotation("javax.persistence.Embeddable")
-	annotation("com.github.nayasis.kotlin.spring.kotlin.annotation.NoArg")
-	invokeInitializers = true
+	kotlin("jvm") version "1.9.20"
 }
 
 application {
@@ -63,16 +47,13 @@ dependencies {
 	implementation("org.jetbrains.exposed:exposed-jdbc:0.44.1")
 
 	implementation("com.github.nayasis:basica-kt:0.3.1")
-//	implementation("com.github.nayasis:basica-kt:develop-SNAPSHOT"){ isChanging = true }
-//	implementation("com.github.nayasis:basicafx-kt:0.1.20")
-//	implementation("com.github.nayasis:basicafx-kt:develop-SNAPSHOT"){ isChanging = true }
-	implementation("com.github.nayasis:basicafx-kt:0.2.1-SNAPSHOT")
+	implementation("com.github.nayasis:basicafx-kt:0.2.1")
 	implementation("no.tornado:tornadofx:1.7.20") {
 		exclude("org.jetbrains.kotlin")
 	}
 	implementation("org.controlsfx:controlsfx:11.1.0")
 	implementation("com.github.vatbub:mslinks:1.0.6.2")
-	implementation("com.github.nayasis:terminalfx-kt:0.1.2")
+	implementation("com.github.nayasis:terminalfx-kt:0.2.1")
 	implementation("commons-cli:commons-cli:1.4")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
 	implementation("ch.qos.logback:logback-classic:1.4.11")
@@ -85,6 +66,7 @@ dependencies {
 	implementation("au.com.console:kassava:2.1.0")
 
 	implementation("de.jensd:fontawesomefx:8.9")
+
 	testImplementation("org.apache.pdfbox:pdfbox:2.0.24")
 	testImplementation("com.levigo.jbig2:levigo-jbig2-imageio:2.0")
 	testImplementation("org.apache.httpcomponents:httpclient:4.5.13")
