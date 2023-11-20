@@ -4,6 +4,7 @@ import au.com.console.kassava.kotlinToString
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.github.nayasis.kotlin.basica.core.extension.ifEmpty
 import com.github.nayasis.kotlin.basica.core.extension.ifNotEmpty
+import com.github.nayasis.kotlin.basica.core.extension.isEmpty
 import com.github.nayasis.kotlin.basica.core.io.Paths
 import com.github.nayasis.kotlin.basica.core.io.exists
 import com.github.nayasis.kotlin.basica.core.io.invariantPath
@@ -154,7 +155,9 @@ data class Link(
         p = Paths.applicationRoot / path.ifEmpty { "" }
         if(p.exists()) return p
 
-        p = Paths.applicationRoot / relativePath.ifEmpty { "" }
+        if(relativePath.isEmpty()) return null
+
+        p = Paths.applicationRoot / relativePath!!
         if(p.exists()) {
             path = p.invariantPath
             Context.linkService.save(this, false)
