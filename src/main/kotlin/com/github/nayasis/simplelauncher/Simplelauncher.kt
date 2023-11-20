@@ -6,7 +6,6 @@ import com.github.nayasis.kotlin.basica.net.Networks
 import com.github.nayasis.kotlin.javafx.app.FxApp
 import com.github.nayasis.kotlin.javafx.preloader.BasePreloader
 import com.github.nayasis.kotlin.javafx.stage.Stages
-import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.model.Links
 import com.github.nayasis.simplelauncher.service.LinkExecutor
 import com.github.nayasis.simplelauncher.service.LinkService
