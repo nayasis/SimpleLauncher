@@ -2,7 +2,7 @@
 
 package com.github.nayasis.simplelauncher.view
 
-import com.github.nayasis.kotlin.basica.core.extention.ifNull
+import com.github.nayasis.kotlin.basica.core.extension.ifNull
 import com.github.nayasis.kotlin.basica.core.localdate.between
 import com.github.nayasis.kotlin.basica.core.localdate.toString
 import com.github.nayasis.kotlin.basica.core.string.message
@@ -14,21 +14,26 @@ import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
 import com.github.nayasis.kotlin.javafx.control.tableview.column.cellValueByDefault
 import com.github.nayasis.kotlin.javafx.control.tableview.column.setAlign
 import com.github.nayasis.kotlin.javafx.control.tableview.focus
+import com.github.nayasis.kotlin.javafx.control.tableview.focusBy
 import com.github.nayasis.kotlin.javafx.control.tableview.focused
+import com.github.nayasis.kotlin.javafx.control.tableview.scrollBy
 import com.github.nayasis.kotlin.javafx.control.tableview.select
+import com.github.nayasis.kotlin.javafx.control.tableview.selectBy
 import com.github.nayasis.kotlin.javafx.control.tableview.visibleRows
 import com.github.nayasis.kotlin.javafx.geometry.Insets
 import com.github.nayasis.kotlin.javafx.misc.Desktop
+import com.github.nayasis.kotlin.javafx.misc.runSync
 import com.github.nayasis.kotlin.javafx.misc.set
+import com.github.nayasis.kotlin.javafx.misc.toImage
+import com.github.nayasis.kotlin.javafx.preloader.BasePreloader
 import com.github.nayasis.kotlin.javafx.property.StageProperty
-import com.github.nayasis.kotlin.javafx.spring.SpringFxApp.Companion.closePreloader
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.kotlin.javafx.stage.Localizator
 import com.github.nayasis.kotlin.javafx.stage.loadDefaultIcon
+import com.github.nayasis.kotlin.javafx.stage.progress.ProgressDialog
 import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.common.ICON_NEW
-import com.github.nayasis.simplelauncher.jpa.entity.Link
-import com.github.nayasis.simplelauncher.jpa.repository.LinkRepository
+import com.github.nayasis.simplelauncher.model.Link
 import com.github.nayasis.simplelauncher.service.LinkExecutor
 import com.github.nayasis.simplelauncher.service.LinkService
 import com.github.nayasis.simplelauncher.service.TextMatcher
@@ -50,12 +55,17 @@ import javafx.scene.input.TransferMode
 import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.javafx.JavaFx
+import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import tornadofx.*
 import java.io.File
 import java.time.LocalDateTime
 import java.time.LocalDateTime.now
 import kotlin.concurrent.timer
+import kotlin.coroutines.CoroutineContext
 import kotlin.system.exitProcess
 
 private val logger = KotlinLogging.logger {}
@@ -64,11 +74,13 @@ private const val CLASS_AUTO_COMPLETER = "auto-completer"
 private const val CLASS_ON_DRAG        = "table-row-on-drag"
 private const val DEFAULT_LINK_EDITOR_WIDTH = 400.0
 
-class Main: View("application.title".message()) {
+class Main: View("application.title".message()), CoroutineScope {
 
-    val linkRepository: LinkRepository by di()
-    val linkService: LinkService by di()
-    val linkExecutor: LinkExecutor by di()
+    override val coroutineContext: CoroutineContext
+        get() = Dispatchers.JavaFx
+
+    private val linkService: LinkService by di()
+    private val linkExecutor: LinkExecutor by di()
 
     override val root: AnchorPane by fxml("/view/main/main.fxml")
 
@@ -104,6 +116,7 @@ class Main: View("application.title".message()) {
     val descShowConsole: CheckBox by fxid()
     val descSeqExecution: CheckBox by fxid()
     val descTitle: TextField by fxid()
+    val descHashtag: TextField by fxid()
     val descDescription: TextArea by fxid()
     val descIcon: ImageView by fxid()
     val descExecPath: TextField by fxid()
@@ -116,8 +129,6 @@ class Main: View("application.title".message()) {
     val labelCmd: Label by fxid()
 
     var detail: Link? = null
-
-    val links = SortedFilteredList(mutableListOf<Link>().asObservable())
 
     val keywordMatcher = TextMatcher()
     val groupMatcher = TextMatcher()
@@ -134,6 +145,7 @@ class Main: View("application.title".message()) {
     }
 
     override fun onBeforeShow() {
+        logger.debug { ">> start before show" }
         currentStage?.loadDefaultIcon()
         Context.config.stageMain?.let {
             try {
@@ -144,8 +156,21 @@ class Main: View("application.title".message()) {
                 logger.error(e)
             }
         }
+
         initSearchFilter(Context.config.lastFocusedRow)
-        closePreloader()
+
+        runSync {
+            val total = linkService.countAll()
+            linkService.loadAll { i, link ->
+                BasePreloader.notifyProgress(i+1, total, link.title)
+            }
+        }
+
+        printSearchResult()
+        BasePreloader.close()
+
+        logger.debug { ">> end before show" }
+
     }
 
     override fun onUndock() {
@@ -163,7 +188,7 @@ class Main: View("application.title".message()) {
         colTitle.cellValueByDefault().cellFormat {
             graphic = hbox {
                 imageview {
-                    image = it.getIconImage()
+                    image = it.icon
                     hmargin = Insets(0,0,0,2)
                 }
                 label {
@@ -176,7 +201,7 @@ class Main: View("application.title".message()) {
 
         colTitle.setComparator { o1, o2 -> o1.title.ifNull{""}.compareTo(o2.title.ifNull{""}) }
 
-        colLastUsedDt.cellValue(Link::lastExecDate).cellFormat {
+        colLastUsedDt.cellValue(Link::executedAt).cellFormat {
             graphic = label {
                 text = it?.toString("YYYY-MM-DD HH:MI:SS")
             }
@@ -184,7 +209,7 @@ class Main: View("application.title".message()) {
         }
         colExecCount.cellValue(Link::executeCount).setAlign(Pos.CENTER_RIGHT)
 
-        links.bindTo(tableMain)
+        linkService.links.bindTo(tableMain)
 
 //        colGroup.remainingWidth()
 //        colTitle.remainingWidth()
@@ -248,6 +273,7 @@ class Main: View("application.title".message()) {
                     event.run {
                         dragboard.let {
                             if( it.hasFiles() ) {
+                                tableMain.focusBy(row.item)
                                 linkExecutor.run(row.item,it.files)
                             }
                         }
@@ -257,8 +283,6 @@ class Main: View("application.title".message()) {
                 }
             }
         }
-
-        readLinks()
 
         currentStage?.requestFocus()
 
@@ -302,23 +326,34 @@ class Main: View("application.title".message()) {
 
         menuImportData.setOnAction {
             linkService.openImportPicker()?.let { file ->
-                linkService.importData(file)
-                readLinks()
-                Dialog.alert( "msg.info.009".message().format(file) )
+                runSync {
+                    launch {
+                        linkService.importData(file)
+                        linkService.loadAll()
+//                        val total = linkService.countAll()
+//                        ProgressDialog("msg.link.reload".message()).runSync {
+//                            linkService.loadAll { i, link ->
+//                                it.updateMessage(link.title)
+//                                it.updateProgress(i + 1, total)
+//                                it.updateSubMessageAsProgress()
+//                            }
+//                        }
+                        Dialog.alert( "msg.success.import".message().format(file) )
+                    }
+                }
             }
         }
 
         menuExportData.setOnAction {
             linkService.openExportPicker()?.let { file ->
                 linkService.exportData(file)
-                Dialog.alert( "msg.info.010".message().format(file) )
+                Dialog.alert( "msg.success.export".message().format(file) )
             }
         }
 
         menuDeleteAll.setOnAction {
-            if(Dialog.confirm("msg.confirm.002".message())) {
+            if(Dialog.confirm("msg.confirm.delete.all".message())) {
                 linkService.deleteAll()
-                links.clear()
                 clearDetail()
             }
         }
@@ -409,8 +444,8 @@ class Main: View("application.title".message()) {
         }
         buttonAddFile.setOnMouseClicked { e ->
             if( e.button == MouseButton.PRIMARY ) {
-                linkService.openExecutorPicker()?.let { file ->
-                    drawDetailForAdd(Link(file))
+                linkService.openExecutorPicker()?.let { path ->
+                    drawDetailForAdd(Link(path.toFile()))
                 }
             }
         }
@@ -490,11 +525,10 @@ class Main: View("application.title".message()) {
     private fun setSearchFilter() {
         val hasKeyword = inputKeyword.text.isNotBlank()
         val hasGroup   = inputGroup.text.isNotBlank()
-        when {
-            !hasGroup && !hasKeyword -> links.predicate = { true }
-            !hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsAll) }
-             hasGroup && !hasKeyword -> links.predicate = { groupMatcher.isMatch(it.wordsGroup) }
-             hasGroup &&  hasKeyword -> links.predicate = { keywordMatcher.isMatch(it.wordsKeyword) && groupMatcher.isMatch(it.wordsGroup) }
+        linkService.links.predicate = {
+            val inKeyword = ! hasKeyword || keywordMatcher.isMatch(it.keywordTitle)
+            val inGroup   = ! hasGroup   || groupMatcher.isMatch(it.keywordGroup)
+            inKeyword && inGroup
         }
         printSearchResult()
     }
@@ -568,7 +602,6 @@ class Main: View("application.title".message()) {
             e.acceptTransferModes(TransferMode.COPY)
             true
         } else {
-    //            e.consume()
             false
         }
     }
@@ -593,26 +626,35 @@ class Main: View("application.title".message()) {
         event.isMetaDown
     )
 
-    fun readLinks() {
-        links.apply {
-            clear()
-            addAll(linkRepository.findAllByOrderByTitle())
-        }
-        printSearchResult()
-    }
-
     private fun clearDetail() {
-        drawDetail(Link())
-        buttonSave.isDisable = false
+        // reset description
+        descTitle.text               = null
+        descHashtag.text                 = null
+        descShowConsole.isSelected   = false
+        descSeqExecution.isSelected  = false
+        descGroupName.text           = null
+        descDescription.text         = null
+        descExecPath.text            = null
+        descArg.text                 = null
+        descCmdPrefix.text           = null
+        descCmdPrev.text             = null
+        descCmdNext.text             = null
+        descIcon.image               = null
+        // reset button status
+        buttonNew.isDisable    = false
+        buttonDelete.isDisable = false
+        buttonCopy.isDisable   = false
+        buttonSave.isDisable   = false
     }
 
     fun drawDetail(link: Link?) {
-        if( link == null || (link.id != 0L && detail?.id == link.id) ) return
+        if( link == null || detail?.id == link.id ) return
         detail = link
         with(detail!!) {
             descTitle.text               = title
+            descHashtag.text                 = hashtag
             descShowConsole.isSelected   = showConsole
-            descSeqExecution.isSelected = eachExecution
+            descSeqExecution.isSelected  = executeEach
             descGroupName.text           = group
             descDescription.text         = description
             descExecPath.text            = path
@@ -620,7 +662,7 @@ class Main: View("application.title".message()) {
             descCmdPrefix.text           = commandPrefix
             descCmdPrev.text             = commandPrev
             descCmdNext.text             = commandNext
-            descIcon.image               = getIconImage()
+            descIcon.image               = icon
         }
         buttonNew.isDisable    = false
         buttonDelete.isDisable = false
@@ -646,12 +688,11 @@ class Main: View("application.title".message()) {
 
         val summary = if( ! link.group.isNullOrEmpty() ) "[${link.group}] ${link.title}" else "${link.title}"
 
-        if( ! Dialog.confirm("msg.confirm.001".message().format(summary)) ) return
+        if( ! Dialog.confirm("msg.confirm.delete".message().format(summary)) ) return
 
         val prev = tableMain.focused
 
         linkService.delete(link)
-        links.remove(link)
 
         clearDetail()
         tableMain.select(prev.row)
@@ -662,10 +703,11 @@ class Main: View("application.title".message()) {
 
     fun saveDetail() {
         detail?.let {
-            val isNew = it.id == 0L
+
             it.title         = descTitle.text?.trim()
+            it.hashtag       = descHashtag.text?.trim()
             it.showConsole   = descShowConsole.isSelected
-            it.eachExecution = descSeqExecution.isSelected
+            it.executeEach   = descSeqExecution.isSelected
             it.group         = descGroupName.text?.trim()
             it.description   = descDescription.text?.trim()
             it.path          = descExecPath.text?.trim()
@@ -673,16 +715,17 @@ class Main: View("application.title".message()) {
             it.commandPrefix = descCmdPrefix.text?.trim()
             it.commandPrev   = descCmdPrev.text
             it.commandNext   = descCmdNext.text
-            it.setIcon(descIcon.image)
-            linkService.save(it)
-            if(isNew) {
-                links.add(it)
-                tableMain.refresh()
+            it.icon          = descIcon.image
+
+            linkService.save(it.indexing())
+
+            runLater {
+                tableMain.selectBy(it)
+                tableMain.scrollBy(it)
                 printSearchResult()
-            } else {
-                tableMain.refresh()
+                printStatus("msg.alert.save.link".message())
             }
-            printStatus("msg.info.013".message())
+
             buttonDelete.isDisable = false
             buttonCopy.isDisable = false
             buttonSave.isDisable = true
@@ -690,19 +733,19 @@ class Main: View("application.title".message()) {
     }
 
     fun copyDetail() {
-        if( detail == null || detail?.id == 0L ) return
-        drawDetail( detail!!.clone().apply { id = 0L } )
+        if( detail == null || detail!!.id <= 0 ) return
+        drawDetail( detail!!.clone() )
         descTitle.requestFocus()
-        printStatus("msg.info.014".message())
+        printStatus("msg.alert.copy.link".message())
         buttonDelete.isDisable = true
         buttonCopy.isDisable = true
         buttonSave.isDisable = false
     }
 
     fun createDetail() {
-        drawDetail(Link().apply { icon = ICON_NEW })
+        drawDetail(Link( icon = ICON_NEW.toImage() ))
         descGroupName.requestFocus()
-        printStatus("msg.info.015".message())
+        printStatus("msg.alert.create.link".message())
         buttonDelete.isDisable = true
         buttonCopy.isDisable = true
         buttonSave.isDisable = false
@@ -716,7 +759,10 @@ class Main: View("application.title".message()) {
         labelStatus.text = status ?: ""
     }
 
-    fun printSearchResult() = printStatus("msg.info.005".message().format(links.size, links.items.size) )
+    fun printSearchResult() = printStatus("msg.status.filter".message().format(
+        linkService.links.size,
+        linkService.links.items.size
+    ))
 
 }
 

@@ -1,6 +1,38 @@
 spring:
-  profiles:
-    active: merong
+  output:
+    ansi:
+      enabled: always
+  datasource:
+    url: jdbc:h2:file:./db/simplelauncher
+    driver-class-name: org.h2.Driver
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      auto-commit: false
+      minimum-idle: 1
+      maximum-pool-size: 3
+      connection-timeout: 600000
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: false
+  main:
+    lazy-initialization: true
+logging:
+  pattern:
+    console: "%d{HH:mm:ss.SSS} %highlight(%-5level) %green([%12(%.-12(%t))]) %yellow(%50(\\(%F:%L\\))) %msg%n"
+  level:
+    root: info
+    org.hibernate.SQL: error
+    org.hibernate.type.descriptor.sql.BasicBinder: error
+    com.github.nayasis: debug
+    com.github.nayasis.simplelauncher: debug
+    com.jediterm.terminal.emulator: error
+#simplalauncher:
+#  locale: ko
 ---
 spring:
   application:
