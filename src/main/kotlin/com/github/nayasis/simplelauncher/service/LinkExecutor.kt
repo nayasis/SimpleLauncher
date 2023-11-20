@@ -3,9 +3,8 @@ package com.github.nayasis.simplelauncher.service
 import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.core.string.tokenize
 import com.github.nayasis.kotlin.basica.exec.Command
-import com.github.nayasis.kotlin.javafx.control.tableview.focus
-import com.github.nayasis.kotlin.javafx.control.tableview.focused
 import com.github.nayasis.kotlin.javafx.misc.runSync
+import com.github.nayasis.kotlin.javafx.property.InsetProperty
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.simplelauncher.common.Context.Companion.config
 import com.github.nayasis.simplelauncher.common.Context.Companion.linkService
