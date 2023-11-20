@@ -16,10 +16,8 @@ internal class KeywordParserTest {
     }
 
     private fun filter(list: List<String>, searchWord: String): List<String> {
-        val keyword = parser.parse(searchWord)
-            .also { if(it==null) return emptyList() }!!
-        return list.filter { title ->
-            keyword.match { pattern -> title.find(pattern) } }
+        val keyword = parser.parse(searchWord).also { if(it.isEmpty()) return emptyList() }
+        return list.filter { title -> keyword.match { pattern -> title.find(pattern) } }
     }
 
     @Test

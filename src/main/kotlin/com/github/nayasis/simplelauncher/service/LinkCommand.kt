@@ -10,7 +10,7 @@ import com.github.nayasis.kotlin.basica.core.string.Formatter
 import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.exec.Command
 import com.github.nayasis.simplelauncher.common.wrapDoubleQuote
-import com.github.nayasis.simplelauncher.jpa.entity.Link
+import com.github.nayasis.simplelauncher.model.Link
 import java.io.File
 
 private val PATTERN_KEYWORD = ExtractPattern("\\$\\{([^\\s{}].*?)}".toPattern())
@@ -100,7 +100,7 @@ class LinkCommand {
             .append(commandPrefix)
             .appendRaw(path)
             .append(argument)
-            .also { if(it.isEmpty()) throw IllegalArgumentException("msg.err.007".message().format(title)) }
+            .also { if(it.isEmpty()) throw IllegalArgumentException("msg.error.no.command".message().format(title)) }
     }
 
 }

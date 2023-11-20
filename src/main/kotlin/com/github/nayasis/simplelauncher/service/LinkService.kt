@@ -12,63 +12,116 @@ import com.github.nayasis.kotlin.javafx.misc.Desktop
 import com.github.nayasis.kotlin.javafx.misc.set
 import com.github.nayasis.kotlin.javafx.stage.Dialog
 import com.github.nayasis.simplelauncher.common.Context
-import com.github.nayasis.simplelauncher.jpa.entity.Link
-import com.github.nayasis.simplelauncher.jpa.repository.LinkRepository
-import com.github.nayasis.simplelauncher.jpa.vo.JsonLink
+import com.github.nayasis.simplelauncher.model.Link
+import com.github.nayasis.simplelauncher.model.Links
+import com.github.nayasis.simplelauncher.model.from
+import com.github.nayasis.simplelauncher.model.save
+import com.github.nayasis.simplelauncher.model.toLink
+import com.github.nayasis.simplelauncher.model.vo.JsonLink
 import mu.KotlinLogging
-import org.springframework.stereotype.Component
-import org.springframework.transaction.annotation.Transactional
+import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import org.jetbrains.exposed.sql.deleteAll
+import org.jetbrains.exposed.sql.deleteWhere
+import org.jetbrains.exposed.sql.insert
+import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.transactions.transaction
 import tornadofx.FileChooserMode
-import java.io.File
+import tornadofx.SortedFilteredList
+import tornadofx.asObservable
+import tornadofx.runLater
 import java.nio.file.Path
+import java.util.*
 
 private val logger = KotlinLogging.logger{}
 
-@Component
-class LinkService(
-    private val linkRepository: LinkRepository,
-) {
+class LinkService {
 
-    @Transactional
-    fun save(link: Link) {
-        linkRepository.save(link.generateKeyword())
+    val links = SortedFilteredList(mutableListOf<Link>().asObservable())
+
+    fun save(link: Link, refreshTable: Boolean = true) {
+        if(link.isNew)
+            links.add(link)
+        transaction {
+            Links.save(link)
+            commit()
+        }
+        if(refreshTable) {
+            runLater {
+                Context.main.tableMain.refresh()
+            }
+        }
     }
 
-    @Transactional
     fun importData(file: Path) {
-        val links = file.readText().let { Reflector.toObject<List<JsonLink>>(it) }.map { it.toLink() }
-        linkRepository.saveAll(links)
+        val jsonLinks = file.readText().let { Reflector.toObject<List<JsonLink>>(it) }.map { it.toLink() }
+        transaction {
+            jsonLinks.forEach { link ->
+                Links.insert { it.from(link) }
+            }
+            commit()
+        }
+    }
+
+    fun countAll(): Long {
+        return transaction {
+            Links.selectAll().count()
+        }
+    }
+
+    fun loadAll(worker: ((index: Int, link: Link) -> Unit)? = null) {
+        var i = 0
+        val links = LinkedList<Link>()
+        transaction {
+            Links.selectAll().orderBy(Links.title, SortOrder.ASC).iterator().forEach { row ->
+                val link = row.toLink()
+                links.add(link)
+                worker?.let { it.invoke(++i, link) }
+            }
+        }
+        this.links.run {
+            clear()
+            addAll(links)
+        }
     }
 
     fun exportData(file: Path) {
-        val jsonLinks = linkRepository.findAllByOrderByTitle().map { JsonLink(it) }
-        file.writeText( Reflector.toJson(jsonLinks, pretty = true))
+        val dbLinks = transaction {
+            Links.selectAll().map { it.toLink() }.map { JsonLink(it) }
+        }
+        logger.debug { dbLinks }
+        file.writeText( Reflector.toJson(dbLinks, pretty = true))
     }
 
-    @Transactional
     fun deleteAll() {
         Context.config.historyKeyword.clear()
-        linkRepository.deleteAll()
+        transaction {
+            Links.deleteAll()
+            links.clear()
+            commit()
+        }
     }
 
-    @Transactional
     fun delete(link: Link) {
         Context.config.historyKeyword.remove(link.title ?: "")
-        linkRepository.delete(link)
-        Context.main.links.remove(link)
+        transaction {
+            Links.deleteWhere { Links.id eq link.id }
+            links.remove(link)
+            commit()
+        }
     }
 
     fun openImportPicker(): Path? =
-        filePicker("msg.info.004","*.sl","msg.info.011")
+        filePicker("msg.file.import","*.sl","msg.file.import.description")
 
     fun openExportPicker(): Path? =
-        filePicker("msg.info.003","*.sl","msg.info.011", FileChooserMode.Save)
+        filePicker("msg.file.export","*.sl","msg.file.import.description", FileChooserMode.Save)
 
     fun openIconPicker(): Path? =
-        filePicker("msg.info.002","*.*","msg.info.012")
+        filePicker("msg.file.icon","*.*","msg.file.icon.description")
 
     fun openExecutorPicker(): Path? =
-        filePicker("msg.info.001","*.*","msg.info.006")
+        filePicker("msg.file.add","*.*","msg.file.add.description")
 
     private fun filePicker(title: String, extension: String, description: String, mode: FileChooserMode = FileChooserMode.Single): Path? {
         return Dialog.filePicker(
@@ -87,7 +140,7 @@ class LinkService(
     fun openFolder(link: Link) {
         link.toPath()?.directory?.let {
             if( it.notExists() ) {
-                Dialog.error("msg.err.005".message().format(it) )
+                Dialog.error("msg.error.no.directory".message().format(it) )
             } else {
                 Desktop.open(it.toFile())
             }
