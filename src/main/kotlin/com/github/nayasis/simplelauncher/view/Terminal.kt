@@ -3,7 +3,6 @@ package com.github.nayasis.simplelauncher.view
 import com.github.nayasis.kotlin.basica.etc.error
 import com.github.nayasis.kotlin.basica.exec.Command
 import com.github.nayasis.kotlin.javafx.property.StageProperty
-import com.github.nayasis.simplelauncher.common.Context
 import com.github.nayasis.simplelauncher.common.Context.Companion.config
 import com.github.nayasis.terminalfx.kt.config.TerminalConfig
 import com.github.nayasis.terminalfx.kt.config.toHex

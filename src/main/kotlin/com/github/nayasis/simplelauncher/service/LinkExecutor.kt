@@ -1,5 +1,6 @@
 package com.github.nayasis.simplelauncher.service
 
+import com.github.nayasis.kotlin.basica.core.string.message
 import com.github.nayasis.kotlin.basica.core.string.tokenize
 import com.github.nayasis.kotlin.basica.exec.Command
 import com.github.nayasis.kotlin.javafx.control.tableview.focus
@@ -11,6 +12,7 @@ import com.github.nayasis.simplelauncher.common.Context.Companion.linkService
 import com.github.nayasis.simplelauncher.common.Context.Companion.main
 import com.github.nayasis.simplelauncher.model.Link
 import com.github.nayasis.simplelauncher.view.Terminal
+import javafx.stage.Stage
 import mu.KotlinLogging
 import tornadofx.runLater
 import java.io.File
@@ -74,7 +76,7 @@ class LinkExecutor{
 
     }
 
-    private fun run(linkCmd: LinkCommand, wait: Boolean = false) {
+    private fun run(linkCmd: LinkCommand, wait: Boolean = false, closeConsoleWhenDone: Boolean = false) {
         with(linkCmd) {
             val command = toCommand()
             commandPrev.tokenize("\n").forEach { run(Command(it,workingDirectory),true) }
@@ -84,19 +86,37 @@ class LinkExecutor{
         }
     }
 
-    private fun run(command: Command, wait: Boolean, showConsole: Boolean = false) {
+    private fun run(command: Command, wait: Boolean, showConsole: Boolean = false, closeConsoleWhenDone: Boolean = false) {
         if( command.isEmpty() ) return
         logger.debug { ">> command : $command" }
         if( showConsole ) {
-            val terminal = Terminal(command)
+            val terminal = Terminal(command, onFail = { e ->
+                throw RuntimeException("msg.err.003".message().format("$command")).apply { this.stackTrace = e.stackTrace }
+            }, onDone = {
+                if(closeConsoleWhenDone) {
+                    runLater { it.close() }
+                }
+            })
             if(wait) {
                 terminal.showAndWait()
             } else {
                 terminal.show()
             }
         } else {
-            command.run().also { if(wait) it.waitFor() }
+            try {
+                command.run().also { if(wait) it.waitFor() }
+            } catch (e: Exception) {
+                throw RuntimeException("msg.err.003".message().format("$command")).apply { this.stackTrace = e.stackTrace }
+            }
+        }
+    }
+
+    private fun setStageToMiddle(stage: Stage, parentInset: InsetProperty?) {
+        parentInset?.let {
+            stage.x = it.x + it.width  / 2 - stage.width  / 2
+            stage.y = it.y + it.height / 2 - stage.height / 2
         }
     }
 
 }
+
