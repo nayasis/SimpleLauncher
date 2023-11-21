@@ -75,7 +75,7 @@ class LinkExecutor{
 
     }
 
-    private fun run(linkCmd: LinkCommand, wait: Boolean = false, closeConsoleWhenDone: Boolean = false) {
+    private fun run(linkCmd: LinkCommand, wait: Boolean = false) {
         with(linkCmd) {
             val command = toCommand()
             commandPrev.tokenize("\n").forEach { run(Command(it,workingDirectory),true) }
