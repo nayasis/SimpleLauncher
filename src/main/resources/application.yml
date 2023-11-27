@@ -13,9 +13,6 @@ logging:
 #    console: "%d{HH:mm:ss.SSS} %highlight(%-5level) %green([%12(%.-12(%t))]) %yellow(%logger) %msg%n"
   level:
     root: off
-    Exposed: debug
-    org.hibernate.SQL: error
-    org.hibernate.type.descriptor.sql.BasicBinder: error
+    Exposed: off
     com.github.nayasis: debug
     com.github.nayasis.simplelauncher: debug
-    com.jediterm.terminal.emulator: error

@@ -237,7 +237,8 @@ fun UpdateBuilder<*>.from(entity: Link) {
     this[Links.commandPrefix] = entity.commandPrefix
     this[Links.commandPrev]   = entity.commandPrev
     this[Links.commandNext]   = entity.commandNext
-    this[Links.hashtag]       = entity.hashtag?.let { Reflector.toJson(it) }
+    this[Links.description]   = entity.description
+    this[Links.hashtag]       = entity.hashtag
     this[Links.icon]          = entity.icon?.toBinary(ICON_IMAGE_TYPE)?.let { ExposedBlob(it) }
     this[Links.executeCount]  = entity.executeCount
     this[Links.executedAt]    = entity.executedAt
