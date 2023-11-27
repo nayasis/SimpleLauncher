@@ -4,13 +4,14 @@ plugins {
 	application
 	id("org.openjfx.javafxplugin") version "0.0.14"
 	id("org.beryx.runtime") version "1.12.6"
+	id("com.gluonhq.client-gradle-plugin") version "0.1.42"
 	kotlin("jvm") version "1.9.20"
 }
 
-application {
-	mainClass.set("com.github.nayasis.simplelauncher.SimplelauncherKt")
-	applicationName = "simplelauncher"
-}
+//application {
+//	mainClass.set("com.github.nayasis.simplelauncher.SimplelauncherKt")
+//	applicationName = "simplelauncher"
+//}
 
 javafx {
 	version = "19.0.2.1"
@@ -23,6 +24,7 @@ version = "0.1.5"
 java {
 	sourceCompatibility = JavaVersion.VERSION_11
 	targetCompatibility = JavaVersion.VERSION_11
+
 }
 
 configurations.all {
@@ -86,6 +88,13 @@ dependencies {
 	testImplementation("io.kotest:kotest-property:5.7.2")
 	testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 	testImplementation("org.yaml:snakeyaml:2.2")
+
+	testImplementation("io.github.vincenzopalazzo:material-ui-swing:1.1.4")
+//	testImplementation("io.github.vincenzopalazzo:material-ui-swing:1.1.2")
+	testImplementation("org.swinglabs:swingx:1.6.1")
+	testImplementation("com.github.jiconfont:jiconfont-swing:1.0.1")
+
+	testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing:1.7.3")
 
 }
 
