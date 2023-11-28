@@ -70,16 +70,10 @@ dependencies {
 	testImplementation("org.apache.pdfbox:pdfbox:2.0.24")
 	testImplementation("com.levigo.jbig2:levigo-jbig2-imageio:2.0")
 	testImplementation("org.apache.httpcomponents:httpclient:4.5.13")
-//	testImplementation("org.junit.jupiter:junit-jupiter-api:5.3.1")
-//	testImplementation("org.junit.jupiter:junit-jupiter-engine:5.3.1")
 
 	// JNA (windows)
 	testImplementation("net.java.dev.jna:jna:5.9.0")
 	testImplementation("net.java.dev.jna:jna-platform:5.9.0")
-
-//	testImplementation("io.kotest:kotest-runner-junit5:5.6.1")
-//	testImplementation("io.kotest:kotest-assertions-core:5.6.1")
-//	testImplementation("io.kotest.extensions:kotest-extensions-spring:1.1.3")
 
 	testImplementation("io.kotest:kotest-assertions-core:5.7.2")
 	testImplementation("io.kotest:kotest-runner-junit5:5.7.2")
