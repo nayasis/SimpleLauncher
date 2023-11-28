@@ -90,7 +90,7 @@ class LinkExecutor{
         logger.debug { ">> command : $command" }
         if( showConsole ) {
             val terminal = Terminal(command, onFail = { e ->
-                throw RuntimeException("msg.err.003".message().format("$command")).apply { this.stackTrace = e.stackTrace }
+                throw RuntimeException("msg.error.runtime".message().format("$command")).apply { this.stackTrace = e.stackTrace }
             }, onDone = {
                 if(closeConsoleWhenDone) {
                     runLater { it.close() }
@@ -105,7 +105,7 @@ class LinkExecutor{
             try {
                 command.run().also { if(wait) it.waitFor() }
             } catch (e: Exception) {
-                throw RuntimeException("msg.err.003".message().format("$command")).apply { this.stackTrace = e.stackTrace }
+                throw RuntimeException("msg.error.runtime".message().format("$command")).apply { this.stackTrace = e.stackTrace }
             }
         }
     }
