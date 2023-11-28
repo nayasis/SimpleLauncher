@@ -76,7 +76,7 @@ class LinkService {
             Links.selectAll().orderBy(Links.title, SortOrder.ASC).iterator().forEach { row ->
                 val link = row.toLink()
                 links.add(link)
-                worker?.let { it.invoke(++i, link) }
+                worker?.invoke(++i, link)
             }
         }
         this.links.run {
