@@ -260,7 +260,7 @@ fun ResultRow.toLink(): Link {
         commandPrev   = row[Links.commandPrev],
         commandNext   = row[Links.commandNext],
         description   = row[Links.description],
-        hashtag       = row[Links.hashtag]?.let { Reflector.toObject(it) },
+        hashtag       = row[Links.hashtag],
         icon          = row[Links.icon]?.bytes?.toImage(),
         executeCount  = row[Links.executeCount],
         executedAt    = row[Links.executedAt],
