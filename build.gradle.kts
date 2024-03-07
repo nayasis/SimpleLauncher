@@ -4,7 +4,7 @@ plugins {
 	application
 	id("org.openjfx.javafxplugin") version "0.0.14"
 	id("org.beryx.runtime") version "1.12.6"
-	kotlin("jvm") version "1.9.20"
+	kotlin("jvm") version "1.9.22"
 }
 
 application {
@@ -56,7 +56,7 @@ dependencies {
 	implementation("com.github.nayasis:terminalfx-kt:0.2.1")
 	implementation("commons-cli:commons-cli:1.4")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
-	implementation("ch.qos.logback:logback-classic:1.4.11")
+	implementation("ch.qos.logback:logback-classic:1.4.14")
 
 	implementation("com.h2database:h2:2.2.224")
 
