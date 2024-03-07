@@ -1,6 +1,6 @@
 package com.github.nayasis.simplelauncher.model
 
-import au.com.console.kassava.kotlinToString
+import au.com.console.kassava.kotlinEquals
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.github.nayasis.kotlin.basica.core.extension.ifEmpty
 import com.github.nayasis.kotlin.basica.core.extension.ifNotEmpty
@@ -13,7 +13,6 @@ import com.github.nayasis.kotlin.basica.core.string.ifNotBlank
 import com.github.nayasis.kotlin.basica.core.string.toPath
 import com.github.nayasis.kotlin.basica.etc.Platforms
 import com.github.nayasis.kotlin.basica.etc.error
-import com.github.nayasis.kotlin.basica.reflection.Reflector
 import com.github.nayasis.kotlin.javafx.misc.copy
 import com.github.nayasis.kotlin.javafx.misc.toBinary
 import com.github.nayasis.kotlin.javafx.misc.toIconImage
@@ -148,24 +147,18 @@ data class Link(
 
     @JsonIgnore
     fun toPath(): Path? {
-
         var p = path?.toPath() ?: return null
-        if(p.exists()) return p
-
+            if(p.exists()) return p
         p = Paths.applicationRoot / path.ifEmpty { "" }
-        if(p.exists()) return p
-
-        if(relativePath.isEmpty()) return null
-
+            if(p.exists()) return p
+            if(relativePath.isEmpty()) return null
         p = Paths.applicationRoot / relativePath!!
-        if(p.exists()) {
-            path = p.invariantPath
-            Context.linkService.save(this, false)
-            return p
-        }
-
+            if(p.exists()) {
+                path = p.invariantPath
+                Context.linkService.save(this, false)
+                return p
+            }
         return null
-
     }
 
     fun indexing(): Link {
@@ -202,27 +195,14 @@ data class Link(
         )}
     }
 
-    override fun toString(): String {
-        return kotlinToString(arrayOf(
-            Link::id,
-            Link::title,
-            Link::group,
-            Link::path,
-            Link::relativePath,
-            Link::showConsole,
-            Link::executeEach,
-            Link::argument,
-            Link::commandPrefix,
-            Link::commandPrev,
-            Link::commandNext,
-            Link::description,
-            Link::hashtag,
-            Link::executeCount,
-            Link::executedAt,
-            Link::createdAt,
-            Link::updatedAt,
-        ))
+    override fun equals(other: Any?): Boolean {
+        return kotlinEquals(other, arrayOf(Link::id))
     }
+
+    override fun hashCode(): Int {
+        return id.hashCode()
+    }
+
 }
 
 fun UpdateBuilder<*>.from(entity: Link) {
@@ -247,7 +227,7 @@ fun UpdateBuilder<*>.from(entity: Link) {
 }
 
 fun ResultRow.toLink(): Link {
-    return this.let { row ->Link(
+    return this.let { row -> Link(
         id            = row[Links.id],
         title         = row[Links.title],
         group         = row[Links.group],
