@@ -6,8 +6,8 @@ import javafx.scene.effect.InnerShadow
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import javafx.scene.paint.Color
-import org.apache.http.client.methods.HttpGet
-import org.apache.http.impl.client.HttpClientBuilder
+import org.apache.hc.client5.http.classic.methods.HttpGet
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder
 import org.apache.pdfbox.pdmodel.PDDocument
 import org.apache.pdfbox.rendering.PDFRenderer
 import tornadofx.*
@@ -34,7 +34,7 @@ class PdfViewerApp : App(PdfViewer::class) {
 
 class PdfViewModel : ViewModel() {
     var documentURIString = SimpleStringProperty("")
-    var documentURI = SimpleObjectProperty<URI>(URI(""))
+    var documentURI = SimpleObjectProperty(URI(""))
     var documentInputStream = SimpleObjectProperty<InputStream>()
     var document: PDDocument? = null
     var pdfRenderer: PDFRenderer? = null
