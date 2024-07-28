@@ -1,4 +1,5 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+group = "com.github.nayasis"
+version = "0.1.5"
 
 plugins {
 	application
@@ -10,6 +11,11 @@ plugins {
 application {
 	mainClass.set("com.github.nayasis.simplelauncher.SimplelauncherKt")
 	applicationName = "simplelauncher"
+	applicationDefaultJvmArgs = listOf(
+		"--add-exports=javafx.graphics/com.sun.javafx.application=ALL-UNNAMED",
+		"--add-exports=javafx.graphics/com.sun.javafx.tk=ALL-UNNAMED",
+		"--add-opens=javafx.graphics/javafx.scene=ALL-UNNAMED",
+	)
 }
 
 javafx {
@@ -17,12 +23,10 @@ javafx {
 	modules = listOf("javafx.graphics","javafx.controls","javafx.fxml","javafx.web","javafx.swing")
 }
 
-group = "com.github.nayasis"
-version = "0.1.5"
-
 java {
-	sourceCompatibility = JavaVersion.VERSION_11
-	targetCompatibility = JavaVersion.VERSION_11
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(11)
+	}
 }
 
 configurations.all {
@@ -55,7 +59,7 @@ dependencies {
 	implementation("com.github.vatbub:mslinks:1.0.6.2")
 	implementation("com.github.nayasis:terminalfx-kt:0.2.1")
 	implementation("commons-cli:commons-cli:1.4")
-	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.+")
+	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.2")
 	implementation("ch.qos.logback:logback-classic:1.4.14")
 
 	implementation("com.h2database:h2:2.2.224")
@@ -69,7 +73,9 @@ dependencies {
 
 	testImplementation("org.apache.pdfbox:pdfbox:2.0.24")
 	testImplementation("com.levigo.jbig2:levigo-jbig2-imageio:2.0")
-	testImplementation("org.apache.httpcomponents:httpclient:4.5.13")
+	testImplementation("org.apache.httpcomponents.client5:httpclient5:5.3.1")
+	testImplementation("org.jetbrains.pty4j:pty4j:0.12.34")
+	implementation(kotlin("scripting-compiler-embeddable"))
 
 	// JNA (windows)
 	testImplementation("net.java.dev.jna:jna:5.9.0")
@@ -77,6 +83,7 @@ dependencies {
 
 	testImplementation("io.kotest:kotest-assertions-core:5.7.2")
 	testImplementation("io.kotest:kotest-runner-junit5:5.7.2")
+	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 	testImplementation("io.kotest:kotest-property:5.7.2")
 	testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 	testImplementation("org.yaml:snakeyaml:2.2")
@@ -87,12 +94,9 @@ tasks.withType<Test> {
 	useJUnitPlatform()
 }
 
-tasks.withType<KotlinCompile> {
-	kotlinOptions {
-		freeCompilerArgs = listOf(
-			"-Xjsr305=strict"
-		)
-		jvmTarget = "11"
+kotlin {
+	compilerOptions {
+		freeCompilerArgs.addAll("-Xjsr305=strict")
 	}
 }
 
