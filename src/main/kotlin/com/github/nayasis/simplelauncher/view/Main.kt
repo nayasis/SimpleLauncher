@@ -330,14 +330,6 @@ class Main: View("application.title".message()), CoroutineScope {
                     launch {
                         linkService.importData(file)
                         linkService.loadAll()
-//                        val total = linkService.countAll()
-//                        ProgressDialog("msg.link.reload".message()).runSync {
-//                            linkService.loadAll { i, link ->
-//                                it.updateMessage(link.title)
-//                                it.updateProgress(i + 1, total)
-//                                it.updateSubMessageAsProgress()
-//                            }
-//                        }
                         Dialog.alert( "msg.success.import".message().format(file) )
                     }
                 }
@@ -401,8 +393,7 @@ class Main: View("application.title".message()), CoroutineScope {
         }
 
         menuHelp.setOnAction{
-            Context.help.openWindow()
-            Context.help.openWindow()
+            Desktop.browse("stage.help.url".message())
         }
 
         buttonSave.setOnAction { saveDetail() }
