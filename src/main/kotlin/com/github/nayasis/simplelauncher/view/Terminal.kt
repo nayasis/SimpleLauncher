@@ -13,6 +13,7 @@ import mu.KotlinLogging
 import tornadofx.runLater
 
 private val logger = KotlinLogging.logger {}
+
 class Terminal(
     command: Command,
     var onDone: ((terminal: Terminal) -> Unit)? = null,
