@@ -147,7 +147,7 @@ data class Link(
 
     @JsonIgnore
     fun toPath(): Path? {
-        var p = path?.let { runCatching { toPath() }.getOrNull() } ?: return null
+        var p = path?.let { runCatching { it.toPath() }.getOrNull() } ?: return null
             if(p.exists()) return p
         p = Paths.applicationRoot / path.ifEmpty { "" }
             if(p.exists()) return p
