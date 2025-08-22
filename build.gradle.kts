@@ -3,9 +3,9 @@ version = "0.1.5"
 
 plugins {
 	application
-	id("org.openjfx.javafxplugin") version "0.0.14"
+	kotlin("jvm") version "2.2.0"
+	id("org.openjfx.javafxplugin") version "0.1.0"
 	id("org.beryx.runtime") version "1.12.6"
-	kotlin("jvm") version "1.9.22"
 }
 
 application {
@@ -19,27 +19,19 @@ application {
 }
 
 javafx {
-	version = "19.0.2.1"
-	modules = listOf("javafx.graphics","javafx.controls","javafx.fxml","javafx.web","javafx.swing")
+	version = "24.0.2"
+	modules = listOf("javafx.graphics","javafx.controls","javafx.web","javafx.fxml","javafx.swing")
 }
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(11)
+		languageVersion = JavaLanguageVersion.of(22)
 	}
-}
-
-configurations.all {
-	resolutionStrategy.cacheChangingModulesFor(0, "seconds")
-	resolutionStrategy.cacheDynamicVersionsFor(5, "minutes")
 }
 
 repositories {
 	mavenLocal()
 	mavenCentral()
-	jcenter()
-	maven { url = uri("https://jitpack.io") }
-	maven { url = uri("https://oss.sonatype.org/content/repositories/snapshots") }
 }
 
 dependencies {
@@ -50,24 +42,23 @@ dependencies {
 	implementation("org.jetbrains.exposed:exposed-java-time:0.44.1")
 	implementation("org.jetbrains.exposed:exposed-jdbc:0.44.1")
 
-	implementation("com.github.nayasis:basica-kt:0.3.1")
-	implementation("com.github.nayasis:basicafx-kt:0.2.1")
+	implementation("io.github.nayasis:basica-kt:0.3.7-SNAPSHOT")
+	implementation("io.github.nayasis:basicafx-kt:0.2.3-SNAPSHOT")
 	implementation("no.tornado:tornadofx:1.7.20") {
 		exclude("org.jetbrains.kotlin")
 	}
-	implementation("org.controlsfx:controlsfx:11.1.0")
+	implementation("org.controlsfx:controlsfx:11.2.2")
 	implementation("com.github.vatbub:mslinks:1.0.6.2")
-	implementation("com.github.nayasis:terminalfx-kt:0.2.1")
+
 	implementation("commons-cli:commons-cli:1.4")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.2")
-	implementation("ch.qos.logback:logback-classic:1.4.14")
+	implementation("ch.qos.logback:logback-classic:1.5.13")
 
 	implementation("com.h2database:h2:2.2.224")
 
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 	implementation("io.github.microutils:kotlin-logging:3.0.5")
-	implementation("au.com.console:kassava:2.1.0")
 
 	implementation("de.jensd:fontawesomefx:8.9")
 
@@ -76,6 +67,11 @@ dependencies {
 	testImplementation("org.apache.httpcomponents.client5:httpclient5:5.3.1")
 	testImplementation("org.jetbrains.pty4j:pty4j:0.12.34")
 	implementation(kotlin("scripting-compiler-embeddable"))
+
+
+	implementation("com.techsenger.jeditermfx:jeditermfx-core:1.1.0")
+	implementation("com.techsenger.jeditermfx:jeditermfx-ui:1.1.0")
+	implementation("com.techsenger.jeditermfx:jeditermfx-app:1.0.0")
 
 	// JNA (windows)
 	testImplementation("net.java.dev.jna:jna:5.9.0")
