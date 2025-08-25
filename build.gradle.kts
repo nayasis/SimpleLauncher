@@ -36,8 +36,6 @@ repositories {
 
 dependencies {
 
-	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.7.3")
-	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
 	implementation("org.jetbrains.exposed:exposed-core:0.44.1")
 	implementation("org.jetbrains.exposed:exposed-java-time:0.44.1")
 	implementation("org.jetbrains.exposed:exposed-jdbc:0.44.1")
@@ -49,29 +47,33 @@ dependencies {
 	}
 	implementation("org.controlsfx:controlsfx:11.2.2")
 	implementation("com.github.vatbub:mslinks:1.0.6.2")
-
 	implementation("commons-cli:commons-cli:1.4")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.2")
+	implementation("io.github.oshai:kotlin-logging-jvm:7.0.3")
 	implementation("ch.qos.logback:logback-classic:1.5.13")
 
 	implementation("com.h2database:h2:2.2.224")
 
+	implementation("de.jensd:fontawesomefx:8.9")
+
 	implementation("org.jetbrains.kotlin:kotlin-reflect")
 	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-	implementation("io.github.microutils:kotlin-logging:3.0.5")
+	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.10.2")
+	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 
-	implementation("de.jensd:fontawesomefx:8.9")
+	// jeditermfx for terminal UI
+	implementation("com.techsenger.jeditermfx:jeditermfx-core:1.1.0")
+	implementation("com.techsenger.jeditermfx:jeditermfx-ui:1.1.0")
+	implementation("com.techsenger.jeditermfx:jeditermfx-app:1.0.0") {
+		exclude(group = "org.jetbrains.pty4j", module = "purejavacomm")
+	}
+	implementation("org.jetbrains.pty4j:pty4j:0.13.10")
 
 	testImplementation("org.apache.pdfbox:pdfbox:2.0.24")
 	testImplementation("com.levigo.jbig2:levigo-jbig2-imageio:2.0")
 	testImplementation("org.apache.httpcomponents.client5:httpclient5:5.3.1")
 	testImplementation("org.jetbrains.pty4j:pty4j:0.12.34")
 	implementation(kotlin("scripting-compiler-embeddable"))
-
-
-	implementation("com.techsenger.jeditermfx:jeditermfx-core:1.1.0")
-	implementation("com.techsenger.jeditermfx:jeditermfx-ui:1.1.0")
-	implementation("com.techsenger.jeditermfx:jeditermfx-app:1.0.0")
 
 	// JNA (windows)
 	testImplementation("net.java.dev.jna:jna:5.9.0")

@@ -4,7 +4,7 @@ import io.github.nayasis.kotlin.basica.core.collection.flattenKeys
 import io.github.nayasis.kotlin.basica.core.collection.toObject
 import io.github.nayasis.kotlin.basica.core.string.toResource
 import io.github.nayasis.kotlin.basica.core.url.toInputStream
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.junit.jupiter.api.Test
 import org.slf4j.LoggerFactory
 import org.yaml.snakeyaml.Yaml
