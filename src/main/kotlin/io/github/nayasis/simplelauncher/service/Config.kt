@@ -7,7 +7,6 @@ import io.github.nayasis.kotlin.basica.reflection.Reflector
 import io.github.nayasis.kotlin.javafx.property.SizeProperty
 import io.github.nayasis.kotlin.javafx.property.StageProperty
 import io.github.nayasis.simplelauncher.view.HistorySet
-import io.github.nayasis.terminalfx.kt.config.TerminalSize
 import java.nio.file.Paths
 import kotlin.reflect.jvm.jvmName
 
@@ -19,7 +18,7 @@ class Config {
     var stageMain: StageProperty? = null
     var stageTerminal: StageProperty? = null
     var stageHelp: SizeProperty? = null
-    var terminalSize: TerminalSize? = null
+//    var terminalSize: TerminalSize? = null
     var historyKeyword = HistorySet<String>(20)
     var lastFocusedRow: Int? = null
 

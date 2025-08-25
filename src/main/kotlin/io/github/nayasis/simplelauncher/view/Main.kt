@@ -2,6 +2,8 @@
 
 package io.github.nayasis.simplelauncher.view
 
+import impl.org.controlsfx.autocompletion.AutoCompletionTextFieldBinding
+import impl.org.controlsfx.autocompletion.SuggestionProvider
 import io.github.nayasis.kotlin.basica.core.extension.ifNull
 import io.github.nayasis.kotlin.basica.core.localdate.between
 import io.github.nayasis.kotlin.basica.core.localdate.toString
@@ -10,16 +12,10 @@ import io.github.nayasis.kotlin.basica.etc.error
 import io.github.nayasis.kotlin.javafx.control.basic.allChildren
 import io.github.nayasis.kotlin.javafx.control.basic.hmargin
 import io.github.nayasis.kotlin.javafx.control.basic.repack
+import io.github.nayasis.kotlin.javafx.control.tableview.*
 import io.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
 import io.github.nayasis.kotlin.javafx.control.tableview.column.cellValueByDefault
 import io.github.nayasis.kotlin.javafx.control.tableview.column.setAlign
-import io.github.nayasis.kotlin.javafx.control.tableview.focus
-import io.github.nayasis.kotlin.javafx.control.tableview.focusBy
-import io.github.nayasis.kotlin.javafx.control.tableview.focused
-import io.github.nayasis.kotlin.javafx.control.tableview.scrollBy
-import io.github.nayasis.kotlin.javafx.control.tableview.select
-import io.github.nayasis.kotlin.javafx.control.tableview.selectBy
-import io.github.nayasis.kotlin.javafx.control.tableview.visibleRows
 import io.github.nayasis.kotlin.javafx.geometry.Insets
 import io.github.nayasis.kotlin.javafx.misc.Desktop
 import io.github.nayasis.kotlin.javafx.misc.runSync
@@ -30,28 +26,22 @@ import io.github.nayasis.kotlin.javafx.property.StageProperty
 import io.github.nayasis.kotlin.javafx.stage.Dialog
 import io.github.nayasis.kotlin.javafx.stage.Localizator
 import io.github.nayasis.kotlin.javafx.stage.loadDefaultIcon
-import io.github.nayasis.kotlin.javafx.stage.progress.ProgressDialog
 import io.github.nayasis.simplelauncher.common.Context
 import io.github.nayasis.simplelauncher.common.ICON_NEW
 import io.github.nayasis.simplelauncher.model.Link
 import io.github.nayasis.simplelauncher.service.LinkExecutor
 import io.github.nayasis.simplelauncher.service.LinkService
 import io.github.nayasis.simplelauncher.service.TextMatcher
-import impl.org.controlsfx.autocompletion.AutoCompletionTextFieldBinding
-import impl.org.controlsfx.autocompletion.SuggestionProvider
+import io.github.oshai.kotlinlogging.KotlinLogging
 import javafx.beans.value.ObservableValue
 import javafx.collections.ListChangeListener
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.control.*
 import javafx.scene.image.ImageView
-import javafx.scene.input.DragEvent
+import javafx.scene.input.*
 import javafx.scene.input.KeyCode.*
-import javafx.scene.input.KeyEvent
 import javafx.scene.input.KeyEvent.KEY_PRESSED
-import javafx.scene.input.MouseButton
-import javafx.scene.input.MouseEvent
-import javafx.scene.input.TransferMode
 import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
@@ -59,7 +49,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.javafx.JavaFx
 import kotlinx.coroutines.launch
-import mu.KotlinLogging
 import tornadofx.*
 import java.io.File
 import java.time.LocalDateTime

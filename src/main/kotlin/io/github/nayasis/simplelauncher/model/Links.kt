@@ -2,13 +2,13 @@ package io.github.nayasis.simplelauncher.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.github.nayasis.kotlin.basica.core.extension.ifEmpty
-import io.github.nayasis.kotlin.basica.core.extension.ifNotEmpty
 import io.github.nayasis.kotlin.basica.core.extension.isEmpty
+import io.github.nayasis.kotlin.basica.core.extension.runIfNotEmpty
 import io.github.nayasis.kotlin.basica.core.io.Paths
 import io.github.nayasis.kotlin.basica.core.io.exists
 import io.github.nayasis.kotlin.basica.core.io.invariantPath
 import io.github.nayasis.kotlin.basica.core.io.toRelativeOrSelf
-import io.github.nayasis.kotlin.basica.core.string.ifNotBlank
+import io.github.nayasis.kotlin.basica.core.string.runIfNotBlank
 import io.github.nayasis.kotlin.basica.core.string.toPath
 import io.github.nayasis.kotlin.basica.etc.Platforms
 import io.github.nayasis.kotlin.basica.etc.error
@@ -18,9 +18,9 @@ import io.github.nayasis.kotlin.javafx.misc.toIconImage
 import io.github.nayasis.kotlin.javafx.misc.toImage
 import io.github.nayasis.simplelauncher.common.Context
 import io.github.nayasis.simplelauncher.common.toKeyword
+import io.github.oshai.kotlinlogging.KotlinLogging
 import javafx.scene.image.Image
 import mslinks.ShellLink
-import mu.KotlinLogging
 import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.Table
 import org.jetbrains.exposed.sql.insert
@@ -163,11 +163,11 @@ data class Link(
     fun indexing(): Link {
         keywordTitle.run {
             clear()
-            title.ifNotBlank { addAll(it.toKeyword()) }
-            hashtag.ifNotEmpty { addAll(it.toKeyword()) }
+            title.runIfNotBlank { addAll(it.toKeyword()) }
+            hashtag.runIfNotEmpty { addAll(it.toKeyword()) }
         }
         keywordGroup.run {
-            group.ifNotBlank { addAll(it.toKeyword()) }
+            group.runIfNotBlank { addAll(it.toKeyword()) }
         }
         return this
     }

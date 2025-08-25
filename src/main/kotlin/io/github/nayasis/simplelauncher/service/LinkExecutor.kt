@@ -11,8 +11,8 @@ import io.github.nayasis.simplelauncher.common.Context.Companion.linkService
 import io.github.nayasis.simplelauncher.common.Context.Companion.main
 import io.github.nayasis.simplelauncher.model.Link
 import io.github.nayasis.simplelauncher.view.Terminal
+import io.github.oshai.kotlinlogging.KotlinLogging
 import javafx.stage.Stage
-import mu.KotlinLogging
 import tornadofx.runLater
 import java.io.File
 import java.time.LocalDateTime

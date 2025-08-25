@@ -3,15 +3,9 @@ package io.github.nayasis.simplelauncher.model
 import io.github.nayasis.kotlin.basica.reflection.Reflector
 import io.github.nayasis.kotlin.javafx.misc.toImage
 import io.github.nayasis.simplelauncher.common.ICON_NEW
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.h2.Driver
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.StdOutSqlLogger
-import org.jetbrains.exposed.sql.addLogger
-import org.jetbrains.exposed.sql.insert
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.statements.api.ExposedBlob
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.Test
 

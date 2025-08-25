@@ -11,10 +11,10 @@ import io.github.nayasis.simplelauncher.service.LinkExecutor
 import io.github.nayasis.simplelauncher.service.LinkService
 import io.github.nayasis.simplelauncher.view.Main
 import io.github.nayasis.simplelauncher.view.Splash
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.javafx.JavaFx
-import mu.KotlinLogging
 import org.apache.commons.cli.CommandLine
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
