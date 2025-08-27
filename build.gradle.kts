@@ -4,6 +4,7 @@ version = "0.1.5"
 plugins {
 	application
 	kotlin("jvm") version "2.2.0"
+	kotlin("kapt") version "2.2.0"
 	id("org.openjfx.javafxplugin") version "0.1.0"
 	id("org.beryx.runtime") version "1.12.6"
 }
@@ -19,13 +20,13 @@ application {
 }
 
 javafx {
-	version = "24.0.2"
+	version = "21.0.2"
 	modules = listOf("javafx.graphics","javafx.controls","javafx.web","javafx.fxml","javafx.swing")
 }
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(22)
+		languageVersion = JavaLanguageVersion.of(17)
 	}
 }
 
@@ -39,6 +40,10 @@ dependencies {
 	implementation("org.jetbrains.exposed:exposed-core:0.44.1")
 	implementation("org.jetbrains.exposed:exposed-java-time:0.44.1")
 	implementation("org.jetbrains.exposed:exposed-jdbc:0.44.1")
+	
+	api("pl.touk.krush:krush-annotation-processor:1.2.0")
+	kapt("pl.touk.krush:krush-annotation-processor:1.2.0")
+	api("pl.touk.krush:krush-runtime:1.2.0")
 
 	implementation("io.github.nayasis:basica-kt:0.3.7-SNAPSHOT")
 	implementation("io.github.nayasis:basicafx-kt:0.2.3-SNAPSHOT")
@@ -88,14 +93,18 @@ dependencies {
 
 }
 
-tasks.withType<Test> {
-	useJUnitPlatform()
-}
-
 kotlin {
 	compilerOptions {
 		freeCompilerArgs.addAll("-Xjsr305=strict")
 	}
+}
+
+tasks.withType<Test> {
+	useJUnitPlatform()
+}
+
+tasks.withType<JavaCompile> {
+	options.release.set(17)
 }
 
 runtime {

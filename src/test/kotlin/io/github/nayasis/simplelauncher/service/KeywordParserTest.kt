@@ -12,7 +12,7 @@ internal class KeywordParserTest {
     fun match() {
         val list = listOf("merong", "nayasis", "emuloader", "gundam", "final fantasy")
         assertEquals("[emuloader]", filter(list, "m r -n"))
-        assertEquals("[merong, emuloader]", filter(list, "(f sy), (m r -n)"))
+        assertEquals("[emuloader, final fantasy]", filter(list, "(f sy), (m r -n)"))
     }
 
     private fun filter(list: List<String>, searchWord: String): List<String> {
