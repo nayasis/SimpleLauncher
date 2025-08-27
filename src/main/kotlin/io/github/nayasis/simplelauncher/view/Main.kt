@@ -196,7 +196,9 @@ class Main: View("application.title".message()), CoroutineScope {
             }
             alignment = Pos.CENTER
         }
-        colExecCount.cellValue(Link::executeCount).setAlign(Pos.CENTER_RIGHT)
+        colExecCount.cellValue(Link::executeCount).cellFormat {
+            alignment = Pos.CENTER_RIGHT
+        }
 
         linkService.links.bindTo(tableMain)
 
