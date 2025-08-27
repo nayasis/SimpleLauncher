@@ -1,4 +1,4 @@
-package io.github.nayasis.terminal.theme
+package io.github.nayasis.simplelauncher.view.theme
 
 import com.techsenger.jeditermfx.core.TerminalColor
 import com.techsenger.jeditermfx.core.TextStyle

@@ -15,7 +15,6 @@ import io.github.nayasis.kotlin.javafx.control.basic.repack
 import io.github.nayasis.kotlin.javafx.control.tableview.*
 import io.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
 import io.github.nayasis.kotlin.javafx.control.tableview.column.cellValueByDefault
-import io.github.nayasis.kotlin.javafx.control.tableview.column.setAlign
 import io.github.nayasis.kotlin.javafx.geometry.Insets
 import io.github.nayasis.kotlin.javafx.misc.Desktop
 import io.github.nayasis.kotlin.javafx.misc.runSync

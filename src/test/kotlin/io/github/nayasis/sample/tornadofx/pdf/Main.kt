@@ -52,7 +52,7 @@ class PdfViewModel : ViewModel() {
                 openPage(0)
             }
         }
-        documentURIString.onChange { documentURI.value = URI(it) }
+        documentURIString.onChange { documentURI.value = URI(it ?: "") }
         documentURI.onChange { nuevaUri ->
             val input = when (nuevaUri!!.scheme) {
                 "file" -> FileInputStream(nuevaUri.toURL().file)
