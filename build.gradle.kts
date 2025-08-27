@@ -6,7 +6,7 @@ plugins {
 	kotlin("jvm") version "2.2.0"
 	kotlin("kapt") version "2.2.0"
 	id("org.openjfx.javafxplugin") version "0.1.0"
-	id("org.beryx.runtime") version "1.12.6"
+	id("org.beryx.runtime") version "1.13.1"
 }
 
 application {
