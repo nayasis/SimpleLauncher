@@ -99,6 +99,17 @@ kotlin {
 	}
 }
 
+kapt {
+	useBuildCache = true
+	correctErrorTypes = true
+	// Set annotation processor to JDK 11 to suppress warnings
+	// Actual project code still compiles with JDK 17
+	javacOptions {
+		option("-source", "11")
+		option("-target", "11")
+	}
+}
+
 tasks.withType<Test> {
 	useJUnitPlatform()
 }
