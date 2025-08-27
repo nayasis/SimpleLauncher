@@ -4,7 +4,6 @@ import io.github.nayasis.kotlin.basica.core.string.message
 import io.github.nayasis.kotlin.basica.core.string.tokenize
 import io.github.nayasis.kotlin.basica.exec.Command
 import io.github.nayasis.kotlin.javafx.misc.runSync
-import io.github.nayasis.kotlin.javafx.property.InsetProperty
 import io.github.nayasis.kotlin.javafx.stage.Dialog
 import io.github.nayasis.simplelauncher.common.Context.Companion.config
 import io.github.nayasis.simplelauncher.common.Context.Companion.linkService
@@ -12,7 +11,6 @@ import io.github.nayasis.simplelauncher.common.Context.Companion.main
 import io.github.nayasis.simplelauncher.model.Link
 import io.github.nayasis.simplelauncher.view.Terminal
 import io.github.oshai.kotlinlogging.KotlinLogging
-import javafx.stage.Stage
 import tornadofx.runLater
 import java.io.File
 import java.time.LocalDateTime
@@ -51,14 +49,14 @@ class LinkExecutor{
                             val cmd = LinkCommand(link, file)
                             logger.debug { ">> command : $cmd" }
                             Terminal(cmd.toCommand(),
-                                onFail = { throwable ->
+                                onFail = { term, error ->
                                     runSync {
-                                        Dialog.error(throwable)
+                                        Dialog.error(error)
                                     }
                                 },
-                                onDone = {
+                                onAlways = { term ->
                                     runLater {
-                                        it.close()
+                                        term.close()
                                     }
                                 }
                             ).showAndWait()
@@ -89,9 +87,9 @@ class LinkExecutor{
         if( command.isEmpty() ) return
         logger.debug { ">> command : $command" }
         if( showConsole ) {
-            val terminal = Terminal(command, onFail = { e ->
-                throw RuntimeException("msg.error.runtime".message().format("$command")).apply { this.stackTrace = e.stackTrace }
-            }, onDone = {
+            val terminal = Terminal(command, onFail = { term, error ->
+                throw RuntimeException("msg.error.runtime".message().format("$command")).apply { this.stackTrace = error.stackTrace }
+            }, onAlways = {
                 if(closeConsoleWhenDone) {
                     runLater { it.close() }
                 }
@@ -107,13 +105,6 @@ class LinkExecutor{
             } catch (e: Exception) {
                 throw RuntimeException("msg.error.runtime".message().format("$command")).apply { this.stackTrace = e.stackTrace }
             }
-        }
-    }
-
-    private fun setStageToMiddle(stage: Stage, parentInset: InsetProperty?) {
-        parentInset?.let {
-            stage.x = it.x + it.width  / 2 - stage.width  / 2
-            stage.y = it.y + it.height / 2 - stage.height / 2
         }
     }
 
