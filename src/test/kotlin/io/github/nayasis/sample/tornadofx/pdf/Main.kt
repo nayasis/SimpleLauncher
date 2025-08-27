@@ -59,8 +59,9 @@ class PdfViewModel : ViewModel() {
                 "http", "https" -> {
                     val client = HttpClientBuilder.create().build()
                     val request = HttpGet(nuevaUri)
-                    val response = client.execute(request)
-                    response.entity.content
+                    client.execute(request) { response ->
+                        response.entity.content
+                    }
                 }
                 else -> null
             }

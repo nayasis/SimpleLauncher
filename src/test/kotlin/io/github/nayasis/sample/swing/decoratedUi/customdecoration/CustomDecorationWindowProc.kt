@@ -72,7 +72,7 @@ class CustomDecorationWindowProc: WindowProc {
         var fOnResizeBorder = false
         var fOnFrameDrag = false
         val topOffset =
-            if (CustomDecorationParameters.titleBarHeight === 0) borderThickness else CustomDecorationParameters.titleBarHeight
+            if (CustomDecorationParameters.titleBarHeight == 0) borderThickness else CustomDecorationParameters.titleBarHeight
         if (ptMouse.y >= rcWindow.top && ptMouse.y < rcWindow.top + topOffset + borderOffset) {
             fOnResizeBorder = ptMouse.y < rcWindow.top + borderThickness // Top Resizing
             if (!fOnResizeBorder) {
