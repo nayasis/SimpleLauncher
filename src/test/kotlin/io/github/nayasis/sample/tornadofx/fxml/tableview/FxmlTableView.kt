@@ -32,7 +32,7 @@ class DemoTableView: View() {
 //        val colName = main.findColumnBy<Person,String>("colName")
 //        val colAge = main.findColumnBy<Person,Int>("colAge")
 
-        main.columnResizePolicy = CONSTRAINED_RESIZE_POLICY
+        main.columnResizePolicy = CONSTRAINED_RESIZE_POLICY_LAST_COLUMN
 
         colName.cellValue(Person::name)
         colAge.cellValue(Person::age).cellFormat {

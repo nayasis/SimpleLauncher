@@ -35,7 +35,7 @@ class LinksTest {
             commit()
             logger.debug { ">> committed" }
             logger.debug { ">> inserted: $created" }
-            val read = Links.select { Links.id eq created.id }.singleOrNull()?.toLink()
+            val read = Links.selectAll().where { Links.id eq created.id }.singleOrNull()?.toLink()
             logger.debug { ">> read: $read" }
         }
     }
