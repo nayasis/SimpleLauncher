@@ -37,9 +37,9 @@ repositories {
 
 dependencies {
 
-	implementation("org.jetbrains.exposed:exposed-core:0.44.1")
-	implementation("org.jetbrains.exposed:exposed-java-time:0.44.1")
-	implementation("org.jetbrains.exposed:exposed-jdbc:0.44.1")
+	implementation("org.jetbrains.exposed:exposed-core:0.48.0")
+	implementation("org.jetbrains.exposed:exposed-java-time:0.48.0")
+	implementation("org.jetbrains.exposed:exposed-jdbc:0.48.0")
 	
 	api("pl.touk.krush:krush-annotation-processor:1.2.0")
 	kapt("pl.touk.krush:krush-annotation-processor:1.2.0")
