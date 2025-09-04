@@ -21,11 +21,14 @@ import org.jetbrains.exposed.sql.SchemaUtils
 import org.jetbrains.exposed.sql.transactions.transaction
 import tornadofx.launch
 import java.util.*
+import java.util.logging.Level
+import java.util.logging.Logger
 import kotlin.coroutines.CoroutineContext
 
 private val logger = KotlinLogging.logger {}
 
 fun main(args: Array<String>) {
+    quietExternalLogs()
     Networks.ignoreCerts()
     Messages.loadFromResource("/message/**.prop")
     BasePreloader.set(Splash::class)
@@ -44,7 +47,6 @@ class Simplelauncher: FxApp(Main::class), CoroutineScope  {
         }
         logger.debug { ">> initialized" }
         connectDb()
-        logger.debug { ">> db connected" }
         ctx.apply {
             set(LinkService())
             set(LinkExecutor())
@@ -62,6 +64,11 @@ class Simplelauncher: FxApp(Main::class), CoroutineScope  {
         transaction {
             SchemaUtils.create(Links)
         }
+        logger.debug { ">> db connected" }
     }
+}
+
+private fun quietExternalLogs() {
+    Logger.getLogger("").level = Level.SEVERE
 }
 
