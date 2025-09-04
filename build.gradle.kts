@@ -10,7 +10,7 @@ plugins {
 }
 
 application {
-	mainClass.set("com.github.nayasis.simplelauncher.SimplelauncherKt")
+	mainClass.set("io.github.nayasis.simplelauncher.SimplelauncherKt")
 	applicationName = "simplelauncher"
 	applicationDefaultJvmArgs = listOf(
 		"--add-exports=javafx.graphics/com.sun.javafx.application=ALL-UNNAMED",
@@ -33,6 +33,10 @@ java {
 repositories {
 	mavenLocal()
 	mavenCentral()
+}
+
+configurations.all {
+    exclude(group = "org.slf4j", module = "slf4j-jdk14")
 }
 
 dependencies {
@@ -61,8 +65,8 @@ dependencies {
 
 	implementation("de.jensd:fontawesomefx:8.9")
 
-	implementation("org.jetbrains.kotlin:kotlin-reflect")
-	implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation(kotlin("reflect"))
+    implementation(kotlin("stdlib-jdk8"))
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.10.2")
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 
@@ -74,6 +78,7 @@ dependencies {
 	}
 	implementation("org.jetbrains.pty4j:pty4j:0.13.10")
 
+
 	testImplementation("org.apache.pdfbox:pdfbox:2.0.24")
 	testImplementation("com.levigo.jbig2:levigo-jbig2-imageio:2.0")
 	testImplementation("org.apache.httpcomponents.client5:httpclient5:5.3.1")
@@ -84,11 +89,14 @@ dependencies {
 	testImplementation("net.java.dev.jna:jna:5.9.0")
 	testImplementation("net.java.dev.jna:jna-platform:5.9.0")
 
-	testImplementation("io.kotest:kotest-assertions-core:5.7.2")
-	testImplementation("io.kotest:kotest-runner-junit5:5.7.2")
-	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
-	testImplementation("io.kotest:kotest-property:5.7.2")
-	testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+    testImplementation(kotlin("test"))
+    testImplementation("io.kotest:kotest-runner-junit5:5.8.0")
+    testImplementation("org.testfx:testfx-junit5:4.0.18")
+//	testImplementation("io.kotest:kotest-assertions-core:5.7.2")
+//	testImplementation("io.kotest:kotest-runner-junit5:5.7.2")
+//	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
+//	testImplementation("io.kotest:kotest-property:5.7.2")
+//	testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 	testImplementation("org.yaml:snakeyaml:2.2")
 
 }
