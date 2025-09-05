@@ -17,6 +17,7 @@ import io.github.nayasis.kotlin.javafx.misc.toIconImage
 import io.github.nayasis.kotlin.javafx.misc.toImage
 import io.github.nayasis.simplelauncher.common.Context
 import io.github.nayasis.simplelauncher.common.toKeyword
+import io.github.nayasis.simplelauncher.model.types.BlobByteArray
 import io.github.oshai.kotlinlogging.KotlinLogging
 import javafx.scene.image.Image
 import mslinks.ShellLink
