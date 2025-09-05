@@ -19,7 +19,6 @@ import io.github.nayasis.kotlin.javafx.geometry.Insets
 import io.github.nayasis.kotlin.javafx.misc.Desktop
 import io.github.nayasis.kotlin.javafx.misc.runSync
 import io.github.nayasis.kotlin.javafx.misc.set
-import io.github.nayasis.kotlin.javafx.misc.toImage
 import io.github.nayasis.kotlin.javafx.preloader.BasePreloader
 import io.github.nayasis.kotlin.javafx.property.StageProperty
 import io.github.nayasis.kotlin.javafx.stage.Dialog
@@ -176,7 +175,7 @@ class Main: View("application.title".message()), CoroutineScope {
         colTitle.cellValueByDefault().cellFormat {
             graphic = hbox {
                 imageview {
-                    image = it.icon
+                    image = it.iconImage
                     hmargin = Insets(0,0,0,2)
                 }
                 label {
@@ -633,7 +632,7 @@ class Main: View("application.title".message()), CoroutineScope {
         detail = link
         with(detail!!) {
             descTitle.text               = title
-            descHashtag.text                 = hashtag
+            descHashtag.text             = hashtag
             descShowConsole.isSelected   = showConsole
             descSeqExecution.isSelected  = executeEach
             descGroupName.text           = group
@@ -643,7 +642,7 @@ class Main: View("application.title".message()), CoroutineScope {
             descCmdPrefix.text           = commandPrefix
             descCmdPrev.text             = commandPrev
             descCmdNext.text             = commandNext
-            descIcon.image               = icon
+            descIcon.image               = iconImage
         }
         buttonNew.isDisable    = false
         buttonDelete.isDisable = false
@@ -696,7 +695,7 @@ class Main: View("application.title".message()), CoroutineScope {
             it.commandPrefix = descCmdPrefix.text?.trim()
             it.commandPrev   = descCmdPrev.text
             it.commandNext   = descCmdNext.text
-            it.icon          = descIcon.image
+            it.iconImage     = descIcon.image
 
             linkService.save(it.indexing())
 
@@ -724,7 +723,7 @@ class Main: View("application.title".message()), CoroutineScope {
     }
 
     fun createDetail() {
-        drawDetail(Link( icon = ICON_NEW.toImage() ))
+        drawDetail(Link(icon = ICON_NEW))
         descGroupName.requestFocus()
         printStatus("msg.alert.create.link".message())
         buttonDelete.isDisable = true
