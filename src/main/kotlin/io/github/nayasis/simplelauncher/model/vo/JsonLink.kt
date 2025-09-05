@@ -3,9 +3,6 @@ package io.github.nayasis.simplelauncher.model.vo
 import io.github.nayasis.kotlin.basica.annotation.NoArg
 import io.github.nayasis.kotlin.basica.core.string.decodeBase64
 import io.github.nayasis.kotlin.basica.core.string.encodeBase64
-import io.github.nayasis.kotlin.javafx.misc.toBinary
-import io.github.nayasis.kotlin.javafx.misc.toImage
-import io.github.nayasis.simplelauncher.model.ICON_IMAGE_TYPE
 import io.github.nayasis.simplelauncher.model.Link
 import java.time.LocalDateTime
 
@@ -41,7 +38,7 @@ data class JsonLink(
         commandNext  = entity.commandNext,
         description  = entity.description,
         hashtag      = entity.hashtag,
-        icon         = entity.icon?.toBinary(ICON_IMAGE_TYPE)?.encodeBase64(),
+        icon         = entity.icon?.encodeBase64(),
         execCount    = entity.executeCount,
         executedAt   = entity.executedAt,
         createdAt    = entity.createdAt,
@@ -61,7 +58,7 @@ data class JsonLink(
             commandNext   = it.commandNext,
             description   = it.description,
             hashtag       = it.hashtag,
-            icon          = runCatching { it.icon?.decodeBase64<ByteArray>()?.toImage() }.getOrNull(),
+            icon          = runCatching { it.icon?.decodeBase64<ByteArray>() }.getOrNull(),
             executeCount  = it.execCount,
             executedAt    = it.executedAt,
             createdAt     = it.createdAt ?: LocalDateTime.now(),
