@@ -14,85 +14,66 @@ import io.github.nayasis.kotlin.basica.etc.Platforms
 import io.github.nayasis.kotlin.basica.etc.error
 import io.github.nayasis.kotlin.javafx.misc.toBinary
 import io.github.nayasis.kotlin.javafx.misc.toIconImage
+import io.github.nayasis.kotlin.javafx.misc.toImage
 import io.github.nayasis.simplelauncher.common.Context
 import io.github.nayasis.simplelauncher.common.toKeyword
+import io.github.nayasis.simplelauncher.model.types.BlobByteArray
 import io.github.oshai.kotlinlogging.KotlinLogging
 import javafx.scene.image.Image
 import mslinks.ShellLink
 import java.io.File
 import java.nio.file.Path
 import java.time.LocalDateTime
-import javax.persistence.Column
-import javax.persistence.Entity
-import javax.persistence.GeneratedValue
-import javax.persistence.GenerationType
-import javax.persistence.Id
-import javax.persistence.Lob
+import org.komapper.annotation.KomapperAutoIncrement
+import org.komapper.annotation.KomapperColumn
+import org.komapper.annotation.KomapperEntity
+import org.komapper.annotation.KomapperId
+import org.komapper.annotation.KomapperTable
 import kotlin.io.path.div
 
 private val logger = KotlinLogging.logger {}
 
 const val ICON_IMAGE_TYPE = "png"
 
-//object Links: Table("TB_LINK_TEST") {
-//    val id            = long("id").autoIncrement()
-//    val title         = varchar("title", 300).nullable()
-//    val group         = varchar("a_group", 255).nullable()
-//    val path          = varchar("path", 2000).nullable()
-//    val relativePath  = varchar("relative_path", 2000).nullable()
-//    val showConsole   = bool("show_console").default(false)
-//    val executeEach   = bool("execute_each").default(true)
-//    val argument      = varchar("argument", 2000).nullable()
-//    val commandPrefix = varchar("command_prefix", 2000).nullable()
-//    val commandPrev   = varchar("command_prev", 2000).nullable()
-//    val commandNext   = varchar("command_next", 2000).nullable()
-//    val description   = text("desc").nullable()
-//    val hashtag       = varchar("hashtag", 2000).nullable()
-//    val icon          = blob("icon").nullable()
-//    val executeCount  = integer("exe_count").default(0)
-//    val executedAt    = datetime("executed_at").nullable()
-//    val createdAt     = datetime("created_at").default(LocalDateTime.now())
-//    val updatedAt     = datetime("updated_at").default(LocalDateTime.now())
-//    override val primaryKey = PrimaryKey(arrayOf(id, title),"pk_$tableName")
-//}
-
-@Entity(name = "TB_LINK_TEST")
+@KomapperEntity
+@KomapperTable(name = "TB_LINK_TEST")
 data class Link(
-    @Id @GeneratedValue(strategy = GenerationType.AUTO)
+    @KomapperId
+    @KomapperAutoIncrement
     var id: Long = 0,
-    @Column(length = 300)
+    @KomapperColumn(name = "title")
     var title: String? = null,
-    @Column(length = 255, name="a_group")
+    @KomapperColumn(name = "a_group")
     var group: String? = null,
-    @Column(length = 2000)
+    @KomapperColumn(name = "path")
     var path: String? = null,
-    @Column(length = 2000)
+    @KomapperColumn(name = "relative_path")
     var relativePath: String? = null,
-    @Column
+    @KomapperColumn(name = "show_console")
     var showConsole: Boolean = false,
-    @Column
+    @KomapperColumn(name = "execute_each")
     var executeEach: Boolean = true,
-    @Column(length = 2000)
+    @KomapperColumn(name = "argument")
     var argument: String? = null,
-    @Column @Lob
+    @KomapperColumn(name = "icon", alternateType = BlobByteArray::class)
     var icon: ByteArray? = null,
-    @Column(length = 2000)
+    @KomapperColumn(name = "command_prefix")
     var commandPrefix: String? = null,
-    @Column(length = 2000)
+    @KomapperColumn(name = "command_prev")
     var commandPrev: String? = null,
-    @Column(length = 2000)
+    @KomapperColumn(name = "command_next")
     var commandNext: String? = null,
-    @Column @Lob
+    @KomapperColumn(name = "description")
     var description: String? = null,
-    @Column(length = 2000)
+    @KomapperColumn(name = "hashtag")
     var hashtag: String? = null,
-    @Column(name="exe_count")
+    @KomapperColumn(name = "exe_count")
     var executeCount: Int = 0,
-    @Column
+    @KomapperColumn(name = "executed_at")
     var executedAt: LocalDateTime? = null,
-    @Column
+    @KomapperColumn(name = "created_at")
     var createdAt: LocalDateTime = LocalDateTime.now(),
-    @Column
+    @KomapperColumn(name = "updated_at")
     var updatedAt: LocalDateTime = LocalDateTime.now(),
 ) {
 
@@ -101,6 +82,18 @@ data class Link(
 
     val keywordTitle: HashSet<String> = HashSet()
     val keywordGroup: HashSet<String> = HashSet()
+
+    var iconImage: Image? = null
+        get() {
+            if( field == null && icon != null ) {
+                field = runCatching { icon?.toImage() }.getOrNull()
+            }
+            return field
+        }
+        set(value) {
+            field = value
+            icon = value?.toBinary(ICON_IMAGE_TYPE)
+        }
 
 //    init {
 //        indexing()
@@ -157,7 +150,9 @@ data class Link(
     fun setIcon(file: File): Image? {
         return runCatching {
             file.toIconImage().firstOrNull()
-        }.getOrNull().also { icon = it?.toBinary(ICON_IMAGE_TYPE) }
+        }.getOrNull().also { image -> 
+            icon = image?.toBinary(ICON_IMAGE_TYPE)
+        }
     }
 
     @JsonIgnore
@@ -222,61 +217,3 @@ data class Link(
     }
 
 }
-
-//fun UpdateBuilder<*>.from(entity: Link) {
-//    if(entity.id > 0) this[Links.id] = entity.id
-//    this[Links.title]         = entity.title
-//    this[Links.group]         = entity.group
-//    this[Links.path]          = entity.path
-//    this[Links.relativePath]  = entity.relativePath
-//    this[Links.showConsole]   = entity.showConsole
-//    this[Links.executeEach]   = entity.executeEach
-//    this[Links.argument]      = entity.argument
-//    this[Links.commandPrefix] = entity.commandPrefix
-//    this[Links.commandPrev]   = entity.commandPrev
-//    this[Links.commandNext]   = entity.commandNext
-//    this[Links.description]   = entity.description
-//    this[Links.hashtag]       = entity.hashtag
-//    this[Links.icon]          = entity.icon?.toBinary(ICON_IMAGE_TYPE)?.let { ExposedBlob(it) }
-//    this[Links.executeCount]  = entity.executeCount
-//    this[Links.executedAt]    = entity.executedAt
-//    this[Links.createdAt]     = entity.createdAt
-//    this[Links.updatedAt]     = entity.updatedAt
-//}
-//
-//fun ResultRow.toLink(): Link {
-//    return this.let { row -> Link(
-//        id            = row[Links.id],
-//        title         = row[Links.title],
-//        group         = row[Links.group],
-//        path          = row[Links.path],
-//        relativePath  = row[Links.relativePath],
-//        showConsole   = row[Links.showConsole],
-//        executeEach   = row[Links.executeEach],
-//        argument      = row[Links.argument],
-//        commandPrefix = row[Links.commandPrefix],
-//        commandPrev   = row[Links.commandPrev],
-//        commandNext   = row[Links.commandNext],
-//        description   = row[Links.description],
-//        hashtag       = row[Links.hashtag],
-//        icon          = row[Links.icon]?.bytes?.toImage(),
-//        executeCount  = row[Links.executeCount],
-//        executedAt    = row[Links.executedAt],
-//        createdAt     = row[Links.createdAt],
-//        updatedAt     = row[Links.updatedAt],
-//    )}
-//}
-//
-//fun Links.save(link: Link) {
-//    if(link.id <= 0) {
-//        insert { it.from(link) }.let { row ->
-//            link.id = row[id]
-//        }
-//    } else {
-//        update({
-//            Links.id eq link.id
-//        }) {
-//            it.from(link)
-//        }
-//    }
-//}

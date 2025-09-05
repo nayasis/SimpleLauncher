@@ -3,8 +3,8 @@ version = "0.1.5"
 
 plugins {
 	application
-	kotlin("jvm") version "2.2.0"
-	kotlin("kapt") version "2.2.0"
+	kotlin("jvm") version "2.2.10"
+	id("com.google.devtools.ksp") version "2.2.10-2.0.2"
 	id("org.openjfx.javafxplugin") version "0.1.0"
 	id("org.beryx.runtime") version "1.13.1"
 }
@@ -41,13 +41,15 @@ configurations.all {
 
 dependencies {
 
-	implementation("org.jetbrains.exposed:exposed-core:0.48.0")
-	implementation("org.jetbrains.exposed:exposed-java-time:0.48.0")
-	implementation("org.jetbrains.exposed:exposed-jdbc:0.48.0")
-	
-	api("pl.touk.krush:krush-annotation-processor:1.2.0")
-	kapt("pl.touk.krush:krush-annotation-processor:1.2.0")
-	api("pl.touk.krush:krush-runtime:1.2.0")
+	// Komapper dependencies
+	val komapperVersion = "5.4.0"
+	platform("org.komapper:komapper-platform:$komapperVersion").let {
+		implementation(it)
+		ksp(it)
+	}
+	implementation("org.komapper:komapper-starter-jdbc")
+	implementation("org.komapper:komapper-dialect-h2-jdbc")
+	ksp("org.komapper:komapper-processor")
 
 	implementation("io.github.nayasis:basica-kt:0.3.7-SNAPSHOT")
 	implementation("io.github.nayasis:basicafx-kt:0.2.3-SNAPSHOT")
@@ -92,11 +94,6 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation("io.kotest:kotest-runner-junit5:5.8.0")
     testImplementation("org.testfx:testfx-junit5:4.0.18")
-//	testImplementation("io.kotest:kotest-assertions-core:5.7.2")
-//	testImplementation("io.kotest:kotest-runner-junit5:5.7.2")
-//	testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
-//	testImplementation("io.kotest:kotest-property:5.7.2")
-//	testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 	testImplementation("org.yaml:snakeyaml:2.2")
 
 }
@@ -107,16 +104,6 @@ kotlin {
 	}
 }
 
-kapt {
-	useBuildCache = true
-	correctErrorTypes = true
-	// Set annotation processor to JDK 11 to suppress warnings
-	// Actual project code still compiles with JDK 17
-	javacOptions {
-		option("-source", "11")
-		option("-target", "11")
-	}
-}
 
 tasks.withType<Test> {
 	useJUnitPlatform()

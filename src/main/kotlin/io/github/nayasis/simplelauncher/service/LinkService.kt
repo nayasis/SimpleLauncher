@@ -8,12 +8,15 @@ import io.github.nayasis.kotlin.javafx.misc.Desktop
 import io.github.nayasis.kotlin.javafx.misc.set
 import io.github.nayasis.kotlin.javafx.stage.Dialog
 import io.github.nayasis.simplelauncher.common.Context
-import io.github.nayasis.simplelauncher.model.*
+import io.github.nayasis.simplelauncher.database.DataSource.db
+import io.github.nayasis.simplelauncher.model.Link
+import io.github.nayasis.simplelauncher.model.link
 import io.github.nayasis.simplelauncher.model.vo.JsonLink
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.jetbrains.exposed.sql.*
-import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
-import org.jetbrains.exposed.sql.transactions.transaction
+import org.komapper.core.dsl.Meta
+import org.komapper.core.dsl.QueryDsl
+import org.komapper.core.dsl.operator.asc
+import org.komapper.core.dsl.operator.count
 import tornadofx.FileChooserMode
 import tornadofx.SortedFilteredList
 import tornadofx.asObservable
@@ -28,12 +31,22 @@ class LinkService {
     val links = SortedFilteredList(mutableListOf<Link>().asObservable())
 
     fun save(link: Link, refreshTable: Boolean = true) {
-        if(link.isNew)
+        if(link.isNew) {
             links.add(link)
-        transaction {
-            Links.save(link)
-            commit()
         }
+
+        db.withTransaction {
+            if(link.isNew) {
+                db.runQuery{
+                    QueryDsl.insert(Meta.link).single(link)
+                }
+            } else {
+                db.runQuery{
+                    QueryDsl.update(Meta.link).single(link)
+                }
+            }
+        }
+
         if(refreshTable) {
             runLater {
                 Context.main.tableMain.refresh()
@@ -43,30 +56,27 @@ class LinkService {
 
     fun importData(file: Path) {
         val jsonLinks = file.readText().let { Reflector.toObject<List<JsonLink>>(it) }.map { it.toLink() }
-        transaction {
-            jsonLinks.forEach { link ->
-                Links.insert { it.from(link) }
-            }
-            commit()
+        jsonLinks.forEach { link ->
+            db.runQuery(QueryDsl.insert(Meta.link).single(link))
         }
     }
 
     fun countAll(): Long {
-        return transaction {
-            Links.selectAll().count()
-        }
+        return db.runQuery(QueryDsl.from(Meta.link).select(count(Meta.link.id))) ?: 0
     }
 
     fun loadAll(worker: ((index: Int, link: Link) -> Unit)? = null) {
         var i = 0
         val links = LinkedList<Link>()
-        transaction {
-            Links.selectAll().orderBy(Links.title, SortOrder.ASC).iterator().forEach { row ->
-                val link = row.toLink()
-                links.add(link)
-                worker?.invoke(++i, link)
-            }
+
+        db.runQuery(
+            QueryDsl.from(Meta.link)
+                .orderBy(Meta.link.title.asc())
+        ).forEach { link ->
+            links.add(link)
+            worker?.invoke(++i, link)
         }
+
         this.links.run {
             clear()
             addAll(links)
@@ -74,28 +84,27 @@ class LinkService {
     }
 
     fun exportData(file: Path) {
-        val dbLinks = transaction {
-            Links.selectAll().map { it.toLink() }.map { JsonLink(it) }
-        }
-        logger.debug { dbLinks }
+        val dbLinks = db.runQuery(
+            QueryDsl.from(Meta.link)
+        ).map { JsonLink(it) }
         file.writeText( Reflector.toJson(dbLinks, pretty = true))
     }
 
     fun deleteAll() {
-        Context.config.historyKeyword.clear()
-        transaction {
-            Links.deleteAll()
+        db.withTransaction {
+            db.runQuery(
+                QueryDsl.delete(Meta.link).all()
+            )
+            Context.config.historyKeyword.clear()
             links.clear()
-            commit()
         }
     }
 
     fun delete(link: Link) {
-        Context.config.historyKeyword.remove(link.title ?: "")
-        transaction {
-            Links.deleteWhere { Links.id eq link.id }
+        db.withTransaction {
+            db.runQuery(QueryDsl.delete(Meta.link).single(link))
+            Context.config.historyKeyword.remove(link.title ?: "")
             links.remove(link)
-            commit()
         }
     }
 
