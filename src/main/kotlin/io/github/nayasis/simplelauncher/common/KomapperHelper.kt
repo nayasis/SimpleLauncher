@@ -1,23 +1,31 @@
 package io.github.nayasis.simplelauncher.common
 
-import org.komapper.core.dsl.query.EntityInsertSingleQuery
 import org.komapper.core.dsl.query.Query
-import org.komapper.core.dsl.query.SchemaCreateQuery
 import org.komapper.jdbc.JdbcDatabase
+import org.komapper.tx.core.EmptyTransactionProperty
+import org.komapper.tx.core.TransactionAttribute
+import org.komapper.tx.core.TransactionOperator
+import org.komapper.tx.core.TransactionProperty
 
-var database: JdbcDatabase? = null
+var defaultDatabase: JdbcDatabase? = null
 
-fun SchemaCreateQuery.runQuery() {
-    database?.runQuery(this)
+fun <T> Query<T>.runQuery(database: JdbcDatabase? = null): T {
+    return getDatabase(database).runQuery(this)
+}
+
+fun <R> withTransaction(
+    database: JdbcDatabase? = null,
+    transactionAttribute: TransactionAttribute = TransactionAttribute.REQUIRED,
+    transactionProperty: TransactionProperty = EmptyTransactionProperty,
+    block: (TransactionOperator) -> R
+): R {
+    return getDatabase(database).withTransaction { block(it) }
+}
+
+
+
+private fun getDatabase(database: JdbcDatabase?): JdbcDatabase {
+    return (database ?: defaultDatabase)
         ?: throw IllegalStateException("Database is not initialized")
 }
 
-fun <T: Any> EntityInsertSingleQuery<T>.runQuery(): T {
-    return database?.runQuery(this)
-        ?: throw IllegalStateException("Database is not initialized")
-}
-
-fun <T: Any> Query<out T>.runQuery(): T {
-    return database?.runQuery(this)
-        ?: throw IllegalStateException("Database is not initialized")
-}

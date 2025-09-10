@@ -1,6 +1,10 @@
 package io.github.nayasis.simplelauncher.service
 
-import io.github.nayasis.kotlin.basica.core.io.*
+import io.github.nayasis.kotlin.basica.core.io.directory
+import io.github.nayasis.kotlin.basica.core.io.notExists
+import io.github.nayasis.kotlin.basica.core.io.pathString
+import io.github.nayasis.kotlin.basica.core.io.readText
+import io.github.nayasis.kotlin.basica.core.io.writeText
 import io.github.nayasis.kotlin.basica.core.string.message
 import io.github.nayasis.kotlin.basica.core.string.toPath
 import io.github.nayasis.kotlin.basica.reflection.Reflector
@@ -8,7 +12,10 @@ import io.github.nayasis.kotlin.javafx.misc.Desktop
 import io.github.nayasis.kotlin.javafx.misc.set
 import io.github.nayasis.kotlin.javafx.stage.Dialog
 import io.github.nayasis.simplelauncher.common.Context
-import io.github.nayasis.simplelauncher.database.DataSource.db
+import io.github.nayasis.simplelauncher.common.Context.Companion.config
+import io.github.nayasis.simplelauncher.common.Context.Companion.main
+import io.github.nayasis.simplelauncher.common.runQuery
+import io.github.nayasis.simplelauncher.common.withTransaction
 import io.github.nayasis.simplelauncher.model.Link
 import io.github.nayasis.simplelauncher.model.link
 import io.github.nayasis.simplelauncher.model.vo.JsonLink
@@ -35,47 +42,45 @@ class LinkService {
             links.add(link)
         }
 
-        db.withTransaction {
-            if(link.isNew) {
-                db.runQuery{
-                    QueryDsl.insert(Meta.link).single(link)
-                }
-            } else {
-                db.runQuery{
-                    QueryDsl.update(Meta.link).single(link)
-                }
-            }
-        }
+        if(link.isNew) {
+            QueryDsl.insert(Meta.link).single(link)
+        } else {
+            QueryDsl.update(Meta.link).single(link)
+        }.runQuery()
 
         if(refreshTable) {
             runLater {
-                Context.main.tableMain.refresh()
+                main.tableMain.refresh()
             }
         }
     }
 
     fun importData(file: Path) {
-        val jsonLinks = file.readText().let { Reflector.toObject<List<JsonLink>>(it) }.map { it.toLink() }
-        jsonLinks.forEach { link ->
-            db.runQuery(QueryDsl.insert(Meta.link).single(link))
+        val jsonLinks = file.readText()
+            .let { Reflector.toObject<List<JsonLink>>(it) }
+            .map { it.toLink() }
+        withTransaction {
+            QueryDsl.insert(Meta.link).multiple(jsonLinks).runQuery()
         }
     }
 
     fun countAll(): Long {
-        return db.runQuery(QueryDsl.from(Meta.link).select(count(Meta.link.id))) ?: 0
+        return QueryDsl.from(Meta.link)
+            .select(count(Meta.link.id)).runQuery() ?: 0
     }
 
     fun loadAll(worker: ((index: Int, link: Link) -> Unit)? = null) {
         var i = 0
         val links = LinkedList<Link>()
 
-        db.runQuery(
-            QueryDsl.from(Meta.link)
-                .orderBy(Meta.link.title.asc())
-        ).forEach { link ->
-            links.add(link)
-            worker?.invoke(++i, link)
-        }
+        QueryDsl.from(Meta.link)
+            .orderBy(Meta.link.title.asc())
+            .runQuery()
+            .forEach { link ->
+                link.indexing()
+                links.add(link)
+                worker?.invoke(++i, link)
+            }
 
         this.links.run {
             clear()
@@ -84,26 +89,22 @@ class LinkService {
     }
 
     fun exportData(file: Path) {
-        val dbLinks = db.runQuery(
-            QueryDsl.from(Meta.link)
-        ).map { JsonLink(it) }
+        val dbLinks = QueryDsl.from(Meta.link).runQuery().map { JsonLink(it) }
         file.writeText( Reflector.toJson(dbLinks, pretty = true))
     }
 
     fun deleteAll() {
-        db.withTransaction {
-            db.runQuery(
-                QueryDsl.delete(Meta.link).all()
-            )
-            Context.config.historyKeyword.clear()
+        withTransaction {
+            QueryDsl.delete(Meta.link).all().runQuery()
+            config.historyKeyword.clear()
             links.clear()
         }
     }
 
     fun delete(link: Link) {
-        db.withTransaction {
-            db.runQuery(QueryDsl.delete(Meta.link).single(link))
-            Context.config.historyKeyword.remove(link.title ?: "")
+        withTransaction {
+            QueryDsl.delete(Meta.link).single(link).runQuery()
+            config.historyKeyword.remove(link.title ?: "")
             links.remove(link)
         }
     }

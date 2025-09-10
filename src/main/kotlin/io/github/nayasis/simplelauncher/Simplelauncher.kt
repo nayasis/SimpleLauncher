@@ -1,12 +1,16 @@
 package io.github.nayasis.simplelauncher
 
 import io.github.nayasis.kotlin.basica.core.extension.runIfNotEmpty
+import io.github.nayasis.kotlin.basica.etc.error
 import io.github.nayasis.kotlin.basica.model.Messages
 import io.github.nayasis.kotlin.basica.net.Networks
 import io.github.nayasis.kotlin.javafx.app.FxApp
 import io.github.nayasis.kotlin.javafx.preloader.BasePreloader
 import io.github.nayasis.kotlin.javafx.stage.Stages
-import io.github.nayasis.simplelauncher.database.DataSource.db
+import io.github.nayasis.simplelauncher.common.defaultDatabase
+import io.github.nayasis.simplelauncher.common.runQuery
+import io.github.nayasis.simplelauncher.common.withTransaction
+import io.github.nayasis.simplelauncher.model.Link
 import io.github.nayasis.simplelauncher.model.link
 import io.github.nayasis.simplelauncher.service.LinkExecutor
 import io.github.nayasis.simplelauncher.service.LinkService
@@ -19,6 +23,7 @@ import kotlinx.coroutines.javafx.JavaFx
 import org.apache.commons.cli.CommandLine
 import org.komapper.core.dsl.Meta
 import org.komapper.core.dsl.QueryDsl
+import org.komapper.jdbc.JdbcDatabase
 import tornadofx.launch
 import java.util.*
 import java.util.logging.Level
@@ -47,16 +52,21 @@ class Simplelauncher: FxApp(Main::class), CoroutineScope  {
     override fun onStart(command: CommandLine) {
         // set favicon
         Stages.defaultIcons.add("/image/icon/favicon.png")
+
         // set i18n
         environment.get<String>("simplelauncher.locale").runIfNotEmpty { locale ->
             Locale.setDefault(Locale.forLanguageTag(locale))
         }
+
         // initialize db table
-        db.withTransaction {
-            db.runQuery{
-                QueryDsl.create(Meta.link)
-            }
-        }
+        defaultDatabase = runCatching { JdbcDatabase(
+            url      = environment["simplelauncher.datasource.url"] ?: "",
+            user     = environment["simplelauncher.datasource.user"] ?: "",
+            password = environment["simplelauncher.datasource.password"] ?: "",
+        ) }.onFailure { logger.error(it) }.getOrThrow()
+
+        Link.createTable().runQuery()
+//        QueryDsl.create(Meta.link).runQuery()
         logger.debug { ">> database prepared" }
 
         // initialize beans

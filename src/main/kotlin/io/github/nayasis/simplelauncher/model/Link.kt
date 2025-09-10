@@ -29,6 +29,8 @@ import org.komapper.annotation.KomapperColumn
 import org.komapper.annotation.KomapperEntity
 import org.komapper.annotation.KomapperId
 import org.komapper.annotation.KomapperTable
+import org.komapper.core.dsl.QueryDsl
+import org.komapper.core.dsl.query.ScriptExecuteQuery
 import kotlin.io.path.div
 
 private val logger = KotlinLogging.logger {}
@@ -55,7 +57,7 @@ data class Link(
     var executeEach: Boolean = true,
     @KomapperColumn(name = "argument")
     var argument: String? = null,
-    @KomapperColumn(name = "icon", alternateType = BlobByteArray::class)
+    @KomapperColumn(name = "icon")
     var icon: ByteArray? = null,
     @KomapperColumn(name = "command_prefix")
     var commandPrefix: String? = null,
@@ -216,4 +218,79 @@ data class Link(
         return id.hashCode()
     }
 
+    companion object {
+        fun createTable(): ScriptExecuteQuery {
+            return QueryDsl.executeScript("""
+                CREATE TABLE IF NOT EXISTS TB_LINK_TEST (
+                    -- id             BIGINT PRIMARY KEY AUTO_INCREMENT,
+                    id             BIGINT generated always as identity not null,
+                    title          VARCHAR(300),
+                    a_group        VARCHAR(255),
+                    path           VARCHAR(2000),
+                    relative_path  VARCHAR(2000),
+                    show_console   BOOLEAN     DEFAULT FALSE,
+                    execute_each   BOOLEAN     DEFAULT TRUE,
+                    argument       VARCHAR(2000),
+                    icon           BLOB,
+                    command_prefix VARCHAR(2000),
+                    command_prev   VARCHAR(2000),
+                    command_next   VARCHAR(2000),
+                    description    TEXT,
+                    hashtag        VARCHAR(2000),
+                    exe_count      INT         DEFAULT 0,
+                    executed_at    DATETIME,
+                    created_at     DATETIME not null,
+                    updated_at     DATETIME not null,
+                    constraint pk_TB_LINK_TEST primary key(id)
+                );                
+            """.trimIndent())
+
+            /**
+             create table if not exists TB_LINK_TEST (
+               id bigint generated always as identity not null,
+               title varchar(500),
+               a_group varchar(500),
+               path varchar(500),
+               relative_path varchar(500),
+               show_console bool not null,
+               execute_each bool not null,
+               argument varchar(500),
+               icon binary,
+               command_prefix varchar(500),
+               command_prev varchar(500),
+               command_next varchar(500),
+               description varchar(500),
+               hashtag varchar(500),
+               exe_count integer not null,
+               executed_at timestamp,
+               created_at timestamp not null,
+               updated_at timestamp not null,
+               constraint pk_TB_LINK_TEST primary key(id))
+             */
+
+        }
+    }
+
 }
+
+//object Links: Table("TB_LINK_TEST") {
+//    val id            = long("id").autoIncrement()
+//    val title         = varchar("title", 300).nullable()
+//    val group         = varchar("a_group", 255).nullable()
+//    val path          = varchar("path", 2000).nullable()
+//    val relativePath  = varchar("relative_path", 2000).nullable()
+//    val showConsole   = bool("show_console").default(false)
+//    val executeEach   = bool("execute_each").default(true)
+//    val argument      = varchar("argument", 2000).nullable()
+//    val commandPrefix = varchar("command_prefix", 2000).nullable()
+//    val commandPrev   = varchar("command_prev", 2000).nullable()
+//    val commandNext   = varchar("command_next", 2000).nullable()
+//    val description   = text("desc").nullable()
+//    val hashtag       = varchar("hashtag", 2000).nullable()
+//    val icon          = blob("icon").nullable()
+//    val executeCount  = integer("exe_count").default(0)
+//    val executedAt    = datetime("executed_at").nullable()
+//    val createdAt     = datetime("created_at").default(LocalDateTime.now())
+//    val updatedAt     = datetime("updated_at").default(LocalDateTime.now())
+//    override val primaryKey = PrimaryKey(arrayOf(id, title),"pk_$tableName")
+//}
