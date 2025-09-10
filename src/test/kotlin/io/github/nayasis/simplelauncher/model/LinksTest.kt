@@ -3,8 +3,8 @@ package io.github.nayasis.simplelauncher.model
 import io.github.nayasis.kotlin.basica.etc.error
 import io.github.nayasis.kotlin.basica.reflection.Reflector
 import io.github.nayasis.simplelauncher.common.ICON_NEW
-import io.github.nayasis.simplelauncher.common.defaultDatabase
-import io.github.nayasis.simplelauncher.common.runQuery
+import io.github.nayasis.simplelauncher.common.KomapperHelper.database
+import io.github.nayasis.simplelauncher.common.KomapperHelper.runQuery
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.junit.jupiter.api.Test
 import org.komapper.core.dsl.Meta
@@ -19,13 +19,14 @@ class LinksTest {
     @Test
     fun basic() {
 
-        defaultDatabase = runCatching { JdbcDatabase(
+        database = runCatching { JdbcDatabase(
             url      = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1",
             user     = "user",
             password = "1234",
         )}.onFailure { logger.error(it) }.getOrThrow()
 
-        QueryDsl.create(Meta.link).runQuery()
+        Link.createTable().runQuery()
+//        QueryDsl.create(Meta.link).runQuery()
 
         val created = Link(
             title   = "test link",

@@ -14,8 +14,8 @@ import io.github.nayasis.kotlin.javafx.stage.Dialog
 import io.github.nayasis.simplelauncher.common.Context
 import io.github.nayasis.simplelauncher.common.Context.Companion.config
 import io.github.nayasis.simplelauncher.common.Context.Companion.main
-import io.github.nayasis.simplelauncher.common.runQuery
-import io.github.nayasis.simplelauncher.common.withTransaction
+import io.github.nayasis.simplelauncher.common.KomapperHelper.runQuery
+import io.github.nayasis.simplelauncher.common.KomapperHelper.withTransaction
 import io.github.nayasis.simplelauncher.model.Link
 import io.github.nayasis.simplelauncher.model.link
 import io.github.nayasis.simplelauncher.model.vo.JsonLink
