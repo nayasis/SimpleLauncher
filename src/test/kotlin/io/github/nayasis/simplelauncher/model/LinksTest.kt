@@ -3,9 +3,8 @@ package io.github.nayasis.simplelauncher.model
 import io.github.nayasis.kotlin.basica.etc.error
 import io.github.nayasis.kotlin.basica.reflection.Reflector
 import io.github.nayasis.simplelauncher.common.ICON_NEW
-import io.github.nayasis.simplelauncher.common.database
+import io.github.nayasis.simplelauncher.common.defaultDatabase
 import io.github.nayasis.simplelauncher.common.runQuery
-import io.github.nayasis.simplelauncher.database.DataSource.db
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.junit.jupiter.api.Test
 import org.komapper.core.dsl.Meta
@@ -20,7 +19,7 @@ class LinksTest {
     @Test
     fun basic() {
 
-        database = runCatching { JdbcDatabase(
+        defaultDatabase = runCatching { JdbcDatabase(
             url      = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1",
             user     = "user",
             password = "1234",
@@ -43,7 +42,7 @@ class LinksTest {
         logger.debug { ">> committed" }
         logger.debug { ">> inserted: $inserted" }
 
-        val read = db.runQuery(QueryDsl.from(Meta.link).where { Meta.link.id eq inserted.id }.firstOrNull())
+        val read = QueryDsl.from(Meta.link).where { Meta.link.id eq inserted.id }.firstOrNull().runQuery()
 
         logger.debug { ">> read: $read" }
 
