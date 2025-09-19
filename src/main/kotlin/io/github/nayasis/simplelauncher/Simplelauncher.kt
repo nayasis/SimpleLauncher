@@ -65,8 +65,7 @@ class Simplelauncher: FxApp(Main::class), CoroutineScope  {
             password = environment["simplelauncher.datasource.password"] ?: "",
         ) }.onFailure { logger.error(it) }.getOrThrow()
 
-        Link.createTable().runQuery()
-//        QueryDsl.create(Meta.link).runQuery()
+        QueryDsl.create(Meta.link).runQuery()
         logger.debug { ">> database prepared" }
 
         // initialize beans
