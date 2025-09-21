@@ -28,8 +28,6 @@ import org.komapper.annotation.KomapperColumn
 import org.komapper.annotation.KomapperEntity
 import org.komapper.annotation.KomapperId
 import org.komapper.annotation.KomapperTable
-import org.komapper.core.dsl.QueryDsl
-import org.komapper.core.dsl.query.ScriptExecuteQuery
 import org.komapper.core.type.BlobByteArray
 import org.komapper.core.type.ClobString
 import kotlin.io.path.div
