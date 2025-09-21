@@ -25,8 +25,7 @@ class LinksTest {
             password = "1234",
         )}.onFailure { logger.error(it) }.getOrThrow()
 
-        Link.createTable().runQuery()
-//        QueryDsl.create(Meta.link).runQuery()
+        QueryDsl.create(Meta.link).runQuery()
 
         val created = Link(
             title   = "test link",

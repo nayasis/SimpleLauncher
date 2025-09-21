@@ -9,6 +9,7 @@ import io.github.nayasis.kotlin.javafx.stage.Stages
 import io.github.nayasis.simplelauncher.common.KomapperHelper
 import io.github.nayasis.simplelauncher.common.KomapperHelper.runQuery
 import io.github.nayasis.simplelauncher.model.Link
+import io.github.nayasis.simplelauncher.model.link
 import io.github.nayasis.simplelauncher.service.LinkExecutor
 import io.github.nayasis.simplelauncher.service.LinkService
 import io.github.nayasis.simplelauncher.view.Main
@@ -18,6 +19,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.javafx.JavaFx
 import org.apache.commons.cli.CommandLine
+import org.komapper.core.dsl.Meta
+import org.komapper.core.dsl.QueryDsl
 import tornadofx.launch
 import java.util.*
 import java.util.logging.Level
