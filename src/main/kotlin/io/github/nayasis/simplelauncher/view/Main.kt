@@ -217,9 +217,8 @@ class Main: View("application.title".message()), CoroutineScope {
             }
         }
 
-        tableMain.selectionModel.selectedItems.addListener { change: ListChangeListener.Change<out Link?> ->
-            if (change.list.isEmpty()) return@addListener
-            drawDetail(change.list[0])
+        tableMain.onSelectionChange { link ->
+            drawDetail(link)
         }
 
         tableMain.setOnKeyPressed { e ->
