@@ -15,7 +15,7 @@ import java.io.File
 
 private val PATTERN_KEYWORD = ExtractPattern("\\$\\{([^\\s{}].*?)}".toPattern())
 
-@Suppress("MemberVisibilityCanBePrivate", "JoinDeclarationAndAssignment")
+@Suppress("MemberVisibilityCanBePrivate")
 class LinkCommand {
 
     var title: String?
@@ -101,6 +101,10 @@ class LinkCommand {
             .appendRaw(path)
             .append(argument)
             .also { if(it.isEmpty()) throw IllegalArgumentException("msg.error.no.command".message().format(title)) }
+    }
+
+    override fun toString(): String {
+        return "$title -> ${toCommand()}"
     }
 
 }

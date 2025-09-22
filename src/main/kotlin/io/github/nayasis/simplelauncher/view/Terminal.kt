@@ -8,15 +8,15 @@ import com.techsenger.jeditermfx.ui.JediTermFxWidget
 import io.github.nayasis.kotlin.basica.core.string.toPath
 import io.github.nayasis.kotlin.basica.etc.error
 import io.github.nayasis.kotlin.basica.exec.Command
+import io.github.nayasis.kotlin.javafx.misc.runSync
 import io.github.nayasis.kotlin.javafx.property.StageProperty
 import io.github.nayasis.simplelauncher.common.Context.Companion.config
 import io.github.nayasis.simplelauncher.view.theme.BlackTerminalTheme
 import io.github.oshai.kotlinlogging.KotlinLogging
-import javafx.scene.layout.Pane
 import javafx.scene.Scene
+import javafx.scene.layout.Pane
 import javafx.stage.Stage
 import tornadofx.attachTo
-import tornadofx.runAsync
 import tornadofx.runLater
 import tornadofx.vbox
 import java.nio.charset.StandardCharsets
@@ -27,9 +27,9 @@ private val logger = KotlinLogging.logger {}
 @Suppress("unused")
 class Terminal(
     command: Command,
-    private val onAlways : ((terminal: Terminal)                   -> Unit)? = null,
-    private val onFail   : ((terminal: Terminal, error: Throwable) -> Unit)? = null,
-    private val onSuccess: ((terminal: Terminal)                   -> Unit)? = null,
+    private val onAlways : ((terminal: Terminal) -> Unit)? = null,
+    private val onFail   : ((error: Throwable)   -> Unit)? = null,
+    private val onSuccess: ((terminal: Terminal) -> Unit)? = null,
 ): Stage() {
 
     private val terminal = toTerminalWidget(command)
@@ -50,14 +50,14 @@ class Terminal(
             minWidth  = 100.0
             minHeight = 100.0
             config.stageTerminal?.bind(this)
-            runAsync{
+            runSync {
                 waitFor()
             }
         }
 
         setOnCloseRequest {
             runCatching { terminal.ttyConnector.close() }.onFailure { e -> logger.error(e) }
-            config.stageTerminal = StageProperty(this)
+            runCatching { terminal.close() }.onFailure { e -> logger.error(e) }
         }
 
     }
@@ -76,11 +76,11 @@ class Terminal(
             onSuccess?.also { f ->
                 runCatching{ f.invoke(this) }.onFailure { e -> logger.error(e) }
             }
-            runLater { title = "Done - ${title}" }
+            runLater { title = "Done - $title" }
         } catch (e: Exception) {
             logger.error(e)
             onFail?.also { f ->
-                runCatching{ f.invoke(this, e) }.onFailure { ex -> logger.error(ex) }
+                runCatching{ f.invoke( e) }.onFailure { ex -> logger.error(ex) }
             }
         } finally {
             onAlways?.also { f ->
@@ -91,9 +91,15 @@ class Terminal(
 
     private fun toTerminalWidget(cmd: Command): JediTermFxWidget {
         return JediTermFxWidget(80, 200, BlackTerminalTheme()).apply {
-            ttyConnector = PtyProcessTtyConnector(toPtyProcess(cmd), StandardCharsets.UTF_8)
-            addHyperlinkFilter(DefaultHyperlinkFilter())
-            start()
+            this.ttyConnector = PtyProcessTtyConnector(toPtyProcess(cmd), StandardCharsets.UTF_8)
+            this.addHyperlinkFilter(DefaultHyperlinkFilter())
+            this.start()
+        }.also { widget ->
+            // close event
+            widget.addListener {
+                config.stageTerminal = StageProperty(this)
+                widget.close()
+            }
         }
     }
 
