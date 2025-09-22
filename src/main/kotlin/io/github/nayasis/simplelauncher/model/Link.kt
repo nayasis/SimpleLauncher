@@ -206,7 +206,7 @@ data class Link(
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
         other as Link
-        return id != other.id
+        return id == other.id
     }
 
     override fun hashCode(): Int {
