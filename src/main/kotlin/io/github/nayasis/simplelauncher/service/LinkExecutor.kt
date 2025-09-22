@@ -44,22 +44,11 @@ class LinkExecutor{
                     } else {
                         val progress = Dialog.progress(link.title)
                         files.forEachIndexed { index, file ->
-                            progress.updateProgress(index + 1, files.size)
-                            progress.updateMessage(file.name)
-                            val cmd = LinkCommand(link, file)
-                            logger.debug { ">> command : $cmd" }
-                            Terminal(cmd.toCommand(),
-                                onFail = { term, error ->
-                                    runSync {
-                                        Dialog.error(error)
-                                    }
-                                },
-                                onAlways = { term ->
-                                    runLater {
-                                        term.close()
-                                    }
-                                }
-                            ).showAndWait()
+                            progress.run {
+                                updateProgress(index + 1, files.size)
+                                updateMessage(file.name)
+                            }
+                            runInTerminal(LinkCommand(link, file).toCommand())
                         }
                         progress.close()
                     }
@@ -73,38 +62,46 @@ class LinkExecutor{
 
     }
 
-    private fun run(linkCmd: LinkCommand, wait: Boolean = false) {
-        with(linkCmd) {
-            val command = toCommand()
-            commandPrev.tokenize("\n").forEach { run(Command(it,workingDirectory),true) }
-            main.printCommand("$command")
-            run(command, wait || showConsole, showConsole)
-            commandNext.tokenize("\n").forEach { run(Command(it,workingDirectory),true) }
+    private fun run(link: LinkCommand, wait: Boolean = false) {
+
+        link.commandPrev.tokenize("\n\r").forEach {
+            runInBackground(Command(it, link.workingDirectory),true)
+        }
+
+        val command = link.toCommand().also { main.printCommand("$it") }
+
+        if(link.showConsole) {
+            runInTerminal(command, true)
+        } else {
+            runInBackground(command, link.commandNext.isNotEmpty())
+        }
+
+        link.commandNext.tokenize("\n\r").forEach {
+            runInBackground(Command(it, link.workingDirectory),true)
+        }
+
+    }
+
+    private fun runInBackground(command: Command, wait: Boolean) {
+        if( command.isEmpty() ) return
+        logger.debug { "- command: $command" }
+        try {
+            command.run().also { if(wait) it.waitFor() }
+        } catch (e: Exception) {
+            throw RuntimeException("msg.error.runtime".message().format("$command")).apply { this.stackTrace = e.stackTrace }
         }
     }
 
-    private fun run(command: Command, wait: Boolean, showConsole: Boolean = false, closeConsoleWhenDone: Boolean = false) {
+    private fun runInTerminal(command: Command, wait: Boolean = false ) {
         if( command.isEmpty() ) return
-        logger.debug { ">> command : $command" }
-        if( showConsole ) {
-            val terminal = Terminal(command, onFail = { term, error ->
-                throw RuntimeException("msg.error.runtime".message().format("$command")).apply { this.stackTrace = error.stackTrace }
-            }, onAlways = {
-                if(closeConsoleWhenDone) {
-                    runLater { it.close() }
-                }
-            })
-            if(wait) {
-                terminal.showAndWait()
-            } else {
-                terminal.show()
+        logger.debug { "- command: $command" }
+        Terminal(command, onFail = { e ->
+            runSync {
+                Dialog.error(e)
             }
-        } else {
-            try {
-                command.run().also { if(wait) it.waitFor() }
-            } catch (e: Exception) {
-                throw RuntimeException("msg.error.runtime".message().format("$command")).apply { this.stackTrace = e.stackTrace }
-            }
+        }).run {
+            runCatching { show() }
+            if(!wait) close()
         }
     }
 
