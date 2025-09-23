@@ -38,7 +38,7 @@ class LinkExecutor{
                             files.forEachIndexed { index, file ->
                                 it.updateProgress(index + 1,files.size)
                                 it.updateMessage(file.name)
-                                run(LinkCommand(link, file),wait=true)
+                                run(LinkCommand(link, file), wait=true)
                             }
                         }
                     } else {
@@ -53,7 +53,7 @@ class LinkExecutor{
                         progress.close()
                     }
                 } else {
-                    run(LinkCommand(link,files),false)
+                    run(LinkCommand(link,files), wait=false)
                 }
             }
             linkService.save( link.apply { executeCount++ })
@@ -73,7 +73,7 @@ class LinkExecutor{
         if(link.showConsole) {
             runInTerminal(command, true)
         } else {
-            runInBackground(command, link.commandNext.isNotEmpty())
+            runInBackground(command, wait || link.commandNext.isNotEmpty())
         }
 
         link.commandNext.tokenize("\n\r").forEach {
