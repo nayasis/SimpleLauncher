@@ -21,7 +21,7 @@ application {
 
 javafx {
 	version = "21.0.2"
-	modules = listOf("javafx.graphics","javafx.controls","javafx.web","javafx.fxml","javafx.swing")
+	modules = listOf("javafx.graphics","javafx.controls","javafx.fxml","javafx.swing")
 }
 
 java {
@@ -37,6 +37,10 @@ repositories {
 
 configurations.all {
     exclude(group = "org.slf4j", module = "slf4j-jdk14")
+    resolutionStrategy {
+//        force("com.h2database:h2:2.1.214")
+        force("com.h2database:h2:2.1.214")
+    }
 }
 
 dependencies {
@@ -63,7 +67,7 @@ dependencies {
 	implementation("io.github.oshai:kotlin-logging-jvm:7.0.3")
 	implementation("ch.qos.logback:logback-classic:1.5.13")
 
-	implementation("com.h2database:h2:2.2.224")
+	implementation("com.h2database:h2:2.1.214")
 
 	implementation("de.jensd:fontawesomefx:8.9")
 

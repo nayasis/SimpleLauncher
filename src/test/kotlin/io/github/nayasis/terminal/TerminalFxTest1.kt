@@ -32,7 +32,7 @@ class TerminalFxTest1: Application() {
             onSuccess = { term ->
                 println("Terminal started successfully.")
             },
-            onFail = { term, error ->
+            onFail = { error ->
                 println("Error while running terminal: ${error.message}")
             },
             onAlways = { term ->
