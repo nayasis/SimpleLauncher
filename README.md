@@ -20,10 +20,6 @@ git clone https://github.com/nayasis/SimpleLauncher.git
 ```
 gradlew runtime
 ```
-- You could also launch application directly.
-  ```shell
-  gradlew bootRun
-  ```
   
 #### 3. Execution
 - Application would be compiled in directory [./build/image] including JRE.
