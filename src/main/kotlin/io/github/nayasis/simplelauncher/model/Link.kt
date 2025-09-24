@@ -12,6 +12,7 @@ import io.github.nayasis.kotlin.basica.core.string.runIfNotBlank
 import io.github.nayasis.kotlin.basica.core.string.toPath
 import io.github.nayasis.kotlin.basica.etc.Platforms
 import io.github.nayasis.kotlin.basica.etc.error
+import io.github.nayasis.kotlin.javafx.misc.resize
 import io.github.nayasis.kotlin.javafx.misc.toBinary
 import io.github.nayasis.kotlin.javafx.misc.toIconImage
 import io.github.nayasis.kotlin.javafx.misc.toImage
@@ -20,6 +21,7 @@ import io.github.nayasis.simplelauncher.common.toKeyword
 import io.github.oshai.kotlinlogging.KotlinLogging
 import javafx.scene.image.Image
 import mslinks.ShellLink
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.file.Path
 import java.time.LocalDateTime
@@ -30,6 +32,7 @@ import org.komapper.annotation.KomapperId
 import org.komapper.annotation.KomapperTable
 import org.komapper.core.type.BlobByteArray
 import org.komapper.core.type.ClobString
+import javax.imageio.ImageIO
 import kotlin.io.path.div
 
 private val logger = KotlinLogging.logger {}
@@ -145,10 +148,20 @@ data class Link(
 
     @JsonIgnore
     fun setIcon(file: File): Image? {
-        return runCatching {
-            file.toIconImage().firstOrNull()
-        }.getOrNull().also { image -> 
-            icon = image?.toBinary(ICON_IMAGE_TYPE)
+        return when(file.extension.lowercase()) {
+            "jpg", "jpeg", "png" -> file.toImage()
+            "gif" -> runCatching { ImageIO.read(file).toBinary(ICON_IMAGE_TYPE).toImage() }.getOrNull()
+            "ico" -> runCatching { file.toIconImage().firstOrNull() }.getOrNull()
+            else -> runCatching { file.toIconImage().firstOrNull() }.getOrNull()
+        }?.let { img ->
+            runCatching { img.resize(128) }.getOrElse { img }
+        }.also { image ->
+            try {
+                icon = image?.toBinary(ICON_IMAGE_TYPE)
+            } catch (e: Exception) {
+                logger.error(e) { ">> file : $file" }
+                throw e
+            }
         }
     }
 
