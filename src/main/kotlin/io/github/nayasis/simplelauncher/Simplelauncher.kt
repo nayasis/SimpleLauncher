@@ -4,11 +4,10 @@ import io.github.nayasis.kotlin.basica.core.extension.runIfNotEmpty
 import io.github.nayasis.kotlin.basica.model.Messages
 import io.github.nayasis.kotlin.basica.net.Networks
 import io.github.nayasis.kotlin.javafx.app.FxApp
-import io.github.nayasis.kotlin.javafx.preloader.BasePreloader
+import io.github.nayasis.kotlin.javafx.preloader.DefaultPreloader
 import io.github.nayasis.kotlin.javafx.stage.Stages
 import io.github.nayasis.simplelauncher.common.KomapperHelper
 import io.github.nayasis.simplelauncher.common.KomapperHelper.runQuery
-import io.github.nayasis.simplelauncher.model.Link
 import io.github.nayasis.simplelauncher.model.link
 import io.github.nayasis.simplelauncher.service.LinkExecutor
 import io.github.nayasis.simplelauncher.service.LinkService
@@ -36,7 +35,7 @@ fun main(args: Array<String>) {
 
     Networks.ignoreCerts()
     Messages.loadFromResource("/message/**.prop")
-    BasePreloader.set(Splash::class)
+    DefaultPreloader.set(Splash::class)
 
     launch<Simplelauncher>(args)
 }
@@ -49,6 +48,8 @@ class Simplelauncher: FxApp(Main::class), CoroutineScope  {
     override fun onStart(command: CommandLine) {
         // set favicon
         Stages.defaultIcons.add("/image/icon/favicon.png")
+
+        DefaultPreloader.notifyMessage("Preparing...")
 
         // set i18n
         environment.get<String>("simplelauncher.locale").runIfNotEmpty { locale ->

@@ -8,7 +8,7 @@ import com.techsenger.jeditermfx.ui.JediTermFxWidget
 import io.github.nayasis.kotlin.basica.core.string.toPath
 import io.github.nayasis.kotlin.basica.etc.error
 import io.github.nayasis.kotlin.basica.exec.Command
-import io.github.nayasis.kotlin.javafx.misc.runSync
+import io.github.nayasis.kotlin.javafx.misc.runAwait
 import io.github.nayasis.kotlin.javafx.property.StageProperty
 import io.github.nayasis.simplelauncher.common.Context.Companion.config
 import io.github.nayasis.simplelauncher.view.theme.BlackTerminalTheme
@@ -50,7 +50,7 @@ class Terminal(
             minWidth  = 100.0
             minHeight = 100.0
             config.stageTerminal?.bind(this)
-            runSync {
+            runAwait {
                 waitFor()
             }
         }
