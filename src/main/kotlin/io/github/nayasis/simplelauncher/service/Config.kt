@@ -18,9 +18,8 @@ class Config {
     var stageMain: StageProperty? = null
     var stageTerminal: StageProperty? = null
     var stageHelp: SizeProperty? = null
-//    var terminalSize: TerminalSize? = null
     var historyKeyword = HistorySet<String>(20)
-    var lastFocusedRow: Int? = null
+    var lastFocusedLinkId: Long? = null
 
     fun save() = configPath.writeText(Reflector.toJson(this,true))
 

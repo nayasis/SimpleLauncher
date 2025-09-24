@@ -133,13 +133,13 @@ class Main: View("application.title".message()), CoroutineScope {
     override fun onBeforeShow() {
         logger.debug { ">> start before show" }
         currentStage?.loadDefaultIcon()
-        
+
         // Set minimum window size (200 x 150)
         currentStage?.let { stage ->
             stage.minWidth  = 200.0
             stage.minHeight = 150.0
         }
-        
+
         Context.config.stageMain?.let {
             try {
                 it.excludeKlass.add(Button::class)
@@ -150,8 +150,6 @@ class Main: View("application.title".message()), CoroutineScope {
             }
         }
 
-        initSearchFilter(Context.config.lastFocusedRow)
-
         runAwait {
             val total = linkService.countAll()
             linkService.loadAll { i, link ->
@@ -159,7 +157,15 @@ class Main: View("application.title".message()), CoroutineScope {
             }
         }
 
-        printSearchResult()
+        initSearchFilter()
+
+        runLater {
+            linkService.links.firstOrNull { it.id == Context.config.lastFocusedLinkId }?.let {
+                tableMain.selectBy(it)
+                tableMain.scrollBy(it)
+            } ?: tableMain.selectFirst()
+        }
+
         DefaultPreloader.close()
 
         logger.debug { ">> end before show" }
@@ -168,7 +174,7 @@ class Main: View("application.title".message()), CoroutineScope {
 
     override fun onUndock() {
         Context.config.run {
-            lastFocusedRow = tableMain.focused.row
+            lastFocusedLinkId = tableMain.selectedItem?.id
             stageMain = StageProperty(currentStage!!)
             save()
         }
@@ -202,6 +208,7 @@ class Main: View("application.title".message()), CoroutineScope {
             text = it.toString()
             alignment = Pos.CENTER_RIGHT
         }
+
 
         linkService.links.bindTo(tableMain)
 
@@ -497,11 +504,10 @@ class Main: View("application.title".message()), CoroutineScope {
 
     }
 
-    private fun initSearchFilter(focused: Int?) {
+    private fun initSearchFilter() {
         keywordMatcher.setKeyword(inputKeyword.text)
         groupMatcher.setKeyword(inputGroup.text)
         setSearchFilter()
-        focused?.let { tableMain.focus(it) }
         setSearchEvent()
     }
 
