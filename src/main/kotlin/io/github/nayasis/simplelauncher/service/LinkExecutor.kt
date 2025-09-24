@@ -3,7 +3,7 @@ package io.github.nayasis.simplelauncher.service
 import io.github.nayasis.kotlin.basica.core.string.message
 import io.github.nayasis.kotlin.basica.core.string.tokenize
 import io.github.nayasis.kotlin.basica.exec.Command
-import io.github.nayasis.kotlin.javafx.misc.runSync
+import io.github.nayasis.kotlin.javafx.misc.runAwait
 import io.github.nayasis.kotlin.javafx.stage.Dialog
 import io.github.nayasis.simplelauncher.common.Context.Companion.config
 import io.github.nayasis.simplelauncher.common.Context.Companion.linkService
@@ -96,7 +96,7 @@ class LinkExecutor{
         if( command.isEmpty() ) return
         logger.debug { "- command: $command" }
         Terminal(command, onFail = { e ->
-            runSync {
+            runAwait {
                 Dialog.error(e)
             }
         }).run {

@@ -1,5 +1,5 @@
 package io.github.nayasis.simplelauncher.view
 
-import io.github.nayasis.kotlin.javafx.preloader.BaseSplash
+import io.github.nayasis.kotlin.javafx.preloader.DefaultSplash
 
-class Splash: BaseSplash(527,297,"/image/splash.jpg")
+class Splash: DefaultSplash(527,297,"/image/splash.jpg")
