@@ -17,9 +17,9 @@ import io.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
 import io.github.nayasis.kotlin.javafx.control.tableview.column.cellValueByDefault
 import io.github.nayasis.kotlin.javafx.geometry.Insets
 import io.github.nayasis.kotlin.javafx.misc.Desktop
-import io.github.nayasis.kotlin.javafx.misc.runSync
+import io.github.nayasis.kotlin.javafx.misc.runAwait
 import io.github.nayasis.kotlin.javafx.misc.set
-import io.github.nayasis.kotlin.javafx.preloader.BasePreloader
+import io.github.nayasis.kotlin.javafx.preloader.DefaultPreloader
 import io.github.nayasis.kotlin.javafx.property.StageProperty
 import io.github.nayasis.kotlin.javafx.stage.Dialog
 import io.github.nayasis.kotlin.javafx.stage.Localizator
@@ -32,7 +32,6 @@ import io.github.nayasis.simplelauncher.service.LinkService
 import io.github.nayasis.simplelauncher.service.TextMatcher
 import io.github.oshai.kotlinlogging.KotlinLogging
 import javafx.beans.value.ObservableValue
-import javafx.collections.ListChangeListener
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.control.*
@@ -134,6 +133,13 @@ class Main: View("application.title".message()), CoroutineScope {
     override fun onBeforeShow() {
         logger.debug { ">> start before show" }
         currentStage?.loadDefaultIcon()
+        
+        // Set minimum window size (200 x 150)
+        currentStage?.let { stage ->
+            stage.minWidth  = 200.0
+            stage.minHeight = 150.0
+        }
+        
         Context.config.stageMain?.let {
             try {
                 it.excludeKlass.add(Button::class)
@@ -146,15 +152,15 @@ class Main: View("application.title".message()), CoroutineScope {
 
         initSearchFilter(Context.config.lastFocusedRow)
 
-        runSync {
+        runAwait {
             val total = linkService.countAll()
             linkService.loadAll { i, link ->
-                BasePreloader.notifyProgress(i+1, total, link.title)
+                DefaultPreloader.notifyProgress(i+1, total, link.title)
             }
         }
 
         printSearchResult()
-        BasePreloader.close()
+        DefaultPreloader.close()
 
         logger.debug { ">> end before show" }
 
@@ -189,20 +195,18 @@ class Main: View("application.title".message()), CoroutineScope {
         colTitle.setComparator { o1, o2 -> o1.title.ifNull{""}.compareTo(o2.title.ifNull{""}) }
 
         colLastUsedDt.cellValue(Link::executedAt).cellFormat {
-            graphic = label {
-                text = it?.toString("YYYY-MM-DD HH:MI:SS")
-            }
+            text = it?.toString("YYYY-MM-DD HH:MI:SS")
             alignment = Pos.CENTER
         }
         colExecCount.cellValue(Link::executeCount).cellFormat {
+            text = it.toString()
             alignment = Pos.CENTER_RIGHT
         }
 
         linkService.links.bindTo(tableMain)
 
-//        colGroup.remainingWidth()
-//        colTitle.remainingWidth()
-//        tableMain.smartResize()
+        tableMain.columnResizePolicy = TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN
+
         tableMain.selectionModel.selectionMode = SelectionMode.SINGLE
 
         tableMain.setOnMouseClicked { event ->
@@ -314,7 +318,7 @@ class Main: View("application.title".message()), CoroutineScope {
 
         menuImportData.setOnAction {
             linkService.openImportPicker()?.let { file ->
-                runSync {
+                runAwait {
                     launch {
                         linkService.importData(file)
                         linkService.loadAll()
