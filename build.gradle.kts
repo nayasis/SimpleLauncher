@@ -119,8 +119,6 @@ tasks.withType<JavaCompile> {
 
 runtime {
 	options.set(listOf("--strip-debug", "--compress", "2", "--no-header-files", "--no-man-pages"))
-	additive.set(true)
-	modules.addAll("jdk.crypto.cryptoki")
 	launcher {
 		noConsole = true
 	}
