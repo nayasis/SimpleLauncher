@@ -38,7 +38,6 @@ repositories {
 configurations.all {
     exclude(group = "org.slf4j", module = "slf4j-jdk14")
     resolutionStrategy {
-//        force("com.h2database:h2:2.1.214")
         force("com.h2database:h2:2.1.214")
     }
 }
@@ -46,8 +45,7 @@ configurations.all {
 dependencies {
 
 	// Komapper dependencies
-	val komapperVersion = "5.4.1-SNAPSHOT"
-	platform("org.komapper:komapper-platform:$komapperVersion").let {
+	platform("org.komapper:komapper-platform:5.4.1-SNAPSHOT").let {
 		implementation(it)
 		ksp(it)
 	}
@@ -55,8 +53,8 @@ dependencies {
 	implementation("org.komapper:komapper-dialect-h2-jdbc")
 	ksp("org.komapper:komapper-processor")
 
-	implementation("io.github.nayasis:basica-kt:0.3.7-SNAPSHOT")
-	implementation("io.github.nayasis:basicafx-kt:0.2.3-SNAPSHOT")
+	implementation("io.github.nayasis:basica-kt:0.3.7")
+	implementation("io.github.nayasis:basicafx-kt:0.2.4")
 	implementation("no.tornado:tornadofx:1.7.20") {
 		exclude("org.jetbrains.kotlin")
 	}
