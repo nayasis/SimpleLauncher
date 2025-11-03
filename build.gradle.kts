@@ -45,7 +45,7 @@ configurations.all {
 dependencies {
 
 	// Komapper dependencies
-	platform("org.komapper:komapper-platform:5.4.1-SNAPSHOT").let {
+	platform("org.komapper:komapper-platform:5.7.0").let {
 		implementation(it)
 		ksp(it)
 	}
