@@ -2,7 +2,6 @@ package io.github.nayasis.simplelauncher.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import io.github.nayasis.kotlin.basica.core.extension.ifEmpty
-import io.github.nayasis.kotlin.basica.core.extension.isEmpty
 import io.github.nayasis.kotlin.basica.core.extension.runIfNotEmpty
 import io.github.nayasis.kotlin.basica.core.io.Paths
 import io.github.nayasis.kotlin.basica.core.io.exists
@@ -21,10 +20,6 @@ import io.github.nayasis.simplelauncher.common.toKeyword
 import io.github.oshai.kotlinlogging.KotlinLogging
 import javafx.scene.image.Image
 import mslinks.ShellLink
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.nio.file.Path
-import java.time.LocalDateTime
 import org.komapper.annotation.KomapperAutoIncrement
 import org.komapper.annotation.KomapperColumn
 import org.komapper.annotation.KomapperEntity
@@ -32,6 +27,9 @@ import org.komapper.annotation.KomapperId
 import org.komapper.annotation.KomapperTable
 import org.komapper.core.type.BlobByteArray
 import org.komapper.core.type.ClobString
+import java.io.File
+import java.nio.file.Path
+import java.time.LocalDateTime
 import javax.imageio.ImageIO
 import kotlin.io.path.div
 
@@ -80,9 +78,6 @@ data class Link(
     @KomapperColumn(name = "updated_at")
     var updatedAt: LocalDateTime = LocalDateTime.now(),
 ) {
-
-    val isNew: Boolean
-        get() = id <= 0
 
     val keywordTitle: HashSet<String> = HashSet()
     val keywordGroup: HashSet<String> = HashSet()
@@ -152,7 +147,7 @@ data class Link(
             "jpg", "jpeg", "png" -> file.toImage()
             "gif" -> runCatching { ImageIO.read(file).toBinary(ICON_IMAGE_TYPE).toImage() }.getOrNull()
             "ico" -> runCatching { file.toIconImage().firstOrNull() }.getOrNull()
-            else -> runCatching { file.toIconImage().firstOrNull() }.getOrNull()
+            else  -> runCatching { file.toIconImage().firstOrNull() }.getOrNull()
         }?.let { img ->
             runCatching { img.resize(128) }.getOrElse { img }
         }.also { image ->
@@ -167,21 +162,31 @@ data class Link(
 
     @JsonIgnore
     fun toPath(): Path? {
-        var p = path?.let { runCatching { it.toPath() }.getOrNull() } ?: return null
-            if(p.exists()) return p
-        p = Paths.applicationRoot / path.ifEmpty { "" }
-            if(p.exists()) return p
-            if(relativePath.isEmpty()) return null
-        p = Paths.applicationRoot / relativePath!!
-            if(p.exists()) {
+        // 1. convert path directly
+        path?.let { runCatching { it.toPath() }.getOrNull() }
+            ?.takeIf { it.exists() }
+            ?.let { return it }
+
+        // 2. combine applicationRoot with path
+        path?.takeIf { it.isNotEmpty() }
+            ?.let { Paths.applicationRoot / it }
+            ?.takeIf { it.exists() }
+            ?.let { return it }
+        
+        // 3. use relativePath
+        relativePath?.takeIf { it.isNotEmpty() }
+            ?.let { Paths.applicationRoot / it }
+            ?.takeIf { it.exists() }
+            ?.let { p ->
                 path = p.invariantPath
                 Context.linkService.save(this, false)
                 return p
             }
+
         return null
     }
 
-    fun indexing(): Link {
+    fun refreshIndex(): Link {
         keywordTitle.run {
             clear()
             title.runIfNotBlank { addAll(it.toKeyword()) }

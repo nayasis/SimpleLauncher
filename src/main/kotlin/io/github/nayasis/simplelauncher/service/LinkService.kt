@@ -11,7 +11,6 @@ import io.github.nayasis.kotlin.basica.reflection.Reflector
 import io.github.nayasis.kotlin.javafx.misc.Desktop
 import io.github.nayasis.kotlin.javafx.misc.set
 import io.github.nayasis.kotlin.javafx.stage.Dialog
-import io.github.nayasis.simplelauncher.common.Context
 import io.github.nayasis.simplelauncher.common.Context.Companion.config
 import io.github.nayasis.simplelauncher.common.Context.Companion.main
 import io.github.nayasis.simplelauncher.common.KomapperHelper.runQuery
@@ -38,16 +37,20 @@ class LinkService {
     val links = SortedFilteredList(mutableListOf<Link>().asObservable())
 
     fun save(link: Link, refreshTable: Boolean = true) {
-        if(link.isNew) {
-            links.add(link)
+
+        val isNew = link.id <= 0
+
+        withTransaction {
+            if(isNew) {
+                QueryDsl.insert(Meta.link).single(link)
+            } else {
+                QueryDsl.update(Meta.link).single(link)
+            }.runQuery()
         }
 
-        if(link.isNew) {
-            QueryDsl.insert(Meta.link).single(link)
-        } else {
-            QueryDsl.update(Meta.link).single(link)
-        }.runQuery()
-
+        if(isNew) {
+            links.add(link)
+        }
         if(refreshTable) {
             runLater {
                 main.tableMain.refresh()
@@ -126,12 +129,12 @@ class LinkService {
             title = title.message(),
             extension = extension,
             description = description.message(),
-            initialDirectory = Context.config.filePickerInitialDirectory?.toPath(),
+            initialDirectory = config.filePickerInitialDirectory?.toPath(),
             mode = mode,
-            owner = Context.main.primaryStage
+            owner = main.primaryStage
         ).firstOrNull().also {
             if( it != null )
-                Context.config.filePickerInitialDirectory = it.directory.pathString
+                config.filePickerInitialDirectory = it.directory.pathString
         }
     }
 
