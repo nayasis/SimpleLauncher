@@ -706,7 +706,7 @@ class Main: View("application.title".message()), CoroutineScope {
             it.commandNext   = descCmdNext.text
             it.iconImage     = descIcon.image
 
-            linkService.save(it.indexing())
+            linkService.save(it.refreshIndex())
 
             runLater {
                 tableMain.selectBy(it)
