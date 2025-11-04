@@ -63,7 +63,7 @@ dependencies {
 	implementation("commons-cli:commons-cli:1.4")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.2")
 	implementation("io.github.oshai:kotlin-logging-jvm:7.0.3")
-	implementation("ch.qos.logback:logback-classic:1.5.13")
+	implementation("ch.qos.logback:logback-classic:1.5.19")
 
 	implementation("com.h2database:h2:2.1.214")
 

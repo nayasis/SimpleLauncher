@@ -18,7 +18,6 @@ import io.github.nayasis.simplelauncher.common.KomapperHelper.withTransaction
 import io.github.nayasis.simplelauncher.model.Link
 import io.github.nayasis.simplelauncher.model.link
 import io.github.nayasis.simplelauncher.model.vo.JsonLink
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.komapper.core.dsl.Meta
 import org.komapper.core.dsl.QueryDsl
 import org.komapper.core.dsl.operator.asc
@@ -29,8 +28,6 @@ import tornadofx.asObservable
 import tornadofx.runLater
 import java.nio.file.Path
 import java.util.*
-
-private val logger = KotlinLogging.logger{}
 
 class LinkService {
 
