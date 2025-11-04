@@ -78,12 +78,13 @@ class LinkService {
 
         QueryDsl.from(Meta.link)
             .orderBy(Meta.link.title.asc())
-            .runQuery()
-            .forEach { link ->
-                link.indexing()
+            // fetch all rows one by one, rather than being processed.
+            .collect { flow -> flow.collect { link ->
+                link.refreshIndex()
                 links.add(link)
                 worker?.invoke(++i, link)
-            }
+            }}
+            .runQuery()
 
         this.links.run {
             clear()
