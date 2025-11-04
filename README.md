@@ -8,7 +8,7 @@ You are free to use **relative path** or **configurable command** to manage your
 ![screenshot](https://github.com/nayasis/simpleLauncher/blob/master/doc/screenshot.jpg?raw=true)
 
 ## Requirements
-- Java 11 above
+- Java 17 above
 
 ## Build
 #### 1. Download source
@@ -20,10 +20,6 @@ git clone https://github.com/nayasis/SimpleLauncher.git
 ```
 gradlew runtime
 ```
-- You could also launch application directly.
-  ```shell
-  gradlew bootRun
-  ```
   
 #### 3. Execution
 - Application would be compiled in directory [./build/image] including JRE.
@@ -42,7 +38,7 @@ simplelauncher
 ### Menu
 
 | shortcut             | description                   |
-| --------------       | ------------------            |
+|----------------------|-------------------------------|
 | Ctrl + Shift + **I** | import application catalog    |
 | Ctrl + Shift + **X** | export application catalog    |
 | Ctrl + Shift + **D** | clear  application catalog    |
@@ -54,18 +50,18 @@ simplelauncher
 
 ### Main catalog
 
-| shortcut       | description             |
-| -------------- | ------------------      |
-| Enter          | execute item            |
-| Delete         | delete item             |
-| Ctrl + **C**   | copy item's folder path |
+| shortcut     | description             |
+|--------------|-------------------------|
+| Enter        | execute item            |
+| Delete       | delete item             |
+| Ctrl + **C** | copy item's folder path |
 
 ### Link editor
 
 Only works when Link editor is opened.
 
 | shortcut             | description             |
-| --------------       | ------------------      |
+|----------------------|-------------------------|
 | Ctrl + **N**         | new item                |
 | Ctrl + Shift + **N** | create link via file    |
 | Shift + **DEL**      | delete item             |
@@ -89,12 +85,12 @@ Enter history mode by pressing ***Alt + Down***.
 
 #### keyword history functions
 
-| shortcut         | description             |
-| --------------   | ------------------      |
-| Alt + **Left**   | previous link executed  |
-| Alt + **Right**  | next link executed      |
-| any key          | filter executed links ![autocompleted links](https://github.com/nayasis/simpleLauncher/blob/master/doc/keyword-autocomplete.jpg?raw=true)  |
-| Esc              | exit history mode       |
+| shortcut        | description                                                                                                                               |
+|-----------------|-------------------------------------------------------------------------------------------------------------------------------------------|
+| Alt + **Left**  | previous link executed                                                                                                                    |
+| Alt + **Right** | next link executed                                                                                                                        |
+| any key         | filter executed links ![autocompleted links](https://github.com/nayasis/simpleLauncher/blob/master/doc/keyword-autocomplete.jpg?raw=true) |
+| Esc             | exit history mode                                                                                                                         |
 
 ## Binding parameters
 
@@ -113,6 +109,8 @@ being injected when runs by file(or directory) dragging.
 | \${home}       | user home directory         | \\home\\***user***     |
 | \${home-unix}  | user home directory as unix | /home/***user***       |
 
+** note: \${path} and \${dir} are only different in Windows.
+
 ### Example
 
 ape2wav.exe "${path}" "${dir}\\${name}.wav"
@@ -121,21 +119,22 @@ ape2wav.exe "${path}" "${dir}\\${name}.wav"
 
 ### Gradle
 
-This is **SpringBoot** application and run through **Spring Boot Loader**. 
-
 #### Run from source
 ```shell
-gradle bootRun
+gradle run
 ```
 
 #### Build
+
 ```shell
-gradle bootJar
+gradle build
 ```
+
 JAR file will be created in <u>${Project Directory}**/build/libs**</u>  
-It could be run like below.
+It could be run like below. (for example, version 0.1.6)
+
 ```shell
-java -jar simplelauncher.jar
+java -jar simple-launcher-0.1.6.jar
 ```
 
 
