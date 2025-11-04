@@ -41,3 +41,5 @@ HELP.md
 /conf
 /db
 /log/log
+/.gradle-home/
+/.kotlin/
