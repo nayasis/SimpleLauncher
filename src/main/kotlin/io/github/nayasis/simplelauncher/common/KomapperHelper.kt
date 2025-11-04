@@ -33,7 +33,7 @@ object KomapperHelper {
         transactionProperty: TransactionProperty = EmptyTransactionProperty,
         block: (TransactionOperator) -> R
     ): R {
-        return database.withTransaction { block(it) }
+        return database.withTransaction(transactionAttribute, transactionProperty, block)
     }
 
 }
