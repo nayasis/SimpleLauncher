@@ -2,8 +2,8 @@
 
 ## Introduction
 
-***Simple Launcher*** is designed to launch all of your application simply and to search easily.  
-You are free to use **relative path** or **configurable command** to manage your own application launch commands.
+***Simple Launcher*** is designed for launching all of your application simply and searching easily.  
+You could use **relative path** or **configurable command** in your own application launch freely.
 
 ![screenshot](https://github.com/nayasis/simpleLauncher/blob/master/doc/screenshot.jpg?raw=true)
 
@@ -17,21 +17,29 @@ git clone https://github.com/nayasis/SimpleLauncher.git
 ```
 
 #### 2. Build
-```
-gradlew runtime
-```
-  
-#### 3. Execution
-- Application would be compiled in directory [./build/image] including JRE.
-- Launch application like this.
 ```shell
-cd ./build/image/bin
-simplelauncher
+gradlew build
 ```
 
-#### 4. For Windows
-- Provide EXE application on [release page](https://github.com/nayasis/SimpleLauncher/releases).
-  - Wrapped by [WinRun4J](https://winrun4j.sourceforge.net)
+#### 3. Execution
+```shell
+gradlew run
+```
+
+#### 4. Create Native Executable
+- Create a native executable (.exe for Windows) using jpackage:
+```shell
+gradlew clean createNativeExe
+```
+- The executable will be created in `build/dist/simplelauncher/` directory.
+
+#### 5. Create Native Executable with jpackage
+- Create a native executable (.exe for Windows) using jpackage:
+```shell
+gradlew createNativeExe
+```
+- The executable will be created in `build/dist/simplelauncher/` directory.
+- Note: Requires Java 14 or higher with jpackage tool (included in JDK 14+).
 
 ## Shortcuts
 
@@ -114,28 +122,6 @@ being injected when runs by file(or directory) dragging.
 ### Example
 
 ape2wav.exe "${path}" "${dir}\\${name}.wav"
-
-## Development
-
-### Gradle
-
-#### Run from source
-```shell
-gradle run
-```
-
-#### Build
-
-```shell
-gradle build
-```
-
-JAR file will be created in <u>${Project Directory}**/build/libs**</u>  
-It could be run like below. (for example, version 0.1.6)
-
-```shell
-java -jar simple-launcher-0.1.6.jar
-```
 
 
 ## Contact
