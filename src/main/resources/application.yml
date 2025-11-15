@@ -3,8 +3,8 @@ simplelauncher:
   datasource:
     url: jdbc:h2:file:./db/simplelauncher
     driver_class: org.h2.Driver
-    user: nayasis
-    password: "1234"
+#    user: nayasis
+#    password: "1234"
 logging:
   file:
 #    path: log/log
