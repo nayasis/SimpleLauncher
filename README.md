@@ -41,6 +41,14 @@ gradlew createNativeExe
 - The executable will be created in `build/dist/simplelauncher/` directory.
 - Note: Requires Java 14 or higher with jpackage tool (included in JDK 14+).
 
+#### 5. Create Native Executable with jpackage
+- Create a native executable (.exe for Windows) using jpackage:
+```shell
+gradlew createNativeExe
+```
+- The executable will be created in `build/dist/simplelauncher/` directory.
+- Note: Requires Java 14 or higher with jpackage tool (included in JDK 14+).
+
 ## Shortcuts
 
 ### Menu
