@@ -1,4 +1,4 @@
-group = "com.github.nayasis"
+group   = "com.github.nayasis"
 version = "0.1.5"
 
 plugins {
@@ -6,7 +6,7 @@ plugins {
 	kotlin("jvm") version "2.2.10"
 	id("com.google.devtools.ksp") version "2.2.10-2.0.2"
 	id("org.openjfx.javafxplugin") version "0.1.0"
-	id("org.beryx.runtime") version "1.13.1"
+	id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 application {
@@ -15,7 +15,7 @@ application {
 	applicationDefaultJvmArgs = listOf(
 		"--add-exports=javafx.graphics/com.sun.javafx.application=ALL-UNNAMED",
 		"--add-exports=javafx.graphics/com.sun.javafx.tk=ALL-UNNAMED",
-		"--add-opens=javafx.graphics/javafx.scene=ALL-UNNAMED",
+		"--add-opens=javafx.graphics/javafx.scene=ALL-UNNAMED"
 	)
 }
 
@@ -115,9 +115,147 @@ tasks.withType<JavaCompile> {
 	options.release.set(17)
 }
 
-runtime {
-	options.set(listOf("--strip-debug", "--compress", "2", "--no-header-files", "--no-man-pages"))
-	launcher {
-		noConsole = true
+val isWindows = System.getProperty("os.name").lowercase().contains("win")
+
+fun File.hasSuffix(suffixes: Set<String>): Boolean =
+	suffixes.any { suffix -> name.contains(suffix, ignoreCase = true) }
+
+fun filterJavaFxJars(jars: Collection<File>): List<File> {
+	val platformSuffixes = if (isWindows) setOf("-win") else setOf("-linux", "-mac")
+	val allSuffixes      = setOf("-win", "-linux", "-mac")
+	return jars
+		.filter { it.name.startsWith("javafx", ignoreCase = true) }
+		.filter { jar ->
+			jar.hasSuffix(platformSuffixes) || !jar.hasSuffix(allSuffixes)
+		}
+}
+
+tasks.register<Delete>("cleanCreateRuntimeImage") {
+	group       = "distribution"
+	description = "Cleans the custom runtime image directory"
+	delete("build/runtime-image")
+}
+
+val requiredJdkModules = listOf(
+	"java.base",
+	"java.desktop",
+	"java.logging",
+	"java.sql",
+	"java.xml",
+	"java.naming",
+	"java.scripting",  // Required for javax.script.* (used by tornadofx)
+	"jdk.unsupported",  // Required for JavaFX
+	"jdk.crypto.ec"
+)
+
+tasks.register<Exec>("createRuntimeImage") {
+	group       = "distribution"
+	description = "Creates a custom runtime image with jlink (smaller size)"
+	
+	dependsOn("build", "cleanCreateRuntimeImage")
+	
+	val javaToolchain   = javaToolchains.launcherFor(java.toolchain).get()
+	val javaHome        = javaToolchain.metadata.installationPath.asFile
+	val jlinkPath       = javaHome.resolve("bin/jlink${if (isWindows) ".exe" else ""}")
+	val runtimeImageDir = file("build/runtime-image")
+	
+	val allJars         = configurations.runtimeClasspath.get().files.filter { it.name.endsWith(".jar") }
+	val javafxJars      = filterJavaFxJars(allJars).map { it.parentFile.absolutePath }.distinct()
+	val javaFxModulePath = javafxJars.joinToString(File.pathSeparator)
+	
+	val modulePath = if (javaFxModulePath.isNotEmpty()) {
+		"${javaHome.resolve("jmods").absolutePath}${File.pathSeparator}$javaFxModulePath"
+	} else {
+		javaHome.resolve("jmods").absolutePath
 	}
+	
+	doFirst {
+		logger.info("Creating custom runtime image with jlink...")
+		logger.info("Required modules: ${requiredJdkModules.joinToString(", ")}")
+		if (javaFxModulePath.isNotEmpty()) {
+			logger.info("JavaFX module path: $javaFxModulePath")
+		}
+	}
+	
+	commandLine(
+		jlinkPath.absolutePath,
+		"--module-path", modulePath,
+		"--add-modules", requiredJdkModules.joinToString(","),
+		"--strip-debug",
+		"--compress", "2",
+		"--no-header-files",
+		"--no-man-pages",
+		"--output", runtimeImageDir.absolutePath
+	)
+}
+
+tasks.register<Exec>("createNativeExe") {
+	group       = "distribution"
+	description = "Creates a native executable using jpackage"
+	
+	dependsOn("createRuntimeImage")
+
+	val javaToolchain      = javaToolchains.launcherFor(java.toolchain).get()
+	val jpackageExecutable = if (isWindows) "jpackage.exe" else "jpackage"
+	val javaHome           = javaToolchain.metadata.installationPath.asFile
+	val jpackagePath       = javaHome.resolve("bin/$jpackageExecutable")
+	val jarFile            = tasks.named<Jar>("jar").get().archiveFile.get().asFile
+	val outputDir          = file("build/dist")
+	val runtimeImageDir    = file("build/runtime-image")
+	val jpackageInputDir   = file("build/jpackage-input")
+	
+	val runtimeClasspath   = configurations.runtimeClasspath.get().files
+	val allJars            = runtimeClasspath.filter { it.name.endsWith(".jar") }
+	val javafxJars         = filterJavaFxJars(allJars)
+	
+	val useExe = runCatching {
+		Runtime.getRuntime().exec("light.exe -?").waitFor()
+		true
+	}.getOrElse { false }
+
+	doFirst {
+		// Validation
+		if (!jarFile.exists())
+			throw GradleException("JAR file not found: ${jarFile.absolutePath}. Run 'gradlew build' first.")
+		if (!jpackagePath.exists())
+			throw GradleException("jpackage not found at: ${jpackagePath.absolutePath}. Make sure you're using Java 14 or higher.")
+		if (!runtimeImageDir.exists())
+			throw GradleException("Runtime image not found: ${runtimeImageDir.absolutePath}. Run 'gradlew createRuntimeImage' first.")
+
+		// Prepare JAR files for jpackage input
+		jpackageInputDir.deleteRecursively()
+		jpackageInputDir.mkdirs()
+		jarFile.copyTo(jpackageInputDir.resolve(jarFile.name), overwrite = true)
+		(allJars.filterNot { it.name.startsWith("javafx", ignoreCase = true) } + javafxJars).forEach { jar ->
+			jar.copyTo(jpackageInputDir.resolve(jar.name), overwrite = true)
+		}
+		
+		logger.info("Creating native executable with jpackage...")
+		logger.info("Output directory: ${outputDir.absolutePath}")
+	}
+	
+	val jpackageArgs = mutableListOf<String>(
+		"--type",          if (useExe) "exe" else "app-image",
+		"--input",         jpackageInputDir.absolutePath,
+		"--name",          application.applicationName,
+		"--main-jar",      jarFile.name,
+		"--main-class",    application.mainClass.get(),
+		"--dest",          outputDir.absolutePath,
+		"--runtime-image", runtimeImageDir.absolutePath
+	)
+	
+	application.applicationDefaultJvmArgs.forEach { option ->
+		jpackageArgs.add("--java-options")
+		jpackageArgs.add(option)
+	}
+	
+	if (useExe) {
+		jpackageArgs.addAll(listOf("--win-dir-chooser", "--win-menu", "--win-shortcut"))
+	}
+	
+	file("src/main/resources/image/icon/favicon.ico").takeIf { it.exists() }?.let { icon ->
+		jpackageArgs.addAll(listOf("--icon", icon.absolutePath))
+	}
+
+	commandLine(listOf(jpackagePath.absolutePath) + jpackageArgs)
 }
