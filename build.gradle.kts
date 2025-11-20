@@ -4,7 +4,8 @@ version = "0.1.5"
 plugins {
 	application
 	kotlin("jvm") version "2.2.10"
-	id("com.google.devtools.ksp") version "2.2.10-2.0.2"
+	kotlin("plugin.serialization") version "2.2.10"
+	id("com.google.devtools.ksp") version "2.1.21-2.0.1"
 	id("org.openjfx.javafxplugin") version "0.1.0"
 	id("org.beryx.runtime") version "1.13.1"
 }
@@ -33,6 +34,7 @@ java {
 repositories {
 	mavenLocal()
 	mavenCentral()
+	google()
 }
 
 configurations.all {
@@ -98,11 +100,19 @@ dependencies {
     testImplementation("org.testfx:testfx-junit5:4.0.18")
 	testImplementation("org.yaml:snakeyaml:2.2")
 
-	testImplementation("org.jetbrains.exposed:exposed-core:1.0.0-rc-3")
-	testImplementation("org.jetbrains.exposed:exposed-dao:1.0.0-rc-3")
-	testImplementation("org.jetbrains.exposed:exposed-kotlin-datetime:1.0.0-rc-3")
-	testImplementation("org.jetbrains.exposed:exposed-json:1.0.0-rc-3")
-	testImplementation("org.jetbrains.exposed:exposed-jdbc:1.0.0-rc-3")
+	// exposed
+	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.9.0")
+	testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.9.0")
+
+	ksp("com.dshatz.exposed-crud:processor:1.0.3")
+	implementation("com.dshatz.exposed-crud:lib:1.0.3")
+	testImplementation("com.dshatz.exposed-crud:lib:1.0.3")
+
+	testImplementation("org.jetbrains.exposed:exposed-core:0.60.0")
+	testImplementation("org.jetbrains.exposed:exposed-dao:0.60.0")
+	testImplementation("org.jetbrains.exposed:exposed-kotlin-datetime:0.60.0")
+	testImplementation("org.jetbrains.exposed:exposed-json:0.60.0")
+	testImplementation("org.jetbrains.exposed:exposed-jdbc:0.60.0")
 
 }
 
