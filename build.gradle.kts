@@ -98,6 +98,12 @@ dependencies {
     testImplementation("org.testfx:testfx-junit5:4.0.18")
 	testImplementation("org.yaml:snakeyaml:2.2")
 
+	testImplementation("org.jetbrains.exposed:exposed-core:1.0.0-rc-3")
+	testImplementation("org.jetbrains.exposed:exposed-dao:1.0.0-rc-3")
+	testImplementation("org.jetbrains.exposed:exposed-kotlin-datetime:1.0.0-rc-3")
+	testImplementation("org.jetbrains.exposed:exposed-json:1.0.0-rc-3")
+	testImplementation("org.jetbrains.exposed:exposed-jdbc:1.0.0-rc-3")
+
 }
 
 kotlin {
