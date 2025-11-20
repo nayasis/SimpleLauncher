@@ -3,12 +3,11 @@ package io.github.nayasis.simplelauncher.model.exposed
 import io.github.nayasis.simplelauncher.model.entity.Person
 import io.github.nayasis.simplelauncher.model.exposed.entity.ExpDepartment
 import io.github.nayasis.simplelauncher.model.exposed.entity.ExpDepartmentTable
+import io.github.nayasis.simplelauncher.model.exposed.entity.attribute
 import io.github.nayasis.simplelauncher.model.exposed.entity.repo
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.StdOutSqlLogger
-import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.Test
@@ -28,19 +27,24 @@ class ExpDepartmentDaoTest {
         )
 
         transaction(database) {
-            addLogger(StdOutSqlLogger)
+
             SchemaUtils.create(ExpDepartmentTable)
 
             val inserted = ExpDepartment(
                 tenantId = "tenant-a",
-                deptId = "100",
-                name = "Department",
-                person = Person(
-                    name = "jake",
-                    age = 10,
+                deptId   = "100",
+                name     = "Department",
+                person   = Person(
+                    name    = "jake",
+                    age     = 10,
                     address = "123 Main Street",
-                )
+                ),
             ).apply {
+                attribute = mapOf(
+                    "key1" to "value1",
+                    "key2" to 123,
+                    "key3" to listOf(1, 2, 3),
+                )
                 ExpDepartmentTable.repo.insert(this)
             }
 
@@ -57,4 +61,3 @@ class ExpDepartmentDaoTest {
         }
     }
 }
-
