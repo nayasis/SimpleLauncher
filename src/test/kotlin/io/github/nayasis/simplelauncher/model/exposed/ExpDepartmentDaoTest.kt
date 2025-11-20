@@ -1,14 +1,18 @@
 package io.github.nayasis.simplelauncher.model.exposed
 
+import io.github.nayasis.simplelauncher.model.entity.Person
 import io.github.nayasis.simplelauncher.model.exposed.entity.ExpDepartment
 import io.github.nayasis.simplelauncher.model.exposed.entity.ExpDepartmentTable
+import io.github.nayasis.simplelauncher.model.exposed.entity.repo
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.jetbrains.exposed.v1.core.StdOutSqlLogger
-import org.jetbrains.exposed.v1.jdbc.Database
-import org.jetbrains.exposed.v1.jdbc.SchemaUtils
-import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import org.junit.jupiter.api.Assertions.assertEquals
+import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.StdOutSqlLogger
+import org.jetbrains.exposed.sql.addLogger
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.Test
+import kotlin.test.assertEquals
 
 private val logger = KotlinLogging.logger {}
 
@@ -27,19 +31,25 @@ class ExpDepartmentDaoTest {
             addLogger(StdOutSqlLogger)
             SchemaUtils.create(ExpDepartmentTable)
 
-            val inserted = ExpDepartment.insert(
+            val inserted = ExpDepartment(
                 tenantId = "tenant-a",
-                deptId = 100,
+                deptId = "100",
                 name = "Department",
-                person = """{"name":"Person","age":30}""",
-            )
+                person = Person(
+                    name = "jake",
+                    age = 10,
+                    address = "123 Main Street",
+                )
+            ).apply {
+                ExpDepartmentTable.repo.insert(this)
+            }
 
             logger.debug { ">> inserted $inserted" }
 
-            val read = ExpDepartment.find(
-                tenantId = inserted.tenantId,
-                deptId = inserted.deptId,
-            )
+            val read = ExpDepartmentTable.repo.select().where {
+                (ExpDepartmentTable.tenantId eq inserted.tenantId) and
+                (ExpDepartmentTable.deptId eq inserted.deptId)
+            }.singleOrNull()
 
             logger.debug { ">> read $read" }
 
