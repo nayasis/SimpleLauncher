@@ -5,7 +5,7 @@ plugins {
 	application
 	kotlin("jvm") version "2.2.10"
 	kotlin("plugin.serialization") version "2.2.10"
-	id("com.google.devtools.ksp") version "2.1.21-2.0.1"
+	id("com.google.devtools.ksp") version "2.2.10-2.0.2"
 	id("org.openjfx.javafxplugin") version "0.1.0"
 	id("org.beryx.runtime") version "1.13.1"
 }
@@ -104,9 +104,8 @@ dependencies {
 	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.9.0")
 	testImplementation("org.jetbrains.kotlinx:kotlinx-serialization-json-jvm:1.9.0")
 
-	ksp("com.dshatz.exposed-crud:processor:1.0.3")
-	implementation("com.dshatz.exposed-crud:lib:1.0.3")
-	testImplementation("com.dshatz.exposed-crud:lib:1.0.3")
+	ksp("com.dshatz.exposed-crud:processor:0.1.0-SNAPSHOT")
+	implementation("com.dshatz.exposed-crud:lib:0.1.0-SNAPSHOT")
 
 	testImplementation("org.jetbrains.exposed:exposed-core:0.60.0")
 	testImplementation("org.jetbrains.exposed:exposed-dao:0.60.0")
