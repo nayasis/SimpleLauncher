@@ -7,10 +7,6 @@ import com.dshatz.exposed_crud.LargeText
 import com.dshatz.exposed_crud.Varchar
 import io.github.nayasis.simplelauncher.model.converter.MapConverter
 import io.github.nayasis.simplelauncher.model.converter.PersonConverter
-import org.komapper.annotation.KomapperColumn
-import org.komapper.annotation.KomapperEntity
-import org.komapper.annotation.KomapperId
-import org.komapper.annotation.KomapperTable
 
 @Entity("TB_DEPARTMENT")
 data class Department(
