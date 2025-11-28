@@ -8,20 +8,20 @@ import io.github.nayasis.kotlin.basica.core.io.writeText
 import io.github.nayasis.kotlin.basica.core.string.message
 import io.github.nayasis.kotlin.basica.core.string.toPath
 import io.github.nayasis.kotlin.basica.reflection.Reflector
+import io.github.nayasis.kotlin.basica.reflection.toObject
 import io.github.nayasis.kotlin.javafx.misc.Desktop
 import io.github.nayasis.kotlin.javafx.misc.set
 import io.github.nayasis.kotlin.javafx.stage.Dialog
 import io.github.nayasis.simplelauncher.common.Context.Companion.config
 import io.github.nayasis.simplelauncher.common.Context.Companion.main
-import io.github.nayasis.simplelauncher.common.KomapperHelper.runQuery
-import io.github.nayasis.simplelauncher.common.KomapperHelper.withTransaction
+import io.github.nayasis.simplelauncher.common.ExposedHelper.transaction
 import io.github.nayasis.simplelauncher.model.Link
-import io.github.nayasis.simplelauncher.model.link
+import io.github.nayasis.simplelauncher.model.LinkTable
+import io.github.nayasis.simplelauncher.model.repo
 import io.github.nayasis.simplelauncher.model.vo.JsonLink
-import org.komapper.core.dsl.Meta
-import org.komapper.core.dsl.QueryDsl
-import org.komapper.core.dsl.operator.asc
-import org.komapper.core.dsl.operator.count
+import io.github.oshai.kotlinlogging.KotlinLogging
+import org.jetbrains.exposed.sql.deleteAll
+import org.jetbrains.exposed.sql.selectAll
 import tornadofx.FileChooserMode
 import tornadofx.SortedFilteredList
 import tornadofx.asObservable
@@ -29,24 +29,21 @@ import tornadofx.runLater
 import java.nio.file.Path
 import java.util.*
 
+private val logger = KotlinLogging.logger {}
+
 class LinkService {
 
     val links = SortedFilteredList(mutableListOf<Link>().asObservable())
 
     fun save(link: Link, refreshTable: Boolean = true) {
-
-        val isNew = link.id <= 0
-
-        withTransaction {
+        val isNew = link.id < 0
+        transaction {
             if(isNew) {
-                QueryDsl.insert(Meta.link).single(link)
+                LinkTable.repo.createReturning(link)
+                links.add(link)
             } else {
-                QueryDsl.update(Meta.link).single(link)
-            }.runQuery()
-        }
-
-        if(isNew) {
-            links.add(link)
+                LinkTable.repo.update(link)
+            }
         }
         if(refreshTable) {
             runLater {
@@ -56,55 +53,56 @@ class LinkService {
     }
 
     fun importData(file: Path) {
-        val jsonLinks = file.readText()
-            .let { Reflector.toObject<List<JsonLink>>(it) }
-            .map { it.toLink() }
-        withTransaction {
-            QueryDsl.insert(Meta.link).multiple(jsonLinks).runQuery()
+        val links = file.readText().toObject<List<JsonLink>>().map { it.toLink() }
+        logger.debug { "write links to DB (count: ${links.size})" }
+        transaction {
+            links.forEachIndexed { i, link ->
+                LinkTable.repo.create(link)
+            }
         }
     }
 
     fun countAll(): Long {
-        return QueryDsl.from(Meta.link)
-            .select(count(Meta.link.id)).runQuery() ?: 0
+        return transaction(readOnly = true) {
+            LinkTable.selectAll().count()
+        }
     }
 
     fun loadAll(worker: ((index: Int, link: Link) -> Unit)? = null) {
-        var i = 0
-        val links = LinkedList<Link>()
-
-        QueryDsl.from(Meta.link)
-            .orderBy(Meta.link.title.asc())
-            // fetch all rows one by one, rather than being processed.
-            .collect { flow -> flow.collect { link ->
-                link.refreshIndex()
-                links.add(link)
-                worker?.invoke(++i, link)
-            }}
-            .runQuery()
-
-        this.links.run {
+        val buffer = LinkedList<Link>()
+        transaction(readOnly = true) {
+            LinkTable.selectAll().orderBy(LinkTable.title).forEachIndexed { i, row ->
+                LinkTable.toEntity(row).let { link ->
+                    link.refreshIndex()
+                    buffer.add(link)
+                    worker?.invoke(i+1, link)
+                }
+            }
+        }
+        links.run {
             clear()
-            addAll(links)
+            addAll(buffer)
         }
     }
 
     fun exportData(file: Path) {
-        val dbLinks = QueryDsl.from(Meta.link).runQuery().map { JsonLink(it) }
-        file.writeText( Reflector.toJson(dbLinks, pretty = true))
+        val jsonLinks = transaction(readOnly = true) {
+            LinkTable.repo.selectAll().map { JsonLink(it) }
+        }
+        file.writeText( Reflector.toJson(jsonLinks, pretty = true))
     }
 
     fun deleteAll() {
-        withTransaction {
-            QueryDsl.delete(Meta.link).all().runQuery()
+        transaction {
+            LinkTable.deleteAll()
             config.historyKeyword.clear()
             links.clear()
         }
     }
 
     fun delete(link: Link) {
-        withTransaction {
-            QueryDsl.delete(Meta.link).single(link).runQuery()
+        transaction {
+            LinkTable.repo.delete(link)
             config.historyKeyword.remove(link.title ?: "")
             links.remove(link)
         }
@@ -122,7 +120,12 @@ class LinkService {
     fun openExecutorPicker(): Path? =
         filePicker("msg.file.add","*.*","msg.file.add.description")
 
-    private fun filePicker(title: String, extension: String, description: String, mode: FileChooserMode = FileChooserMode.Single): Path? {
+    private fun filePicker(
+        title: String,
+        extension: String,
+        description: String,
+        mode: FileChooserMode = FileChooserMode.Single
+    ): Path? {
         return Dialog.filePicker(
             title = title.message(),
             extension = extension,

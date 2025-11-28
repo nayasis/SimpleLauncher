@@ -131,7 +131,6 @@ class Main: View("application.title".message()), CoroutineScope {
     }
 
     override fun onBeforeShow() {
-        logger.debug { ">> start before show" }
         currentStage?.loadDefaultIcon()
 
         // Set minimum window size (200 x 150)
@@ -167,8 +166,6 @@ class Main: View("application.title".message()), CoroutineScope {
         }
 
         DefaultPreloader.close()
-
-        logger.debug { ">> end before show" }
 
     }
 
@@ -284,8 +281,6 @@ class Main: View("application.title".message()), CoroutineScope {
         }
 
         currentStage?.requestFocus()
-
-        logger.debug { ">> done initialize" }
 
     }
 

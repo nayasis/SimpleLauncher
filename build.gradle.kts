@@ -33,6 +33,7 @@ java {
 repositories {
 	mavenLocal()
 	mavenCentral()
+	google()
 }
 
 configurations.all {
@@ -44,17 +45,26 @@ configurations.all {
 
 dependencies {
 
-	// Komapper dependencies
-	platform("org.komapper:komapper-platform:5.7.0").let {
-		implementation(it)
-		ksp(it)
-	}
-	implementation("org.komapper:komapper-starter-jdbc")
-	implementation("org.komapper:komapper-dialect-h2-jdbc")
-	ksp("org.komapper:komapper-processor")
-
-	implementation("io.github.nayasis:basica-kt:0.3.7")
+	// core
+	implementation("io.github.nayasis:basica-kt:0.3.8")
 	implementation("io.github.nayasis:basicafx-kt:0.2.4")
+	implementation("ch.qos.logback:logback-classic:1.5.19")
+	implementation(kotlin("reflect"))
+	implementation(kotlin("stdlib-jdk8"))
+	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.10.2")
+
+	// exposed
+	ksp("com.dshatz.exposed-crud:processor:0.1.0-SNAPSHOT")
+	implementation("com.dshatz.exposed-crud:lib:0.1.0-SNAPSHOT")
+	implementation("org.jetbrains.exposed:exposed-core:0.60.0")
+	implementation("org.jetbrains.exposed:exposed-dao:0.60.0")
+	implementation("org.jetbrains.exposed:exposed-java-time:0.60.0")
+	implementation("org.jetbrains.exposed:exposed-json:0.60.0")
+	implementation("org.jetbrains.exposed:exposed-jdbc:0.60.0")
+	implementation("com.h2database:h2:2.3.232")
+
+	// UI
 	implementation("no.tornado:tornadofx:1.7.20") {
 		exclude("org.jetbrains.kotlin")
 	}
@@ -63,16 +73,7 @@ dependencies {
 	implementation("commons-cli:commons-cli:1.4")
 	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.17.2")
 	implementation("io.github.oshai:kotlin-logging-jvm:7.0.3")
-	implementation("ch.qos.logback:logback-classic:1.5.19")
-
-	implementation("com.h2database:h2:2.1.214")
-
 	implementation("de.jensd:fontawesomefx:8.9")
-
-    implementation(kotlin("reflect"))
-    implementation(kotlin("stdlib-jdk8"))
-	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.10.2")
-	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 
 	// jeditermfx for terminal UI
 	implementation("com.techsenger.jeditermfx:jeditermfx-core:1.1.0")
@@ -81,7 +82,6 @@ dependencies {
 		exclude(group = "org.jetbrains.pty4j", module = "purejavacomm")
 	}
 	implementation("org.jetbrains.pty4j:pty4j:0.13.10")
-
 
 	testImplementation("org.apache.pdfbox:pdfbox:2.0.24")
 	testImplementation("com.levigo.jbig2:levigo-jbig2-imageio:2.0")
