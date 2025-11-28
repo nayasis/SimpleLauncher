@@ -1,16 +1,11 @@
 package io.github.nayasis.simplelauncher.model
 
-import io.github.nayasis.kotlin.basica.etc.error
 import io.github.nayasis.kotlin.basica.reflection.Reflector
+import io.github.nayasis.simplelauncher.common.ExposedHelper
 import io.github.nayasis.simplelauncher.common.ICON_NEW
-import io.github.nayasis.simplelauncher.common.KomapperHelper.database
-import io.github.nayasis.simplelauncher.common.KomapperHelper.runQuery
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.Test
-import org.komapper.core.dsl.Meta
-import org.komapper.core.dsl.QueryDsl
-import org.komapper.core.dsl.query.firstOrNull
-import org.komapper.jdbc.JdbcDatabase
 
 private val logger = KotlinLogging.logger {}
 
@@ -19,32 +14,34 @@ class LinksTest {
     @Test
     fun basic() {
 
-        database = runCatching { JdbcDatabase(
+        ExposedHelper.connectDatabase(
             url      = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1",
             user     = "user",
             password = "1234",
-        )}.onFailure { logger.error(it) }.getOrThrow()
+        )
 
-        QueryDsl.create(Meta.link).runQuery()
+        transaction {
 
-        val created = Link(
-            title   = "test link",
-            group   = "grp1",
-            hashtag = "1,2,3,4",
-            icon    = ICON_NEW,
-        ).also {
-            logger.debug { ">> title: ${it.title}" }
-            logger.debug { ">> id   : ${it.id}" }
+            val created = Link(
+                title   = "test link",
+                group   = "grp1",
+                hashtag = "1,2,3,4",
+                icon    = ICON_NEW,
+            ).also {
+                logger.debug { ">> title: ${it.title}" }
+                logger.debug { ">> id   : ${it.id}" }
+            }
+
+            val inserted = LinkTable.repo.createReturning(created)
+
+            logger.debug { ">> committed" }
+            logger.debug { ">> inserted: $inserted" }
+
+            val read = LinkTable.repo.findById(inserted.id)
+
+            logger.debug { ">> read: $read" }
+
         }
-
-        val inserted = QueryDsl.insert(Meta.link).single(created).runQuery()
-
-        logger.debug { ">> committed" }
-        logger.debug { ">> inserted: $inserted" }
-
-        val read = QueryDsl.from(Meta.link).where { Meta.link.id eq inserted.id }.firstOrNull().runQuery()
-
-        logger.debug { ">> read: $read" }
 
     }
 
