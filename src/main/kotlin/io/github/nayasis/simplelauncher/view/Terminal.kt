@@ -3,6 +3,7 @@ package io.github.nayasis.simplelauncher.view
 import com.pty4j.PtyProcess
 import com.pty4j.PtyProcessBuilder
 import com.techsenger.jeditermfx.app.pty.PtyProcessTtyConnector
+import com.techsenger.jeditermfx.core.TtyConnector
 import com.techsenger.jeditermfx.ui.DefaultHyperlinkFilter
 import com.techsenger.jeditermfx.ui.JediTermFxWidget
 import io.github.nayasis.kotlin.basica.core.string.toPath
@@ -20,6 +21,7 @@ import tornadofx.attachTo
 import tornadofx.runLater
 import tornadofx.vbox
 import java.nio.charset.StandardCharsets
+import java.util.concurrent.CountDownLatch
 import kotlin.io.path.exists
 
 private val logger = KotlinLogging.logger {}
@@ -32,7 +34,8 @@ class Terminal(
     private val onSuccess: ((terminal: Terminal) -> Unit)? = null,
 ): Stage() {
 
-    private val terminal = toTerminalWidget(command)
+    private val processLatch = CountDownLatch(1)
+    private val terminal     = createTerminalWidget(command, processLatch)
 
     init {
 
@@ -50,6 +53,7 @@ class Terminal(
             minWidth  = 100.0
             minHeight = 100.0
             config.stageTerminal?.bind(this)
+
             runAwait {
                 waitFor()
             }
@@ -70,8 +74,35 @@ class Terminal(
         terminal.ttyConnector.write("$command\r\n")
     }
 
+    fun kill() {
+        runCatching {
+            terminal.ttyConnector.close()
+        }.onFailure { e ->
+            logger.error(e) { "Failed to kill process" }
+        }
+    }
+
+    fun isProcessRunning(): Boolean {
+        return runCatching {
+            terminal.ttyConnector.isConnected
+        }.getOrDefault(false)
+    }
+
+    private fun createTerminalWidget(cmd: Command, processLatch: CountDownLatch): JediTermFxWidget {
+        return JediTermFxWidget(80, 200, BlackTerminalTheme()).apply {
+            ttyConnector = DelayedTtyConnector(cmd, processLatch)
+            addHyperlinkFilter(DefaultHyperlinkFilter())
+            start()
+            addListener {
+                config.stageTerminal = StageProperty(this@Terminal)
+                close()
+            }
+        }
+    }
+
     private fun waitFor() {
         try {
+            processLatch.countDown()
             terminal.ttyConnector.waitFor()
             onSuccess?.also { f ->
                 runCatching{ f.invoke(this) }.onFailure { e -> logger.error(e) }
@@ -89,18 +120,59 @@ class Terminal(
         }
     }
 
-    private fun toTerminalWidget(cmd: Command): JediTermFxWidget {
-        return JediTermFxWidget(80, 200, BlackTerminalTheme()).apply {
-            this.ttyConnector = PtyProcessTtyConnector(toPtyProcess(cmd), StandardCharsets.UTF_8)
-            this.addHyperlinkFilter(DefaultHyperlinkFilter())
-            this.start()
-        }.also { widget ->
-            // close event
-            widget.addListener {
-                config.stageTerminal = StageProperty(this)
-                widget.close()
-            }
+    private fun Pane.bindSizeProperties(other: Pane) {
+        prefWidthProperty().bind(other.widthProperty())
+        prefHeightProperty().bind(other.heightProperty())
+        minWidthProperty().bind(other.minWidthProperty())
+        minHeightProperty().bind(other.minHeightProperty())
+        maxWidthProperty().bind(other.maxWidthProperty())
+        maxHeightProperty().bind(other.maxHeightProperty())
+    }
+
+}
+
+private class DelayedTtyConnector(
+    private val cmd: Command,
+    private val latch: CountDownLatch
+): TtyConnector {
+
+    private lateinit var ttyConnector: PtyProcessTtyConnector
+
+    private fun ensureInitialized() {
+        if (!::ttyConnector.isInitialized) {
+            latch.await()
+            ttyConnector = PtyProcessTtyConnector(toPtyProcess(cmd), StandardCharsets.UTF_8)
         }
+    }
+
+    override fun read(buf: CharArray, offset: Int, length: Int): Int {
+        ensureInitialized()
+        return ttyConnector.read(buf, offset, length)
+    }
+
+    override fun write(bytes: ByteArray) {
+        if (::ttyConnector.isInitialized) ttyConnector.write(bytes)
+    }
+
+    override fun write(string: String) {
+        if (::ttyConnector.isInitialized) ttyConnector.write(string)
+    }
+
+    override fun isConnected(): Boolean =
+        if (::ttyConnector.isInitialized) ttyConnector.isConnected else true
+
+    override fun waitFor(): Int {
+        ensureInitialized()
+        return ttyConnector.waitFor()
+    }
+
+    override fun ready(): Boolean =
+        if (::ttyConnector.isInitialized) ttyConnector.ready() else false
+
+    override fun getName(): String = "Delayed"
+
+    override fun close() {
+        if (::ttyConnector.isInitialized) ttyConnector.close()
     }
 
     private fun toPtyProcess(cmd: Command): PtyProcess {
@@ -116,15 +188,6 @@ class Terminal(
                 }
             }
             .start()
-    }
-
-    private fun Pane.bindSizeProperties(other: Pane) {
-        prefWidthProperty().bind(other.widthProperty())
-        prefHeightProperty().bind(other.heightProperty())
-        minWidthProperty().bind(other.minWidthProperty())
-        minHeightProperty().bind(other.minHeightProperty())
-        maxWidthProperty().bind(other.maxWidthProperty())
-        maxHeightProperty().bind(other.maxHeightProperty())
     }
 
 }
