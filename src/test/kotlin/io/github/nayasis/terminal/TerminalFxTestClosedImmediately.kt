@@ -2,11 +2,8 @@ package io.github.nayasis.terminal
 
 import io.github.nayasis.kotlin.basica.exec.Command
 import io.github.nayasis.simplelauncher.view.Terminal
-import io.github.oshai.kotlinlogging.KotlinLogging
 import javafx.application.Application
 import javafx.stage.Stage
-
-private val logger = KotlinLogging.logger {}
 
 fun main() {
     configureLogging()
@@ -18,13 +15,13 @@ class TerminalFxTestClosedImmediately: Application() {
         val command = Command("src/test/resources/test-program/test.exe zero 0")
         val terminal = Terminal(
             command = command,
-            onSuccess = { term ->
+            onSuccess = {
                 println("Terminal started successfully.")
             },
             onFail = { error ->
                 println("Error while running terminal: ${error.message}")
             },
-            onAlways = { term ->
+            onAlways = {
                 println("Terminal closed.")
             }
         )

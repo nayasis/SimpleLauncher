@@ -4,14 +4,11 @@ import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.Logger
 import io.github.nayasis.kotlin.basica.exec.Command
 import io.github.nayasis.simplelauncher.view.Terminal
-import io.github.oshai.kotlinlogging.KotlinLogging
 import javafx.application.Application
 import javafx.stage.Stage
 import org.slf4j.LoggerFactory
 import tornadofx.runLater
 import tornadofx.seconds
-
-private val logger = KotlinLogging.logger {}
 
 fun main() {
     configureLogging()
@@ -34,13 +31,13 @@ class TerminalFxRunLater: Application() {
         val command = Command("cmd")
         val terminal = Terminal(
             command = command,
-            onSuccess = { term ->
+            onSuccess = {
                 println("Terminal started successfully.")
             },
             onFail = { error ->
                 println("Error while running terminal: ${error.message}")
             },
-            onAlways = { term ->
+            onAlways = {
                 println("Terminal closed.")
             }
         )
