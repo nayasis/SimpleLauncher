@@ -15,13 +15,13 @@ class TerminalFxTestSimple: Application() {
         val command = Command("src/test/resources/test-program/test.exe 5")
         val terminal = Terminal(
             command = command,
-            onSuccess = { term ->
+            onSuccess = {
                 println("Terminal started successfully.")
             },
             onFail = { error ->
                 println("Error while running terminal: ${error.message}")
             },
-            onAlways = { term ->
+            onAlways = {
                 println("Terminal closed.")
             }
         )
