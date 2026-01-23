@@ -2,9 +2,9 @@ package io.github.nayasis.simplelauncher.model
 
 import io.github.nayasis.kotlin.basica.reflection.Reflector
 import io.github.nayasis.simplelauncher.common.ExposedHelper
+import io.github.nayasis.simplelauncher.common.ExposedHelper.tx
 import io.github.nayasis.simplelauncher.common.ICON_NEW
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.jetbrains.exposed.sql.transactions.transaction
 import org.junit.jupiter.api.Test
 
 private val logger = KotlinLogging.logger {}
@@ -20,7 +20,7 @@ class LinksTest {
             password = "1234",
         )
 
-        transaction {
+        tx {
 
             val created = Link(
                 title   = "test link",
@@ -32,7 +32,7 @@ class LinksTest {
                 logger.debug { ">> id   : ${it.id}" }
             }
 
-            val inserted = LinkTable.repo.createReturning(created)
+            val inserted = LinkTable.repo.save(created)
 
             logger.debug { ">> committed" }
             logger.debug { ">> inserted: $inserted" }

@@ -2,6 +2,7 @@ package io.github.nayasis.simplelauncher
 
 import io.github.nayasis.kotlin.basica.core.extension.runIfNotEmpty
 import io.github.nayasis.kotlin.basica.model.Messages
+import io.github.nayasis.kotlin.basica.model.Messages.Companion.loadMessages
 import io.github.nayasis.kotlin.basica.net.Networks
 import io.github.nayasis.kotlin.javafx.app.FxApp
 import io.github.nayasis.kotlin.javafx.preloader.DefaultPreloader
@@ -30,7 +31,7 @@ fun main(args: Array<String>) {
     Logger.getLogger("").level = Level.SEVERE
 
     Networks.ignoreCerts()
-    Messages.loadFromResource("/message/**.prop")
+    "/message/**.prop".loadMessages()
     DefaultPreloader.set(Splash::class)
 
     launch<Simplelauncher>(args)
@@ -55,12 +56,6 @@ class Simplelauncher: FxApp(Main::class), CoroutineScope  {
         ExposedHelper.connectDatabase()
         logger.debug { ">> database prepared" }
 
-        // initialize beans
-        ctx.set(
-            LinkService(),
-            LinkExecutor(),
-        )
-        logger.debug { ">> bean initialized" }
     }
 
 }
