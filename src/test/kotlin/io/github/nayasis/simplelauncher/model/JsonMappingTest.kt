@@ -1,16 +1,17 @@
 package io.github.nayasis.simplelauncher.model
 
+import io.github.nayasis.simplelauncher.common.ExposedHelper.tx
 import io.github.nayasis.simplelauncher.model.entity.Department
 import io.github.nayasis.simplelauncher.model.entity.DepartmentTable
 import io.github.nayasis.simplelauncher.model.entity.Person
 import io.github.nayasis.simplelauncher.model.entity.repo
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.SchemaUtils
-import org.jetbrains.exposed.sql.and
-import org.jetbrains.exposed.sql.transactions.transaction
+import io.kotest.matchers.shouldBe
+import org.jetbrains.exposed.v1.core.and
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.jdbc.Database
+import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.junit.jupiter.api.Test
-import kotlin.test.assertEquals
 
 private val logger = KotlinLogging.logger {}
 
@@ -26,7 +27,7 @@ class JsonMappingTest {
             password = "1234",
         )
 
-        transaction(database) {
+        tx(database) {
 
             SchemaUtils.create(DepartmentTable)
 
@@ -45,18 +46,20 @@ class JsonMappingTest {
                     "key3" to listOf(1, 2, 3),
                 ),
             ).apply {
-                DepartmentTable.repo.insert(this)
+                DepartmentTable.repo.save(this)
             }
 
             logger.debug { ">> inserted $inserted" }
 
             val read = DepartmentTable.repo.select().where {
-                (DepartmentTable.tenantId eq inserted.tenantId) and (DepartmentTable.deptId eq inserted.deptId)
+                (DepartmentTable.tenantId eq inserted.tenantId) and
+                (DepartmentTable.deptId eq inserted.deptId)
             }.singleOrNull()
 
             logger.debug { ">> read $read" }
 
-            assertEquals(inserted, read)
+            inserted shouldBe read
+
         }
     }
 

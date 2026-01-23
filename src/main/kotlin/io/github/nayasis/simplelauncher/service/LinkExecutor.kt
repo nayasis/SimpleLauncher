@@ -3,6 +3,7 @@ package io.github.nayasis.simplelauncher.service
 import io.github.nayasis.kotlin.basica.core.string.message
 import io.github.nayasis.kotlin.basica.core.string.tokenize
 import io.github.nayasis.kotlin.basica.exec.Command
+import io.github.nayasis.kotlin.javafx.app.di.Inject
 import io.github.nayasis.kotlin.javafx.misc.runAwait
 import io.github.nayasis.kotlin.javafx.stage.Dialog
 import io.github.nayasis.simplelauncher.common.Context.Companion.config
@@ -17,6 +18,7 @@ import java.time.LocalDateTime
 
 private val logger = KotlinLogging.logger{}
 
+@Inject
 class LinkExecutor{
 
     fun run(link: Link, files: Collection<File>? = null) {

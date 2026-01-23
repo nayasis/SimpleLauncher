@@ -34,7 +34,6 @@ private val logger = KotlinLogging.logger {}
 
 const val ICON_IMAGE_TYPE = "png"
 
-
 @Entity(name = "TB_LINK_TEST")
 data class Link(
 
@@ -212,8 +211,7 @@ data class Link(
     }
 
     override fun equals(other: Any?): Boolean {
-        return (other is Link)
-                && this.id == other.id
+        return other is Link && this.id == other.id
     }
 
     override fun hashCode(): Int {

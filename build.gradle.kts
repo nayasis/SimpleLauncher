@@ -1,10 +1,10 @@
-group   = "com.github.nayasis"
+group   = "io.github.nayasis"
 version = "0.1.5"
 
 plugins {
 	application
-	kotlin("jvm") version "2.2.10"
-	id("com.google.devtools.ksp") version "2.2.10-2.0.2"
+	kotlin("jvm") version "2.2.0"
+	id("com.google.devtools.ksp") version "2.2.0-2.0.2"
 	id("org.openjfx.javafxplugin") version "0.1.0"
 	id("com.github.johnrengelman.shadow") version "8.1.1"
 }
@@ -19,21 +19,22 @@ application {
 	)
 }
 
-javafx {
-	version = "21.0.2"
-	modules = listOf("javafx.graphics","javafx.controls","javafx.fxml","javafx.swing")
-}
-
 java {
 	toolchain {
 		languageVersion = JavaLanguageVersion.of(17)
 	}
 }
 
+javafx {
+	version = "21.0.2"
+	modules = listOf("javafx.graphics","javafx.controls","javafx.fxml","javafx.swing")
+}
+
 repositories {
 	mavenLocal()
 	mavenCentral()
 	google()
+	gradlePluginPortal()
 }
 
 configurations.all {
@@ -46,22 +47,23 @@ configurations.all {
 dependencies {
 
 	// core
-	implementation("io.github.nayasis:basica-kt:0.3.8")
-	implementation("io.github.nayasis:basicafx-kt:0.2.4")
+	implementation("io.github.nayasis:basica-kt:0.3.11")
+	implementation("io.github.nayasis:basicafx-kt:0.2.6")
 	implementation("ch.qos.logback:logback-classic:1.5.19")
-	implementation(kotlin("reflect"))
-	implementation(kotlin("stdlib-jdk8"))
+
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.10.2")
 
 	// exposed
 	ksp("com.dshatz.exposed-crud:processor:0.1.0-SNAPSHOT")
 	implementation("com.dshatz.exposed-crud:lib:0.1.0-SNAPSHOT")
-	implementation("org.jetbrains.exposed:exposed-core:0.60.0")
-	implementation("org.jetbrains.exposed:exposed-dao:0.60.0")
-	implementation("org.jetbrains.exposed:exposed-java-time:0.60.0")
-	implementation("org.jetbrains.exposed:exposed-json:0.60.0")
-	implementation("org.jetbrains.exposed:exposed-jdbc:0.60.0")
+	implementation("org.jetbrains.exposed:exposed-core:1.0.0-rc-4")
+	implementation("org.jetbrains.exposed:exposed-jdbc:1.0.0-rc-4")
+	implementation("org.jetbrains.exposed:exposed-dao:1.0.0-rc-4")
+	implementation("org.jetbrains.exposed:exposed-java-time:1.0.0-rc-4")
+	implementation("org.jetbrains.exposed:exposed-kotlin-datetime:1.0.0-rc-4")
+	implementation("org.jetbrains.exposed:exposed-json:1.0.0-rc-4")
+	implementation("org.jetbrains.exposed:exposed-jdbc:1.0.0-rc-4")
 	implementation("com.h2database:h2:2.3.232")
 
 	// UI
