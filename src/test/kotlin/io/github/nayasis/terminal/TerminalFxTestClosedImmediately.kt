@@ -1,32 +1,21 @@
 package io.github.nayasis.terminal
 
-import ch.qos.logback.classic.Level
-import ch.qos.logback.classic.Logger
 import io.github.nayasis.kotlin.basica.exec.Command
 import io.github.nayasis.simplelauncher.view.Terminal
+import io.github.oshai.kotlinlogging.KotlinLogging
 import javafx.application.Application
 import javafx.stage.Stage
-import org.slf4j.LoggerFactory
+
+private val logger = KotlinLogging.logger {}
 
 fun main() {
     configureLogging()
-    Application.launch(TerminalFxTest1::class.java)
+    Application.launch(TerminalFxTestClosedImmediately::class.java)
 }
 
-private fun configureLogging() {
-    listOf(
-        "com.techsenger.jeditermfx.core",
-        "com.techsenger.jeditermfx.ui",
-        "com.techsenger.jeditermfx",
-        "com.pty4j",
-    ).forEach { packageName ->
-        (LoggerFactory.getLogger(packageName) as Logger).level = Level.WARN
-    }
-}
-
-class TerminalFxTest1: Application() {
+class TerminalFxTestClosedImmediately: Application() {
     override fun start(stage: Stage) {
-        val command = Command("src/test/resources/test-program/test.exe 5")
+        val command = Command("src/test/resources/test-program/test.exe zero 0")
         val terminal = Terminal(
             command = command,
             onSuccess = { term ->
