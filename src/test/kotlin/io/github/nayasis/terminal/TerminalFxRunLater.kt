@@ -4,17 +4,21 @@ import ch.qos.logback.classic.Level
 import ch.qos.logback.classic.Logger
 import io.github.nayasis.kotlin.basica.exec.Command
 import io.github.nayasis.simplelauncher.view.Terminal
+import io.github.oshai.kotlinlogging.KotlinLogging
 import javafx.application.Application
-import javafx.application.Platform.runLater
 import javafx.stage.Stage
 import org.slf4j.LoggerFactory
+import tornadofx.runLater
+import tornadofx.seconds
+
+private val logger = KotlinLogging.logger {}
 
 fun main() {
     configureLogging()
-    Application.launch(TerminalFxTest2::class.java)
+    Application.launch(TerminalFxRunLater::class.java)
 }
 
-private fun configureLogging() {
+fun configureLogging() {
     listOf(
         "com.techsenger.jeditermfx.core",
         "com.techsenger.jeditermfx.ui",
@@ -25,7 +29,7 @@ private fun configureLogging() {
     }
 }
 
-class TerminalFxTest2: Application() {
+class TerminalFxRunLater: Application() {
     override fun start(stage: Stage) {
         val command = Command("cmd")
         val terminal = Terminal(
@@ -40,9 +44,9 @@ class TerminalFxTest2: Application() {
                 println("Terminal closed.")
             }
         )
-        terminal.show()
-        runLater {
+        runLater(1.seconds) {
             terminal.sendCommand("dir")
         }
+        terminal.show()
     }
 }
