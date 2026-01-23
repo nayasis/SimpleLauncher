@@ -9,19 +9,19 @@ import io.github.nayasis.kotlin.basica.core.string.message
 import io.github.nayasis.kotlin.basica.core.string.toPath
 import io.github.nayasis.kotlin.basica.reflection.Reflector
 import io.github.nayasis.kotlin.basica.reflection.toObject
+import io.github.nayasis.kotlin.javafx.app.di.Inject
 import io.github.nayasis.kotlin.javafx.misc.Desktop
 import io.github.nayasis.kotlin.javafx.misc.set
 import io.github.nayasis.kotlin.javafx.stage.Dialog
 import io.github.nayasis.simplelauncher.common.Context.Companion.config
 import io.github.nayasis.simplelauncher.common.Context.Companion.main
-import io.github.nayasis.simplelauncher.common.ExposedHelper.transaction
+import io.github.nayasis.simplelauncher.common.ExposedHelper.tx
 import io.github.nayasis.simplelauncher.model.Link
 import io.github.nayasis.simplelauncher.model.LinkTable
 import io.github.nayasis.simplelauncher.model.repo
 import io.github.nayasis.simplelauncher.model.vo.JsonLink
 import io.github.oshai.kotlinlogging.KotlinLogging
-import org.jetbrains.exposed.sql.deleteAll
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.v1.jdbc.deleteAll
 import tornadofx.FileChooserMode
 import tornadofx.SortedFilteredList
 import tornadofx.asObservable
@@ -31,18 +31,17 @@ import java.util.*
 
 private val logger = KotlinLogging.logger {}
 
+@Inject
 class LinkService {
 
     val links = SortedFilteredList(mutableListOf<Link>().asObservable())
 
     fun save(link: Link, refreshTable: Boolean = true) {
-        val isNew = link.id < 0
-        transaction {
+        val isNew = link.id <= 0
+        tx {
+            LinkTable.repo.save(link)
             if(isNew) {
-                LinkTable.repo.createReturning(link)
                 links.add(link)
-            } else {
-                LinkTable.repo.update(link)
             }
         }
         if(refreshTable) {
@@ -55,28 +54,26 @@ class LinkService {
     fun importData(file: Path) {
         val links = file.readText().toObject<List<JsonLink>>().map { it.toLink() }
         logger.debug { "write links to DB (count: ${links.size})" }
-        transaction {
+        tx {
             links.forEachIndexed { i, link ->
                 LinkTable.repo.create(link)
             }
         }
     }
 
-    fun countAll(): Long {
-        return transaction(readOnly = true) {
-            LinkTable.selectAll().count()
+    fun countAll(): Int {
+        return tx(readOnly = true) {
+            LinkTable.repo.select().count()
         }
     }
 
     fun loadAll(worker: ((index: Int, link: Link) -> Unit)? = null) {
         val buffer = LinkedList<Link>()
-        transaction(readOnly = true) {
-            LinkTable.selectAll().orderBy(LinkTable.title).forEachIndexed { i, row ->
-                LinkTable.toEntity(row).let { link ->
-                    link.refreshIndex()
-                    buffer.add(link)
-                    worker?.invoke(i+1, link)
-                }
+        tx(readOnly = true) {
+            LinkTable.repo.select().orderBy(LinkTable.title).forEachIndexed { i, link ->
+                link.refreshIndex()
+                buffer.add(link)
+                worker?.invoke(i+1, link)
             }
         }
         links.run {
@@ -86,14 +83,14 @@ class LinkService {
     }
 
     fun exportData(file: Path) {
-        val jsonLinks = transaction(readOnly = true) {
+        val jsonLinks = tx(readOnly = true) {
             LinkTable.repo.selectAll().map { JsonLink(it) }
         }
         file.writeText( Reflector.toJson(jsonLinks, pretty = true))
     }
 
     fun deleteAll() {
-        transaction {
+        tx {
             LinkTable.deleteAll()
             config.historyKeyword.clear()
             links.clear()
@@ -101,7 +98,7 @@ class LinkService {
     }
 
     fun delete(link: Link) {
-        transaction {
+        tx {
             LinkTable.repo.delete(link)
             config.historyKeyword.remove(link.title ?: "")
             links.remove(link)
