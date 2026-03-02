@@ -55,7 +55,6 @@ class Simplelauncher: FxApp(Main::class), CoroutineScope  {
 
         ExposedHelper.connectDatabase()
         logger.debug { ">> database prepared" }
-
     }
 
 }
