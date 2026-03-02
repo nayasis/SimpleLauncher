@@ -4,7 +4,6 @@ import com.dshatz.exposed_crud.Column
 import com.dshatz.exposed_crud.Entity
 import com.dshatz.exposed_crud.Id
 import com.dshatz.exposed_crud.LargeText
-import com.dshatz.exposed_crud.Varchar
 import io.github.nayasis.kotlin.basica.core.extension.ifEmpty
 import io.github.nayasis.kotlin.basica.core.extension.runIfNotEmpty
 import io.github.nayasis.kotlin.basica.core.io.Paths
@@ -38,43 +37,47 @@ const val ICON_IMAGE_TYPE = "png"
 data class Link(
 
     @Id(autoGenerate = true)
+    @Column
     var id: Long = -1,
-    @Varchar(length = 300)
+    @Column(length = 300)
     var title: String? = null,
-    @Column(name = "a_group")
-    @Varchar(length = 300)
+    @Column(name = "a_group", length = 300)
     var group: String? = null,
-    @Varchar(length = 2000)
+    @Column(length = 2000)
     var path: String? = null,
-    @Varchar(length = 2000)
+    @Column(length = 2000)
     var relativePath: String? = null,
+    @Column
     var showConsole: Boolean = false,
+    @Column
     var executeEach: Boolean = true,
-    @Varchar(length = 2000)
+    @Column(length = 2000)
     var argument: String? = null,
+    @Column
     var icon: ByteArray? = null,
-    @Varchar(length = 2000)
+    @Column(length = 2000)
     var commandPrefix: String? = null,
-    @Varchar(length = 2000)
+    @Column(length = 2000)
     var commandPrev: String? = null,
-    @Varchar(length = 2000)
+    @Column(length = 2000)
     var commandNext: String? = null,
+    @Column
     @LargeText
     var description: String? = null,
-    @Varchar(length = 2000)
+    @Column(length = 2000)
     var hashtag: String? = null,
     @Column(name = "exe_count")
     var executeCount: Int = 0,
+    @Column
     var executedAt: LocalDateTime? = null,
+    @Column
     var createdAt: LocalDateTime = LocalDateTime.now(),
+    @Column
     var updatedAt: LocalDateTime = LocalDateTime.now(),
 ) {
 
-    @Transient
     val keywordTitle: HashSet<String> = HashSet()
-    @Transient
     val keywordGroup: HashSet<String> = HashSet()
-    @Transient
     var iconImage: Image? = null
         get() {
             if( field == null && icon != null ) {
@@ -159,7 +162,7 @@ data class Link(
 
         // 2. combine applicationRoot with path
         path?.takeIf { it.isNotEmpty() }
-            ?.let { Paths.applicationRoot / it }
+            ?.let { runCatching { Paths.applicationRoot.resolve(it) }.getOrNull() }
             ?.takeIf { it.exists() }
             ?.let { return it }
         
