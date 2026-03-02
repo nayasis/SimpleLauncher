@@ -1,6 +1,7 @@
 package io.github.nayasis.simplelauncher.common
 
 import io.github.nayasis.kotlin.basica.etc.error
+import io.github.nayasis.kotlin.javafx.app.Environment
 import io.github.nayasis.kotlin.javafx.app.FxApp.Companion.environment
 import io.github.nayasis.simplelauncher.model.LinkTable
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -16,6 +17,14 @@ private val logger = KotlinLogging.logger {}
 object ExposedHelper {
 
     lateinit var database: Database
+
+    fun connectDatabase(environment: Environment) {
+        connectDatabase(
+            environment["simplelauncher.datasource.url"],
+            environment["simplelauncher.datasource.user"],
+            environment["simplelauncher.datasource.password"],
+        )
+    }
 
     fun connectDatabase(
         url             : String? = null,
