@@ -5,10 +5,10 @@ import io.github.nayasis.kotlin.basica.reflection.Reflector
 import io.github.nayasis.simplelauncher.model.entity.Person
 
 class PersonConverter : AttributeConverter<Person?, String?> {
-    override fun convertToDatabaseColumn(attribute: Person?): String? {
-        return attribute?.let { Reflector.Companion.toJson(it) }
+    override fun convertToDatabaseColumn(entityData: Person?): String? {
+        return entityData?.let { Reflector.toJson(it) }
     }
     override fun convertToEntityAttribute(dbData: String?): Person? {
-        return dbData?.let { Reflector.Companion.toObject<Person>(it) }
+        return dbData?.let { Reflector.toObject<Person>(it) }
     }
 }
