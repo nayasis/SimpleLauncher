@@ -59,6 +59,7 @@ private val logger = KotlinLogging.logger {}
 private const val CLASS_AUTO_COMPLETER = "auto-completer"
 private const val CLASS_ON_DRAG        = "table-row-on-drag"
 private const val DEFAULT_LINK_EDITOR_WIDTH = 400.0
+private const val TABLE_ICON_SIZE = 18.0
 
 class Main: View("application.title".message()), CoroutineScope {
 
@@ -185,6 +186,9 @@ class Main: View("application.title".message()), CoroutineScope {
             graphic = hbox {
                 imageview {
                     image = it.iconImage
+                    fitWidth = TABLE_ICON_SIZE
+                    fitHeight = TABLE_ICON_SIZE
+                    isPreserveRatio = true
                     hmargin = Insets(0,0,0,2)
                 }
                 label {
