@@ -7,13 +7,15 @@ import io.github.nayasis.simplelauncher.view.Terminal
 import javafx.application.Application
 import javafx.stage.Stage
 import org.slf4j.LoggerFactory
+import tornadofx.runLater
+import tornadofx.seconds
 
 fun main() {
     configureLogging()
-    Application.launch(TerminalFxTest1::class.java)
+    Application.launch(TerminalFxRunLater::class.java)
 }
 
-private fun configureLogging() {
+fun configureLogging() {
     listOf(
         "com.techsenger.jeditermfx.core",
         "com.techsenger.jeditermfx.ui",
@@ -24,21 +26,24 @@ private fun configureLogging() {
     }
 }
 
-class TerminalFxTest1: Application() {
+class TerminalFxRunLater: Application() {
     override fun start(stage: Stage) {
-        val command = Command("src/test/resources/test-program/test.exe 5")
+        val command = Command("cmd")
         val terminal = Terminal(
             command = command,
-            onSuccess = { term ->
+            onSuccess = {
                 println("Terminal started successfully.")
             },
             onFail = { error ->
                 println("Error while running terminal: ${error.message}")
             },
-            onAlways = { term ->
+            onAlways = {
                 println("Terminal closed.")
             }
         )
+        runLater(1.seconds) {
+            terminal.sendCommand("dir")
+        }
         terminal.show()
     }
 }

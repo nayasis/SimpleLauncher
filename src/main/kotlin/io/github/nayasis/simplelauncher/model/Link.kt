@@ -1,6 +1,9 @@
 package io.github.nayasis.simplelauncher.model
 
-import com.fasterxml.jackson.annotation.JsonIgnore
+import com.dshatz.exposed_crud.Column
+import com.dshatz.exposed_crud.Entity
+import com.dshatz.exposed_crud.Id
+import com.dshatz.exposed_crud.LargeText
 import io.github.nayasis.kotlin.basica.core.extension.ifEmpty
 import io.github.nayasis.kotlin.basica.core.extension.runIfNotEmpty
 import io.github.nayasis.kotlin.basica.core.io.Paths
@@ -20,13 +23,6 @@ import io.github.nayasis.simplelauncher.common.toKeyword
 import io.github.oshai.kotlinlogging.KotlinLogging
 import javafx.scene.image.Image
 import mslinks.ShellLink
-import org.komapper.annotation.KomapperAutoIncrement
-import org.komapper.annotation.KomapperColumn
-import org.komapper.annotation.KomapperEntity
-import org.komapper.annotation.KomapperId
-import org.komapper.annotation.KomapperTable
-import org.komapper.core.type.BlobByteArray
-import org.komapper.core.type.ClobString
 import java.io.File
 import java.nio.file.Path
 import java.time.LocalDateTime
@@ -37,51 +33,51 @@ private val logger = KotlinLogging.logger {}
 
 const val ICON_IMAGE_TYPE = "png"
 
-@KomapperEntity
-@KomapperTable(name = "TB_LINK_TEST")
+@Entity(name = "TB_LINK_TEST")
 data class Link(
-    @KomapperId
-    @KomapperAutoIncrement
-    var id: Long = 0,
-    @KomapperColumn(name = "title", length = 300)
+
+    @Id(autoGenerate = true)
+    @Column
+    var id: Long = -1,
+    @Column(length = 300)
     var title: String? = null,
-    @KomapperColumn(name = "a_group", length = 300)
+    @Column(name = "a_group", length = 300)
     var group: String? = null,
-    @KomapperColumn(name = "path", length = 2000)
+    @Column(length = 2000)
     var path: String? = null,
-    @KomapperColumn(name = "relative_path", length = 2000)
+    @Column(length = 2000)
     var relativePath: String? = null,
-    @KomapperColumn(name = "show_console")
+    @Column
     var showConsole: Boolean = false,
-    @KomapperColumn(name = "execute_each")
+    @Column
     var executeEach: Boolean = true,
-    @KomapperColumn(name = "argument", length = 2000)
+    @Column(length = 2000)
     var argument: String? = null,
-    @KomapperColumn(name = "icon", alternateType = BlobByteArray::class)
+    @Column
     var icon: ByteArray? = null,
-    @KomapperColumn(name = "command_prefix", length = 2000)
+    @Column(length = 2000)
     var commandPrefix: String? = null,
-    @KomapperColumn(name = "command_prev", length = 2000)
+    @Column(length = 2000)
     var commandPrev: String? = null,
-    @KomapperColumn(name = "command_next", length = 2000)
+    @Column(length = 2000)
     var commandNext: String? = null,
-    @KomapperColumn(name = "description", alternateType = ClobString::class)
+    @Column
+    @LargeText
     var description: String? = null,
-    @KomapperColumn(name = "hashtag", length = 2000)
+    @Column(length = 2000)
     var hashtag: String? = null,
-    @KomapperColumn(name = "exe_count")
+    @Column(name = "exe_count")
     var executeCount: Int = 0,
-    @KomapperColumn(name = "executed_at")
+    @Column
     var executedAt: LocalDateTime? = null,
-    @KomapperColumn(name = "created_at")
+    @Column
     var createdAt: LocalDateTime = LocalDateTime.now(),
-    @KomapperColumn(name = "updated_at")
+    @Column
     var updatedAt: LocalDateTime = LocalDateTime.now(),
 ) {
 
     val keywordTitle: HashSet<String> = HashSet()
     val keywordGroup: HashSet<String> = HashSet()
-
     var iconImage: Image? = null
         get() {
             if( field == null && icon != null ) {
@@ -94,7 +90,6 @@ data class Link(
             icon = value?.toBinary(ICON_IMAGE_TYPE)
         }
 
-    @JsonIgnore
     fun setPath(file: File) {
         this.path = file.invariantSeparatorsPath
         relativePath = file.toPath().toRelativeOrSelf(Paths.applicationRoot).invariantPath
@@ -141,7 +136,6 @@ data class Link(
         }.onFailure { e -> logger.error(e) }
     }
 
-    @JsonIgnore
     fun setIcon(file: File): Image? {
         return when(file.extension.lowercase()) {
             "jpg", "jpeg", "png" -> file.toImage()
@@ -160,7 +154,6 @@ data class Link(
         }
     }
 
-    @JsonIgnore
     fun toPath(): Path? {
         // 1. convert path directly
         path?.let { runCatching { it.toPath() }.getOrNull() }
@@ -169,7 +162,7 @@ data class Link(
 
         // 2. combine applicationRoot with path
         path?.takeIf { it.isNotEmpty() }
-            ?.let { Paths.applicationRoot / it }
+            ?.let { runCatching { Paths.applicationRoot.resolve(it) }.getOrNull() }
             ?.takeIf { it.exists() }
             ?.let { return it }
         
@@ -221,14 +214,15 @@ data class Link(
     }
 
     override fun equals(other: Any?): Boolean {
-        if (this === other) return true
-        if (javaClass != other?.javaClass) return false
-        other as Link
-        return id == other.id
+        return other is Link && this.id == other.id
     }
 
     override fun hashCode(): Int {
         return id.hashCode()
+    }
+
+    override fun toString(): String {
+        return "Link(id=$id, title=$title, group=$group, path=$path, relativePath=$relativePath, showConsole=$showConsole, executeEach=$executeEach, argument=$argument, commandPrefix=$commandPrefix, commandPrev=$commandPrev, commandNext=$commandNext, description=$description, hashtag=$hashtag, executeCount=$executeCount, executedAt=$executedAt, createdAt=$createdAt, updatedAt=$updatedAt)"
     }
 
 }
