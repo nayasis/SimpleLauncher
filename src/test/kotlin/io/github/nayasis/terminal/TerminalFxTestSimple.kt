@@ -6,7 +6,6 @@ import javafx.application.Application
 import javafx.stage.Stage
 
 fun main() {
-    configureLogging()
     Application.launch(TerminalFxTestSimple::class.java)
 }
 
@@ -14,7 +13,6 @@ class TerminalFxTestSimple: Application() {
     override fun start(stage: Stage) {
         val command = Command("src/test/resources/test-program/test.exe 5")
         val terminal = Terminal(
-            command = command,
             onSuccess = {
                 println("Terminal started successfully.")
             },
@@ -26,5 +24,6 @@ class TerminalFxTestSimple: Application() {
             }
         )
         terminal.show()
+        terminal.run(command)
     }
 }
