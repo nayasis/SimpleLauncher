@@ -97,12 +97,13 @@ class LinkExecutor{
     private fun runInTerminal(command: Command, wait: Boolean = false ) {
         if( command.isEmpty() ) return
         logger.debug { "- command: $command" }
-        Terminal(command, onFail = { e ->
+        Terminal(onFail = { e ->
             runAwait {
                 Dialog.error(e)
             }
         }).run {
-            runCatching { show() }
+            show()
+            runCatching { run(command) }
             if(!wait) close()
         }
     }

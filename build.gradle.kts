@@ -47,10 +47,8 @@ configurations.all {
 dependencies {
 
 	// core
-//	implementation("io.github.nayasis:basica-kt:0.3.11")
-	implementation("io.github.nayasis:basica-kt:0.1.0-SNAPSHOT")
-//	implementation("io.github.nayasis:basicafx-kt:0.2.6")
-	implementation("io.github.nayasis:basicafx-kt:0.1.0-SNAPSHOT")
+	implementation("io.github.nayasis:basica-kt:0.3.12")
+	implementation("io.github.nayasis:basicafx-kt:0.2.7")
 	implementation("ch.qos.logback:logback-classic:1.5.31")
 
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
