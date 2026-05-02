@@ -28,61 +28,62 @@
    <children>
       <VBox minWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
-            <MenuBar fx:id="menubarTop" prefHeight="15.0" prefWidth="919.0">
-              <menus>
-                <Menu mnemonicParsing="false" text="\%menu.file">
-                  <items>
-                    <MenuItem fx:id="menuImportData" mnemonicParsing="false" text="\%menu.file.import">
-                           <accelerator>
-                              <KeyCodeCombination alt="UP" code="I" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
-                           </accelerator>
-                        </MenuItem>
-                        <MenuItem fx:id="menuExportData" mnemonicParsing="false" text="\%menu.file.export">
-                           <accelerator>
-                              <KeyCodeCombination alt="UP" code="X" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
-                           </accelerator>
-                        </MenuItem>
-                        <MenuItem fx:id="menuDeleteAll" mnemonicParsing="false" text="\%menu.file.clear" />
-                  </items>
-                </Menu>
-                <Menu mnemonicParsing="false" text="\%menu.view">
-                  <items>
-                        <CheckMenuItem fx:id="menuViewDesc" mnemonicParsing="false" selected="true" text="\%menu.view.description">
-                           <accelerator>
-                              <KeyCodeCombination alt="DOWN" code="E" control="UP" meta="UP" shift="UP" shortcut="UP" />
-                           </accelerator>
-                        </CheckMenuItem>
-                        <CheckMenuItem fx:id="menuViewMenuBar" mnemonicParsing="false" selected="true" text="\%menu.view.showMenuBar">
-                           <accelerator>
-                              <KeyCodeCombination alt="DOWN" code="V" control="UP" meta="UP" shift="UP" shortcut="UP" />
-                           </accelerator>
-                        </CheckMenuItem>
-                        <CheckMenuItem fx:id="menuShowInputGroup" mnemonicParsing="false" selected="true" text="\%menu.view.showInputGroup">
-                           <accelerator>
-                              <KeyCodeCombination alt="DOWN" code="G" control="UP" meta="UP" shift="UP" shortcut="UP" />
-                           </accelerator>
-                        </CheckMenuItem>
-                        <CheckMenuItem fx:id="menuAlwaysOnTop" mnemonicParsing="false" text="\%menu.view.alwaysOnTop">
-                           <accelerator>
-                              <KeyCodeCombination alt="UP" code="F" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
-                           </accelerator>
-                        </CheckMenuItem>
-                  </items>
-                </Menu>
-                <Menu mnemonicParsing="false" text="\%menu.help">
-                  <items>
-                    <MenuItem fx:id="menuHelp" mnemonicParsing="false" text="\%menu.help.about">
-                           <accelerator>
-                              <KeyCodeCombination alt="ANY" code="F1" control="UP" meta="UP" shift="UP" shortcut="UP" />
-                           </accelerator>
-                        </MenuItem>
-                  </items>
-                </Menu>
-              </menus>
-               <VBox.margin>
-                  <Insets />
-               </VBox.margin>
-            </MenuBar>
+            <HBox fx:id="titleBar" alignment="CENTER_LEFT" spacing="0.0">
+               <children>
+                  <MenuBar fx:id="menubarTop" styleClass="window-menu-bar">
+                    <menus>
+                      <Menu mnemonicParsing="false" text="\%menu.file">
+                        <items>
+                          <MenuItem fx:id="menuImportData" mnemonicParsing="false" text="\%menu.file.import">
+                                 <accelerator>
+                                    <KeyCodeCombination alt="UP" code="I" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
+                                 </accelerator>
+                              </MenuItem>
+                              <MenuItem fx:id="menuExportData" mnemonicParsing="false" text="\%menu.file.export">
+                                 <accelerator>
+                                    <KeyCodeCombination alt="UP" code="X" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
+                                 </accelerator>
+                              </MenuItem>
+                              <MenuItem fx:id="menuDeleteAll" mnemonicParsing="false" text="\%menu.file.clear" />
+                        </items>
+                      </Menu>
+                      <Menu mnemonicParsing="false" text="\%menu.view">
+                        <items>
+                              <CheckMenuItem fx:id="menuViewDesc" mnemonicParsing="false" selected="true" text="\%menu.view.description">
+                                 <accelerator>
+                                    <KeyCodeCombination alt="DOWN" code="E" control="UP" meta="UP" shift="UP" shortcut="UP" />
+                                 </accelerator>
+                              </CheckMenuItem>
+                              <CheckMenuItem fx:id="menuViewMenuBar" mnemonicParsing="false" selected="true" text="\%menu.view.showMenuBar">
+                                 <accelerator>
+                                    <KeyCodeCombination alt="DOWN" code="V" control="UP" meta="UP" shift="UP" shortcut="UP" />
+                                 </accelerator>
+                              </CheckMenuItem>
+                              <CheckMenuItem fx:id="menuShowInputGroup" mnemonicParsing="false" selected="true" text="\%menu.view.showInputGroup">
+                                 <accelerator>
+                                    <KeyCodeCombination alt="DOWN" code="G" control="UP" meta="UP" shift="UP" shortcut="UP" />
+                                 </accelerator>
+                              </CheckMenuItem>
+                              <CheckMenuItem fx:id="menuAlwaysOnTop" mnemonicParsing="false" text="\%menu.view.alwaysOnTop">
+                                 <accelerator>
+                                    <KeyCodeCombination alt="UP" code="F" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
+                                 </accelerator>
+                              </CheckMenuItem>
+                        </items>
+                      </Menu>
+                      <Menu mnemonicParsing="false" text="\%menu.help">
+                        <items>
+                          <MenuItem fx:id="menuHelp" mnemonicParsing="false" text="\%menu.help.about">
+                                 <accelerator>
+                                    <KeyCodeCombination alt="ANY" code="F1" control="UP" meta="UP" shift="UP" shortcut="UP" />
+                                 </accelerator>
+                              </MenuItem>
+                        </items>
+                      </Menu>
+                    </menus>
+                  </MenuBar>
+               </children>
+            </HBox>
             <HBox alignment="CENTER_LEFT" prefHeight="30.0" spacing="5.0">
                <children>
                   <Label alignment="CENTER_RIGHT" minWidth="-Infinity" text="\%search.keyword">
