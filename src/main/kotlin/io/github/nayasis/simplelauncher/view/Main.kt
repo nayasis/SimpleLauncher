@@ -24,6 +24,7 @@ import io.github.nayasis.kotlin.javafx.property.StageProperty
 import io.github.nayasis.kotlin.javafx.stage.Dialog
 import io.github.nayasis.kotlin.javafx.stage.Localizator
 import io.github.nayasis.kotlin.javafx.stage.loadDefaultIcon
+import io.github.nayasis.kotlin.javafx.stage.WindowHeaderHelper
 import io.github.nayasis.simplelauncher.common.Context
 import io.github.nayasis.simplelauncher.common.ICON_NEW
 import io.github.nayasis.simplelauncher.model.Link
@@ -70,6 +71,8 @@ class Main: View("application.title".message()), CoroutineScope {
     private val linkExecutor: LinkExecutor by di()
 
     override val root: AnchorPane by fxml("/view/main/main.fxml")
+
+    val titleBar: HBox by fxid()
 
     val tableMain: TableView<Link> by fxid()
     val colGroup: TableColumn<Link,String> by fxid()
@@ -127,6 +130,7 @@ class Main: View("application.title".message()), CoroutineScope {
 
     init {
         Localizator(root)
+        WindowHeaderHelper(titleBar)
         initEvent()
         initTable()
     }

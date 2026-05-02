@@ -6,27 +6,33 @@ plugins {
 	kotlin("jvm") version "2.2.0"
 	id("com.google.devtools.ksp") version "2.2.0-2.0.2"
 	id("org.openjfx.javafxplugin") version "0.1.0"
-	id("com.github.johnrengelman.shadow") version "8.1.1"
+	id("com.gradleup.shadow") version "9.4.1"
 }
+
+val appJvmArgs = listOf(
+	"-Djavafx.enablePreview=true",
+	"-Djavafx.suppressPreviewWarning=true",
+	"--enable-native-access=ALL-UNNAMED",
+	"--enable-native-access=javafx.graphics",
+	"--add-exports=javafx.graphics/com.sun.javafx.application=ALL-UNNAMED",
+	"--add-exports=javafx.graphics/com.sun.javafx.tk=ALL-UNNAMED",
+	"--add-opens=javafx.graphics/javafx.scene=ALL-UNNAMED",
+)
 
 application {
 	mainClass.set("io.github.nayasis.simplelauncher.SimplelauncherKt")
 	applicationName = "simplelauncher"
-	applicationDefaultJvmArgs = listOf(
-		"--add-exports=javafx.graphics/com.sun.javafx.application=ALL-UNNAMED",
-		"--add-exports=javafx.graphics/com.sun.javafx.tk=ALL-UNNAMED",
-		"--add-opens=javafx.graphics/javafx.scene=ALL-UNNAMED"
-	)
+	applicationDefaultJvmArgs = appJvmArgs
 }
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
+		languageVersion = JavaLanguageVersion.of(24)
 	}
 }
 
 javafx {
-	version = "21.0.2"
+	version = "26"
 	modules = listOf("javafx.graphics","javafx.controls","javafx.fxml","javafx.swing")
 }
 
@@ -46,9 +52,11 @@ configurations.all {
 
 dependencies {
 
-	// core
-	implementation("io.github.nayasis:basica-kt:0.3.12")
-	implementation("io.github.nayasis:basicafx-kt:0.2.7")
+	implementation("io.github.nayasis:basica-kt:0.3.13")
+//	implementation("io.github.nayasis:basicafx-kt:0.2.8")
+	implementation("io.github.nayasis:basicafx-kt:0.1.0-SNAPSHOT") {
+		exclude(group = "io.github.nayasis", module = "basica-kt")
+	}
 	implementation("ch.qos.logback:logback-classic:1.5.31")
 
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
@@ -107,7 +115,11 @@ tasks.withType<Test> {
 }
 
 tasks.withType<JavaCompile> {
-	options.release.set(17)
+	options.release.set(24)
+}
+
+tasks.withType<JavaExec> {
+	jvmArgs(appJvmArgs)
 }
 
 val isWindows = System.getProperty("os.name").lowercase().contains("win")
@@ -123,6 +135,16 @@ fun filterJavaFxJars(jars: Collection<File>): List<File> {
 		.filter { jar ->
 			jar.hasSuffix(platformSuffixes) || !jar.hasSuffix(allSuffixes)
 		}
+}
+
+fun deleteRecursivelyForce(target: File) {
+	if (!target.exists()) return
+	target.walkBottomUp().forEach { file ->
+		file.setWritable(true)
+		if (!file.delete() && file.exists()) {
+			throw GradleException("Failed to delete existing path: ${file.absolutePath}")
+		}
+	}
 }
 
 tasks.register<Delete>("cleanCreateRuntimeImage") {
@@ -204,7 +226,10 @@ tasks.register<Exec>("createNativeExe") {
 	val javafxJars         = filterJavaFxJars(allJars)
 	
 	val useExe = runCatching {
-		Runtime.getRuntime().exec("light.exe -?").waitFor()
+		ProcessBuilder("light.exe", "-?")
+			.redirectErrorStream(true)
+			.start()
+			.waitFor()
 		true
 	}.getOrElse { false }
 
@@ -218,6 +243,7 @@ tasks.register<Exec>("createNativeExe") {
 			throw GradleException("Runtime image not found: ${runtimeImageDir.absolutePath}. Run 'gradlew createRuntimeImage' first.")
 
 		// Prepare JAR files for jpackage input
+		deleteRecursivelyForce(outputDir.resolve(application.applicationName))
 		jpackageInputDir.deleteRecursively()
 		jpackageInputDir.mkdirs()
 		jarFile.copyTo(jpackageInputDir.resolve(jarFile.name), overwrite = true)

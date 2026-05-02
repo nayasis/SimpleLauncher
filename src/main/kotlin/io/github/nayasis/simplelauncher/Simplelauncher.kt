@@ -13,6 +13,8 @@ import io.github.nayasis.simplelauncher.service.LinkService
 import io.github.nayasis.simplelauncher.view.Main
 import io.github.nayasis.simplelauncher.view.Splash
 import io.github.oshai.kotlinlogging.KotlinLogging
+import javafx.stage.Stage
+import javafx.stage.StageStyle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.javafx.JavaFx
@@ -29,6 +31,9 @@ fun main(args: Array<String>) {
 
     // turn off external logs
     Logger.getLogger("").level = Level.SEVERE
+
+    System.setProperty("javafx.suppressPreviewWarning", "true")
+    System.setProperty("javafx.enablePreview", "true")
 
     Networks.ignoreCerts()
     "/message/**.prop".loadMessages()
@@ -55,6 +60,10 @@ class Simplelauncher: FxApp(Main::class), CoroutineScope  {
 
         ExposedHelper.connectDatabase()
         logger.debug { ">> database prepared" }
+    }
+
+    override fun onStart(stage: Stage) {
+        stage.initStyle(StageStyle.EXTENDED)
     }
 
 }
