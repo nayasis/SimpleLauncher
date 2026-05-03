@@ -138,9 +138,9 @@ class Main: View("application.title".message()), CoroutineScope {
     override fun onBeforeShow() {
         currentStage?.loadDefaultIcon()
 
-        // Set minimum window size (200 x 150)
+        // set minimum window size
         currentStage?.let { stage ->
-            stage.minWidth  = 200.0
+            stage.minWidth  = 400.0
             stage.minHeight = 150.0
         }
 
