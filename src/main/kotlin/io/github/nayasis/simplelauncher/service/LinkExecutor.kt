@@ -50,7 +50,7 @@ class LinkExecutor{
                                 updateProgress(index + 1, files.size)
                                 updateMessage(file.name)
                             }
-                            runInTerminal(LinkCommand(link, file).toCommand())
+                            run(LinkCommand(link, file), wait=true)
                         }
                         progress.close()
                     }
@@ -66,22 +66,53 @@ class LinkExecutor{
 
     private fun run(link: LinkCommand, wait: Boolean = false) {
 
-        link.commandPrev.tokenize("\n\r").forEach {
-            runInBackground(Command(it, link.workingDirectory),true)
+        val nextCommands = toCommands(link.commandNext, link.workingDirectory)
+
+        executeSequential(
+            commands = toCommands(link.commandPrev, link.workingDirectory),
+            showConsole = link.showConsole,
+        )
+
+        execute(
+            command = link.toCommand(),
+            wait = wait || nextCommands.isNotEmpty(),
+            showConsole = link.showConsole,
+            keepTerminalOpen = link.showConsole && !wait,
+        )
+
+        executeSequential(
+            commands = nextCommands,
+            showConsole = link.showConsole,
+        )
+
+    }
+
+    private fun toCommands(script: String, workingDirectory: String?): List<Command> {
+        return script
+            .tokenize("\n\r")
+            .map { Command(it, workingDirectory) }
+            .filterNot { it.isEmpty() }
+    }
+
+    private fun executeSequential(commands: Collection<Command>, showConsole: Boolean) {
+        commands.forEach { command ->
+            execute(
+                command = command,
+                wait = true,
+                showConsole = showConsole,
+                keepTerminalOpen = false,
+            )
         }
+    }
 
-        val command = link.toCommand().also { main.printCommand("$it") }
-
-        if(link.showConsole) {
-            runInTerminal(command, true)
+    private fun execute(command: Command, wait: Boolean, showConsole: Boolean, keepTerminalOpen: Boolean) {
+        if( command.isEmpty() ) return
+        main.printCommand("$command")
+        if(showConsole) {
+            runInTerminal(command, keepTerminalOpen)
         } else {
-            runInBackground(command, wait || link.commandNext.isNotEmpty())
+            runInBackground(command, wait)
         }
-
-        link.commandNext.tokenize("\n\r").forEach {
-            runInBackground(Command(it, link.workingDirectory),true)
-        }
-
     }
 
     private fun runInBackground(command: Command, wait: Boolean) {
