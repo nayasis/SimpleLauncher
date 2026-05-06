@@ -3,8 +3,12 @@ package io.github.nayasis.simplelauncher.view
 import com.pty4j.PtyProcess
 import com.pty4j.PtyProcessBuilder
 import com.techsenger.jeditermfx.app.pty.PtyProcessTtyConnector
+import com.techsenger.jeditermfx.core.model.StyleState
+import com.techsenger.jeditermfx.core.model.TerminalTextBuffer
 import com.techsenger.jeditermfx.ui.DefaultHyperlinkFilter
 import com.techsenger.jeditermfx.ui.JediTermFxWidget
+import com.techsenger.jeditermfx.ui.TerminalPanel
+import com.techsenger.jeditermfx.ui.settings.SettingsProvider
 import io.github.nayasis.kotlin.basica.core.string.toPath
 import io.github.nayasis.kotlin.basica.etc.error
 import io.github.nayasis.kotlin.basica.exec.Command
@@ -13,6 +17,9 @@ import io.github.nayasis.kotlin.javafx.property.StageProperty
 import io.github.nayasis.simplelauncher.common.Context.Companion.config
 import io.github.nayasis.simplelauncher.view.theme.BlackTerminalTheme
 import io.github.oshai.kotlinlogging.KotlinLogging
+import javafx.animation.KeyFrame
+import javafx.animation.Timeline
+import javafx.event.EventHandler
 import javafx.scene.Scene
 import javafx.scene.layout.Pane
 import javafx.stage.Stage
@@ -88,7 +95,7 @@ class Terminal(
     }
 
     private fun toTerminalWidget(cmd: Command): JediTermFxWidget {
-        return JediTermFxWidget(80, 200, BlackTerminalTheme()).apply {
+        return SafeJediTermFxWidget(80, 200, BlackTerminalTheme()).apply {
             this.ttyConnector = PtyProcessTtyConnector(toPtyProcess(cmd), StandardCharsets.UTF_8)
             this.addHyperlinkFilter(DefaultHyperlinkFilter())
             this.start()
@@ -124,4 +131,77 @@ class Terminal(
         maxHeightProperty().bind(other.maxHeightProperty())
     }
 
+}
+
+private class SafeJediTermFxWidget(
+    columns: Int,
+    lines: Int,
+    settingsProvider: SettingsProvider,
+): JediTermFxWidget(columns, lines, settingsProvider) {
+
+    override fun createTerminalPanel(
+        settingsProvider: SettingsProvider,
+        styleState: StyleState,
+        terminalTextBuffer: TerminalTextBuffer,
+    ): TerminalPanel {
+        return SafeTerminalPanel(settingsProvider, terminalTextBuffer, styleState)
+    }
+
+}
+
+private class SafeTerminalPanel(
+    settingsProvider: SettingsProvider,
+    terminalTextBuffer: TerminalTextBuffer,
+    styleState: StyleState,
+): TerminalPanel(settingsProvider, terminalTextBuffer, styleState) {
+
+    override fun init() {
+        super.init()
+        patchWeakRedrawTimer()
+    }
+
+    private fun patchWeakRedrawTimer() {
+        runCatching {
+            val field = TerminalPanel::class.java.getDeclaredField("myRepaintTimeLine").apply {
+                isAccessible = true
+            }
+            val originalTimeline = field.get(this) as? Timeline ?: return
+            val originalKeyFrame = originalTimeline.keyFrames.firstOrNull() ?: return
+            val originalHandler = originalKeyFrame.onFinished ?: return
+            lateinit var patchedTimeline: Timeline
+            patchedTimeline = Timeline(
+                KeyFrame(
+                    originalKeyFrame.time,
+                    EventHandler { event ->
+                        try {
+                            originalHandler.handle(event)
+                        } catch (e: ClassCastException) {
+                            if(e.isWeakRedrawTimerSourceCast()) {
+                                logger.warn(e) { "Stopping jeditermfx repaint timeline after source mismatch" }
+                                patchedTimeline.stop()
+                            } else {
+                                throw e
+                            }
+                        }
+                    }
+                )
+            ).apply {
+                cycleCount = originalTimeline.cycleCount
+            }
+            originalTimeline.stop()
+            field.set(this, patchedTimeline)
+            patchedTimeline.play()
+        }.onFailure { e ->
+            logger.warn(e) { "Failed to patch jeditermfx repaint timeline" }
+        }
+    }
+
+}
+
+private fun ClassCastException.isWeakRedrawTimerSourceCast(): Boolean {
+    val frame = stackTrace.firstOrNull()
+    return message?.contains("javafx.animation.KeyFrame") == true
+        && message?.contains("javafx.animation.Timeline") == true
+        && frame?.className == "com.techsenger.jeditermfx.ui.TerminalPanel\$WeakRedrawTimer"
+        && frame.methodName == "handle"
 }

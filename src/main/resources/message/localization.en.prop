@@ -64,6 +64,9 @@ msg.alert.create.link       = Create link
 
 msg.confirm.delete          = Confirm to delete ?\n\n%s
 msg.confirm.delete.all      = Confirm to initialize ?\n\n(All links will be deleted.)
+msg.confirm.exit.pending.all     = There are unsaved changes and running tasks.\n\nExit anyway?
+msg.confirm.exit.pending.unsaved = There are unsaved changes.\n\nExit anyway?
+msg.confirm.exit.pending.running = There are running tasks.\n\nExit anyway?
 
 msg.error.runtime           = Error on running program.
 msg.error.no.directory      = There is no directory.\n\n(%s)

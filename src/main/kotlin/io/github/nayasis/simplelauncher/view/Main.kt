@@ -124,6 +124,8 @@ class Main: View("application.title".message()), CoroutineScope {
     val groupMatcher = TextMatcher()
 
     private var lastFocused: Node? = null
+    private var progressDialogLifecycleBound = false
+    private var closeRequestBound = false
 
     private val favicon       = resources.image("/image/icon/favicon.png")
     private val faviconPinned = resources.image("/image/icon/favicon-pinned.png")
@@ -137,6 +139,8 @@ class Main: View("application.title".message()), CoroutineScope {
 
     override fun onBeforeShow() {
         currentStage?.loadDefaultIcon()
+        bindProgressDialogLifecycle()
+        bindCloseRequest()
 
         // set minimum window size
         currentStage?.let { stage ->
@@ -172,6 +176,44 @@ class Main: View("application.title".message()), CoroutineScope {
 
         DefaultPreloader.close()
 
+    }
+
+    private fun bindProgressDialogLifecycle() {
+        if(progressDialogLifecycleBound) return
+        currentStage?.showingProperty()?.addListener { _, _, showing ->
+            if(showing == true) {
+                linkExecutor.restoreProgressDialogs()
+            } else {
+                linkExecutor.hideProgressDialogs()
+            }
+        }
+        progressDialogLifecycleBound = true
+    }
+
+    private fun bindCloseRequest() {
+        if(closeRequestBound) return
+        currentStage?.setOnCloseRequest { event ->
+            if(!confirmClose()) {
+                event.consume()
+            }
+        }
+        closeRequestBound = true
+    }
+
+    private fun confirmClose(): Boolean {
+        val hasUnsavedChanges = hasUnsavedChanges()
+        val hasRunningWork = linkExecutor.hasRunningWork()
+        val messageKey = when {
+            hasUnsavedChanges && hasRunningWork -> "msg.confirm.exit.pending.all"
+            hasUnsavedChanges -> "msg.confirm.exit.pending.unsaved"
+            hasRunningWork -> "msg.confirm.exit.pending.running"
+            else -> return true
+        }
+        return Dialog.confirm(messageKey.message())
+    }
+
+    private fun hasUnsavedChanges(): Boolean {
+        return detail != null && !buttonSave.isDisable
     }
 
     override fun onUndock() {
