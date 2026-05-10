@@ -14,6 +14,8 @@ import io.github.nayasis.simplelauncher.common.Context.Companion.main
 import io.github.nayasis.simplelauncher.model.Link
 import io.github.nayasis.simplelauncher.view.Terminal
 import io.github.oshai.kotlinlogging.KotlinLogging
+import javafx.scene.control.Button
+import javafx.scene.control.Tooltip
 import tornadofx.runLater
 import java.io.File
 import java.time.LocalDateTime
@@ -43,11 +45,14 @@ class LinkExecutor{
             } else {
                 if( link.executeEach ) {
                     if( ! link.showConsole ) {
-                        openProgressDialog(link.title) {
-                            files.forEachIndexed { index, file ->
-                                it.updateProgress(index + 1,files.size)
-                                it.updateMessage(file.name)
-                                run(LinkCommand(link, file), wait=true)
+                        val queue = ProgressFileQueue(files)
+                        openProgressDialog(link.title, queue) { dialog, control ->
+                            while (queue.hasNext()) {
+                                val item = queue.next() ?: continue
+                                updateProgress(dialog, queue, item)
+                                run(LinkCommand(link, item.file), wait=true, onExecutorChanged=control::updateExecutor)
+                                queue.finish(item)
+                                control.updateExecutor(null)
                             }
                         }
                     } else {
@@ -124,13 +129,50 @@ class LinkExecutor{
         }
     }
 
-    private fun openProgressDialog(title: String?, task: (dialog: ProgressDialog) -> Unit): ProgressDialog {
+    private fun openProgressDialog(
+        title: String?,
+        queue: ProgressFileQueue,
+        task: (dialog: ProgressDialog, control: ProgressQueueControl) -> Unit,
+    ): ProgressDialog {
         lateinit var dialog: ProgressDialog
-        dialog = Dialog.progress(title, task = task).setOnDone {
+        lateinit var popOver: ProgressQueuePopOver
+        val control = ProgressQueueControl(queue) {
+            popOver.refreshIfShowing()
+        }
+        val queueButton = Button("☰").apply {
+            tooltip = Tooltip("label.work.queue.tooltip".message())
+            style = "-fx-padding: 0 4 0 4; -fx-min-width: 20px; -fx-pref-width: 20px; -fx-max-width: 20px; -fx-min-height: 18px; -fx-pref-height: 18px; -fx-max-height: 18px; -fx-font-size: 10px;"
+            setOnAction { event ->
+                event.consume()
+                popOver.toggle(this)
+            }
+        }
+        popOver = ProgressQueuePopOver(
+            items = queue,
+            control = control,
+            onPendingRemoved = { updateProgress(dialog, queue, queue.currentItem()) },
+        )
+        dialog = Dialog.progress(title, headerButton = queueButton) {
+            task(it, control)
+        }.setOnDone {
+            control.updateExecutor(null)
+            popOver.hide()
             unregisterProgressDialog(dialog)
         }
         registerProgressDialog(dialog)
         return dialog
+    }
+
+    private fun updateProgress(dialog: ProgressDialog, queue: ProgressFileQueue, item: ProgressFileQueueItem?) {
+        dialog.updateMessage(item?.title)
+        dialog.updateProgress(queue.currNo, queue.size.coerceAtLeast(1))
+        dialog.updateSubMessage(
+            if (queue.size > 1) {
+                "(${queue.currNo}/${queue.size})"
+            } else {
+                ""
+            }
+        )
     }
 
     private fun registerProgressDialog(dialog: ProgressDialog) {
@@ -146,13 +188,14 @@ class LinkExecutor{
         }
     }
 
-    private fun run(link: LinkCommand, wait: Boolean = false) {
+    private fun run(link: LinkCommand, wait: Boolean = false, onExecutorChanged: ((CommandExecutor?) -> Unit)? = null) {
 
         val nextCommands = toCommands(link.commandNext, link.workingDirectory)
 
         executeSequential(
             commands = toCommands(link.commandPrev, link.workingDirectory),
             showConsole = link.showConsole,
+            onExecutorChanged = onExecutorChanged,
         )
 
         execute(
@@ -160,11 +203,13 @@ class LinkExecutor{
             wait = wait || nextCommands.isNotEmpty(),
             showConsole = link.showConsole,
             keepTerminalOpen = link.showConsole && !wait,
+            onExecutorChanged = onExecutorChanged,
         )
 
         executeSequential(
             commands = nextCommands,
             showConsole = link.showConsole,
+            onExecutorChanged = onExecutorChanged,
         )
 
     }
@@ -176,37 +221,40 @@ class LinkExecutor{
             .filterNot { it.isEmpty() }
     }
 
-    private fun executeSequential(commands: Collection<Command>, showConsole: Boolean) {
+    private fun executeSequential(commands: Collection<Command>, showConsole: Boolean, onExecutorChanged: ((CommandExecutor?) -> Unit)? = null) {
         commands.forEach { command ->
             execute(
                 command = command,
                 wait = true,
                 showConsole = showConsole,
                 keepTerminalOpen = false,
+                onExecutorChanged = onExecutorChanged,
             )
         }
     }
 
-    private fun execute(command: Command, wait: Boolean, showConsole: Boolean, keepTerminalOpen: Boolean) {
+    private fun execute(command: Command, wait: Boolean, showConsole: Boolean, keepTerminalOpen: Boolean, onExecutorChanged: ((CommandExecutor?) -> Unit)? = null) {
         if( command.isEmpty() ) return
         main.printCommand("$command")
         if(showConsole) {
             runInTerminal(command, keepTerminalOpen)
         } else {
-            runInBackground(command, wait)
+            runInBackground(command, wait, onExecutorChanged)
         }
     }
 
-    private fun runInBackground(command: Command, wait: Boolean) {
+    private fun runInBackground(command: Command, wait: Boolean, onExecutorChanged: ((CommandExecutor?) -> Unit)? = null) {
         if( command.isEmpty() ) return
         logger.debug { "- command: $command" }
         try {
             val executor = command.run()
             registerExecutor(executor)
+            onExecutorChanged?.invoke(executor)
             if(wait) {
                 try {
                     executor.waitFor()
                 } finally {
+                    onExecutorChanged?.invoke(null)
                     unregisterExecutor(executor)
                 }
             } else {
@@ -214,6 +262,7 @@ class LinkExecutor{
                     try {
                         executor.waitFor()
                     } finally {
+                        onExecutorChanged?.invoke(null)
                         unregisterExecutor(executor)
                     }
                 }.apply {
@@ -272,4 +321,3 @@ class LinkExecutor{
     }
 
 }
-
