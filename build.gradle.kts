@@ -12,6 +12,7 @@ plugins {
 val appJvmArgs = listOf(
 	"-Djavafx.enablePreview=true",
 	"-Djavafx.suppressPreviewWarning=true",
+	"-Djavafx.suppressUnsupportedConfiguration=true",
 	"--enable-native-access=ALL-UNNAMED",
 	"--enable-native-access=javafx.graphics",
 	"--add-exports=javafx.graphics/com.sun.javafx.application=ALL-UNNAMED",
@@ -119,7 +120,10 @@ tasks.withType<JavaCompile> {
 }
 
 tasks.withType<JavaExec> {
-	jvmArgs(appJvmArgs)
+	jvmArgs(
+		"-Djavafx.suppressUnsupportedConfiguration=true",
+		"--enable-native-access=ALL-UNNAMED",
+	)
 }
 
 val isWindows = System.getProperty("os.name").lowercase().contains("win")
