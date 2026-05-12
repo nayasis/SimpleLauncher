@@ -124,7 +124,7 @@ class Main: View("application.title".message()), CoroutineScope {
     val groupMatcher = TextMatcher()
 
     private var lastFocused: Node? = null
-    private var progressDialogLifecycleBound = false
+    private var childWindowLifecycleBound = false
     private var closeRequestBound = false
 
     private val favicon       = resources.image("/image/icon/favicon.png")
@@ -139,7 +139,7 @@ class Main: View("application.title".message()), CoroutineScope {
 
     override fun onBeforeShow() {
         currentStage?.loadDefaultIcon()
-        bindProgressDialogLifecycle()
+        bindChildWindowLifecycle()
         bindCloseRequest()
 
         // set minimum window size
@@ -178,16 +178,16 @@ class Main: View("application.title".message()), CoroutineScope {
 
     }
 
-    private fun bindProgressDialogLifecycle() {
-        if(progressDialogLifecycleBound) return
+    private fun bindChildWindowLifecycle() {
+        if(childWindowLifecycleBound) return
         currentStage?.showingProperty()?.addListener { _, _, showing ->
             if(showing == true) {
-                linkExecutor.restoreProgressDialogs()
+                linkExecutor.restoreChildWindows()
             } else {
-                linkExecutor.hideProgressDialogs()
+                linkExecutor.hideChildWindows()
             }
         }
-        progressDialogLifecycleBound = true
+        childWindowLifecycleBound = true
     }
 
     private fun bindCloseRequest() {
@@ -259,7 +259,7 @@ class Main: View("application.title".message()), CoroutineScope {
 
         linkService.links.bindTo(tableMain)
 
-        tableMain.columnResizePolicy = TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN
+        tableMain.columnResizePolicy = CONSTRAINED_RESIZE_POLICY_TRAILING_COLUMNS
 
         tableMain.selectionModel.selectionMode = SelectionMode.SINGLE
 

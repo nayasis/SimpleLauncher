@@ -16,17 +16,27 @@ import io.github.nayasis.simplelauncher.view.Terminal
 import io.github.oshai.kotlinlogging.KotlinLogging
 import javafx.scene.control.Button
 import javafx.scene.control.Tooltip
+import javafx.stage.WindowEvent
 import tornadofx.runLater
 import java.io.File
 import java.time.LocalDateTime
 
 private val logger = KotlinLogging.logger{}
 
+private data class ProgressQueueContext(
+    val queueButton: Button,
+    val control: ProgressQueueControl,
+    val popOver: ProgressQueuePopOver,
+)
+
 @Inject
 class LinkExecutor{
 
     private val progressDialogs = LinkedHashSet<ProgressDialog>()
     private val hiddenProgressDialogs = LinkedHashSet<ProgressDialog>()
+    private val progressQueuePopOvers = LinkedHashMap<ProgressDialog, ProgressQueuePopOver>()
+    private val terminals = LinkedHashSet<Terminal>()
+    private val hiddenTerminals = LinkedHashSet<Terminal>()
     private val runningExecutors = LinkedHashSet<CommandExecutor>()
     private var runningTerminalCount = 0
 
@@ -56,13 +66,14 @@ class LinkExecutor{
                             }
                         }
                     } else {
-                        val progress = openProgressDialog(link.title)
-                        files.forEachIndexed { index, file ->
-                            progress.run {
-                                updateProgress(index + 1, files.size)
-                                updateMessage(file.name)
-                            }
-                            run(LinkCommand(link, file), wait=true)
+                        val queue = ProgressFileQueue(files)
+                        val progress = openProgressDialog(link.title, queue)
+                        while (queue.hasNext()) {
+                            val item = queue.next() ?: continue
+                            updateProgress(progress, queue, item)
+                            run(LinkCommand(link, item.file), wait=true)
+                            queue.finish(item)
+                            refreshProgressQueue(progress)
                         }
                         progress.close()
                         unregisterProgressDialog(progress)
@@ -77,18 +88,29 @@ class LinkExecutor{
 
     }
 
-    fun hideProgressDialogs() = runLater {
+    fun hideChildWindows() = runLater {
+        hideProgressDialogs()
+        hideTerminals()
+    }
+
+    fun restoreChildWindows() = runLater {
+        restoreProgressDialogs()
+        restoreTerminals()
+    }
+
+    private fun hideProgressDialogs() {
         synchronized(progressDialogs) {
             progressDialogs.forEach { dialog ->
                 if(dialog.stage.isShowing) {
                     hiddenProgressDialogs.add(dialog)
+                    hideProgressQueue(dialog)
                     dialog.stage.hide()
                 }
             }
         }
     }
 
-    fun restoreProgressDialogs() = runLater {
+    private fun restoreProgressDialogs() {
         synchronized(progressDialogs) {
             hiddenProgressDialogs.toList().forEach { dialog ->
                 if(dialog !in progressDialogs) {
@@ -103,6 +125,36 @@ class LinkExecutor{
                     unregisterProgressDialog(dialog)
                 }
                 hiddenProgressDialogs.remove(dialog)
+            }
+        }
+    }
+
+    private fun hideTerminals() {
+        synchronized(terminals) {
+            terminals.forEach { terminal ->
+                if(terminal.isShowing) {
+                    hiddenTerminals.add(terminal)
+                    terminal.hide()
+                }
+            }
+        }
+    }
+
+    private fun restoreTerminals() {
+        synchronized(terminals) {
+            hiddenTerminals.toList().forEach { terminal ->
+                if(terminal !in terminals) {
+                    hiddenTerminals.remove(terminal)
+                    return@forEach
+                }
+                runCatching {
+                    if(!terminal.isShowing) {
+                        terminal.show()
+                    }
+                }.onFailure {
+                    unregisterTerminalWindow(terminal)
+                }
+                hiddenTerminals.remove(terminal)
             }
         }
     }
@@ -129,12 +181,39 @@ class LinkExecutor{
         }
     }
 
+    private fun openProgressDialog(title: String?, queue: ProgressFileQueue): ProgressDialog {
+        lateinit var dialog: ProgressDialog
+        val context = createProgressQueueContext(queue) {
+            updateProgress(dialog, queue, queue.currentItem())
+            refreshProgressQueue(dialog)
+        }
+        dialog = Dialog.progress(title, headerButton = context.queueButton).also {
+            registerProgressDialog(it, context.popOver)
+        }
+        return dialog
+    }
+
     private fun openProgressDialog(
         title: String?,
         queue: ProgressFileQueue,
         task: (dialog: ProgressDialog, control: ProgressQueueControl) -> Unit,
     ): ProgressDialog {
         lateinit var dialog: ProgressDialog
+        val context = createProgressQueueContext(queue) {
+            updateProgress(dialog, queue, queue.currentItem())
+            refreshProgressQueue(dialog)
+        }
+        dialog = Dialog.progress(title, headerButton = context.queueButton) {
+            task(it, context.control)
+        }.setOnDone {
+            context.control.updateExecutor(null)
+            unregisterProgressDialog(dialog)
+        }
+        registerProgressDialog(dialog, context.popOver)
+        return dialog
+    }
+
+    private fun createProgressQueueContext(queue: ProgressFileQueue, onPendingRemoved: () -> Unit): ProgressQueueContext {
         lateinit var popOver: ProgressQueuePopOver
         val control = ProgressQueueControl(queue) {
             popOver.refreshIfShowing()
@@ -150,17 +229,9 @@ class LinkExecutor{
         popOver = ProgressQueuePopOver(
             items = queue,
             control = control,
-            onPendingRemoved = { updateProgress(dialog, queue, queue.currentItem()) },
+            onPendingRemoved = onPendingRemoved,
         )
-        dialog = Dialog.progress(title, headerButton = queueButton) {
-            task(it, control)
-        }.setOnDone {
-            control.updateExecutor(null)
-            popOver.hide()
-            unregisterProgressDialog(dialog)
-        }
-        registerProgressDialog(dialog)
-        return dialog
+        return ProgressQueueContext(queueButton, control, popOver)
     }
 
     private fun updateProgress(dialog: ProgressDialog, queue: ProgressFileQueue, item: ProgressFileQueueItem?) {
@@ -181,11 +252,27 @@ class LinkExecutor{
         }
     }
 
+    private fun registerProgressDialog(dialog: ProgressDialog, popOver: ProgressQueuePopOver) {
+        synchronized(progressDialogs) {
+            progressDialogs.add(dialog)
+            progressQueuePopOvers[dialog] = popOver
+        }
+    }
+
     private fun unregisterProgressDialog(dialog: ProgressDialog) {
         synchronized(progressDialogs) {
             progressDialogs.remove(dialog)
             hiddenProgressDialogs.remove(dialog)
+            progressQueuePopOvers.remove(dialog)?.hide()
         }
+    }
+
+    private fun hideProgressQueue(dialog: ProgressDialog) {
+        progressQueuePopOvers[dialog]?.hide()
+    }
+
+    private fun refreshProgressQueue(dialog: ProgressDialog) {
+        progressQueuePopOvers[dialog]?.refreshIfShowing()
     }
 
     private fun run(link: LinkCommand, wait: Boolean = false, onExecutorChanged: ((CommandExecutor?) -> Unit)? = null) {
@@ -278,19 +365,27 @@ class LinkExecutor{
     private fun runInTerminal(command: Command, wait: Boolean = false ) {
         if( command.isEmpty() ) return
         logger.debug { "- command: $command" }
-        registerTerminal()
-        Terminal(
+        registerRunningTerminal()
+        val terminal = Terminal(
             onAlways = {
-                unregisterTerminal()
+                unregisterRunningTerminal()
             },
             onFail = { e ->
             runAwait {
                 Dialog.error(e)
             }
-        }).run {
+        })
+        registerTerminalWindow(terminal)
+        terminal.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST) {
+            unregisterTerminalWindow(terminal)
+        }
+        terminal.run {
             show()
             runCatching { run(command) }
-            if(!wait) close()
+            if(!wait) {
+                close()
+                unregisterTerminalWindow(this)
+            }
         }
     }
 
@@ -306,13 +401,26 @@ class LinkExecutor{
         }
     }
 
-    private fun registerTerminal() {
+    private fun registerTerminalWindow(terminal: Terminal) {
+        synchronized(terminals) {
+            terminals.add(terminal)
+        }
+    }
+
+    private fun unregisterTerminalWindow(terminal: Terminal) {
+        synchronized(terminals) {
+            terminals.remove(terminal)
+            hiddenTerminals.remove(terminal)
+        }
+    }
+
+    private fun registerRunningTerminal() {
         synchronized(this) {
             runningTerminalCount++
         }
     }
 
-    private fun unregisterTerminal() {
+    private fun unregisterRunningTerminal() {
         synchronized(this) {
             if(runningTerminalCount > 0) {
                 runningTerminalCount--
