@@ -97,9 +97,10 @@ dependencies {
 	testImplementation("net.java.dev.jna:jna:5.9.0")
 	testImplementation("net.java.dev.jna:jna-platform:5.9.0")
 
-    testImplementation(kotlin("test"))
-    testImplementation("io.kotest:kotest-runner-junit5:5.8.0")
-    testImplementation("org.testfx:testfx-junit5:4.0.18")
+	testImplementation(kotlin("test"))
+	testImplementation("io.kotest:kotest-runner-junit5:5.8.0")
+	testImplementation("io.github.classgraph:classgraph:4.8.184")
+	testImplementation("org.testfx:testfx-junit5:4.0.18")
 	testImplementation("org.yaml:snakeyaml:2.2")
 
 }
@@ -113,6 +114,7 @@ kotlin {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+	jvmArgs("--enable-native-access=ALL-UNNAMED")
 }
 
 tasks.withType<JavaCompile> {
@@ -124,6 +126,10 @@ tasks.withType<JavaExec> {
 		"-Djavafx.suppressUnsupportedConfiguration=true",
 		"--enable-native-access=ALL-UNNAMED",
 	)
+}
+
+tasks.named<JavaExec>("run") {
+	jvmArgs(appJvmArgs)
 }
 
 val isWindows = System.getProperty("os.name").lowercase().contains("win")
@@ -203,7 +209,7 @@ tasks.register<Exec>("createRuntimeImage") {
 		"--module-path", modulePath,
 		"--add-modules", requiredJdkModules.joinToString(","),
 		"--strip-debug",
-		"--compress", "2",
+		"--compress", "zip-6",
 		"--no-header-files",
 		"--no-man-pages",
 		"--output", runtimeImageDir.absolutePath
