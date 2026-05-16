@@ -132,6 +132,14 @@ tasks.named<JavaExec>("run") {
 	jvmArgs(appJvmArgs)
 }
 
+tasks.register<JavaExec>("runChildWindowLifecycleTest") {
+	group = "verification"
+	description = "Runs the manual child-window hide/restore viewer"
+	classpath = sourceSets["test"].runtimeClasspath
+	mainClass.set("io.github.nayasis.simplelauncher.view.lifecycle.ChildWindowLifecycleTestKt")
+	jvmArgs(appJvmArgs)
+}
+
 val isWindows = System.getProperty("os.name").lowercase().contains("win")
 
 fun File.hasSuffix(suffixes: Set<String>): Boolean =
@@ -154,6 +162,19 @@ fun deleteRecursivelyForce(target: File) {
 		if (!file.delete() && file.exists()) {
 			throw GradleException("Failed to delete existing path: ${file.absolutePath}")
 		}
+	}
+}
+
+fun copyRecursivelyForce(source: File, target: File) {
+	if (!source.exists()) {
+		throw GradleException("Deploy source not found: ${source.absolutePath}")
+	}
+	if (source.isDirectory) {
+		target.mkdirs()
+		source.copyRecursively(target, overwrite = true)
+	} else {
+		target.parentFile.mkdirs()
+		source.copyTo(target, overwrite = true)
 	}
 }
 
@@ -289,4 +310,35 @@ tasks.register<Exec>("createNativeExe") {
 	}
 
 	commandLine(listOf(jpackagePath.absolutePath) + jpackageArgs)
+}
+
+tasks.register("deploy") {
+	group       = "distribution"
+	description = "Builds the native executable and deploys it to D:/app/SimpleLauncher"
+
+	dependsOn("createNativeExe")
+
+	doLast {
+		val appName = application.applicationName
+		val sourceDir = file("build/dist/$appName")
+		val targetDir = file("D:/app/SimpleLauncher")
+		val executable = "$appName.exe"
+
+		if (isWindows) {
+			ProcessBuilder("taskkill", "/IM", executable, "/F", "/T")
+				.redirectErrorStream(true)
+				.start()
+				.waitFor()
+		}
+
+		targetDir.mkdirs()
+		listOf("app", "runtime").forEach { name ->
+			deleteRecursivelyForce(targetDir.resolve(name))
+		}
+		deleteRecursivelyForce(targetDir.resolve(executable))
+
+		copyRecursivelyForce(sourceDir.resolve("app"), targetDir.resolve("app"))
+		copyRecursivelyForce(sourceDir.resolve("runtime"), targetDir.resolve("runtime"))
+		copyRecursivelyForce(sourceDir.resolve(executable), targetDir.resolve(executable))
+	}
 }
