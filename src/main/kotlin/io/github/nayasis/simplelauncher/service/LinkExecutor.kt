@@ -16,7 +16,6 @@ import io.github.nayasis.simplelauncher.view.Terminal
 import io.github.oshai.kotlinlogging.KotlinLogging
 import javafx.scene.control.Button
 import javafx.scene.control.Tooltip
-import javafx.stage.WindowEvent
 import tornadofx.runLater
 import java.io.File
 import java.time.LocalDateTime
@@ -32,11 +31,7 @@ private data class ProgressQueueContext(
 @Inject
 class LinkExecutor{
 
-    private val progressDialogs = LinkedHashSet<ProgressDialog>()
-    private val hiddenProgressDialogs = LinkedHashSet<ProgressDialog>()
-    private val progressQueuePopOvers = LinkedHashMap<ProgressDialog, ProgressQueuePopOver>()
-    private val terminals = LinkedHashSet<Terminal>()
-    private val hiddenTerminals = LinkedHashSet<Terminal>()
+    private val childWindows = LauncherChildWindows()
     private val runningExecutors = LinkedHashSet<CommandExecutor>()
     private var runningTerminalCount = 0
 
@@ -88,82 +83,13 @@ class LinkExecutor{
 
     }
 
-    fun hideChildWindows() = runLater {
-        hideProgressDialogs()
-        hideTerminals()
-    }
+    fun hideChildWindows() = childWindows.hide()
 
-    fun restoreChildWindows() = runLater {
-        restoreProgressDialogs()
-        restoreTerminals()
-    }
-
-    private fun hideProgressDialogs() {
-        synchronized(progressDialogs) {
-            progressDialogs.forEach { dialog ->
-                if(dialog.stage.isShowing) {
-                    hiddenProgressDialogs.add(dialog)
-                    hideProgressQueue(dialog)
-                    dialog.stage.hide()
-                }
-            }
-        }
-    }
-
-    private fun restoreProgressDialogs() {
-        synchronized(progressDialogs) {
-            hiddenProgressDialogs.toList().forEach { dialog ->
-                if(dialog !in progressDialogs) {
-                    hiddenProgressDialogs.remove(dialog)
-                    return@forEach
-                }
-                runCatching {
-                    if(!dialog.stage.isShowing) {
-                        dialog.show()
-                    }
-                }.onFailure {
-                    unregisterProgressDialog(dialog)
-                }
-                hiddenProgressDialogs.remove(dialog)
-            }
-        }
-    }
-
-    private fun hideTerminals() {
-        synchronized(terminals) {
-            terminals.forEach { terminal ->
-                if(terminal.isShowing) {
-                    hiddenTerminals.add(terminal)
-                    terminal.hide()
-                }
-            }
-        }
-    }
-
-    private fun restoreTerminals() {
-        synchronized(terminals) {
-            hiddenTerminals.toList().forEach { terminal ->
-                if(terminal !in terminals) {
-                    hiddenTerminals.remove(terminal)
-                    return@forEach
-                }
-                runCatching {
-                    if(!terminal.isShowing) {
-                        terminal.show()
-                    }
-                }.onFailure {
-                    unregisterTerminalWindow(terminal)
-                }
-                hiddenTerminals.remove(terminal)
-            }
-        }
-    }
+    fun restoreChildWindows() = childWindows.restore()
 
     fun hasRunningWork(): Boolean {
-        synchronized(progressDialogs) {
-            if(progressDialogs.isNotEmpty()) {
-                return true
-            }
+        if(childWindows.hasProgressDialogs()) {
+            return true
         }
         synchronized(runningExecutors) {
             if(runningExecutors.isNotEmpty()) {
@@ -247,32 +173,19 @@ class LinkExecutor{
     }
 
     private fun registerProgressDialog(dialog: ProgressDialog) {
-        synchronized(progressDialogs) {
-            progressDialogs.add(dialog)
-        }
+        childWindows.register(dialog)
     }
 
     private fun registerProgressDialog(dialog: ProgressDialog, popOver: ProgressQueuePopOver) {
-        synchronized(progressDialogs) {
-            progressDialogs.add(dialog)
-            progressQueuePopOvers[dialog] = popOver
-        }
+        childWindows.register(dialog, popOver)
     }
 
     private fun unregisterProgressDialog(dialog: ProgressDialog) {
-        synchronized(progressDialogs) {
-            progressDialogs.remove(dialog)
-            hiddenProgressDialogs.remove(dialog)
-            progressQueuePopOvers.remove(dialog)?.hide()
-        }
-    }
-
-    private fun hideProgressQueue(dialog: ProgressDialog) {
-        progressQueuePopOvers[dialog]?.hide()
+        childWindows.unregister(dialog)
     }
 
     private fun refreshProgressQueue(dialog: ProgressDialog) {
-        progressQueuePopOvers[dialog]?.refreshIfShowing()
+        childWindows.refreshProgressQueue(dialog)
     }
 
     private fun run(link: LinkCommand, wait: Boolean = false, onExecutorChanged: ((CommandExecutor?) -> Unit)? = null) {
@@ -375,16 +288,13 @@ class LinkExecutor{
                 Dialog.error(e)
             }
         })
-        registerTerminalWindow(terminal)
-        terminal.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST) {
-            unregisterTerminalWindow(terminal)
-        }
+        childWindows.register(terminal)
         terminal.run {
-            show()
+            childWindows.show(this)
             runCatching { run(command) }
             if(!wait) {
                 close()
-                unregisterTerminalWindow(this)
+                childWindows.unregister(this)
             }
         }
     }
@@ -398,19 +308,6 @@ class LinkExecutor{
     private fun unregisterExecutor(executor: CommandExecutor) {
         synchronized(runningExecutors) {
             runningExecutors.remove(executor)
-        }
-    }
-
-    private fun registerTerminalWindow(terminal: Terminal) {
-        synchronized(terminals) {
-            terminals.add(terminal)
-        }
-    }
-
-    private fun unregisterTerminalWindow(terminal: Terminal) {
-        synchronized(terminals) {
-            terminals.remove(terminal)
-            hiddenTerminals.remove(terminal)
         }
     }
 

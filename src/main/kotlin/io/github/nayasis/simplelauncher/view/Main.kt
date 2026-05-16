@@ -43,6 +43,8 @@ import javafx.scene.input.KeyEvent.KEY_PRESSED
 import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
+import javafx.stage.Stage
+import javafx.stage.WindowEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.javafx.JavaFx
@@ -180,11 +182,31 @@ class Main: View("application.title".message()), CoroutineScope {
 
     private fun bindChildWindowLifecycle() {
         if(childWindowLifecycleBound) return
-        currentStage?.showingProperty()?.addListener { _, _, showing ->
-            if(showing == true) {
-                linkExecutor.restoreChildWindows()
-            } else {
-                linkExecutor.hideChildWindows()
+        currentStage?.let(::bindChildWindowLifecycle) ?: root.sceneProperty().addListener { _, _, scene ->
+            scene?.windowProperty()?.addListener { _, _, window ->
+                (window as? Stage)?.let(::bindChildWindowLifecycle)
+            }
+        }
+    }
+
+    private fun bindChildWindowLifecycle(stage: Stage) {
+        if(childWindowLifecycleBound) return
+        stage.addEventHandler(WindowEvent.WINDOW_HIDDEN) {
+            linkExecutor.hideChildWindows()
+        }
+        stage.addEventHandler(WindowEvent.WINDOW_SHOWN) {
+            linkExecutor.restoreChildWindows()
+        }
+        stage.iconifiedProperty().addListener { _, _, iconified ->
+            when(iconified) {
+                true -> linkExecutor.hideChildWindows()
+                else -> linkExecutor.restoreChildWindows()
+            }
+        }
+        stage.showingProperty().addListener { _, _, showing ->
+            when(showing) {
+                true -> linkExecutor.restoreChildWindows()
+                else -> linkExecutor.hideChildWindows()
             }
         }
         childWindowLifecycleBound = true
