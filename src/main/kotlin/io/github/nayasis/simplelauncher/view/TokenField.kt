@@ -3,6 +3,8 @@ package io.github.nayasis.simplelauncher.view
 import io.github.nayasis.simplelauncher.model.normalizeHashtags
 import javafx.scene.control.Button
 import javafx.scene.control.TextField
+import javafx.geometry.Pos
+import javafx.scene.Node
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent.KEY_PRESSED
 import javafx.scene.layout.FlowPane
@@ -20,7 +22,14 @@ class TokenField: FlowPane() {
     init {
         hgap = 4.0
         vgap = 4.0
+        alignment = Pos.CENTER_LEFT
+        isFocusTraversable = false
+        isPickOnBounds = true
         styleClass.add("token-field")
+        setOnMousePressed { event ->
+            if ((event.target as? Node)?.styleClass?.contains("token-chip") == true) return@setOnMousePressed
+            input.requestFocus()
+        }
         input.styleClass.add("token-field-input")
         input.prefColumnCount = 8
         input.textProperty().addListener { _, _, _ ->
