@@ -37,6 +37,7 @@ class LinkService {
     val links = SortedFilteredList(mutableListOf<Link>().asObservable())
 
     fun save(link: Link, refreshTable: Boolean = true) {
+        link.syncHashtagStorage()
         val isNew = link.id <= 0
         tx {
             LinkTable.repo.save(link)
@@ -71,7 +72,6 @@ class LinkService {
         val buffer = LinkedList<Link>()
         tx(readOnly = true) {
             LinkTable.repo.select().orderBy(LinkTable.title).forEachIndexed { i, link ->
-                link.refreshIndex()
                 buffer.add(link)
                 worker?.invoke(i+1, link)
             }

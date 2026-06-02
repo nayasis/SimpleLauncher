@@ -108,7 +108,7 @@ class Main: View("application.title".message()), CoroutineScope {
     val descShowConsole: CheckBox by fxid()
     val descSeqExecution: CheckBox by fxid()
     val descTitle: TextField by fxid()
-    val descHashtag: TextField by fxid()
+    val descHashtag: TokenField by fxid()
     val descDescription: TextArea by fxid()
     val descIcon: ImageView by fxid()
     val descExecPath: TextField by fxid()
@@ -305,7 +305,10 @@ class Main: View("application.title".message()), CoroutineScope {
             when(e.code) {
                 ENTER -> tableMain.selectedItem?.let { linkExecutor.run(it) }
                 ESCAPE -> inputKeyword.requestFocus()
-                DELETE -> tableMain.selectedItem?.let{ deleteLink(it) }
+                DELETE -> tableMain.selectedItem?.let{
+                    e.consume()
+                    deleteLink(it)
+                }
                 TAB -> {
                     if( ! e.isShiftDown ) {
                         e.consume()
@@ -567,6 +570,13 @@ class Main: View("application.title".message()), CoroutineScope {
         descGridPane.children.filterIsInstance<TextInputControl>().forEach {
             it.textProperty().addListener(listener)
         }
+        descHashtag.addEventFilter(KEY_PRESSED) { e ->
+            if( e.code == ESCAPE ) {
+                lastFocused = descHashtag
+                tableMain.requestFocus()
+            }
+        }
+        descHashtag.onTokenChanged = { buttonSave.isDisable = false }
         descIcon.imageProperty().addListener(listener)
 
     }
@@ -582,8 +592,8 @@ class Main: View("application.title".message()), CoroutineScope {
         val hasKeyword = inputKeyword.text.isNotBlank()
         val hasGroup   = inputGroup.text.isNotBlank()
         linkService.links.predicate = {
-            val inKeyword = ! hasKeyword || keywordMatcher.isMatch(it.keywordTitle)
-            val inGroup   = ! hasGroup   || groupMatcher.isMatch(it.keywordGroup)
+            val inKeyword = ! hasKeyword || keywordMatcher.isMatch(listOf(it.title) + it.hashtag)
+            val inGroup   = ! hasGroup   || groupMatcher.isMatch(it.group)
             inKeyword && inGroup
         }
         printSearchResult()
@@ -685,7 +695,7 @@ class Main: View("application.title".message()), CoroutineScope {
     private fun clearDetail() {
         // reset description
         descTitle.text               = null
-        descHashtag.text                 = null
+        descHashtag.clearTokens()
         descShowConsole.isSelected   = false
         descSeqExecution.isSelected  = false
         descGroupName.text           = null
@@ -708,7 +718,7 @@ class Main: View("application.title".message()), CoroutineScope {
         detail = link
         with(detail!!) {
             descTitle.text               = title
-            descHashtag.text             = hashtag
+            descHashtag.setTokens(hashtag)
             descShowConsole.isSelected   = showConsole
             descSeqExecution.isSelected  = executeEach
             descGroupName.text           = group
@@ -761,7 +771,7 @@ class Main: View("application.title".message()), CoroutineScope {
         detail?.let {
 
             it.title         = descTitle.text?.trim()
-            it.hashtag       = descHashtag.text?.trim()
+            it.hashtag       = descHashtag.getTokens()
             it.showConsole   = descShowConsole.isSelected
             it.executeEach   = descSeqExecution.isSelected
             it.group         = descGroupName.text?.trim()
@@ -773,7 +783,7 @@ class Main: View("application.title".message()), CoroutineScope {
             it.commandNext   = descCmdNext.text
             it.iconImage     = descIcon.image
 
-            linkService.save(it.refreshIndex())
+            linkService.save(it)
 
             runLater {
                 tableMain.selectBy(it)

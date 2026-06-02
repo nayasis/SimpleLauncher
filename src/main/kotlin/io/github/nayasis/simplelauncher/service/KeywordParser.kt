@@ -1,11 +1,9 @@
 package io.github.nayasis.simplelauncher.service
 
 import io.github.nayasis.kotlin.basica.cache.implement.LruCache
-import io.github.nayasis.kotlin.basica.core.string.find
 import io.github.nayasis.kotlin.basica.core.string.tokenize
 import io.github.nayasis.simplelauncher.service.Operator.*
 import java.util.*
-import java.util.regex.Pattern
 
 class KeywordParser(capacity: Int = 20) {
 
@@ -24,7 +22,7 @@ class KeywordParser(capacity: Int = 20) {
 
         for (token in tokenize(text)) {
             if (token is String) {
-                queue.add(toPattern(token)!!)
+                queue.add(SearchTerm(token.lowercase()))
             } else if (token === BRACE_OPEN) {
                 stack.push(token)
             } else if (token === BRACE_CLOSE) {
@@ -139,17 +137,10 @@ class KeywordParser(capacity: Int = 20) {
         return result.reversed()
     }
 
-    private fun toPattern(keyword: String?): Pattern? {
-        if (keyword.isNullOrEmpty()) return null
-        return try {
-            Pattern.compile(keyword.lowercase())
-        } catch (e: Exception) {
-            Pattern.compile(
-                keyword.lowercase().replace(PATTERN_REGEX, "")
-            )
-        }
-    }
+}
 
+private data class SearchTerm(val value: String) {
+    override fun toString(): String = value
 }
 
 private enum class Operator(val priority: Int) {
@@ -165,17 +156,16 @@ private enum class Operator(val priority: Int) {
 
 }
 
-private val PATTERN_REGEX  = "[\\[\\]\\(\\)\\{\\}\\.\\*\\+\\?\\$\\^\\|\\#\\\\]".toRegex()
 private val ARITH_OPERATOR = listOf(AND, OR, NOT)
 
 class Keyword: ArrayList<Any>() {
 
-    fun match(fn: (pattern: Pattern) -> Boolean): Boolean {
+    fun match(fn: (term: String) -> Boolean): Boolean {
         if(isEmpty()) return false
         val stack = Stack<Boolean>()
         for (token in this) {
             when {
-                token is Pattern -> stack.push(fn(token))
+                token is SearchTerm -> stack.push(fn(token.value))
                 token === NOT -> {
                     val a = stack.pop()
                     stack.push(! a)
@@ -196,14 +186,29 @@ class Keyword: ArrayList<Any>() {
     }
 
     fun match(word: String?): Boolean {
-        return match { pattern -> word.find(pattern) }
+        return match { term -> matchesSearchTerm(word, term) }
     }
 
-    fun match(words: Set<String>?): Boolean {
-        return match { pattern ->
-            words?.firstOrNull { it.find(pattern) } != null
+    fun match(words: Iterable<String?>?): Boolean {
+        return match { term ->
+            words?.firstOrNull { matchesSearchTerm(it, term) } != null
         }
     }
 
+}
+
+fun matchesSearchTerm(haystack: String?, value: String): Boolean {
+    val text = haystack?.trim()?.lowercase() ?: return false
+    val needle = value.trim().lowercase()
+    return needle.isNotEmpty() && (text.contains(needle) || fuzzyContains(text, needle))
+}
+
+fun fuzzyContains(haystack: String, needle: String): Boolean {
+    var index = 0
+    for (char in haystack) {
+        if (index < needle.length && char == needle[index]) index++
+        if (index == needle.length) return true
+    }
+    return false
 }
 

@@ -5,12 +5,10 @@ import com.dshatz.exposed_crud.Entity
 import com.dshatz.exposed_crud.Id
 import com.dshatz.exposed_crud.LargeText
 import io.github.nayasis.kotlin.basica.core.extension.ifEmpty
-import io.github.nayasis.kotlin.basica.core.extension.runIfNotEmpty
 import io.github.nayasis.kotlin.basica.core.io.Paths
 import io.github.nayasis.kotlin.basica.core.io.exists
 import io.github.nayasis.kotlin.basica.core.io.invariantPath
 import io.github.nayasis.kotlin.basica.core.io.toRelativeOrSelf
-import io.github.nayasis.kotlin.basica.core.string.runIfNotBlank
 import io.github.nayasis.kotlin.basica.core.string.toPath
 import io.github.nayasis.kotlin.basica.etc.Platforms
 import io.github.nayasis.kotlin.basica.etc.error
@@ -19,7 +17,6 @@ import io.github.nayasis.kotlin.javafx.misc.toBinary
 import io.github.nayasis.kotlin.javafx.misc.toIconImage
 import io.github.nayasis.kotlin.javafx.misc.toImage
 import io.github.nayasis.simplelauncher.common.Context
-import io.github.nayasis.simplelauncher.common.toKeyword
 import io.github.oshai.kotlinlogging.KotlinLogging
 import javafx.scene.image.Image
 import mslinks.ShellLink
@@ -64,8 +61,9 @@ data class Link(
     @Column
     @LargeText
     var description: String? = null,
-    @Column(length = 2000)
-    var hashtag: String? = null,
+    var hashtag: HashSet<String> = hashSetOf(),
+    @Column(name = "hashtag", length = 2000)
+    var hashtagJson: String? = null,
     @Column(name = "exe_count")
     var executeCount: Int = 0,
     @Column
@@ -76,8 +74,6 @@ data class Link(
     var updatedAt: LocalDateTime = LocalDateTime.now(),
 ) {
 
-    val keywordTitle: HashSet<String> = HashSet()
-    val keywordGroup: HashSet<String> = HashSet()
     var iconImage: Image? = null
         get() {
             if( field == null && icon != null ) {
@@ -89,6 +85,13 @@ data class Link(
             field = value
             icon = value?.toBinary(ICON_IMAGE_TYPE)
         }
+
+    init {
+        if (hashtag.isEmpty() && !hashtagJson.isNullOrBlank()) {
+            hashtag = decodeStoredHashtags(hashtagJson)
+        }
+        syncHashtagStorage()
+    }
 
     fun setPath(file: File) {
         this.path = file.invariantSeparatorsPath
@@ -179,15 +182,9 @@ data class Link(
         return null
     }
 
-    fun refreshIndex(): Link {
-        keywordTitle.run {
-            clear()
-            title.runIfNotBlank { addAll(it.toKeyword()) }
-            hashtag.runIfNotEmpty { addAll(it.toKeyword()) }
-        }
-        keywordGroup.run {
-            group.runIfNotBlank { addAll(it.toKeyword()) }
-        }
+    fun syncHashtagStorage(): Link {
+        hashtag = normalizeHashtags(hashtag)
+        hashtagJson = encodeHashtags(hashtag)
         return this
     }
 
@@ -205,7 +202,8 @@ data class Link(
             commandPrev   = it.commandPrev,
             commandNext   = it.commandNext,
             description   = it.description,
-            hashtag       = it.hashtag,
+            hashtag       = HashSet(it.hashtag),
+            hashtagJson   = it.hashtagJson,
             executeCount  = it.executeCount,
             executedAt    = it.executedAt,
             createdAt     = it.createdAt,

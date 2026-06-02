@@ -23,6 +23,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
+<?import io.github.nayasis.simplelauncher.view.TokenField?>
 
 <AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="659.0" prefWidth="1000.0" stylesheets="@main.css" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1">
    <children>
@@ -202,7 +203,7 @@
                            </children>
                         </HBox>
                         <TextField fx:id="descTitle" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                        <TextField fx:id="descHashtag" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                        <TokenField fx:id="descHashtag" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                         <TextArea fx:id="descDescription" prefWidth="330.0" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="4">
                            <opaqueInsets>
                               <Insets />
