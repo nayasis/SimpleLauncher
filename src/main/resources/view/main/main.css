@@ -32,23 +32,37 @@
 }
 
 .token-field {
-  -fx-padding: 2px;
-  -fx-border-color: #b8b8b8;
-  -fx-border-radius: 2px;
+  -fx-min-height: 22px;
+  -fx-pref-height: 22px;
+  -fx-max-height: 22px;
+  -fx-padding: 0 2px;
+  -fx-border-color: #b6b6b6;
+  -fx-border-radius: 3px;
   -fx-background-color: white;
+  -fx-background-radius: 3px;
+  -fx-background-insets: 0;
 }
 
 .token-field-input {
+  -fx-min-height: 18px;
+  -fx-pref-height: 18px;
+  -fx-max-height: 18px;
   -fx-background-color: transparent;
   -fx-border-color: transparent;
-  -fx-padding: 2px;
+  -fx-background-insets: 0;
+  -fx-padding: 0 2px;
 }
 
 .token-chip {
-  -fx-padding: 2px 6px;
+  -fx-min-height: 16px;
+  -fx-pref-height: 16px;
+  -fx-max-height: 16px;
+  -fx-padding: 0 5px;
+  -fx-background-insets: 0;
+  -fx-border-insets: 0;
   -fx-background-radius: 3px;
   -fx-background-color: #e8eef8;
   -fx-border-color: #b8c7e6;
   -fx-border-radius: 3px;
-  -fx-font-size: 11px;
+  -fx-font-size: 10px;
 }
