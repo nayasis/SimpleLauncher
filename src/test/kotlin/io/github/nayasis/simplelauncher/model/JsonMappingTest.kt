@@ -38,6 +38,48 @@ class JsonMappingTest {
     }
 
     @Test
+    fun jsonLinkShouldExportHashtagAsArray() {
+        val link = Link(
+            title = "test",
+            hashtag = hashSetOf("dev", "tool"),
+        )
+
+        val json = Reflector.toJson(JsonLink(link))
+
+        json.contains("\"hashtag\":[") shouldBe true
+        json.contains("\"dev\"") shouldBe true
+        json.contains("\"tool\"") shouldBe true
+    }
+
+    @Test
+    fun jsonLinkShouldImportHashtagArray() {
+        val restored = """
+            {
+              "title": "test",
+              "hashtag": ["dev", "tool", "dev", ""]
+            }
+        """.trimIndent()
+            .toObject<JsonLink>()
+            .toLink()
+
+        restored.hashtag shouldBe hashSetOf("dev", "tool")
+    }
+
+    @Test
+    fun jsonLinkShouldImportOldStringHashtag() {
+        val restored = """
+            {
+              "title": "test",
+              "hashtag": "dev tool,util,,"
+            }
+        """.trimIndent()
+            .toObject<JsonLink>()
+            .toLink()
+
+        restored.hashtag shouldBe hashSetOf("dev", "tool", "util")
+    }
+
+    @Test
     fun writeAndRead() {
 
         val database = Database.connect(
