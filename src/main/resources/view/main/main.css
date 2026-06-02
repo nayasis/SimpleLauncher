@@ -30,3 +30,25 @@
 .auto-completer {
   -fx-focus-color: #ff5c33;
 }
+
+.token-field {
+  -fx-padding: 2px;
+  -fx-border-color: #b8b8b8;
+  -fx-border-radius: 2px;
+  -fx-background-color: white;
+}
+
+.token-field-input {
+  -fx-background-color: transparent;
+  -fx-border-color: transparent;
+  -fx-padding: 2px;
+}
+
+.token-chip {
+  -fx-padding: 2px 6px;
+  -fx-background-radius: 3px;
+  -fx-background-color: #e8eef8;
+  -fx-border-color: #b8c7e6;
+  -fx-border-radius: 3px;
+  -fx-font-size: 11px;
+}

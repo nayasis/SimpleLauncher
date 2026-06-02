@@ -4,6 +4,8 @@ import io.github.nayasis.kotlin.basica.annotation.NoArg
 import io.github.nayasis.kotlin.basica.core.string.decodeBase64
 import io.github.nayasis.kotlin.basica.core.string.encodeBase64
 import io.github.nayasis.simplelauncher.model.Link
+import io.github.nayasis.simplelauncher.model.normalizeHashtags
+import io.github.nayasis.simplelauncher.model.parseImportedHashtags
 import java.time.LocalDateTime
 
 @NoArg
@@ -19,7 +21,7 @@ data class JsonLink(
     var commandPrev: String?         = null,
     var commandNext: String?         = null,
     var description: String?         = null,
-    var hashtag: String?             = null,
+    var hashtag: Any?                = null,
     var icon: String?                = null,
     var execCount: Int               = 0,
     var executedAt: LocalDateTime?   = null,
@@ -39,7 +41,7 @@ data class JsonLink(
         commandPrev  = entity.commandPrev,
         commandNext  = entity.commandNext,
         description  = entity.description,
-        hashtag      = entity.hashtag,
+        hashtag      = normalizeHashtags(entity.hashtag),
         icon         = entity.icon?.encodeBase64(),
         execCount    = entity.executeCount,
         executedAt   = entity.executedAt,
@@ -60,7 +62,7 @@ data class JsonLink(
             commandPrev   = it.commandPrev,
             commandNext   = it.commandNext,
             description   = it.description,
-            hashtag       = it.hashtag,
+            hashtag       = parseImportedHashtags(it.hashtag),
             icon          = runCatching { it.icon?.decodeBase64<ByteArray>() }.getOrNull(),
             executeCount  = it.execCount,
             executedAt    = it.executedAt,

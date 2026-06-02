@@ -12,7 +12,7 @@ class TextMatcher {
         keyword = parser.parse(search?.trim())
     }
 
-    fun isMatch(words: Set<String>?): Boolean = keyword.match(words)
+    fun isMatch(words: Iterable<String?>?): Boolean = keyword.match(words)
 
     fun isMatch(word: String?): Boolean = keyword.match(word)
 
