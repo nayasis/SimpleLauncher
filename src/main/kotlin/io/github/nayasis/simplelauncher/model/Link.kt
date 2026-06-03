@@ -38,8 +38,9 @@ data class Link(
     var id: Long = -1,
     @Column(length = 300)
     var title: String? = null,
+    var group: HashSet<String> = hashSetOf(),
     @Column(name = "a_group", length = 300)
-    var group: String? = null,
+    var groupJson: String? = null,
     @Column(length = 2000)
     var path: String? = null,
     @Column(length = 2000)
@@ -87,10 +88,13 @@ data class Link(
         }
 
     init {
+        if (group.isEmpty() && !groupJson.isNullOrBlank()) {
+            group = decodeStoredTokens(groupJson)
+        }
         if (hashtag.isEmpty() && !hashtagJson.isNullOrBlank()) {
             hashtag = decodeStoredHashtags(hashtagJson)
         }
-        syncHashtagStorage()
+        syncTokenStorage()
     }
 
     fun setPath(file: File) {
@@ -182,16 +186,21 @@ data class Link(
         return null
     }
 
-    fun syncHashtagStorage(): Link {
+    fun syncTokenStorage(): Link {
+        group = normalizeTokens(group)
+        groupJson = encodeTokens(group)
         hashtag = normalizeHashtags(hashtag)
         hashtagJson = encodeHashtags(hashtag)
         return this
     }
 
+    fun syncHashtagStorage(): Link = syncTokenStorage()
+
     fun clone(): Link {
         return this.let { Link(
             title         = it.title,
-            group         = it.group,
+            group         = HashSet(it.group),
+            groupJson     = it.groupJson,
             path          = it.path,
             relativePath  = it.relativePath,
             showConsole   = it.showConsole,

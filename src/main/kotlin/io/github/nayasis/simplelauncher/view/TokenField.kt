@@ -80,6 +80,10 @@ class TokenField: FlowPane() {
         }
     }
 
+    fun focusInput() {
+        input.requestFocus()
+    }
+
     private fun addFromInput(fireChanged: Boolean = true) {
         val added = normalizeHashtags(input.text.split(TOKEN_DELIMITER))
             .filter { tokens.add(it) }

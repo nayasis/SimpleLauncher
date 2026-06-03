@@ -41,11 +41,14 @@ class JsonMappingTest {
     fun jsonLinkShouldExportHashtagAsArray() {
         val link = Link(
             title = "test",
+            group = hashSetOf("util", "dev"),
             hashtag = hashSetOf("dev", "tool"),
         )
 
         val json = Reflector.toJson(JsonLink(link))
 
+        json.contains("\"group\":[") shouldBe true
+        json.contains("\"util\"") shouldBe true
         json.contains("\"hashtag\":[") shouldBe true
         json.contains("\"dev\"") shouldBe true
         json.contains("\"tool\"") shouldBe true
@@ -56,26 +59,30 @@ class JsonMappingTest {
         val restored = """
             {
               "title": "test",
+              "group": ["util", "dev", "util", ""],
               "hashtag": ["dev", "tool", "dev", ""]
             }
         """.trimIndent()
             .toObject<JsonLink>()
             .toLink()
 
+        restored.group shouldBe hashSetOf("util", "dev")
         restored.hashtag shouldBe hashSetOf("dev", "tool")
     }
 
     @Test
-    fun jsonLinkShouldImportOldStringHashtag() {
+    fun jsonLinkShouldImportOldStringGroupAndHashtag() {
         val restored = """
             {
               "title": "test",
+              "group": "util dev,script",
               "hashtag": "dev tool,util,,"
             }
         """.trimIndent()
             .toObject<JsonLink>()
             .toLink()
 
+        restored.group shouldBe hashSetOf("util", "dev", "script")
         restored.hashtag shouldBe hashSetOf("dev", "tool", "util")
     }
 

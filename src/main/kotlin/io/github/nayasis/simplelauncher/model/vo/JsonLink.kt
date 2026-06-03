@@ -4,14 +4,16 @@ import io.github.nayasis.kotlin.basica.annotation.NoArg
 import io.github.nayasis.kotlin.basica.core.string.decodeBase64
 import io.github.nayasis.kotlin.basica.core.string.encodeBase64
 import io.github.nayasis.simplelauncher.model.Link
+import io.github.nayasis.simplelauncher.model.normalizeTokens
 import io.github.nayasis.simplelauncher.model.normalizeHashtags
 import io.github.nayasis.simplelauncher.model.parseImportedHashtags
+import io.github.nayasis.simplelauncher.model.parseImportedTokens
 import java.time.LocalDateTime
 
 @NoArg
 data class JsonLink(
     var title: String?               = null,
-    var group: String?               = null,
+    var group: Any?                  = null,
     var path: String?                = null,
     var relativePath: String?        = null,
     var showConsole: Boolean         = false,
@@ -31,7 +33,7 @@ data class JsonLink(
 
     constructor(entity: Link): this(
         title        = entity.title,
-        group        = entity.group,
+        group        = normalizeTokens(entity.group),
         path         = entity.path,
         relativePath = entity.relativePath,
         showConsole  = entity.showConsole,
@@ -52,7 +54,7 @@ data class JsonLink(
     fun toLink(): Link {
         return this.let { Link(
             title         = it.title,
-            group         = it.group,
+            group         = parseImportedTokens(it.group),
             path          = it.path,
             relativePath  = it.relativePath,
             showConsole   = it.showConsole,
