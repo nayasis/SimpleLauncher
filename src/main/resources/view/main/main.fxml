@@ -23,6 +23,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
+<?import io.github.nayasis.simplelauncher.view.SearchTokenField?>
 <?import io.github.nayasis.simplelauncher.view.TokenField?>
 
 <AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="659.0" prefWidth="1000.0" stylesheets="@main.css" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1">
@@ -91,10 +92,10 @@
                      <HBox.margin>
                         <Insets left="2.0" />
                      </HBox.margin></Label>
-                  <TextField fx:id="inputKeyword" minWidth="100.0" HBox.hgrow="ALWAYS">
+                  <SearchTokenField fx:id="inputKeyword" minWidth="100.0" HBox.hgrow="ALWAYS">
                      <HBox.margin>
                         <Insets left="5.0" />
-                     </HBox.margin></TextField>
+                     </HBox.margin></SearchTokenField>
                   <HBox alignment="CENTER">
                      <children>
                         <Label minWidth="-Infinity" text="\%search.group">
@@ -197,7 +198,7 @@
                         </Label>
                         <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="5.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
                            <children>
-                              <TextField fx:id="descGroupName" />
+                              <TokenField fx:id="descGroupName" minWidth="170.0" prefWidth="220.0" HBox.hgrow="ALWAYS" />
                               <CheckBox fx:id="descShowConsole" mnemonicParsing="false" text="\%desc.showConsole" />
                               <CheckBox fx:id="descSeqExecution" mnemonicParsing="false" text="\%desc.execution.sequential" />
                            </children>

@@ -25,7 +25,7 @@ class LinksTest {
 
             val created = Link(
                 title   = "test link",
-                group   = "grp1",
+                group   = hashSetOf("grp1", "tool"),
                 hashtag = hashSetOf("1", "2", "3", "4"),
                 icon    = ICON_NEW,
             ).also {
@@ -42,6 +42,8 @@ class LinksTest {
 
             logger.debug { ">> read: $read" }
 
+            read?.group shouldBe hashSetOf("grp1", "tool")
+            read?.groupJson shouldBe """["grp1","tool"]"""
             read?.hashtag shouldBe hashSetOf("1", "2", "3", "4")
             read?.hashtagJson shouldBe """["1","2","3","4"]"""
 

@@ -27,11 +27,14 @@ import io.github.nayasis.kotlin.javafx.stage.loadDefaultIcon
 import io.github.nayasis.kotlin.javafx.stage.WindowHeaderHelper
 import io.github.nayasis.simplelauncher.common.Context
 import io.github.nayasis.simplelauncher.common.ICON_NEW
+import io.github.nayasis.simplelauncher.model.formatTokens
 import io.github.nayasis.simplelauncher.model.Link
 import io.github.nayasis.simplelauncher.service.LinkExecutor
 import io.github.nayasis.simplelauncher.service.LinkService
 import io.github.nayasis.simplelauncher.service.TextMatcher
+import io.github.nayasis.simplelauncher.service.matchesSearchTokens
 import io.github.oshai.kotlinlogging.KotlinLogging
+import javafx.beans.property.SimpleStringProperty
 import javafx.beans.value.ObservableValue
 import javafx.geometry.Pos
 import javafx.scene.Node
@@ -92,7 +95,7 @@ class Main: View("application.title".message()), CoroutineScope {
     val menuExportData: MenuItem by fxid()
     val menuDeleteAll: MenuItem by fxid()
 
-    val inputKeyword: TextField by fxid()
+    val inputKeyword: SearchTokenField by fxid()
     val inputGroup: TextField by fxid()
 
     val buttonNew: Button by fxid()
@@ -104,7 +107,7 @@ class Main: View("application.title".message()), CoroutineScope {
     val buttonAddFile: ImageView by fxid()
 
     val descGridPane: GridPane by fxid()
-    val descGroupName: TextField by fxid()
+    val descGroupName: TokenField by fxid()
     val descShowConsole: CheckBox by fxid()
     val descSeqExecution: CheckBox by fxid()
     val descTitle: TextField by fxid()
@@ -249,7 +252,7 @@ class Main: View("application.title".message()), CoroutineScope {
 
     private fun initTable() {
 
-        colGroup.cellValue(Link::group)
+        colGroup.setCellValueFactory { SimpleStringProperty(formatTokens(it.value.group)) }
         colTitle.cellValueByDefault().cellFormat {
             graphic = hbox {
                 imageview {
@@ -304,7 +307,7 @@ class Main: View("application.title".message()), CoroutineScope {
         tableMain.setOnKeyPressed { e ->
             when(e.code) {
                 ENTER -> tableMain.selectedItem?.let { linkExecutor.run(it) }
-                ESCAPE -> inputKeyword.requestFocus()
+                ESCAPE -> inputKeyword.focusInput()
                 DELETE -> tableMain.selectedItem?.let{
                     e.consume()
                     deleteLink(it)
@@ -312,7 +315,11 @@ class Main: View("application.title".message()), CoroutineScope {
                 TAB -> {
                     if( ! e.isShiftDown ) {
                         e.consume()
-                        (if(lastFocused == null || lastFocused == tableMain) descGroupName else lastFocused)!!.requestFocus()
+                        if(lastFocused == null || lastFocused == tableMain) {
+                            descGroupName.focusInput()
+                        } else {
+                            lastFocused!!.requestFocus()
+                        }
                     }
                 }
                 C -> if(e.isControlDown) {
@@ -516,19 +523,16 @@ class Main: View("application.title".message()), CoroutineScope {
             }
         }
 
-        inputKeyword.addEventFilter(KEY_PRESSED) { e ->
-            if( e.code == ENTER ) {
-                if( tableMain.visibleRows in 1..10 ) {
-                    e.consume()
-                    tableMain.focus(0)
-                    tableMain.selectedItem?.let { link -> linkExecutor.run(link) }
-                }
+        inputKeyword.onPlainEnter = {
+            if( tableMain.visibleRows in 1..10 ) {
+                tableMain.focus(0)
+                tableMain.selectedItem?.let { link -> linkExecutor.run(link) }
             }
         }
 
         inputGroup.addEventFilter(KEY_PRESSED) { e ->
             if( e.code == ESCAPE ) {
-                inputKeyword.requestFocus()
+                inputKeyword.focusInput()
             }
         }
 
@@ -577,6 +581,13 @@ class Main: View("application.title".message()), CoroutineScope {
             }
         }
         descHashtag.onTokenChanged = { buttonSave.isDisable = false }
+        descGroupName.addEventFilter(KEY_PRESSED) { e ->
+            if( e.code == ESCAPE ) {
+                lastFocused = descGroupName
+                tableMain.requestFocus()
+            }
+        }
+        descGroupName.onTokenChanged = { buttonSave.isDisable = false }
         descIcon.imageProperty().addListener(listener)
 
     }
@@ -592,7 +603,12 @@ class Main: View("application.title".message()), CoroutineScope {
         val hasKeyword = inputKeyword.text.isNotBlank()
         val hasGroup   = inputGroup.text.isNotBlank()
         linkService.links.predicate = {
-            val inKeyword = ! hasKeyword || keywordMatcher.isMatch(listOf(it.title) + it.hashtag)
+            val keywordHaystack = listOf(it.title) + it.hashtag
+            val inKeyword = when {
+                inputKeyword.hasTokens() -> matchesSearchTokens(keywordHaystack, inputKeyword.tokens())
+                hasKeyword -> keywordMatcher.isMatch(keywordHaystack)
+                else -> true
+            }
             val inGroup   = ! hasGroup   || groupMatcher.isMatch(it.group)
             inKeyword && inGroup
         }
@@ -614,8 +630,8 @@ class Main: View("application.title".message()), CoroutineScope {
             }
         }
 
-        inputKeyword.textProperty().onChange{
-            keywordMatcher.setKeyword(it)
+        inputKeyword.onSearchChanged = {
+            keywordMatcher.setKeyword(inputKeyword.text)
             lastModified = now()
         }
         inputGroup.textProperty().onChange{
@@ -623,7 +639,7 @@ class Main: View("application.title".message()), CoroutineScope {
             lastModified = now()
         }
 
-        applyAutoCompletion(inputKeyword, Context.config.historyKeyword)
+        applyAutoCompletion(inputKeyword.input, Context.config.historyKeyword)
 
     }
 
@@ -698,7 +714,7 @@ class Main: View("application.title".message()), CoroutineScope {
         descHashtag.clearTokens()
         descShowConsole.isSelected   = false
         descSeqExecution.isSelected  = false
-        descGroupName.text           = null
+        descGroupName.clearTokens()
         descDescription.text         = null
         descExecPath.text            = null
         descArg.text                 = null
@@ -721,7 +737,7 @@ class Main: View("application.title".message()), CoroutineScope {
             descHashtag.setTokens(hashtag)
             descShowConsole.isSelected   = showConsole
             descSeqExecution.isSelected  = executeEach
-            descGroupName.text           = group
+            descGroupName.setTokens(group)
             descDescription.text         = description
             descExecPath.text            = path
             descArg.text                 = argument
@@ -745,14 +761,15 @@ class Main: View("application.title".message()), CoroutineScope {
         buttonDelete.isDisable = true
         buttonCopy.isDisable   = true
         buttonSave.isDisable   = false
-        descGroupName.requestFocus()
+        descGroupName.focusInput()
     }
 
     fun deleteLink(link: Link?) {
 
         if( link == null ) return
 
-        val summary = if( ! link.group.isNullOrEmpty() ) "[${link.group}] ${link.title}" else "${link.title}"
+        val group = formatTokens(link.group)
+        val summary = if( group.isNotEmpty() ) "[$group] ${link.title}" else "${link.title}"
 
         if( ! Dialog.confirm("msg.confirm.delete".message().format(summary)) ) return
 
@@ -774,7 +791,7 @@ class Main: View("application.title".message()), CoroutineScope {
             it.hashtag       = descHashtag.getTokens()
             it.showConsole   = descShowConsole.isSelected
             it.executeEach   = descSeqExecution.isSelected
-            it.group         = descGroupName.text?.trim()
+            it.group         = descGroupName.getTokens()
             it.description   = descDescription.text?.trim()
             it.path          = descExecPath.text?.trim()
             it.argument      = descArg.text?.trim()
@@ -810,7 +827,7 @@ class Main: View("application.title".message()), CoroutineScope {
 
     fun createDetail() {
         drawDetail(Link(icon = ICON_NEW))
-        descGroupName.requestFocus()
+        descGroupName.focusInput()
         printStatus("msg.alert.create.link".message())
         buttonDelete.isDisable = true
         buttonCopy.isDisable = true
