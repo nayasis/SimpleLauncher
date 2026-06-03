@@ -66,3 +66,24 @@
   -fx-border-radius: 3px;
   -fx-font-size: 10px;
 }
+
+.search-token-chip.and {
+  -fx-background-color: #eef5e8;
+  -fx-border-color: #c6ddb7;
+  -fx-font-size: 9px;
+  -fx-text-fill: #687960;
+}
+
+.search-token-chip.or {
+  -fx-background-color: #fff0dc;
+  -fx-border-color: #e6c48f;
+  -fx-font-size: 9px;
+  -fx-text-fill: #8a7047;
+}
+
+.search-token-chip.paren {
+  -fx-background-color: #f2eef8;
+  -fx-border-color: #c9b7e6;
+  -fx-font-size: 9px;
+  -fx-text-fill: #746483;
+}

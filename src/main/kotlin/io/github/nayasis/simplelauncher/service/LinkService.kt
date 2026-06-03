@@ -37,7 +37,7 @@ class LinkService {
     val links = SortedFilteredList(mutableListOf<Link>().asObservable())
 
     fun save(link: Link, refreshTable: Boolean = true) {
-        link.syncHashtagStorage()
+        link.syncTokenStorage()
         val isNew = link.id <= 0
         tx {
             LinkTable.repo.save(link)
