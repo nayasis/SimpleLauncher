@@ -1,0 +1,4 @@
+WARNING: Unknown module: javafx.graphics specified to --add-exports
+WARNING: Unknown module: javafx.graphics specified to --add-exports
+WARNING: Unknown module: javafx.graphics specified to --add-opens
+WARNING: Unknown module: javafx.graphics specified to --enable-native-access

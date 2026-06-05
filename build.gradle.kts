@@ -15,6 +15,7 @@ val appJvmArgs = listOf(
 	"-Djavafx.suppressUnsupportedConfiguration=true",
 	"--enable-native-access=ALL-UNNAMED",
 	"--enable-native-access=javafx.graphics",
+	"--add-exports=javafx.base/com.sun.javafx.event=ALL-UNNAMED",
 	"--add-exports=javafx.graphics/com.sun.javafx.application=ALL-UNNAMED",
 	"--add-exports=javafx.graphics/com.sun.javafx.tk=ALL-UNNAMED",
 	"--add-opens=javafx.graphics/javafx.scene=ALL-UNNAMED",
