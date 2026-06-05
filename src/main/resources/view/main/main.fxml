@@ -9,6 +9,7 @@
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextArea?>
@@ -53,7 +54,7 @@
                         <items>
                               <CheckMenuItem fx:id="menuViewDesc" mnemonicParsing="false" selected="true" text="\%menu.view.description">
                                  <accelerator>
-                                    <KeyCodeCombination alt="DOWN" code="E" control="UP" meta="UP" shift="UP" shortcut="UP" />
+                                    <KeyCodeCombination alt="UP" code="E" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
                                  </accelerator>
                               </CheckMenuItem>
                               <CheckMenuItem fx:id="menuViewMenuBar" mnemonicParsing="false" selected="true" text="\%menu.view.showMenuBar">
@@ -103,11 +104,11 @@
                               <Insets left="10.0" />
                            </HBox.margin>
                         </Label>
-                        <TextField fx:id="inputGroup">
+                        <SearchTokenField fx:id="inputGroup" minWidth="140.0" prefWidth="220.0">
                            <HBox.margin>
                               <Insets left="5.0" />
                            </HBox.margin>
-                        </TextField>
+                        </SearchTokenField>
                      </children>
                   </HBox>
                   <HBox alignment="CENTER_RIGHT" maxWidth="100.0" HBox.hgrow="ALWAYS">
@@ -139,9 +140,9 @@
                   <Insets bottom="2.0" left="5.0" right="5.0" top="2.0" />
                </VBox.margin>
             </HBox>
-            <HBox spacing="10.0" VBox.vgrow="ALWAYS">
-               <children>
-                  <TableView fx:id="tableMain" minWidth="150.0" tableMenuButtonVisible="true" HBox.hgrow="ALWAYS">
+            <SplitPane fx:id="contentPane" dividerPositions="0.6" VBox.vgrow="ALWAYS">
+               <items>
+                  <TableView fx:id="tableMain" minWidth="150.0" tableMenuButtonVisible="true">
                     <columns>
                       <TableColumn fx:id="colGroup"      maxWidth="1000.0" minWidth="50.0" prefWidth="100.0" text="\%table.groupName" />
                       <TableColumn fx:id="colTitle"      maxWidth="1000.0" minWidth="80.0" prefWidth="253.0" text="\%table.title" />
@@ -149,7 +150,7 @@
                       <TableColumn fx:id="colExecCount"  maxWidth="200.0"  minWidth="50.0" prefWidth="50.0"  text="\%table.execCount" />
                     </columns>
                   </TableView>
-                  <GridPane fx:id="descGridPane" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="400.0" HBox.hgrow="ALWAYS">
+                  <GridPane fx:id="descGridPane" minWidth="300.0" prefWidth="400.0">
                      <children>
                         <Label text="\%desc.groupName" textAlignment="RIGHT" wrapText="true" GridPane.rowIndex="1">
                            <GridPane.margin>
@@ -198,9 +199,9 @@
                         </Label>
                         <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="5.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
                            <children>
-                              <TokenField fx:id="descGroupName" minWidth="170.0" prefWidth="220.0" HBox.hgrow="ALWAYS" />
-                              <CheckBox fx:id="descShowConsole" mnemonicParsing="false" text="\%desc.showConsole" />
-                              <CheckBox fx:id="descSeqExecution" mnemonicParsing="false" text="\%desc.execution.sequential" />
+                              <TokenField fx:id="descGroupName" minWidth="140.0" prefWidth="220.0" HBox.hgrow="ALWAYS" />
+                              <CheckBox fx:id="descShowConsole" minWidth="-Infinity" mnemonicParsing="false" text="\%desc.showConsole" />
+                              <CheckBox fx:id="descSeqExecution" minWidth="-Infinity" mnemonicParsing="false" text="\%desc.execution.sequential" />
                            </children>
                         </HBox>
                         <TextField fx:id="descTitle" GridPane.columnIndex="1" GridPane.rowIndex="2" />
@@ -322,11 +323,11 @@
                         <RowConstraints minHeight="30.0" prefHeight="60.0" vgrow="SOMETIMES" />
                      </rowConstraints>
                   </GridPane>
-               </children>
+               </items>
                <VBox.margin>
                   <Insets left="5.0" right="5.0" />
                </VBox.margin>
-            </HBox>
+            </SplitPane>
             <GridPane alignment="CENTER_LEFT" maxHeight="-Infinity" minHeight="-Infinity" prefHeight="20.0" VBox.vgrow="ALWAYS">
               <columnConstraints>
                 <ColumnConstraints />
