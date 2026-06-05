@@ -8,7 +8,6 @@ import io.github.nayasis.kotlin.javafx.app.di.Inject
 import io.github.nayasis.kotlin.javafx.misc.runAwait
 import io.github.nayasis.kotlin.javafx.stage.Dialog
 import io.github.nayasis.kotlin.javafx.stage.progress.ProgressDialog
-import io.github.nayasis.simplelauncher.common.Context.Companion.config
 import io.github.nayasis.simplelauncher.common.Context.Companion.linkService
 import io.github.nayasis.simplelauncher.common.Context.Companion.main
 import io.github.nayasis.simplelauncher.model.Link
@@ -36,8 +35,6 @@ class LinkExecutor{
     private var runningTerminalCount = 0
 
     fun run(link: Link, files: Collection<File>? = null) {
-
-        link.title?.let { config.historyKeyword.add(it) }
 
         linkService.save( link.apply { executedAt = LocalDateTime.now() })
         runLater { main.tableMain.refresh() }
@@ -92,6 +89,7 @@ class LinkExecutor{
             return true
         }
         synchronized(runningExecutors) {
+            runningExecutors.removeIf { !it.isAlive }
             if(runningExecutors.isNotEmpty()) {
                 return true
             }
@@ -129,13 +127,14 @@ class LinkExecutor{
             updateProgress(dialog, queue, queue.currentItem())
             refreshProgressQueue(dialog)
         }
-        dialog = Dialog.progress(title, headerButton = context.queueButton) {
-            task(it, context.control)
-        }.setOnDone {
+        dialog = Dialog.progress(title, headerButton = context.queueButton).setOnDone {
             context.control.updateExecutor(null)
             unregisterProgressDialog(dialog)
         }
         registerProgressDialog(dialog, context.popOver)
+        dialog.runAsync {
+            task(it, context.control)
+        }
         return dialog
     }
 
@@ -278,24 +277,38 @@ class LinkExecutor{
     private fun runInTerminal(command: Command, wait: Boolean = false ) {
         if( command.isEmpty() ) return
         logger.debug { "- command: $command" }
-        registerRunningTerminal()
+        var runningRegistered = false
+        fun unregisterRunningTerminalOnce() {
+            synchronized(this) {
+                if(runningRegistered) {
+                    runningRegistered = false
+                    unregisterRunningTerminal()
+                }
+            }
+        }
         val terminal = Terminal(
             onAlways = {
-                unregisterRunningTerminal()
+                unregisterRunningTerminalOnce()
             },
             onFail = { e ->
             runAwait {
                 Dialog.error(e)
             }
         })
-        childWindows.register(terminal)
-        terminal.run {
-            childWindows.show(this)
-            runCatching { run(command) }
-            if(!wait) {
-                close()
-                childWindows.unregister(this)
+        registerRunningTerminal()
+        runningRegistered = true
+        try {
+            childWindows.register(terminal)
+            terminal.run {
+                childWindows.show(this)
+                runCatching { run(command) }
+                if(!wait) {
+                    close()
+                    childWindows.unregister(this)
+                }
             }
+        } finally {
+            unregisterRunningTerminalOnce()
         }
     }
 

@@ -1,43 +1,23 @@
 package io.github.nayasis.simplelauncher.view
 
 import io.github.nayasis.simplelauncher.model.normalizeHashtags
-import javafx.scene.control.Button
-import javafx.scene.control.TextField
-import javafx.geometry.Pos
-import javafx.scene.Node
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent.KEY_PRESSED
-import javafx.scene.layout.FlowPane
 
-private val TOKEN_DELIMITER = "[,\\s]+".toRegex()
-
-class TokenField: FlowPane() {
+class TokenField: TokenInputPane("plain-token-chip", 8) {
 
     private val tokens = LinkedHashSet<String>()
-    private val input = TextField()
     private var suppressChange = false
 
     var onTokenChanged: (() -> Unit)? = null
 
     init {
-        hgap = 4.0
-        vgap = 4.0
-        alignment = Pos.CENTER_LEFT
-        isFocusTraversable = false
-        isPickOnBounds = true
-        styleClass.add("token-field")
-        setOnMousePressed { event ->
-            if ((event.target as? Node)?.styleClass?.contains("token-chip") == true) return@setOnMousePressed
-            input.requestFocus()
-        }
-        input.styleClass.add("token-field-input")
-        input.prefColumnCount = 8
         input.textProperty().addListener { _, _, _ ->
             if (!suppressChange) fireTokenChanged()
         }
         input.addEventFilter(KEY_PRESSED) { event ->
             when {
-                event.code == KeyCode.ENTER || event.code == KeyCode.SPACE || event.code == KeyCode.COMMA -> {
+                event.code == KeyCode.ENTER -> {
                     addFromInput()
                     event.consume()
                 }
@@ -69,6 +49,14 @@ class TokenField: FlowPane() {
         return HashSet(tokens)
     }
 
+    fun currentTokens(): HashSet<String> {
+        return HashSet(tokens)
+    }
+
+    fun hasPendingInput(): Boolean {
+        return input.text.isNotBlank()
+    }
+
     fun clearTokens() {
         suppressChange = true
         try {
@@ -80,12 +68,12 @@ class TokenField: FlowPane() {
         }
     }
 
-    fun focusInput() {
-        input.requestFocus()
+    fun commitInput() {
+        addFromInput()
     }
 
     private fun addFromInput(fireChanged: Boolean = true) {
-        val added = normalizeHashtags(input.text.split(TOKEN_DELIMITER))
+        val added = normalizeHashtags(listOf(input.text))
             .filter { tokens.add(it) }
             .isNotEmpty()
         input.clear()
@@ -98,17 +86,13 @@ class TokenField: FlowPane() {
     private fun render() {
         children.clear()
         tokens.forEach { token ->
-            children += Button(token).apply {
-                styleClass.add("token-chip")
-                isFocusTraversable = false
-                setOnAction {
-                    tokens.remove(token)
-                    render()
-                    fireTokenChanged()
-                }
+            children += tokenButton(token) {
+                tokens.remove(token)
+                render()
+                fireTokenChanged()
             }
         }
-        children += input
+        addInput()
     }
 
     private fun fireTokenChanged() {

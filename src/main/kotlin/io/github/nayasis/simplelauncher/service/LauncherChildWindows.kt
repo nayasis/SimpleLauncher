@@ -38,6 +38,9 @@ internal class LauncherChildWindows {
 
     fun hasProgressDialogs(): Boolean {
         return synchronized(progressDialogs) {
+            progressDialogs
+                .filter { dialog -> !dialog.stage.isShowing && dialog !in hiddenProgressDialogs }
+                .forEach { dialog -> unregister(dialog) }
             progressDialogs.isNotEmpty()
         }
     }
