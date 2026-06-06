@@ -247,27 +247,16 @@ class LinkExecutor{
         logger.debug { "- command: $command" }
         try {
             val executor = command.run()
+            if(!wait) {
+                return
+            }
             registerExecutor(executor)
             onExecutorChanged?.invoke(executor)
-            if(wait) {
-                try {
-                    executor.waitFor()
-                } finally {
-                    onExecutorChanged?.invoke(null)
-                    unregisterExecutor(executor)
-                }
-            } else {
-                Thread {
-                    try {
-                        executor.waitFor()
-                    } finally {
-                        onExecutorChanged?.invoke(null)
-                        unregisterExecutor(executor)
-                    }
-                }.apply {
-                    isDaemon = true
-                    start()
-                }
+            try {
+                executor.waitFor()
+            } finally {
+                onExecutorChanged?.invoke(null)
+                unregisterExecutor(executor)
             }
         } catch (e: Exception) {
             throw RuntimeException("msg.error.runtime".message().format("$command")).apply { this.stackTrace = e.stackTrace }
