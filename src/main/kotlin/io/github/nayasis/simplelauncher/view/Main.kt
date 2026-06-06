@@ -59,6 +59,7 @@ import java.io.File
 import java.time.LocalDateTime
 import kotlin.coroutines.CoroutineContext
 import javafx.util.Duration
+import javafx.util.StringConverter
 import kotlin.system.exitProcess
 
 private val logger = KotlinLogging.logger {}
@@ -782,7 +783,7 @@ class Main: View("application.title".message()), CoroutineScope {
             submitSearch()
         }
 
-        applySearchHistory(inputKeyword) { Context.config.historySearch }
+        applySearchHistory(inputKeyword) { compactSearchHistory(Context.config.historySearch) }
         applyAutoCompletion(inputGroup.input, { groupTokenSuggestions(inputGroup.currentTermValues()) })
         applyLiveAutoCompletion(descGroupName.input, { allGroupTokenSuggestions(descGroupName.currentTokens()) }) {
             descGroupName.commitInput()
@@ -812,28 +813,45 @@ class Main: View("application.title".message()), CoroutineScope {
         val state = inputKeyword.searchState().takeIf { !it.isBlank() }
         Context.config.lastSearchState = state
         Context.config.lastSearchKeyword = state?.displayText()
-        state?.let { Context.config.historySearch.add(it) }
+        state?.let { replaceSearchHistory(it) }
         Context.config.save()
+    }
+
+    private fun replaceSearchHistory(state: SearchFieldState) {
+        val displayText = state.displayText()
+        Context.config.historySearch.toList()
+            .filter { it.displayText() == displayText }
+            .forEach { Context.config.historySearch.remove(it) }
+        Context.config.historySearch.add(state)
+    }
+
+    private fun compactSearchHistory(history: HistorySet<SearchFieldState>): HistorySet<SearchFieldState> {
+        val statesByText = LinkedHashMap<String, SearchFieldState>()
+        history.toList().forEach { state ->
+            val displayText = state.displayText()
+            if(displayText.isNotBlank()) {
+                val existing = statesByText[displayText]
+                if(existing == null || state.tokens.isNotEmpty() || existing.tokens.isEmpty()) {
+                    statesByText.remove(displayText)
+                    statesByText[displayText] = state
+                }
+            }
+        }
+        return HistorySet<SearchFieldState>(statesByText.size.coerceAtLeast(1)).apply {
+            statesByText.values.forEach { add(it) }
+        }
     }
 
     private fun applySearchHistory(
         field: SearchTokenField,
         suggestions: () -> HistorySet<SearchFieldState>,
     ) {
-        var autoCompleter: AutoCompletionText? = null
+        var autoCompleter: SearchHistoryAutoCompletionText? = null
         var suggestion: HistorySet<SearchFieldState>? = null
-        var suggestionByText = emptyMap<String, SearchFieldState>()
 
         fun setSearch(state: SearchFieldState?) {
             state ?: return
             field.setSearchState(state)
-        }
-
-        fun displaySuggestions(history: HistorySet<SearchFieldState>): HistorySet<String> {
-            suggestionByText = history.toList().associateBy { it.displayText() }
-            return HistorySet<String>(history.size.coerceAtLeast(1)).apply {
-                history.toList().forEach { add(it.displayText()) }
-            }
         }
 
         field.input.addEventFilter(KEY_PRESSED) { e ->
@@ -843,23 +861,19 @@ class Main: View("application.title".message()), CoroutineScope {
                     autoCompleter?.dispose()
                     autoCompleter = null
                     suggestion = null
-                    suggestionByText = emptyMap()
                 }
                 e.isAltDown -> {
                     when (e.code) {
                         DOWN -> if(autoCompleter == null) {
                             suggestion = suggestions()
                             field.input.addClass(CLASS_AUTO_COMPLETER)
-                            autoCompleter = AutoCompletionText(field.input, displaySuggestions(suggestion!!))
-                            autoCompleter?.setOnAutoCompleted {
+                            autoCompleter = SearchHistoryAutoCompletionText(field.input, suggestion!!)
+                            autoCompleter?.setOnAutoCompleted { event ->
                                 field.input.removeClass(CLASS_AUTO_COMPLETER)
                                 autoCompleter?.dispose()
                                 autoCompleter = null
                                 suggestion = null
-                                suggestionByText[field.text]
-                                    ?.let { state -> field.setSearchState(state) }
-                                    ?: field.setSearchText(field.text)
-                                suggestionByText = emptyMap()
+                                field.setSearchState(event.completion)
                             }
                             autoCompleter?.show()
                         }
@@ -1180,6 +1194,29 @@ class AutoCompletionText(
     val textField: TextField,
     val suggestion: HistorySet<String>
 ): AutoCompletionTextFieldBinding<String>(textField, SuggestionProvider.create(suggestion.toList())) {
+    fun show() {
+        if(suggestion.isEmpty() || textField.text.isBlank() ) return
+        super.setUserInput(textField.text)
+        super.showPopup()
+    }
+}
+
+class SearchHistoryAutoCompletionText(
+    val textField: TextField,
+    val suggestion: HistorySet<SearchFieldState>
+): AutoCompletionTextFieldBinding<SearchFieldState>(
+    textField,
+    SuggestionProvider.create({ it.displayText() }, suggestion.toList()),
+    object: StringConverter<SearchFieldState>() {
+        override fun toString(value: SearchFieldState?): String {
+            return value?.displayText() ?: ""
+        }
+
+        override fun fromString(value: String?): SearchFieldState {
+            return SearchFieldState(text = value?.trim())
+        }
+    },
+) {
     fun show() {
         if(suggestion.isEmpty() || textField.text.isBlank() ) return
         super.setUserInput(textField.text)
