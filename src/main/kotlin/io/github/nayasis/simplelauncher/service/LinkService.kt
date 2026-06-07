@@ -35,8 +35,10 @@ private val logger = KotlinLogging.logger {}
 class LinkService {
 
     val links = SortedFilteredList(mutableListOf<Link>().asObservable())
+    private val tokenReferences = TokenReferenceIndex()
 
     fun save(link: Link, refreshTable: Boolean = true) {
+        val previousId = link.id
         link.syncTokenStorage()
         val isNew = link.id <= 0
         tx {
@@ -45,6 +47,7 @@ class LinkService {
                 links.add(link)
             }
         }
+        tokenReferences.update(previousId, link)
         if(refreshTable) {
             runLater {
                 main.tableMain.refresh()
@@ -80,6 +83,7 @@ class LinkService {
             clear()
             addAll(buffer)
         }
+        tokenReferences.rebuild(buffer)
     }
 
     fun exportData(file: Path) {
@@ -94,6 +98,7 @@ class LinkService {
             LinkTable.deleteAll()
             config.historyKeyword.clear()
             links.clear()
+            tokenReferences.clear()
         }
     }
 
@@ -102,7 +107,20 @@ class LinkService {
             LinkTable.repo.delete(link)
             config.historyKeyword.remove(link.title ?: "")
             links.remove(link)
+            tokenReferences.remove(link)
         }
+    }
+
+    fun groupTokenSuggestions(excludedTokens: Iterable<String> = emptyList()): List<String> {
+        return tokenReferences.groupSuggestions(excludedTokens)
+    }
+
+    fun groupTokenSuggestions(selectedTokens: Iterable<String>, excludedTokens: Iterable<String>): List<String> {
+        return tokenReferences.groupSuggestions(selectedTokens, excludedTokens)
+    }
+
+    fun hashtagSuggestions(excludedTokens: Iterable<String> = emptyList()): List<String> {
+        return tokenReferences.hashtagSuggestions(excludedTokens)
     }
 
     fun openImportPicker(): Path? =
@@ -149,6 +167,147 @@ class LinkService {
     fun copyFolder(link: Link) {
         val path = link.toPath()?.directory ?: link.path
         Desktop.clipboard.set(path.toString())
+    }
+
+}
+
+private data class LinkTokenSnapshot(
+    val id: Long,
+    val group: Set<String>,
+    val hashtag: Set<String>,
+)
+
+private class TokenReferenceIndex {
+
+    private val snapshots = HashMap<Long, LinkTokenSnapshot>()
+    private val groupCounts = HashMap<String, Int>()
+    private val hashtagCounts = HashMap<String, Int>()
+    private val groupContextCounts = HashMap<Set<String>, MutableMap<String, Int>>()
+
+    fun rebuild(links: Iterable<Link>) {
+        clear()
+        links.forEach { link ->
+            snapshot(link)?.let(::add)
+        }
+    }
+
+    fun update(previousId: Long, link: Link) {
+        if(previousId > 0) {
+            snapshots.remove(previousId)?.let(::removeCounts)
+        }
+        snapshot(link)?.let(::add)
+    }
+
+    fun remove(link: Link) {
+        snapshots.remove(link.id)?.let(::removeCounts)
+    }
+
+    fun clear() {
+        snapshots.clear()
+        groupCounts.clear()
+        hashtagCounts.clear()
+        groupContextCounts.clear()
+    }
+
+    fun groupSuggestions(excludedTokens: Iterable<String>): List<String> {
+        return rank(groupCounts, excludedTokens.normalizedTokenSet())
+    }
+
+    fun groupSuggestions(selectedTokens: Iterable<String>, excludedTokens: Iterable<String>): List<String> {
+        val selected = selectedTokens.normalizedTokenSet()
+        if(selected.isEmpty()) {
+            return groupSuggestions(excludedTokens)
+        }
+        return rank(groupContextCounts[selected] ?: emptyMap(), excludedTokens.normalizedTokenSet() + selected)
+    }
+
+    fun hashtagSuggestions(excludedTokens: Iterable<String>): List<String> {
+        return rank(hashtagCounts, excludedTokens.normalizedTokenSet())
+    }
+
+    private fun add(snapshot: LinkTokenSnapshot) {
+        snapshots[snapshot.id] = snapshot
+        addCounts(snapshot)
+    }
+
+    private fun addCounts(snapshot: LinkTokenSnapshot) {
+        adjust(groupCounts, snapshot.group, 1)
+        adjust(hashtagCounts, snapshot.hashtag, 1)
+        adjustGroupContexts(snapshot.group, 1)
+    }
+
+    private fun removeCounts(snapshot: LinkTokenSnapshot) {
+        adjust(groupCounts, snapshot.group, -1)
+        adjust(hashtagCounts, snapshot.hashtag, -1)
+        adjustGroupContexts(snapshot.group, -1)
+    }
+
+    private fun adjustGroupContexts(group: Set<String>, delta: Int) {
+        if(group.size < 2) return
+        properSubsets(group.toList()).forEach { selected ->
+            val candidates = group - selected
+            val counts = groupContextCounts.getOrPut(selected) { HashMap() }
+            adjust(counts, candidates, delta)
+            if(counts.isEmpty()) {
+                groupContextCounts.remove(selected)
+            }
+        }
+    }
+
+    private fun properSubsets(tokens: List<String>): List<Set<String>> {
+        val subsets = ArrayList<Set<String>>()
+        fun collect(index: Int, selected: LinkedHashSet<String>) {
+            if(index == tokens.size) {
+                if(selected.isNotEmpty() && selected.size < tokens.size) {
+                    subsets += HashSet(selected)
+                }
+                return
+            }
+            collect(index + 1, selected)
+            selected += tokens[index]
+            collect(index + 1, selected)
+            selected -= tokens[index]
+        }
+        collect(0, LinkedHashSet())
+        return subsets
+    }
+
+    private fun adjust(counts: MutableMap<String, Int>, tokens: Iterable<String>, delta: Int) {
+        tokens.forEach { token ->
+            val next = (counts[token] ?: 0) + delta
+            if(next > 0) {
+                counts[token] = next
+            } else {
+                counts.remove(token)
+            }
+        }
+    }
+
+    private fun snapshot(link: Link): LinkTokenSnapshot? {
+        if(link.id <= 0) return null
+        return LinkTokenSnapshot(
+            id = link.id,
+            group = link.group.normalizedTokenSet(),
+            hashtag = link.hashtag.normalizedTokenSet(),
+        )
+    }
+
+    private fun rank(counts: Map<String, Int>, excluded: Set<String>): List<String> {
+        return counts.entries
+            .asSequence()
+            .filter { it.key !in excluded }
+            .sortedWith(
+                compareByDescending<Map.Entry<String, Int>> { it.value }
+                    .thenBy(String.CASE_INSENSITIVE_ORDER) { it.key }
+            )
+            .map { it.key }
+            .toList()
+    }
+
+    private fun Iterable<String>.normalizedTokenSet(): Set<String> {
+        return map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .toSet()
     }
 
 }
