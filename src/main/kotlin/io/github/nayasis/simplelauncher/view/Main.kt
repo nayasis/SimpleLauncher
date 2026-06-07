@@ -40,7 +40,6 @@ import javafx.beans.value.ObservableValue
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.control.*
-import javafx.scene.control.TableView.CONSTRAINED_RESIZE_POLICY_LAST_COLUMN
 import javafx.scene.image.ImageView
 import javafx.scene.input.*
 import javafx.scene.input.KeyCode.*
@@ -326,8 +325,6 @@ class Main: View("application.title".message()), CoroutineScope {
 
 
         linkService.links.bindTo(tableMain)
-
-        tableMain.columnResizePolicy = CONSTRAINED_RESIZE_POLICY_LAST_COLUMN
 
         tableMain.selectionModel.selectionMode = SelectionMode.SINGLE
 
@@ -788,7 +785,7 @@ class Main: View("application.title".message()), CoroutineScope {
         applyLiveAutoCompletion(descGroupName.input, { allGroupTokenSuggestions(descGroupName.currentTokens()) }) {
             descGroupName.commitInput()
         }
-        applyAutoCompletion(descHashtag.input, { tokenSuggestions { it.hashtag } }) {
+        applyAutoCompletion(descHashtag.input, { hashtagSuggestions() }) {
             descHashtag.commitInput()
         }
 
@@ -951,46 +948,21 @@ class Main: View("application.title".message()), CoroutineScope {
         textField.properties["liveAutoCompleter"] = autoCompleter
     }
 
-    private fun tokenSuggestions(tokens: (Link) -> Iterable<String>): HistorySet<String> {
+    private fun hashtagSuggestions(): HistorySet<String> {
         return HistorySet<String>(512).apply {
-            linkService.links.items
-                .flatMap { tokens(it) }
-                .distinct()
-                .sortedWith(String.CASE_INSENSITIVE_ORDER)
-                .forEach { add(it) }
+            linkService.hashtagSuggestions().forEach { add(it) }
         }
     }
 
     private fun allGroupTokenSuggestions(excludedTokens: Iterable<String>): HistorySet<String> {
-        val excluded = excludedTokens
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-            .toSet()
         return HistorySet<String>(512).apply {
-            linkService.links.items
-                .asSequence()
-                .flatMap { it.group.asSequence() }
-                .filter { it !in excluded }
-                .distinct()
-                .sortedWith(String.CASE_INSENSITIVE_ORDER)
-                .forEach { add(it) }
+            linkService.groupTokenSuggestions(excludedTokens).forEach { add(it) }
         }
     }
 
     private fun groupTokenSuggestions(selectedTokens: Iterable<String>): HistorySet<String> {
-        val selected = selectedTokens
-            .map { it.trim() }
-            .filter { it.isNotEmpty() }
-            .toSet()
-        val links = linkService.links.items.asSequence()
-            .filter { link -> selected.isEmpty() || link.group.containsAll(selected) }
         return HistorySet<String>(512).apply {
-            links
-                .flatMap { it.group.asSequence() }
-                .filter { it !in selected }
-                .distinct()
-                .sortedWith(String.CASE_INSENSITIVE_ORDER)
-                .forEach { add(it) }
+            linkService.groupTokenSuggestions(selectedTokens, selectedTokens).forEach { add(it) }
         }
     }
 
