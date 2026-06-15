@@ -87,6 +87,21 @@ class JsonMappingTest {
     }
 
     @Test
+    fun jsonLinkShouldImportPlainTextGroupAsLowercaseTokens() {
+        val restored = """
+            {
+              "title": "test",
+              "group": "Dev Tool / Script.Runner  한글-그룹"
+            }
+        """.trimIndent()
+            .toObject<JsonLink>()
+            .toLink()
+
+        restored.group shouldBe hashSetOf("dev", "tool", "script", "runner", "한글", "그룹")
+        restored.groupJson shouldBe """["dev","tool","script","runner","한글","그룹"]"""
+    }
+
+    @Test
     fun writeAndRead() {
 
         val database = Database.connect(

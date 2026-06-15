@@ -136,6 +136,7 @@ class Main: View("application.title".message()), CoroutineScope {
     private var ignoreDescEditorWidthChange = false
     private var childWindowLifecycleBound = false
     private var closeRequestBound = false
+    private val searchSubmitTracker = SearchSubmitTracker()
 
     private val favicon       = resources.image("/image/icon/favicon.png")
     private val faviconPinned = resources.image("/image/icon/favicon-pinned.png")
@@ -565,12 +566,7 @@ class Main: View("application.title".message()), CoroutineScope {
         }
 
         inputKeyword.onPlainEnter = {
-            val search = inputKeyword.searchText()
-            submitSearch(saveKeywordHistory = true)
-            if( search.isBlank() && tableMain.visibleRows in 1..10 ) {
-                tableMain.focus(0)
-                tableMain.selectedItem?.let { link -> linkExecutor.run(link) }
-            }
+            handleSearchEnter(saveKeywordHistory = true)
         }
         inputKeyword.onEscape = {
             tableMain.requestFocus()
@@ -777,7 +773,7 @@ class Main: View("application.title".message()), CoroutineScope {
     private fun setSearchEvent() {
 
         inputGroup.onPlainEnter = {
-            submitSearch()
+            handleSearchEnter()
         }
 
         applySearchHistory(inputKeyword) { compactSearchHistory(Context.config.historySearch) }
@@ -804,6 +800,33 @@ class Main: View("application.title".message()), CoroutineScope {
         if(saveKeywordHistory) {
             saveSubmittedKeyword()
         }
+    }
+
+    private fun handleSearchEnter(saveKeywordHistory: Boolean = false) {
+        val snapshot = searchSubmitSnapshot()
+        when(searchSubmitTracker.nextAction(snapshot)) {
+            SearchSubmitAction.SUBMIT -> {
+                submitSearch(saveKeywordHistory)
+                if(snapshot.isBlank() && tableMain.visibleRows in 1..10) {
+                    runFirstSearchResult()
+                }
+            }
+            SearchSubmitAction.RUN_FIRST_RESULT -> runFirstSearchResult()
+        }
+    }
+
+    private fun searchSubmitSnapshot(): SearchSubmitSnapshot {
+        return SearchSubmitSnapshot(
+            keyword = inputKeyword.searchText(),
+            group = inputGroup.searchText(),
+        )
+    }
+
+    private fun runFirstSearchResult() {
+        val link = tableMain.items.firstOrNull() ?: return
+        tableMain.focus(0)
+        tableMain.selectionModel.select(link)
+        linkExecutor.run(link)
     }
 
     private fun saveSubmittedKeyword() {
