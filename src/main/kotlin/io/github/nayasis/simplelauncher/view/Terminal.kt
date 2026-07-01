@@ -13,7 +13,9 @@ import io.github.nayasis.kotlin.basica.core.string.toPath
 import io.github.nayasis.kotlin.basica.etc.error
 import io.github.nayasis.kotlin.basica.exec.Command
 import io.github.nayasis.kotlin.javafx.misc.runAwait
+import io.github.nayasis.kotlin.javafx.property.InsetProperty
 import io.github.nayasis.kotlin.javafx.property.StageProperty
+import io.github.nayasis.kotlin.javafx.stage.watchMaximized
 import io.github.nayasis.simplelauncher.common.Context.Companion.config
 import io.github.nayasis.simplelauncher.view.theme.BlackTerminalTheme
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -46,17 +48,21 @@ class Terminal(
 
         scene = Scene(vbox)
 
-        config.stageTerminal?.bind(this) ?: run {
+        config.stageTerminal?.sanitizeTerminalStageProperty()?.bind(this) ?: run {
             width     = 700.0
             height    = 600.0
             minWidth  = 100.0
             minHeight = 100.0
         }
+        watchMaximized()
 
         setOnCloseRequest {
-            config.stageTerminal = StageProperty(this)
+            persistStageState()
             runCatching { terminal.ttyConnector.close() }.onFailure { e -> logger.error(e) }
             runCatching { terminal.close() }.onFailure { e -> logger.error(e) }
+        }
+        setOnHidden {
+            persistStageState()
         }
 
     }
@@ -129,6 +135,11 @@ class Terminal(
         minHeightProperty().bind(other.minHeightProperty())
         maxWidthProperty().bind(other.maxWidthProperty())
         maxHeightProperty().bind(other.maxHeightProperty())
+    }
+
+    private fun persistStageState() {
+        config.stageTerminal = StageProperty(this, includeChildren = false)
+        config.save()
     }
 
 }
@@ -204,4 +215,16 @@ private fun ClassCastException.isWeakRedrawTimerSourceCast(): Boolean {
         && message?.contains("javafx.animation.Timeline") == true
         && frame?.className == "com.techsenger.jeditermfx.ui.TerminalPanel\$WeakRedrawTimer"
         && frame.methodName == "handle"
+}
+
+internal fun StageProperty.sanitizeTerminalStageProperty(): StageProperty {
+    if(maximized && previousBoundary?.maximized == true && previousBoundary?.boundary?.isDefaultBoundary() == true) {
+        maximized = false
+        previousBoundary?.maximized = false
+    }
+    return this
+}
+
+private fun InsetProperty.isDefaultBoundary(): Boolean {
+    return x == 100 && y == 100 && width == 500 && height == 600
 }
