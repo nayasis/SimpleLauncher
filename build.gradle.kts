@@ -166,6 +166,24 @@ val isWindows = osName.contains("win")
 val isLinux = osName.contains("linux")
 val isMac = osName.contains("mac")
 
+fun Project.toJpackageAppVersion(): String {
+	val parts = version.toString()
+		.split('.')
+		.filter { it.isNotBlank() }
+		.take(3)
+		.toMutableList()
+
+	if (parts.isEmpty()) {
+		return "1"
+	}
+
+	if (isMac && (parts[0].toIntOrNull() ?: 0) <= 0) {
+		parts[0] = "1"
+	}
+
+	return parts.joinToString(".")
+}
+
 fun File.hasSuffix(suffixes: Set<String>): Boolean =
 	suffixes.any { suffix -> name.contains(suffix, ignoreCase = true) }
 
@@ -323,7 +341,7 @@ tasks.register<Exec>("createNativeExe") {
 		"--type",          if (useExe) "exe" else "app-image",
 		"--input",         jpackageInputDir.absolutePath,
 		"--name",          application.applicationName,
-		"--app-version",   project.version.toString(),
+		"--app-version",   project.toJpackageAppVersion(),
 		"--main-jar",      jarFile.name,
 		"--main-class",    application.mainClass.get(),
 		"--dest",          outputDir.absolutePath,
