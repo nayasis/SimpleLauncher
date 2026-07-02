@@ -29,7 +29,7 @@ application {
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(24)
+		languageVersion = JavaLanguageVersion.of(25)
 	}
 }
 
@@ -55,18 +55,15 @@ configurations.all {
 dependencies {
 
 	implementation("io.github.nayasis:basica-kt:0.3.13")
-//	implementation("io.github.nayasis:basicafx-kt:0.2.8")
-	implementation("io.github.nayasis:basicafx-kt:0.1.0-SNAPSHOT") {
-		exclude(group = "io.github.nayasis", module = "basica-kt")
-	}
+	implementation("io.github.nayasis:basicafx-kt:0.3.0")
 	implementation("ch.qos.logback:logback-classic:1.5.31")
 
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.10.2")
 
 	// exposed
-	ksp("com.dshatz.exposed-crud:processor:0.1.0-SNAPSHOT")
-	implementation("com.dshatz.exposed-crud:lib:0.1.0-SNAPSHOT")
+	ksp("io.github.nayasis:exposed-crud-processor:0.1.0")
+	implementation("io.github.nayasis:exposed-crud:0.1.0")
 	implementation("com.h2database:h2:2.3.232")
 
 	// UI
@@ -108,6 +105,7 @@ dependencies {
 
 kotlin {
 	compilerOptions {
+		jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_24)
 		freeCompilerArgs.addAll("-Xjsr305=strict")
 	}
 }
