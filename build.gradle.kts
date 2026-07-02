@@ -185,6 +185,30 @@ fun Project.toJpackageAppVersion(): String {
 	return parts.joinToString(".")
 }
 
+fun hasCommand(command: String): Boolean {
+	if (isWindows) {
+		return runCatching {
+			ProcessBuilder("where.exe", command)
+				.redirectErrorStream(true)
+				.start()
+				.apply {
+					inputStream.bufferedReader().use { it.readText() }
+				}
+				.waitFor() == 0
+		}.getOrDefault(false)
+	}
+
+	return runCatching {
+		ProcessBuilder("which", command)
+			.redirectErrorStream(true)
+			.start()
+			.apply {
+				inputStream.bufferedReader().use { it.readText() }
+			}
+			.waitFor() == 0
+	}.getOrDefault(false)
+}
+
 fun File.hasSuffix(suffixes: Set<String>): Boolean =
 	suffixes.any { suffix -> name.contains(suffix, ignoreCase = true) }
 
@@ -308,13 +332,7 @@ tasks.register<Exec>("createNativeExe") {
 	val allJars            = runtimeClasspath.filter { it.name.endsWith(".jar") }
 	val javafxJars         = filterJavaFxJars(allJars)
 	
-	val useExe = runCatching {
-		ProcessBuilder("light.exe", "-?")
-			.redirectErrorStream(true)
-			.start()
-			.waitFor()
-		true
-	}.getOrElse { false }
+	val useExe = isWindows && !isGitHubActions && hasCommand("light.exe")
 	val packageType = if (isWindows && isGitHubActions) "app-image" else if (useExe) "exe" else "app-image"
 
 	doFirst {
