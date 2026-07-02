@@ -320,7 +320,8 @@ tasks.register("deploy") {
 	doLast {
 		val appName = application.applicationName
 		val sourceDir = file("build/dist/$appName")
-		val targetDir = file("D:/app/SimpleLauncher")
+		val targetDir = file("d:/app/SimpleLauncher")
+//		val targetDir = file("c:/app/SimpleLauncher")
 		val executable = "$appName.exe"
 
 		if (isWindows) {
