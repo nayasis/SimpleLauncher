@@ -355,7 +355,7 @@ tasks.register<Exec>("createNativeExe") {
 		jpackageArgs.add(option)
 	}
 	
-	if (useExe) {
+	if (packageType == "exe") {
 		jpackageArgs.addAll(listOf("--win-dir-chooser", "--win-menu", "--win-shortcut"))
 	}
 	
