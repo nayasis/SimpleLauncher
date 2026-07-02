@@ -1,5 +1,4 @@
 .gradle
-!gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 
@@ -33,7 +32,12 @@ out/
 
 ### VS Code ###
 .vscode/
-/gradle/
+
+### Gradle Wrapper ###
+/gradle/*
+!/gradle/wrapper/
+!/gradle/wrapper/gradle-wrapper.properties
+!/gradle/wrapper/gradle-wrapper.jar
 
 ## project
 HELP.md

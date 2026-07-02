@@ -1,5 +1,26 @@
 group   = "io.github.nayasis"
-version = "0.1.5"
+
+fun Project.findReleaseVersionFromBranch(): String? {
+	val branchName = providers.environmentVariable("GITHUB_REF_NAME").orNull?.trim().takeUnless { it.isNullOrBlank() } ?: run {
+		try {
+			val process = ProcessBuilder("git", "rev-parse", "--abbrev-ref", "HEAD")
+				.redirectErrorStream(true)
+				.start()
+			process.waitFor()
+			process.inputStream.bufferedReader().readText().trim().takeUnless { it.isBlank() || it == "HEAD" }
+		} catch (_: Exception) {
+			return null
+		}
+	}
+
+	return branchName
+		?.removePrefix("refs/heads/")
+		?.takeIf { it.startsWith("release/") }
+		?.removePrefix("release/")
+		?.takeIf { it.isNotBlank() }
+}
+
+version = findReleaseVersionFromBranch() ?: "0.1.5"
 
 plugins {
 	application
@@ -139,14 +160,27 @@ tasks.register<JavaExec>("runChildWindowLifecycleTest") {
 	jvmArgs(appJvmArgs)
 }
 
-val isWindows = System.getProperty("os.name").lowercase().contains("win")
+val osName = System.getProperty("os.name").lowercase()
+val osArch = System.getProperty("os.arch").lowercase()
+val isWindows = osName.contains("win")
+val isLinux = osName.contains("linux")
+val isMac = osName.contains("mac")
 
 fun File.hasSuffix(suffixes: Set<String>): Boolean =
 	suffixes.any { suffix -> name.contains(suffix, ignoreCase = true) }
 
 fun filterJavaFxJars(jars: Collection<File>): List<File> {
-	val platformSuffixes = if (isWindows) setOf("-win") else setOf("-linux", "-mac")
-	val allSuffixes      = setOf("-win", "-linux", "-mac")
+	val platformSuffixes = when {
+		isWindows && (osArch.contains("aarch64") || osArch.contains("arm64")) -> setOf("-win-aarch64")
+		isWindows && (osArch == "x86" || osArch == "i386") -> setOf("-win-x86")
+		isWindows -> setOf("-win")
+		isLinux && (osArch.contains("aarch64") || osArch.contains("arm64")) -> setOf("-linux-aarch64")
+		isLinux -> setOf("-linux")
+		isMac && (osArch.contains("aarch64") || osArch.contains("arm64")) -> setOf("-mac-aarch64")
+		isMac -> setOf("-mac")
+		else -> emptySet()
+	}
+	val allSuffixes = setOf("-win", "-win-x86", "-win-aarch64", "-linux", "-linux-aarch64", "-mac", "-mac-aarch64")
 	return jars
 		.filter { it.name.startsWith("javafx", ignoreCase = true) }
 		.filter { jar ->
@@ -289,6 +323,7 @@ tasks.register<Exec>("createNativeExe") {
 		"--type",          if (useExe) "exe" else "app-image",
 		"--input",         jpackageInputDir.absolutePath,
 		"--name",          application.applicationName,
+		"--app-version",   project.version.toString(),
 		"--main-jar",      jarFile.name,
 		"--main-class",    application.mainClass.get(),
 		"--dest",          outputDir.absolutePath,

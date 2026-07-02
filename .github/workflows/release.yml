@@ -1,0 +1,147 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - 'release/**'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  prepare-release:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Resolve release version
+        id: release
+        shell: pwsh
+        run: |
+          $branchName = "${{ github.ref_name }}".Trim()
+          if (-not $branchName.StartsWith("release/")) {
+            throw "Unsupported release branch: $branchName"
+          }
+
+          $version = $branchName.Substring("release/".Length)
+          if ($version -notmatch '^\d+(\.\d+){1,3}$') {
+            throw "Release branch must look like release/1.2.3. Actual: $branchName"
+          }
+
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "tag=app-v$version" >> $env:GITHUB_OUTPUT
+
+      - name: Delete existing release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          gh release view $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY 2>$null
+          if ($LASTEXITCODE -eq 0) {
+            gh release delete $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --cleanup-tag --yes
+          }
+
+      - name: Create GitHub release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          gh release create $env:RELEASE_TAG `
+            --repo $env:GITHUB_REPOSITORY `
+            --title "Simple Launcher v$env:RELEASE_VERSION" `
+            --notes "Automated release for release/$env:RELEASE_VERSION"
+
+  publish-package:
+    needs: prepare-release
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: windows-latest
+            asset_os: windows
+            asset_arch: x64
+            gradle_cmd: .\gradlew.bat
+          - platform: ubuntu-22.04
+            asset_os: linux
+            asset_arch: x64
+            gradle_cmd: ./gradlew
+          - platform: macos-15-intel
+            asset_os: macos
+            asset_arch: x64
+            gradle_cmd: ./gradlew
+          - platform: macos-15
+            asset_os: macos
+            asset_arch: arm64
+            gradle_cmd: ./gradlew
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Grant execute permission to Gradle wrapper
+        if: runner.os != 'Windows'
+        run: chmod +x ./gradlew
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-disabled: true
+
+      - name: Build native package
+        shell: pwsh
+        run: ${{ matrix.gradle_cmd }} clean createNativeExe
+
+      - name: Package release asset
+        id: asset
+        shell: pwsh
+        env:
+          RELEASE_VERSION: ${{ needs.prepare-release.outputs.version }}
+          ASSET_OS: ${{ matrix.asset_os }}
+          ASSET_ARCH: ${{ matrix.asset_arch }}
+        run: |
+          $releaseDir = Join-Path $PWD "build/release"
+          $distDir = Join-Path $PWD "build/dist"
+          $assetName = "simplelauncher-$env:RELEASE_VERSION-$env:ASSET_OS-$env:ASSET_ARCH.zip"
+          $assetPath = Join-Path $releaseDir $assetName
+          $items = Get-ChildItem -LiteralPath $distDir
+
+          if ($items.Count -eq 0) {
+            throw "Release output not found under $distDir"
+          }
+
+          New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
+          if (Test-Path -LiteralPath $assetPath) {
+            Remove-Item -LiteralPath $assetPath -Force
+          }
+
+          Compress-Archive -LiteralPath $items.FullName -DestinationPath $assetPath -Force
+          "path=$assetPath" >> $env:GITHUB_OUTPUT
+
+      - name: Upload release asset
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.prepare-release.outputs.tag }}
+          RELEASE_ASSET: ${{ steps.asset.outputs.path }}
+        run: |
+          gh release upload $env:RELEASE_TAG $env:RELEASE_ASSET --repo $env:GITHUB_REPOSITORY --clobber
