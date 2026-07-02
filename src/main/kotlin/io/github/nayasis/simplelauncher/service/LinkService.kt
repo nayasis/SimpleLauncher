@@ -124,10 +124,10 @@ class LinkService {
     }
 
     fun openImportPicker(): Path? =
-        filePicker("msg.file.import","*.sl","msg.file.import.description")
+        filePicker("msg.file.import","*.json","msg.file.import.description")
 
     fun openExportPicker(): Path? =
-        filePicker("msg.file.export","*.sl","msg.file.import.description", FileChooserMode.Save)
+        filePicker("msg.file.export","*.json","msg.file.import.description", FileChooserMode.Save)
 
     fun openIconPicker(): Path? =
         filePicker("msg.file.icon","*.*","msg.file.icon.description")
