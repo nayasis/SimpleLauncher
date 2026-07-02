@@ -165,6 +165,7 @@ val osArch = System.getProperty("os.arch").lowercase()
 val isWindows = osName.contains("win")
 val isLinux = osName.contains("linux")
 val isMac = osName.contains("mac")
+val isGitHubActions = System.getenv("GITHUB_ACTIONS") == "true"
 
 fun Project.toJpackageAppVersion(): String {
 	val parts = version.toString()
@@ -314,6 +315,7 @@ tasks.register<Exec>("createNativeExe") {
 			.waitFor()
 		true
 	}.getOrElse { false }
+	val packageType = if (isWindows && isGitHubActions) "app-image" else if (useExe) "exe" else "app-image"
 
 	doFirst {
 		// Validation
@@ -338,7 +340,7 @@ tasks.register<Exec>("createNativeExe") {
 	}
 	
 	val jpackageArgs = mutableListOf<String>(
-		"--type",          if (useExe) "exe" else "app-image",
+		"--type",          packageType,
 		"--input",         jpackageInputDir.absolutePath,
 		"--name",          application.applicationName,
 		"--app-version",   project.toJpackageAppVersion(),
