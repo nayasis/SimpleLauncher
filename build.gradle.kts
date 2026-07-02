@@ -233,7 +233,7 @@ tasks.register<Exec>("createRuntimeImage") {
 	group       = "distribution"
 	description = "Creates a custom runtime image with jlink (smaller size)"
 	
-	dependsOn("build", "cleanCreateRuntimeImage")
+	dependsOn("jar", "cleanCreateRuntimeImage")
 	
 	val javaToolchain   = javaToolchains.launcherFor(java.toolchain).get()
 	val javaHome        = javaToolchain.metadata.installationPath.asFile
@@ -339,7 +339,13 @@ tasks.register<Exec>("createNativeExe") {
 		jpackageArgs.addAll(listOf("--win-dir-chooser", "--win-menu", "--win-shortcut"))
 	}
 	
-	file("src/main/resources/image/icon/favicon.ico").takeIf { it.exists() }?.let { icon ->
+	val iconFile = when {
+		isWindows -> file("src/main/resources/image/icon/favicon.ico").takeIf { it.exists() }
+		isLinux -> file("src/main/resources/image/icon/favicon.png").takeIf { it.exists() }
+		else -> null
+	}
+
+	iconFile?.let { icon ->
 		jpackageArgs.addAll(listOf("--icon", icon.absolutePath))
 	}
 
