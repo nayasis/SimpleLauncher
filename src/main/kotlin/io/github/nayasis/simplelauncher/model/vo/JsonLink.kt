@@ -4,21 +4,26 @@ import io.github.nayasis.kotlin.basica.annotation.NoArg
 import io.github.nayasis.kotlin.basica.core.string.decodeBase64
 import io.github.nayasis.kotlin.basica.core.string.encodeBase64
 import io.github.nayasis.simplelauncher.model.Link
+import io.github.nayasis.simplelauncher.model.normalizeTokens
+import io.github.nayasis.simplelauncher.model.normalizeHashtags
+import io.github.nayasis.simplelauncher.model.parseImportedHashtags
+import io.github.nayasis.simplelauncher.model.parseImportedTokens
 import java.time.LocalDateTime
 
 @NoArg
 data class JsonLink(
     var title: String?               = null,
-    var group: String?               = null,
+    var group: Any?                  = null,
     var path: String?                = null,
     var relativePath: String?        = null,
     var showConsole: Boolean         = false,
+    var executeEach: Boolean         = true,
     var option: String?              = null,
     var optionPrefix: String?        = null,
     var commandPrev: String?         = null,
     var commandNext: String?         = null,
     var description: String?         = null,
-    var hashtag: String?             = null,
+    var hashtag: Any?                = null,
     var icon: String?                = null,
     var execCount: Int               = 0,
     var executedAt: LocalDateTime?   = null,
@@ -28,16 +33,17 @@ data class JsonLink(
 
     constructor(entity: Link): this(
         title        = entity.title,
-        group        = entity.group,
+        group        = normalizeTokens(entity.group),
         path         = entity.path,
         relativePath = entity.relativePath,
         showConsole  = entity.showConsole,
+        executeEach  = entity.executeEach,
         option       = entity.argument,
         optionPrefix = entity.commandPrefix,
         commandPrev  = entity.commandPrev,
         commandNext  = entity.commandNext,
         description  = entity.description,
-        hashtag      = entity.hashtag,
+        hashtag      = normalizeHashtags(entity.hashtag),
         icon         = entity.icon?.encodeBase64(),
         execCount    = entity.executeCount,
         executedAt   = entity.executedAt,
@@ -48,16 +54,17 @@ data class JsonLink(
     fun toLink(): Link {
         return this.let { Link(
             title         = it.title,
-            group         = it.group,
+            group         = parseImportedTokens(it.group),
             path          = it.path,
             relativePath  = it.relativePath,
             showConsole   = it.showConsole,
+            executeEach   = it.executeEach,
             argument      = it.option,
             commandPrefix = it.optionPrefix,
             commandPrev   = it.commandPrev,
             commandNext   = it.commandNext,
             description   = it.description,
-            hashtag       = it.hashtag,
+            hashtag       = parseImportedHashtags(it.hashtag),
             icon          = runCatching { it.icon?.decodeBase64<ByteArray>() }.getOrNull(),
             executeCount  = it.execCount,
             executedAt    = it.executedAt,

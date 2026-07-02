@@ -1,32 +1,61 @@
 group   = "io.github.nayasis"
-version = "0.1.5"
+
+fun Project.findReleaseVersionFromBranch(): String? {
+	val branchName = providers.environmentVariable("GITHUB_REF_NAME").orNull?.trim().takeUnless { it.isNullOrBlank() } ?: run {
+		try {
+			val process = ProcessBuilder("git", "rev-parse", "--abbrev-ref", "HEAD")
+				.redirectErrorStream(true)
+				.start()
+			process.waitFor()
+			process.inputStream.bufferedReader().readText().trim().takeUnless { it.isBlank() || it == "HEAD" }
+		} catch (_: Exception) {
+			return null
+		}
+	}
+
+	return branchName
+		?.removePrefix("refs/heads/")
+		?.takeIf { it.startsWith("release/") }
+		?.removePrefix("release/")
+		?.takeIf { it.isNotBlank() }
+}
+
+version = findReleaseVersionFromBranch() ?: "0.1.5"
 
 plugins {
 	application
 	kotlin("jvm") version "2.2.0"
 	id("com.google.devtools.ksp") version "2.2.0-2.0.2"
 	id("org.openjfx.javafxplugin") version "0.1.0"
-	id("com.github.johnrengelman.shadow") version "8.1.1"
+	id("com.gradleup.shadow") version "9.4.1"
 }
+
+val appJvmArgs = listOf(
+	"-Djavafx.enablePreview=true",
+	"-Djavafx.suppressPreviewWarning=true",
+	"-Djavafx.suppressUnsupportedConfiguration=true",
+	"--enable-native-access=ALL-UNNAMED",
+	"--enable-native-access=javafx.graphics",
+	"--add-exports=javafx.base/com.sun.javafx.event=ALL-UNNAMED",
+	"--add-exports=javafx.graphics/com.sun.javafx.application=ALL-UNNAMED",
+	"--add-exports=javafx.graphics/com.sun.javafx.tk=ALL-UNNAMED",
+	"--add-opens=javafx.graphics/javafx.scene=ALL-UNNAMED",
+)
 
 application {
 	mainClass.set("io.github.nayasis.simplelauncher.SimplelauncherKt")
 	applicationName = "simplelauncher"
-	applicationDefaultJvmArgs = listOf(
-		"--add-exports=javafx.graphics/com.sun.javafx.application=ALL-UNNAMED",
-		"--add-exports=javafx.graphics/com.sun.javafx.tk=ALL-UNNAMED",
-		"--add-opens=javafx.graphics/javafx.scene=ALL-UNNAMED"
-	)
+	applicationDefaultJvmArgs = appJvmArgs
 }
 
 java {
 	toolchain {
-		languageVersion = JavaLanguageVersion.of(17)
+		languageVersion = JavaLanguageVersion.of(25)
 	}
 }
 
 javafx {
-	version = "21.0.2"
+	version = "26"
 	modules = listOf("javafx.graphics","javafx.controls","javafx.fxml","javafx.swing")
 }
 
@@ -46,19 +75,16 @@ configurations.all {
 
 dependencies {
 
-	// core
-//	implementation("io.github.nayasis:basica-kt:0.3.11")
-	implementation("io.github.nayasis:basica-kt:0.1.0-SNAPSHOT")
-//	implementation("io.github.nayasis:basicafx-kt:0.2.6")
-	implementation("io.github.nayasis:basicafx-kt:0.1.0-SNAPSHOT")
+	implementation("io.github.nayasis:basica-kt:0.3.13")
+	implementation("io.github.nayasis:basicafx-kt:0.3.0")
 	implementation("ch.qos.logback:logback-classic:1.5.31")
 
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.10.2")
 
 	// exposed
-	ksp("com.dshatz.exposed-crud:processor:0.1.0-SNAPSHOT")
-	implementation("com.dshatz.exposed-crud:lib:0.1.0-SNAPSHOT")
+	ksp("io.github.nayasis:exposed-crud-processor:0.1.0")
+	implementation("io.github.nayasis:exposed-crud:0.1.0")
 	implementation("com.h2database:h2:2.3.232")
 
 	// UI
@@ -90,15 +116,17 @@ dependencies {
 	testImplementation("net.java.dev.jna:jna:5.9.0")
 	testImplementation("net.java.dev.jna:jna-platform:5.9.0")
 
-    testImplementation(kotlin("test"))
-    testImplementation("io.kotest:kotest-runner-junit5:5.8.0")
-    testImplementation("org.testfx:testfx-junit5:4.0.18")
+	testImplementation(kotlin("test"))
+	testImplementation("io.kotest:kotest-runner-junit5:5.8.0")
+	testImplementation("io.github.classgraph:classgraph:4.8.184")
+	testImplementation("org.testfx:testfx-junit5:4.0.18")
 	testImplementation("org.yaml:snakeyaml:2.2")
 
 }
 
 kotlin {
 	compilerOptions {
+		jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_24)
 		freeCompilerArgs.addAll("-Xjsr305=strict")
 	}
 }
@@ -106,25 +134,81 @@ kotlin {
 
 tasks.withType<Test> {
 	useJUnitPlatform()
+	jvmArgs("--enable-native-access=ALL-UNNAMED")
 }
 
 tasks.withType<JavaCompile> {
-	options.release.set(17)
+	options.release.set(24)
 }
 
-val isWindows = System.getProperty("os.name").lowercase().contains("win")
+tasks.withType<JavaExec> {
+	jvmArgs(
+		"-Djavafx.suppressUnsupportedConfiguration=true",
+		"--enable-native-access=ALL-UNNAMED",
+	)
+}
+
+tasks.named<JavaExec>("run") {
+	jvmArgs(appJvmArgs)
+}
+
+tasks.register<JavaExec>("runChildWindowLifecycleTest") {
+	group = "verification"
+	description = "Runs the manual child-window hide/restore viewer"
+	classpath = sourceSets["test"].runtimeClasspath
+	mainClass.set("io.github.nayasis.simplelauncher.view.lifecycle.ChildWindowLifecycleTestKt")
+	jvmArgs(appJvmArgs)
+}
+
+val osName = System.getProperty("os.name").lowercase()
+val osArch = System.getProperty("os.arch").lowercase()
+val isWindows = osName.contains("win")
+val isLinux = osName.contains("linux")
+val isMac = osName.contains("mac")
 
 fun File.hasSuffix(suffixes: Set<String>): Boolean =
 	suffixes.any { suffix -> name.contains(suffix, ignoreCase = true) }
 
 fun filterJavaFxJars(jars: Collection<File>): List<File> {
-	val platformSuffixes = if (isWindows) setOf("-win") else setOf("-linux", "-mac")
-	val allSuffixes      = setOf("-win", "-linux", "-mac")
+	val platformSuffixes = when {
+		isWindows && (osArch.contains("aarch64") || osArch.contains("arm64")) -> setOf("-win-aarch64")
+		isWindows && (osArch == "x86" || osArch == "i386") -> setOf("-win-x86")
+		isWindows -> setOf("-win")
+		isLinux && (osArch.contains("aarch64") || osArch.contains("arm64")) -> setOf("-linux-aarch64")
+		isLinux -> setOf("-linux")
+		isMac && (osArch.contains("aarch64") || osArch.contains("arm64")) -> setOf("-mac-aarch64")
+		isMac -> setOf("-mac")
+		else -> emptySet()
+	}
+	val allSuffixes = setOf("-win", "-win-x86", "-win-aarch64", "-linux", "-linux-aarch64", "-mac", "-mac-aarch64")
 	return jars
 		.filter { it.name.startsWith("javafx", ignoreCase = true) }
 		.filter { jar ->
 			jar.hasSuffix(platformSuffixes) || !jar.hasSuffix(allSuffixes)
 		}
+}
+
+fun deleteRecursivelyForce(target: File) {
+	if (!target.exists()) return
+	target.walkBottomUp().forEach { file ->
+		file.setWritable(true)
+		if (!file.delete() && file.exists()) {
+			throw GradleException("Failed to delete existing path: ${file.absolutePath}")
+		}
+	}
+}
+
+fun copyRecursivelyForce(source: File, target: File) {
+	if (!source.exists()) {
+		throw GradleException("Deploy source not found: ${source.absolutePath}")
+	}
+	if (source.isDirectory) {
+		target.mkdirs()
+		source.copyRecursively(target, overwrite = true)
+	} else {
+		target.parentFile.mkdirs()
+		source.copyTo(target, overwrite = true)
+	}
 }
 
 tasks.register<Delete>("cleanCreateRuntimeImage") {
@@ -179,7 +263,7 @@ tasks.register<Exec>("createRuntimeImage") {
 		"--module-path", modulePath,
 		"--add-modules", requiredJdkModules.joinToString(","),
 		"--strip-debug",
-		"--compress", "2",
+		"--compress", "zip-6",
 		"--no-header-files",
 		"--no-man-pages",
 		"--output", runtimeImageDir.absolutePath
@@ -206,7 +290,10 @@ tasks.register<Exec>("createNativeExe") {
 	val javafxJars         = filterJavaFxJars(allJars)
 	
 	val useExe = runCatching {
-		Runtime.getRuntime().exec("light.exe -?").waitFor()
+		ProcessBuilder("light.exe", "-?")
+			.redirectErrorStream(true)
+			.start()
+			.waitFor()
 		true
 	}.getOrElse { false }
 
@@ -220,6 +307,7 @@ tasks.register<Exec>("createNativeExe") {
 			throw GradleException("Runtime image not found: ${runtimeImageDir.absolutePath}. Run 'gradlew createRuntimeImage' first.")
 
 		// Prepare JAR files for jpackage input
+		deleteRecursivelyForce(outputDir.resolve(application.applicationName))
 		jpackageInputDir.deleteRecursively()
 		jpackageInputDir.mkdirs()
 		jarFile.copyTo(jpackageInputDir.resolve(jarFile.name), overwrite = true)
@@ -235,6 +323,7 @@ tasks.register<Exec>("createNativeExe") {
 		"--type",          if (useExe) "exe" else "app-image",
 		"--input",         jpackageInputDir.absolutePath,
 		"--name",          application.applicationName,
+		"--app-version",   project.version.toString(),
 		"--main-jar",      jarFile.name,
 		"--main-class",    application.mainClass.get(),
 		"--dest",          outputDir.absolutePath,
@@ -255,4 +344,36 @@ tasks.register<Exec>("createNativeExe") {
 	}
 
 	commandLine(listOf(jpackagePath.absolutePath) + jpackageArgs)
+}
+
+tasks.register("deploy") {
+	group       = "distribution"
+	description = "Builds the native executable and deploys it to D:/app/SimpleLauncher"
+
+	dependsOn("createNativeExe")
+
+	doLast {
+		val appName = application.applicationName
+		val sourceDir = file("build/dist/$appName")
+		val targetDir = file("d:/app/SimpleLauncher")
+//		val targetDir = file("c:/app/SimpleLauncher")
+		val executable = "$appName.exe"
+
+		if (isWindows) {
+			ProcessBuilder("taskkill", "/IM", executable, "/F", "/T")
+				.redirectErrorStream(true)
+				.start()
+				.waitFor()
+		}
+
+		targetDir.mkdirs()
+		listOf("app", "runtime").forEach { name ->
+			deleteRecursivelyForce(targetDir.resolve(name))
+		}
+		deleteRecursivelyForce(targetDir.resolve(executable))
+
+		copyRecursivelyForce(sourceDir.resolve("app"), targetDir.resolve("app"))
+		copyRecursivelyForce(sourceDir.resolve("runtime"), targetDir.resolve("runtime"))
+		copyRecursivelyForce(sourceDir.resolve(executable), targetDir.resolve(executable))
+	}
 }

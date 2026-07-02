@@ -5,7 +5,6 @@ package io.github.nayasis.simplelauncher.view
 import impl.org.controlsfx.autocompletion.AutoCompletionTextFieldBinding
 import impl.org.controlsfx.autocompletion.SuggestionProvider
 import io.github.nayasis.kotlin.basica.core.extension.ifNull
-import io.github.nayasis.kotlin.basica.core.localdate.between
 import io.github.nayasis.kotlin.basica.core.localdate.toString
 import io.github.nayasis.kotlin.basica.core.string.message
 import io.github.nayasis.kotlin.basica.etc.error
@@ -24,13 +23,19 @@ import io.github.nayasis.kotlin.javafx.property.StageProperty
 import io.github.nayasis.kotlin.javafx.stage.Dialog
 import io.github.nayasis.kotlin.javafx.stage.Localizator
 import io.github.nayasis.kotlin.javafx.stage.loadDefaultIcon
+import io.github.nayasis.kotlin.javafx.stage.WindowHeaderHelper
 import io.github.nayasis.simplelauncher.common.Context
 import io.github.nayasis.simplelauncher.common.ICON_NEW
+import io.github.nayasis.simplelauncher.model.formatTokens
 import io.github.nayasis.simplelauncher.model.Link
 import io.github.nayasis.simplelauncher.service.LinkExecutor
 import io.github.nayasis.simplelauncher.service.LinkService
 import io.github.nayasis.simplelauncher.service.TextMatcher
+import io.github.nayasis.simplelauncher.service.matchesSearchTokens
 import io.github.oshai.kotlinlogging.KotlinLogging
+import javafx.animation.PauseTransition
+import javafx.beans.property.SimpleStringProperty
+import javafx.beans.value.ChangeListener
 import javafx.beans.value.ObservableValue
 import javafx.geometry.Pos
 import javafx.scene.Node
@@ -42,6 +47,8 @@ import javafx.scene.input.KeyEvent.KEY_PRESSED
 import javafx.scene.layout.AnchorPane
 import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
+import javafx.stage.Stage
+import javafx.stage.WindowEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.javafx.JavaFx
@@ -49,9 +56,9 @@ import kotlinx.coroutines.launch
 import tornadofx.*
 import java.io.File
 import java.time.LocalDateTime
-import java.time.LocalDateTime.now
-import kotlin.concurrent.timer
 import kotlin.coroutines.CoroutineContext
+import javafx.util.Duration
+import javafx.util.StringConverter
 import kotlin.system.exitProcess
 
 private val logger = KotlinLogging.logger {}
@@ -59,6 +66,8 @@ private val logger = KotlinLogging.logger {}
 private const val CLASS_AUTO_COMPLETER = "auto-completer"
 private const val CLASS_ON_DRAG        = "table-row-on-drag"
 private const val DEFAULT_LINK_EDITOR_WIDTH = 400.0
+private const val MIN_LINK_EDITOR_WIDTH = 300.0
+private const val TABLE_ICON_SIZE = 18.0
 
 class Main: View("application.title".message()), CoroutineScope {
 
@@ -70,6 +79,9 @@ class Main: View("application.title".message()), CoroutineScope {
 
     override val root: AnchorPane by fxml("/view/main/main.fxml")
 
+    val titleBar: HBox by fxid()
+
+    val contentPane: SplitPane by fxid()
     val tableMain: TableView<Link> by fxid()
     val colGroup: TableColumn<Link,String> by fxid()
     val colTitle: TableColumn<Link,Link> by fxid()
@@ -86,8 +98,8 @@ class Main: View("application.title".message()), CoroutineScope {
     val menuExportData: MenuItem by fxid()
     val menuDeleteAll: MenuItem by fxid()
 
-    val inputKeyword: TextField by fxid()
-    val inputGroup: TextField by fxid()
+    val inputKeyword: SearchTokenField by fxid()
+    val inputGroup: SearchTokenField by fxid()
 
     val buttonNew: Button by fxid()
     val buttonSave: Button by fxid()
@@ -98,11 +110,11 @@ class Main: View("application.title".message()), CoroutineScope {
     val buttonAddFile: ImageView by fxid()
 
     val descGridPane: GridPane by fxid()
-    val descGroupName: TextField by fxid()
+    val descGroupName: TokenField by fxid()
     val descShowConsole: CheckBox by fxid()
     val descSeqExecution: CheckBox by fxid()
     val descTitle: TextField by fxid()
-    val descHashtag: TextField by fxid()
+    val descHashtag: TokenField by fxid()
     val descDescription: TextArea by fxid()
     val descIcon: ImageView by fxid()
     val descExecPath: TextField by fxid()
@@ -120,22 +132,30 @@ class Main: View("application.title".message()), CoroutineScope {
     val groupMatcher = TextMatcher()
 
     private var lastFocused: Node? = null
+    private var descEditorWidth = Context.config.descEditorWidth?.takeIf { it > 0 } ?: DEFAULT_LINK_EDITOR_WIDTH
+    private var ignoreDescEditorWidthChange = false
+    private var childWindowLifecycleBound = false
+    private var closeRequestBound = false
+    private val searchSubmitTracker = SearchSubmitTracker()
 
     private val favicon       = resources.image("/image/icon/favicon.png")
     private val faviconPinned = resources.image("/image/icon/favicon-pinned.png")
 
     init {
         Localizator(root)
+        WindowHeaderHelper(titleBar)
         initEvent()
         initTable()
     }
 
     override fun onBeforeShow() {
         currentStage?.loadDefaultIcon()
+        bindChildWindowLifecycle()
+        bindCloseRequest()
 
-        // Set minimum window size (200 x 150)
+        // set minimum window size
         currentStage?.let { stage ->
-            stage.minWidth  = 200.0
+            stage.minWidth  = 400.0
             stage.minHeight = 150.0
         }
 
@@ -169,22 +189,120 @@ class Main: View("application.title".message()), CoroutineScope {
 
     }
 
+    private fun bindChildWindowLifecycle() {
+        if(childWindowLifecycleBound) return
+        currentStage?.let(::bindChildWindowLifecycle) ?: root.sceneProperty().addListener { _, _, scene ->
+            scene?.windowProperty()?.addListener { _, _, window ->
+                (window as? Stage)?.let(::bindChildWindowLifecycle)
+            }
+        }
+    }
+
+    private fun bindChildWindowLifecycle(stage: Stage) {
+        if(childWindowLifecycleBound) return
+        stage.addEventHandler(WindowEvent.WINDOW_HIDDEN) {
+            linkExecutor.hideChildWindows()
+        }
+        stage.addEventHandler(WindowEvent.WINDOW_SHOWN) {
+            linkExecutor.restoreChildWindows()
+        }
+        stage.iconifiedProperty().addListener { _, _, iconified ->
+            when(iconified) {
+                true -> linkExecutor.hideChildWindows()
+                else -> linkExecutor.restoreChildWindows()
+            }
+        }
+        stage.showingProperty().addListener { _, _, showing ->
+            when(showing) {
+                true -> linkExecutor.restoreChildWindows()
+                else -> linkExecutor.hideChildWindows()
+            }
+        }
+        childWindowLifecycleBound = true
+    }
+
+    private fun bindCloseRequest() {
+        if(closeRequestBound) return
+        currentStage?.setOnCloseRequest { event ->
+            if(!confirmClose()) {
+                event.consume()
+            } else {
+                saveAppState()
+            }
+        }
+        closeRequestBound = true
+    }
+
+    private fun confirmClose(): Boolean {
+        val hasUnsavedChanges = hasUnsavedChanges()
+        val hasRunningWork = linkExecutor.hasRunningWork()
+        val messageKey = when {
+            hasUnsavedChanges && hasRunningWork -> "msg.confirm.exit.pending.all"
+            hasUnsavedChanges -> "msg.confirm.exit.pending.unsaved"
+            hasRunningWork -> "msg.confirm.exit.pending.running"
+            else -> return true
+        }
+        return Dialog.confirm(messageKey.message())
+    }
+
+    private fun hasUnsavedChanges(): Boolean {
+        val link = detail ?: return false
+        if(link.id <= 0) {
+            return !buttonSave.isDisable
+        }
+        return isDetailModified(link)
+    }
+
+    private fun isDetailModified(link: Link): Boolean {
+        return normalizedTrimmed(descTitle.text) != normalizedTrimmed(link.title)
+            || descGroupName.hasPendingInput()
+            || descGroupName.currentTokens() != link.group
+            || descShowConsole.isSelected != link.showConsole
+            || descSeqExecution.isSelected != link.executeEach
+            || normalizedTrimmed(descDescription.text) != normalizedTrimmed(link.description)
+            || normalizedTrimmed(descExecPath.text) != normalizedTrimmed(link.path)
+            || normalizedTrimmed(descArg.text) != normalizedTrimmed(link.argument)
+            || normalizedTrimmed(descCmdPrefix.text) != normalizedTrimmed(link.commandPrefix)
+            || normalizedText(descCmdPrev.text) != normalizedText(link.commandPrev)
+            || normalizedText(descCmdNext.text) != normalizedText(link.commandNext)
+            || descHashtag.hasPendingInput()
+            || descHashtag.currentTokens() != link.hashtag
+            || descIcon.image != link.iconImage
+    }
+
+    private fun normalizedTrimmed(value: String?): String? {
+        return value?.trim()?.takeIf { it.isNotEmpty() }
+    }
+
+    private fun normalizedText(value: String?): String? {
+        return value?.takeIf { it.isNotEmpty() }
+    }
+
     override fun onUndock() {
+        saveAppState()
+        exitProcess(0)
+    }
+
+    private fun saveAppState() {
         Context.config.run {
+            updateDescEditorWidth()
             lastFocusedLinkId = tableMain.selectedItem?.id
             stageMain = StageProperty(currentStage!!)
+            descEditorWidth = this@Main.descEditorWidth
             save()
         }
-        exitProcess(0)
     }
 
     private fun initTable() {
 
-        colGroup.cellValue(Link::group)
+        colGroup.setCellValueFactory { SimpleStringProperty(formatTokens(it.value.group)) }
         colTitle.cellValueByDefault().cellFormat {
             graphic = hbox {
                 imageview {
                     image = it.iconImage
+                    fitWidth = TABLE_ICON_SIZE
+                    fitHeight = TABLE_ICON_SIZE
+                    isPreserveRatio = true
                     hmargin = Insets(0,0,0,2)
                 }
                 label {
@@ -209,8 +327,6 @@ class Main: View("application.title".message()), CoroutineScope {
 
         linkService.links.bindTo(tableMain)
 
-        tableMain.columnResizePolicy = TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN
-
         tableMain.selectionModel.selectionMode = SelectionMode.SINGLE
 
         tableMain.setOnMouseClicked { event ->
@@ -232,12 +348,19 @@ class Main: View("application.title".message()), CoroutineScope {
         tableMain.setOnKeyPressed { e ->
             when(e.code) {
                 ENTER -> tableMain.selectedItem?.let { linkExecutor.run(it) }
-                ESCAPE -> inputKeyword.requestFocus()
-                DELETE -> tableMain.selectedItem?.let{ deleteLink(it) }
+                ESCAPE -> inputKeyword.focusInput()
+                DELETE -> tableMain.selectedItem?.let{
+                    e.consume()
+                    deleteLink(it)
+                }
                 TAB -> {
                     if( ! e.isShiftDown ) {
                         e.consume()
-                        (if(lastFocused == null || lastFocused == tableMain) descGroupName else lastFocused)!!.requestFocus()
+                        if(lastFocused == null || lastFocused == tableMain) {
+                            descGroupName.focusInput()
+                        } else {
+                            lastFocused!!.requestFocus()
+                        }
                     }
                 }
                 C -> if(e.isControlDown) {
@@ -286,6 +409,9 @@ class Main: View("application.title".message()), CoroutineScope {
 
     private fun initEvent() {
 
+        descGridPane.maxWidth = Double.MAX_VALUE
+        descGridPane.widthProperty().addListener { _, _, _ -> updateDescEditorWidth() }
+
         // global shortcut
         root.setOnKeyPressed { e ->
             if( e.isControlDown ) {
@@ -308,6 +434,10 @@ class Main: View("application.title".message()), CoroutineScope {
                         }
                     }
                     I -> if(!e.isShiftDown) changeIcon()
+                    E -> {
+                        e.consume()
+                        menuViewDesc.isSelected = !menuViewDesc.isSelected
+                    }
                     else -> {}
                 }
             } else if (e.isShiftDown ) {
@@ -345,16 +475,9 @@ class Main: View("application.title".message()), CoroutineScope {
         }
 
         menuViewDesc.selectedProperty().addListener { _, _, show ->
-            (tableMain.parent as HBox).children.also {
-                if(show && descGridPane !in it) {
-                    it.add(descGridPane)
-                    currentStage?.let { stage -> stage.width += if(descGridPane.width <= 0) DEFAULT_LINK_EDITOR_WIDTH else descGridPane.width }
-                } else {
-                    if(descGridPane.width > 0 ) {
-                        currentStage?.let { stage -> stage.width -= descGridPane.width }
-                    }
-                    it.remove(descGridPane)
-                }
+            when {
+                show -> showDescEditor()
+                else -> hideDescEditor()
             }
         }
 
@@ -370,10 +493,11 @@ class Main: View("application.title".message()), CoroutineScope {
             (inputKeyword.parent as HBox).children.also {
                 if(show && group !in it) {
                     it.add(it.indexOf(inputKeyword) + 1, group)
-                    inputGroup.requestFocus()
+                    inputGroup.focusInput()
                 } else {
                     it.remove(group)
-                    inputGroup.text = ""
+                    inputGroup.clearTokens()
+                    submitSearch()
                 }
             }
         }
@@ -441,20 +565,15 @@ class Main: View("application.title".message()), CoroutineScope {
             }
         }
 
-        inputKeyword.addEventFilter(KEY_PRESSED) { e ->
-            if( e.code == ENTER ) {
-                if( tableMain.visibleRows in 1..10 ) {
-                    e.consume()
-                    tableMain.focus(0)
-                    tableMain.selectedItem?.let { link -> linkExecutor.run(link) }
-                }
-            }
+        inputKeyword.onPlainEnter = {
+            handleSearchEnter(saveKeywordHistory = true)
+        }
+        inputKeyword.onEscape = {
+            tableMain.requestFocus()
         }
 
-        inputGroup.addEventFilter(KEY_PRESSED) { e ->
-            if( e.code == ESCAPE ) {
-                inputKeyword.requestFocus()
-            }
+        inputGroup.onEscape = {
+            inputKeyword.focusInput()
         }
 
         descGridPane.allChildren.let{ children ->
@@ -495,11 +614,136 @@ class Main: View("application.title".message()), CoroutineScope {
         descGridPane.children.filterIsInstance<TextInputControl>().forEach {
             it.textProperty().addListener(listener)
         }
+        descHashtag.addEventFilter(KEY_PRESSED) { e ->
+            if( e.code == ESCAPE ) {
+                lastFocused = descHashtag
+                tableMain.requestFocus()
+            }
+        }
+        descHashtag.onTokenChanged = { buttonSave.isDisable = false }
+        descGroupName.addEventFilter(KEY_PRESSED) { e ->
+            if( e.code == ESCAPE ) {
+                lastFocused = descGroupName
+                tableMain.requestFocus()
+            }
+        }
+        descGroupName.onTokenChanged = { buttonSave.isDisable = false }
         descIcon.imageProperty().addListener(listener)
 
     }
 
+    private fun updateDescEditorWidth() {
+        if(ignoreDescEditorWidthChange) {
+            return
+        }
+        if(descGridPane !in contentPane.items) {
+            return
+        }
+        if(descGridPane.width > 0) {
+            descEditorWidth = descGridPane.width
+        }
+    }
+
+    private fun showDescEditor() {
+        if(descGridPane in contentPane.items) return
+        val width = descEditorWidth
+        val targetPaneWidth = contentPane.width + width
+        ignoreDescEditorWidthChange = true
+        constrainDescEditorWidth(width)
+        contentPane.items.add(descGridPane)
+        currentStage?.let { stage -> stage.width += width }
+        restoreDescEditorWidthWhenReady(width, targetPaneWidth)
+    }
+
+    private fun hideDescEditor() {
+        if(descGridPane !in contentPane.items) return
+        val width = descGridPane.width.takeIf { it > 0 } ?: descEditorWidth
+        descEditorWidth = width
+        ignoreDescEditorWidthChange = true
+        if(contentPane.width > 0 && descGridPane.width > 0) {
+            currentStage?.let { stage -> stage.width -= width }
+        }
+        contentPane.items.remove(descGridPane)
+        runLater {
+            descEditorWidth = width
+            ignoreDescEditorWidthChange = false
+        }
+    }
+
+    private fun restoreDescEditorWidth(editorWidth: Double = descEditorWidth) {
+        if(descGridPane !in contentPane.items) {
+            return
+        }
+        val width = contentPane.width
+        if(width <= editorWidth) {
+            return
+        }
+        val divider = ((width - splitPaneDividerWidth() - editorWidth) / width).coerceIn(0.1, 0.9)
+        contentPane.setDividerPositions(divider)
+        descEditorWidth = editorWidth
+    }
+
+    private fun restoreDescEditorWidthWhenReady(editorWidth: Double, targetPaneWidth: Double) {
+        var applied = false
+        var listener: ChangeListener<Number>? = null
+        fun applyIfReady(force: Boolean) {
+            if(applied) return
+            val ready = isDescEditorLayoutReady(targetPaneWidth)
+            if(!ready && !force) return
+            applied = true
+            listener?.let { contentPane.widthProperty().removeListener(it) }
+            restoreDescEditorWidth(editorWidth)
+            PauseTransition(Duration.millis(80.0)).apply {
+                setOnFinished {
+                    releaseDescEditorWidthConstraint(editorWidth)
+                    descEditorWidth = descGridPane.width.takeIf { it > 0 } ?: editorWidth
+                    ignoreDescEditorWidthChange = false
+                }
+                play()
+            }
+        }
+        listener = ChangeListener { _, _, _ ->
+            runLater { applyIfReady(false) }
+        }
+        contentPane.widthProperty().addListener(listener)
+        runLater { applyIfReady(false) }
+        PauseTransition(Duration.millis(250.0)).apply {
+            setOnFinished { applyIfReady(true) }
+            play()
+        }
+    }
+
+    private fun isDescEditorLayoutReady(targetPaneWidth: Double): Boolean {
+        return contentPane.width >= targetPaneWidth - 1
+            && tableMain.width > 0
+            && descGridPane.width > 0
+            && splitPaneDividerWidth() > 0
+    }
+
+    private fun splitPaneDividerWidth(): Double {
+        val dividerNodeWidth = contentPane.lookupAll(".split-pane-divider")
+            .sumOf { it.boundsInParent.width }
+            .takeIf { it > 0 }
+        if(dividerNodeWidth != null) return dividerNodeWidth
+
+        val itemWidth = contentPane.items.sumOf { it.boundsInParent.width }
+        return (contentPane.width - itemWidth).coerceAtLeast(0.0)
+    }
+
+    private fun constrainDescEditorWidth(width: Double) {
+        descGridPane.minWidth = width
+        descGridPane.prefWidth = width
+        descGridPane.maxWidth = width
+    }
+
+    private fun releaseDescEditorWidthConstraint(width: Double) {
+        descGridPane.minWidth = MIN_LINK_EDITOR_WIDTH
+        descGridPane.prefWidth = width
+        descGridPane.maxWidth = Double.MAX_VALUE
+    }
+
     private fun initSearchFilter() {
+        restoreSearchState()
         keywordMatcher.setKeyword(inputKeyword.text)
         groupMatcher.setKeyword(inputGroup.text)
         setSearchFilter()
@@ -510,8 +754,17 @@ class Main: View("application.title".message()), CoroutineScope {
         val hasKeyword = inputKeyword.text.isNotBlank()
         val hasGroup   = inputGroup.text.isNotBlank()
         linkService.links.predicate = {
-            val inKeyword = ! hasKeyword || keywordMatcher.isMatch(it.keywordTitle)
-            val inGroup   = ! hasGroup   || groupMatcher.isMatch(it.keywordGroup)
+            val keywordHaystack = listOf(it.title) + it.hashtag
+            val inKeyword = when {
+                inputKeyword.hasTokens() -> matchesSearchTokens(keywordHaystack, inputKeyword.tokens())
+                hasKeyword -> keywordMatcher.isMatch(keywordHaystack)
+                else -> true
+            }
+            val inGroup = when {
+                inputGroup.hasTokens() -> matchesSearchTokens(it.group, inputGroup.tokens())
+                hasGroup -> groupMatcher.isMatch(it.group)
+                else -> true
+            }
             inKeyword && inGroup
         }
         printSearchResult()
@@ -519,60 +772,220 @@ class Main: View("application.title".message()), CoroutineScope {
 
     private fun setSearchEvent() {
 
-        var lastModified: LocalDateTime? = null
-
-        timer(period = 100) {
-            if( lastModified != null && now().between(lastModified!!).toMillis() < 300 ) {
-                lastModified = null
-                runLater {
-                    listOf(inputKeyword,inputGroup).forEach { it.isDisable = true }
-                    setSearchFilter()
-                    listOf(inputKeyword,inputGroup).forEach { it.isDisable = false }
-                }
-            }
+        inputGroup.onPlainEnter = {
+            handleSearchEnter()
         }
 
-        inputKeyword.textProperty().onChange{
-            keywordMatcher.setKeyword(it)
-            lastModified = now()
+        applySearchHistory(inputKeyword) { compactSearchHistory(Context.config.historySearch) }
+        applyAutoCompletion(inputGroup.input, { groupTokenSuggestions(inputGroup.currentTermValues()) })
+        applyLiveAutoCompletion(descGroupName.input, { allGroupTokenSuggestions(descGroupName.currentTokens()) }) {
+            descGroupName.commitInput()
         }
-        inputGroup.textProperty().onChange{
-            groupMatcher.setKeyword(it)
-            lastModified = now()
+        applyAutoCompletion(descHashtag.input, { hashtagSuggestions() }) {
+            descHashtag.commitInput()
         }
-
-        applyAutoCompletion(inputKeyword, Context.config.historyKeyword)
 
     }
 
-    private fun applyAutoCompletion(textField: TextField, suggestion: HistorySet<String>) {
+    private fun restoreSearchState() {
+        Context.config.lastSearchState
+            ?.let { inputKeyword.setSearchState(it) }
+            ?: inputKeyword.setSearchText(Context.config.lastSearchKeyword)
+    }
+
+    private fun submitSearch(saveKeywordHistory: Boolean = false) {
+        keywordMatcher.setKeyword(inputKeyword.text)
+        groupMatcher.setKeyword(inputGroup.text)
+        setSearchFilter()
+        if(saveKeywordHistory) {
+            saveSubmittedKeyword()
+        }
+    }
+
+    private fun handleSearchEnter(saveKeywordHistory: Boolean = false) {
+        val snapshot = searchSubmitSnapshot()
+        when(searchSubmitTracker.nextAction(snapshot)) {
+            SearchSubmitAction.SUBMIT -> {
+                submitSearch(saveKeywordHistory)
+                if(snapshot.isBlank() && tableMain.visibleRows in 1..10) {
+                    runFirstSearchResult()
+                }
+            }
+            SearchSubmitAction.RUN_FIRST_RESULT -> runFirstSearchResult()
+        }
+    }
+
+    private fun searchSubmitSnapshot(): SearchSubmitSnapshot {
+        return SearchSubmitSnapshot(
+            keyword = inputKeyword.searchText(),
+            group = inputGroup.searchText(),
+        )
+    }
+
+    private fun runFirstSearchResult() {
+        val link = tableMain.items.firstOrNull() ?: return
+        tableMain.focus(0)
+        tableMain.selectionModel.select(link)
+        linkExecutor.run(link)
+    }
+
+    private fun saveSubmittedKeyword() {
+        val state = inputKeyword.searchState().takeIf { !it.isBlank() }
+        Context.config.lastSearchState = state
+        Context.config.lastSearchKeyword = state?.displayText()
+        state?.let { replaceSearchHistory(it) }
+        Context.config.save()
+    }
+
+    private fun replaceSearchHistory(state: SearchFieldState) {
+        val displayText = state.displayText()
+        Context.config.historySearch.toList()
+            .filter { it.displayText() == displayText }
+            .forEach { Context.config.historySearch.remove(it) }
+        Context.config.historySearch.add(state)
+    }
+
+    private fun compactSearchHistory(history: HistorySet<SearchFieldState>): HistorySet<SearchFieldState> {
+        val statesByText = LinkedHashMap<String, SearchFieldState>()
+        history.toList().forEach { state ->
+            val displayText = state.displayText()
+            if(displayText.isNotBlank()) {
+                val existing = statesByText[displayText]
+                if(existing == null || state.tokens.isNotEmpty() || existing.tokens.isEmpty()) {
+                    statesByText.remove(displayText)
+                    statesByText[displayText] = state
+                }
+            }
+        }
+        return HistorySet<SearchFieldState>(statesByText.size.coerceAtLeast(1)).apply {
+            statesByText.values.forEach { add(it) }
+        }
+    }
+
+    private fun applySearchHistory(
+        field: SearchTokenField,
+        suggestions: () -> HistorySet<SearchFieldState>,
+    ) {
+        var autoCompleter: SearchHistoryAutoCompletionText? = null
+        var suggestion: HistorySet<SearchFieldState>? = null
+
+        fun setSearch(state: SearchFieldState?) {
+            state ?: return
+            field.setSearchState(state)
+        }
+
+        field.input.addEventFilter(KEY_PRESSED) { e ->
+            when {
+                e.code == ESCAPE -> {
+                    field.input.removeClass(CLASS_AUTO_COMPLETER)
+                    autoCompleter?.dispose()
+                    autoCompleter = null
+                    suggestion = null
+                }
+                e.isAltDown -> {
+                    when (e.code) {
+                        DOWN -> if(autoCompleter == null) {
+                            suggestion = suggestions()
+                            field.input.addClass(CLASS_AUTO_COMPLETER)
+                            autoCompleter = SearchHistoryAutoCompletionText(field.input, suggestion!!)
+                            autoCompleter?.setOnAutoCompleted { event ->
+                                field.input.removeClass(CLASS_AUTO_COMPLETER)
+                                autoCompleter?.dispose()
+                                autoCompleter = null
+                                suggestion = null
+                                field.setSearchState(event.completion)
+                            }
+                            autoCompleter?.show()
+                        }
+                        LEFT -> {
+                            setSearch((suggestion ?: suggestions().also { suggestion = it }).prev())
+                            e.consume()
+                        }
+                        RIGHT -> {
+                            setSearch((suggestion ?: suggestions().also { suggestion = it }).next())
+                            e.consume()
+                        }
+                        else -> {}
+                    }
+                }
+            }
+        }
+    }
+
+    private fun applyAutoCompletion(
+        textField: TextField,
+        suggestions: () -> HistorySet<String>,
+        onAutoCompleted: (() -> Unit)? = null,
+    ) {
         var autoCompleter: AutoCompletionText? = null
+        var suggestion: HistorySet<String>? = null
         textField.addEventFilter(KEY_PRESSED) { e ->
             when {
                 e.code == ESCAPE -> {
                     textField.removeClass(CLASS_AUTO_COMPLETER)
                     autoCompleter?.dispose()
                     autoCompleter = null
+                    suggestion = null
                 }
                 e.isAltDown -> {
                     when (e.code) {
                         DOWN -> if( autoCompleter == null ) {
+                            suggestion = suggestions()
                             textField.addClass(CLASS_AUTO_COMPLETER)
-                            autoCompleter = AutoCompletionText(textField, suggestion)
+                            autoCompleter = AutoCompletionText(textField, suggestion!!)
                             autoCompleter?.setOnAutoCompleted {
                                 textField.removeClass(CLASS_AUTO_COMPLETER)
                                 autoCompleter?.dispose()
                                 autoCompleter = null
-                                setSearchFilter()
+                                suggestion = null
+                                onAutoCompleted?.invoke()
                             }
                             autoCompleter?.show()
                         }
-                        LEFT  -> suggestion.prev()?.let { textField.text = it }
-                        RIGHT -> suggestion.next()?.let { textField.text = it }
+                        LEFT  -> (suggestion ?: suggestions().also { suggestion = it }).prev()?.let { textField.text = it }
+                        RIGHT -> (suggestion ?: suggestions().also { suggestion = it }).next()?.let { textField.text = it }
                         else -> {}
                     }
                 }
             }
+        }
+    }
+
+    private fun applyLiveAutoCompletion(
+        textField: TextField,
+        suggestions: () -> HistorySet<String>,
+        onAutoCompleted: (() -> Unit)? = null,
+    ) {
+        val autoCompleter = AutoCompletionTextFieldBinding<String>(textField) { request ->
+            val userText = request.userText?.trim() ?: ""
+            if(request.isCancelled || userText.isBlank()) {
+                emptyList()
+            } else {
+                suggestions().toList().filter { it.contains(userText, ignoreCase = true) }
+            }
+        }
+        autoCompleter.setDelay(0)
+        autoCompleter.setOnAutoCompleted {
+            onAutoCompleted?.invoke()
+        }
+        textField.properties["liveAutoCompleter"] = autoCompleter
+    }
+
+    private fun hashtagSuggestions(): HistorySet<String> {
+        return HistorySet<String>(512).apply {
+            linkService.hashtagSuggestions().forEach { add(it) }
+        }
+    }
+
+    private fun allGroupTokenSuggestions(excludedTokens: Iterable<String>): HistorySet<String> {
+        return HistorySet<String>(512).apply {
+            linkService.groupTokenSuggestions(excludedTokens).forEach { add(it) }
+        }
+    }
+
+    private fun groupTokenSuggestions(selectedTokens: Iterable<String>): HistorySet<String> {
+        return HistorySet<String>(512).apply {
+            linkService.groupTokenSuggestions(selectedTokens, selectedTokens).forEach { add(it) }
         }
     }
 
@@ -613,10 +1026,10 @@ class Main: View("application.title".message()), CoroutineScope {
     private fun clearDetail() {
         // reset description
         descTitle.text               = null
-        descHashtag.text                 = null
+        descHashtag.clearTokens()
         descShowConsole.isSelected   = false
         descSeqExecution.isSelected  = false
-        descGroupName.text           = null
+        descGroupName.clearTokens()
         descDescription.text         = null
         descExecPath.text            = null
         descArg.text                 = null
@@ -636,10 +1049,10 @@ class Main: View("application.title".message()), CoroutineScope {
         detail = link
         with(detail!!) {
             descTitle.text               = title
-            descHashtag.text             = hashtag
+            descHashtag.setTokens(hashtag)
             descShowConsole.isSelected   = showConsole
             descSeqExecution.isSelected  = executeEach
-            descGroupName.text           = group
+            descGroupName.setTokens(group)
             descDescription.text         = description
             descExecPath.text            = path
             descArg.text                 = argument
@@ -663,14 +1076,15 @@ class Main: View("application.title".message()), CoroutineScope {
         buttonDelete.isDisable = true
         buttonCopy.isDisable   = true
         buttonSave.isDisable   = false
-        descGroupName.requestFocus()
+        descGroupName.focusInput()
     }
 
     fun deleteLink(link: Link?) {
 
         if( link == null ) return
 
-        val summary = if( ! link.group.isNullOrEmpty() ) "[${link.group}] ${link.title}" else "${link.title}"
+        val group = formatTokens(link.group)
+        val summary = if( group.isNotEmpty() ) "[$group] ${link.title}" else "${link.title}"
 
         if( ! Dialog.confirm("msg.confirm.delete".message().format(summary)) ) return
 
@@ -689,10 +1103,10 @@ class Main: View("application.title".message()), CoroutineScope {
         detail?.let {
 
             it.title         = descTitle.text?.trim()
-            it.hashtag       = descHashtag.text?.trim()
+            it.hashtag       = descHashtag.getTokens()
             it.showConsole   = descShowConsole.isSelected
             it.executeEach   = descSeqExecution.isSelected
-            it.group         = descGroupName.text?.trim()
+            it.group         = descGroupName.getTokens()
             it.description   = descDescription.text?.trim()
             it.path          = descExecPath.text?.trim()
             it.argument      = descArg.text?.trim()
@@ -701,7 +1115,7 @@ class Main: View("application.title".message()), CoroutineScope {
             it.commandNext   = descCmdNext.text
             it.iconImage     = descIcon.image
 
-            linkService.save(it.refreshIndex())
+            linkService.save(it)
 
             runLater {
                 tableMain.selectBy(it)
@@ -728,7 +1142,7 @@ class Main: View("application.title".message()), CoroutineScope {
 
     fun createDetail() {
         drawDetail(Link(icon = ICON_NEW))
-        descGroupName.requestFocus()
+        descGroupName.focusInput()
         printStatus("msg.alert.create.link".message())
         buttonDelete.isDisable = true
         buttonCopy.isDisable = true
@@ -775,6 +1189,29 @@ class AutoCompletionText(
     val textField: TextField,
     val suggestion: HistorySet<String>
 ): AutoCompletionTextFieldBinding<String>(textField, SuggestionProvider.create(suggestion.toList())) {
+    fun show() {
+        if(suggestion.isEmpty() || textField.text.isBlank() ) return
+        super.setUserInput(textField.text)
+        super.showPopup()
+    }
+}
+
+class SearchHistoryAutoCompletionText(
+    val textField: TextField,
+    val suggestion: HistorySet<SearchFieldState>
+): AutoCompletionTextFieldBinding<SearchFieldState>(
+    textField,
+    SuggestionProvider.create({ it.displayText() }, suggestion.toList()),
+    object: StringConverter<SearchFieldState>() {
+        override fun toString(value: SearchFieldState?): String {
+            return value?.displayText() ?: ""
+        }
+
+        override fun fromString(value: String?): SearchFieldState {
+            return SearchFieldState(text = value?.trim())
+        }
+    },
+) {
     fun show() {
         if(suggestion.isEmpty() || textField.text.isBlank() ) return
         super.setUserInput(textField.text)

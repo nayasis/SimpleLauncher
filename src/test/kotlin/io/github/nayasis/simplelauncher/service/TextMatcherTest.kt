@@ -8,12 +8,36 @@ internal class TextMatcherTest {
     @Test
     fun test() {
 
-        val keyword = setOf("autohotkey", "dev", "spy", "au3")
+        val keyword = listOf("autohotkey", "dev", "spy", "au3")
         val matcher = TextMatcher()
         matcher.setKeyword("a d")
 
         assertTrue( matcher.isMatch(keyword) )
 
+    }
+
+    @Test
+    fun fuzzyMatchTitle() {
+        val matcher = TextMatcher()
+        matcher.setKeyword("ff")
+
+        assertTrue(matcher.isMatch("final fantasy"))
+    }
+
+    @Test
+    fun fuzzyMatchGroup() {
+        val matcher = TextMatcher()
+        matcher.setKeyword("dtl")
+
+        assertTrue(matcher.isMatch("developer tool"))
+    }
+
+    @Test
+    fun fuzzyMatchHashtagTokens() {
+        val matcher = TextMatcher()
+        matcher.setKeyword("ahk")
+
+        assertTrue(matcher.isMatch(listOf("auto hotkey", "script")))
     }
 
 }

@@ -1,6 +1,5 @@
 package io.github.nayasis.simplelauncher.service
 
-import io.github.nayasis.kotlin.basica.core.string.find
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -17,7 +16,7 @@ internal class KeywordParserTest {
 
     private fun filter(list: List<String>, searchWord: String): List<String> {
         val keyword = parser.parse(searchWord).also { if(it.isEmpty()) return emptyList() }
-        return list.filter { title -> keyword.match { pattern -> title.find(pattern) } }
+        return list.filter { title -> keyword.match { term -> matchesSearchTerm(title, term) } }
     }
 
     @Test

@@ -5,12 +5,10 @@ import com.dshatz.exposed_crud.Entity
 import com.dshatz.exposed_crud.Id
 import com.dshatz.exposed_crud.LargeText
 import io.github.nayasis.kotlin.basica.core.extension.ifEmpty
-import io.github.nayasis.kotlin.basica.core.extension.runIfNotEmpty
 import io.github.nayasis.kotlin.basica.core.io.Paths
 import io.github.nayasis.kotlin.basica.core.io.exists
 import io.github.nayasis.kotlin.basica.core.io.invariantPath
 import io.github.nayasis.kotlin.basica.core.io.toRelativeOrSelf
-import io.github.nayasis.kotlin.basica.core.string.runIfNotBlank
 import io.github.nayasis.kotlin.basica.core.string.toPath
 import io.github.nayasis.kotlin.basica.etc.Platforms
 import io.github.nayasis.kotlin.basica.etc.error
@@ -19,7 +17,6 @@ import io.github.nayasis.kotlin.javafx.misc.toBinary
 import io.github.nayasis.kotlin.javafx.misc.toIconImage
 import io.github.nayasis.kotlin.javafx.misc.toImage
 import io.github.nayasis.simplelauncher.common.Context
-import io.github.nayasis.simplelauncher.common.toKeyword
 import io.github.oshai.kotlinlogging.KotlinLogging
 import javafx.scene.image.Image
 import mslinks.ShellLink
@@ -41,8 +38,9 @@ data class Link(
     var id: Long = -1,
     @Column(length = 300)
     var title: String? = null,
+    var group: HashSet<String> = hashSetOf(),
     @Column(name = "a_group", length = 300)
-    var group: String? = null,
+    var groupJson: String? = null,
     @Column(length = 2000)
     var path: String? = null,
     @Column(length = 2000)
@@ -64,8 +62,9 @@ data class Link(
     @Column
     @LargeText
     var description: String? = null,
-    @Column(length = 2000)
-    var hashtag: String? = null,
+    var hashtag: HashSet<String> = hashSetOf(),
+    @Column(name = "hashtag", length = 2000)
+    var hashtagJson: String? = null,
     @Column(name = "exe_count")
     var executeCount: Int = 0,
     @Column
@@ -76,8 +75,6 @@ data class Link(
     var updatedAt: LocalDateTime = LocalDateTime.now(),
 ) {
 
-    val keywordTitle: HashSet<String> = HashSet()
-    val keywordGroup: HashSet<String> = HashSet()
     var iconImage: Image? = null
         get() {
             if( field == null && icon != null ) {
@@ -89,6 +86,16 @@ data class Link(
             field = value
             icon = value?.toBinary(ICON_IMAGE_TYPE)
         }
+
+    init {
+        if (group.isEmpty() && !groupJson.isNullOrBlank()) {
+            group = decodeStoredTokens(groupJson)
+        }
+        if (hashtag.isEmpty() && !hashtagJson.isNullOrBlank()) {
+            hashtag = decodeStoredHashtags(hashtagJson)
+        }
+        syncTokenStorage()
+    }
 
     fun setPath(file: File) {
         this.path = file.invariantSeparatorsPath
@@ -179,22 +186,21 @@ data class Link(
         return null
     }
 
-    fun refreshIndex(): Link {
-        keywordTitle.run {
-            clear()
-            title.runIfNotBlank { addAll(it.toKeyword()) }
-            hashtag.runIfNotEmpty { addAll(it.toKeyword()) }
-        }
-        keywordGroup.run {
-            group.runIfNotBlank { addAll(it.toKeyword()) }
-        }
+    fun syncTokenStorage(): Link {
+        group = normalizeTokens(group)
+        groupJson = encodeTokens(group)
+        hashtag = normalizeHashtags(hashtag)
+        hashtagJson = encodeHashtags(hashtag)
         return this
     }
+
+    fun syncHashtagStorage(): Link = syncTokenStorage()
 
     fun clone(): Link {
         return this.let { Link(
             title         = it.title,
-            group         = it.group,
+            group         = HashSet(it.group),
+            groupJson     = it.groupJson,
             path          = it.path,
             relativePath  = it.relativePath,
             showConsole   = it.showConsole,
@@ -205,7 +211,8 @@ data class Link(
             commandPrev   = it.commandPrev,
             commandNext   = it.commandNext,
             description   = it.description,
-            hashtag       = it.hashtag,
+            hashtag       = HashSet(it.hashtag),
+            hashtagJson   = it.hashtagJson,
             executeCount  = it.executeCount,
             executedAt    = it.executedAt,
             createdAt     = it.createdAt,

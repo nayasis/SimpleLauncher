@@ -9,6 +9,7 @@
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.SplitPane?>
 <?import javafx.scene.control.TableColumn?>
 <?import javafx.scene.control.TableView?>
 <?import javafx.scene.control.TextArea?>
@@ -23,76 +24,79 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
+<?import io.github.nayasis.simplelauncher.view.SearchTokenField?>
+<?import io.github.nayasis.simplelauncher.view.TokenField?>
 
 <AnchorPane fx:id="root" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="659.0" prefWidth="1000.0" stylesheets="@main.css" xmlns="http://javafx.com/javafx/18" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <VBox minWidth="600.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
          <children>
-            <MenuBar fx:id="menubarTop" prefHeight="15.0" prefWidth="919.0">
-              <menus>
-                <Menu mnemonicParsing="false" text="\%menu.file">
-                  <items>
-                    <MenuItem fx:id="menuImportData" mnemonicParsing="false" text="\%menu.file.import">
-                           <accelerator>
-                              <KeyCodeCombination alt="UP" code="I" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
-                           </accelerator>
-                        </MenuItem>
-                        <MenuItem fx:id="menuExportData" mnemonicParsing="false" text="\%menu.file.export">
-                           <accelerator>
-                              <KeyCodeCombination alt="UP" code="X" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
-                           </accelerator>
-                        </MenuItem>
-                        <MenuItem fx:id="menuDeleteAll" mnemonicParsing="false" text="\%menu.file.clear" />
-                  </items>
-                </Menu>
-                <Menu mnemonicParsing="false" text="\%menu.view">
-                  <items>
-                        <CheckMenuItem fx:id="menuViewDesc" mnemonicParsing="false" selected="true" text="\%menu.view.description">
-                           <accelerator>
-                              <KeyCodeCombination alt="DOWN" code="E" control="UP" meta="UP" shift="UP" shortcut="UP" />
-                           </accelerator>
-                        </CheckMenuItem>
-                        <CheckMenuItem fx:id="menuViewMenuBar" mnemonicParsing="false" selected="true" text="\%menu.view.showMenuBar">
-                           <accelerator>
-                              <KeyCodeCombination alt="DOWN" code="V" control="UP" meta="UP" shift="UP" shortcut="UP" />
-                           </accelerator>
-                        </CheckMenuItem>
-                        <CheckMenuItem fx:id="menuShowInputGroup" mnemonicParsing="false" selected="true" text="\%menu.view.showInputGroup">
-                           <accelerator>
-                              <KeyCodeCombination alt="DOWN" code="G" control="UP" meta="UP" shift="UP" shortcut="UP" />
-                           </accelerator>
-                        </CheckMenuItem>
-                        <CheckMenuItem fx:id="menuAlwaysOnTop" mnemonicParsing="false" text="\%menu.view.alwaysOnTop">
-                           <accelerator>
-                              <KeyCodeCombination alt="UP" code="F" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
-                           </accelerator>
-                        </CheckMenuItem>
-                  </items>
-                </Menu>
-                <Menu mnemonicParsing="false" text="\%menu.help">
-                  <items>
-                    <MenuItem fx:id="menuHelp" mnemonicParsing="false" text="\%menu.help.about">
-                           <accelerator>
-                              <KeyCodeCombination alt="ANY" code="F1" control="UP" meta="UP" shift="UP" shortcut="UP" />
-                           </accelerator>
-                        </MenuItem>
-                  </items>
-                </Menu>
-              </menus>
-               <VBox.margin>
-                  <Insets />
-               </VBox.margin>
-            </MenuBar>
+            <HBox fx:id="titleBar" alignment="CENTER_LEFT" spacing="0.0">
+               <children>
+                  <MenuBar fx:id="menubarTop" styleClass="window-menu-bar">
+                    <menus>
+                      <Menu mnemonicParsing="false" text="\%menu.file">
+                        <items>
+                          <MenuItem fx:id="menuImportData" mnemonicParsing="false" text="\%menu.file.import">
+                                 <accelerator>
+                                    <KeyCodeCombination alt="UP" code="I" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
+                                 </accelerator>
+                              </MenuItem>
+                              <MenuItem fx:id="menuExportData" mnemonicParsing="false" text="\%menu.file.export">
+                                 <accelerator>
+                                    <KeyCodeCombination alt="UP" code="X" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
+                                 </accelerator>
+                              </MenuItem>
+                              <MenuItem fx:id="menuDeleteAll" mnemonicParsing="false" text="\%menu.file.clear" />
+                        </items>
+                      </Menu>
+                      <Menu mnemonicParsing="false" text="\%menu.view">
+                        <items>
+                              <CheckMenuItem fx:id="menuViewDesc" mnemonicParsing="false" selected="true" text="\%menu.view.description">
+                                 <accelerator>
+                                    <KeyCodeCombination alt="UP" code="E" control="DOWN" meta="UP" shift="UP" shortcut="UP" />
+                                 </accelerator>
+                              </CheckMenuItem>
+                              <CheckMenuItem fx:id="menuViewMenuBar" mnemonicParsing="false" selected="true" text="\%menu.view.showMenuBar">
+                                 <accelerator>
+                                    <KeyCodeCombination alt="DOWN" code="V" control="UP" meta="UP" shift="UP" shortcut="UP" />
+                                 </accelerator>
+                              </CheckMenuItem>
+                              <CheckMenuItem fx:id="menuShowInputGroup" mnemonicParsing="false" selected="true" text="\%menu.view.showInputGroup">
+                                 <accelerator>
+                                    <KeyCodeCombination alt="DOWN" code="G" control="UP" meta="UP" shift="UP" shortcut="UP" />
+                                 </accelerator>
+                              </CheckMenuItem>
+                              <CheckMenuItem fx:id="menuAlwaysOnTop" mnemonicParsing="false" text="\%menu.view.alwaysOnTop">
+                                 <accelerator>
+                                    <KeyCodeCombination alt="UP" code="F" control="DOWN" meta="UP" shift="DOWN" shortcut="UP" />
+                                 </accelerator>
+                              </CheckMenuItem>
+                        </items>
+                      </Menu>
+                      <Menu mnemonicParsing="false" text="\%menu.help">
+                        <items>
+                          <MenuItem fx:id="menuHelp" mnemonicParsing="false" text="\%menu.help.about">
+                                 <accelerator>
+                                    <KeyCodeCombination alt="ANY" code="F1" control="UP" meta="UP" shift="UP" shortcut="UP" />
+                                 </accelerator>
+                              </MenuItem>
+                        </items>
+                      </Menu>
+                    </menus>
+                  </MenuBar>
+               </children>
+            </HBox>
             <HBox alignment="CENTER_LEFT" prefHeight="30.0" spacing="5.0">
                <children>
                   <Label alignment="CENTER_RIGHT" minWidth="-Infinity" text="\%search.keyword">
                      <HBox.margin>
                         <Insets left="2.0" />
                      </HBox.margin></Label>
-                  <TextField fx:id="inputKeyword" minWidth="100.0" HBox.hgrow="ALWAYS">
+                  <SearchTokenField fx:id="inputKeyword" minWidth="100.0" HBox.hgrow="ALWAYS">
                      <HBox.margin>
                         <Insets left="5.0" />
-                     </HBox.margin></TextField>
+                     </HBox.margin></SearchTokenField>
                   <HBox alignment="CENTER">
                      <children>
                         <Label minWidth="-Infinity" text="\%search.group">
@@ -100,11 +104,11 @@
                               <Insets left="10.0" />
                            </HBox.margin>
                         </Label>
-                        <TextField fx:id="inputGroup">
+                        <SearchTokenField fx:id="inputGroup" minWidth="140.0" prefWidth="220.0">
                            <HBox.margin>
                               <Insets left="5.0" />
                            </HBox.margin>
-                        </TextField>
+                        </SearchTokenField>
                      </children>
                   </HBox>
                   <HBox alignment="CENTER_RIGHT" maxWidth="100.0" HBox.hgrow="ALWAYS">
@@ -136,9 +140,9 @@
                   <Insets bottom="2.0" left="5.0" right="5.0" top="2.0" />
                </VBox.margin>
             </HBox>
-            <HBox spacing="10.0" VBox.vgrow="ALWAYS">
-               <children>
-                  <TableView fx:id="tableMain" minWidth="150.0" tableMenuButtonVisible="true" HBox.hgrow="ALWAYS">
+            <SplitPane fx:id="contentPane" dividerPositions="0.6" VBox.vgrow="ALWAYS">
+               <items>
+                  <TableView fx:id="tableMain" minWidth="150.0" tableMenuButtonVisible="true">
                     <columns>
                       <TableColumn fx:id="colGroup"      maxWidth="1000.0" minWidth="50.0" prefWidth="100.0" text="\%table.groupName" />
                       <TableColumn fx:id="colTitle"      maxWidth="1000.0" minWidth="80.0" prefWidth="253.0" text="\%table.title" />
@@ -146,7 +150,7 @@
                       <TableColumn fx:id="colExecCount"  maxWidth="200.0"  minWidth="50.0" prefWidth="50.0"  text="\%table.execCount" />
                     </columns>
                   </TableView>
-                  <GridPane fx:id="descGridPane" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="400.0" HBox.hgrow="ALWAYS">
+                  <GridPane fx:id="descGridPane" minWidth="300.0" prefWidth="400.0">
                      <children>
                         <Label text="\%desc.groupName" textAlignment="RIGHT" wrapText="true" GridPane.rowIndex="1">
                            <GridPane.margin>
@@ -195,13 +199,13 @@
                         </Label>
                         <HBox alignment="CENTER_LEFT" prefHeight="100.0" prefWidth="200.0" spacing="5.0" GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="1" GridPane.vgrow="ALWAYS">
                            <children>
-                              <TextField fx:id="descGroupName" />
-                              <CheckBox fx:id="descShowConsole" mnemonicParsing="false" text="\%desc.showConsole" />
-                              <CheckBox fx:id="descSeqExecution" mnemonicParsing="false" text="\%desc.execution.sequential" />
+                              <TokenField fx:id="descGroupName" minWidth="140.0" prefWidth="220.0" HBox.hgrow="ALWAYS" />
+                              <CheckBox fx:id="descShowConsole" minWidth="-Infinity" mnemonicParsing="false" text="\%desc.showConsole" />
+                              <CheckBox fx:id="descSeqExecution" minWidth="-Infinity" mnemonicParsing="false" text="\%desc.execution.sequential" />
                            </children>
                         </HBox>
                         <TextField fx:id="descTitle" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                        <TextField fx:id="descHashtag" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                        <TokenField fx:id="descHashtag" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                         <TextArea fx:id="descDescription" prefWidth="330.0" wrapText="true" GridPane.columnIndex="1" GridPane.rowIndex="4">
                            <opaqueInsets>
                               <Insets />
@@ -319,11 +323,11 @@
                         <RowConstraints minHeight="30.0" prefHeight="60.0" vgrow="SOMETIMES" />
                      </rowConstraints>
                   </GridPane>
-               </children>
+               </items>
                <VBox.margin>
                   <Insets left="5.0" right="5.0" />
                </VBox.margin>
-            </HBox>
+            </SplitPane>
             <GridPane alignment="CENTER_LEFT" maxHeight="-Infinity" minHeight="-Infinity" prefHeight="20.0" VBox.vgrow="ALWAYS">
               <columnConstraints>
                 <ColumnConstraints />

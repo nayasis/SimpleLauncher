@@ -5,6 +5,7 @@ import io.github.nayasis.simplelauncher.common.ExposedHelper
 import io.github.nayasis.simplelauncher.common.ExposedHelper.tx
 import io.github.nayasis.simplelauncher.common.ICON_NEW
 import io.github.oshai.kotlinlogging.KotlinLogging
+import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 
 private val logger = KotlinLogging.logger {}
@@ -24,8 +25,8 @@ class LinksTest {
 
             val created = Link(
                 title   = "test link",
-                group   = "grp1",
-                hashtag = "1,2,3,4",
+                group   = hashSetOf("grp1", "tool"),
+                hashtag = hashSetOf("1", "2", "3", "4"),
                 icon    = ICON_NEW,
             ).also {
                 logger.debug { ">> title: ${it.title}" }
@@ -40,6 +41,11 @@ class LinksTest {
             val read = LinkTable.repo.findById(inserted.id)
 
             logger.debug { ">> read: $read" }
+
+            read?.group shouldBe hashSetOf("grp1", "tool")
+            read?.groupJson shouldBe """["grp1","tool"]"""
+            read?.hashtag shouldBe hashSetOf("1", "2", "3", "4")
+            read?.hashtagJson shouldBe """["1","2","3","4"]"""
 
         }
 
