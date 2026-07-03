@@ -75,18 +75,26 @@ jobs:
           - platform: windows-latest
             asset_os: windows
             asset_arch: x64
+            package_type: app-image
+            asset_extension: zip
             gradle_cmd: .\gradlew.bat
           - platform: ubuntu-22.04
             asset_os: linux
             asset_arch: x64
+            package_type: deb
+            asset_extension: deb
             gradle_cmd: ./gradlew
           - platform: macos-15-intel
             asset_os: macos
             asset_arch: x64
+            package_type: dmg
+            asset_extension: dmg
             gradle_cmd: ./gradlew
           - platform: macos-15
             asset_os: macos
             asset_arch: arm64
+            package_type: dmg
+            asset_extension: dmg
             gradle_cmd: ./gradlew
 
     runs-on: ${{ matrix.platform }}
@@ -112,6 +120,8 @@ jobs:
 
       - name: Build native package
         shell: pwsh
+        env:
+          SIMPLELAUNCHER_PACKAGE_TYPE: ${{ matrix.package_type }}
         run: ${{ matrix.gradle_cmd }} clean createNativeExe
 
       - name: Package release asset
@@ -121,23 +131,38 @@ jobs:
           RELEASE_VERSION: ${{ needs.prepare-release.outputs.version }}
           ASSET_OS: ${{ matrix.asset_os }}
           ASSET_ARCH: ${{ matrix.asset_arch }}
+          PACKAGE_TYPE: ${{ matrix.package_type }}
+          ASSET_EXTENSION: ${{ matrix.asset_extension }}
         run: |
           $releaseDir = Join-Path $PWD "build/release"
           $distDir = Join-Path $PWD "build/dist"
-          $assetName = "simplelauncher-$env:RELEASE_VERSION-$env:ASSET_OS-$env:ASSET_ARCH.zip"
+          $assetName = "simplelauncher-$env:RELEASE_VERSION-$env:ASSET_OS-$env:ASSET_ARCH.$env:ASSET_EXTENSION"
           $assetPath = Join-Path $releaseDir $assetName
-          $items = Get-ChildItem -LiteralPath $distDir
-
-          if ($items.Count -eq 0) {
-            throw "Release output not found under $distDir"
-          }
 
           New-Item -ItemType Directory -Force -Path $releaseDir | Out-Null
           if (Test-Path -LiteralPath $assetPath) {
             Remove-Item -LiteralPath $assetPath -Force
           }
 
-          Compress-Archive -LiteralPath $items.FullName -DestinationPath $assetPath -Force
+          if ($env:PACKAGE_TYPE -eq "app-image") {
+            $appDir = Join-Path $distDir "simplelauncher"
+            if (-not (Test-Path -LiteralPath $appDir)) {
+              throw "Windows app-image not found: $appDir"
+            }
+
+            Compress-Archive -LiteralPath $appDir -DestinationPath $assetPath -Force
+          } else {
+            $package = Get-ChildItem -LiteralPath $distDir -Filter "*.$env:ASSET_EXTENSION" -File |
+              Sort-Object LastWriteTime -Descending |
+              Select-Object -First 1
+
+            if ($null -eq $package) {
+              throw "Package *.$env:ASSET_EXTENSION not found under $distDir"
+            }
+
+            Copy-Item -LiteralPath $package.FullName -Destination $assetPath -Force
+          }
+
           "path=$assetPath" >> $env:GITHUB_OUTPUT
 
       - name: Upload release asset
