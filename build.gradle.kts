@@ -165,6 +165,50 @@ val osArch = System.getProperty("os.arch").lowercase()
 val isWindows = osName.contains("win")
 val isLinux = osName.contains("linux")
 val isMac = osName.contains("mac")
+val isGitHubActions = System.getenv("GITHUB_ACTIONS") == "true"
+val requestedPackageType = System.getenv("SIMPLELAUNCHER_PACKAGE_TYPE")?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
+
+fun Project.toJpackageAppVersion(): String {
+	val parts = version.toString()
+		.split('.')
+		.filter { it.isNotBlank() }
+		.take(3)
+		.toMutableList()
+
+	if (parts.isEmpty()) {
+		return "1"
+	}
+
+	if (isMac && (parts[0].toIntOrNull() ?: 0) <= 0) {
+		parts[0] = "1"
+	}
+
+	return parts.joinToString(".")
+}
+
+fun hasCommand(command: String): Boolean {
+	if (isWindows) {
+		return runCatching {
+			ProcessBuilder("where.exe", command)
+				.redirectErrorStream(true)
+				.start()
+				.apply {
+					inputStream.bufferedReader().use { it.readText() }
+				}
+				.waitFor() == 0
+		}.getOrDefault(false)
+	}
+
+	return runCatching {
+		ProcessBuilder("which", command)
+			.redirectErrorStream(true)
+			.start()
+			.apply {
+				inputStream.bufferedReader().use { it.readText() }
+			}
+			.waitFor() == 0
+	}.getOrDefault(false)
+}
 
 fun File.hasSuffix(suffixes: Set<String>): Boolean =
 	suffixes.any { suffix -> name.contains(suffix, ignoreCase = true) }
@@ -233,7 +277,7 @@ tasks.register<Exec>("createRuntimeImage") {
 	group       = "distribution"
 	description = "Creates a custom runtime image with jlink (smaller size)"
 	
-	dependsOn("build", "cleanCreateRuntimeImage")
+	dependsOn("jar", "cleanCreateRuntimeImage")
 	
 	val javaToolchain   = javaToolchains.launcherFor(java.toolchain).get()
 	val javaHome        = javaToolchain.metadata.installationPath.asFile
@@ -272,7 +316,7 @@ tasks.register<Exec>("createRuntimeImage") {
 
 tasks.register<Exec>("createNativeExe") {
 	group       = "distribution"
-	description = "Creates a native executable using jpackage"
+	description = "Creates a native package using jpackage"
 	
 	dependsOn("createRuntimeImage")
 
@@ -289,13 +333,15 @@ tasks.register<Exec>("createNativeExe") {
 	val allJars            = runtimeClasspath.filter { it.name.endsWith(".jar") }
 	val javafxJars         = filterJavaFxJars(allJars)
 	
-	val useExe = runCatching {
-		ProcessBuilder("light.exe", "-?")
-			.redirectErrorStream(true)
-			.start()
-			.waitFor()
-		true
-	}.getOrElse { false }
+	val useExe = isWindows && !isGitHubActions && hasCommand("light.exe")
+	val defaultPackageType = when {
+		isWindows && isGitHubActions -> "app-image"
+		isLinux && isGitHubActions -> "deb"
+		isMac && isGitHubActions -> "dmg"
+		useExe -> "exe"
+		else -> "app-image"
+	}
+	val packageType = requestedPackageType ?: defaultPackageType
 
 	doFirst {
 		// Validation
@@ -320,10 +366,10 @@ tasks.register<Exec>("createNativeExe") {
 	}
 	
 	val jpackageArgs = mutableListOf<String>(
-		"--type",          if (useExe) "exe" else "app-image",
+		"--type",          packageType,
 		"--input",         jpackageInputDir.absolutePath,
 		"--name",          application.applicationName,
-		"--app-version",   project.version.toString(),
+		"--app-version",   project.toJpackageAppVersion(),
 		"--main-jar",      jarFile.name,
 		"--main-class",    application.mainClass.get(),
 		"--dest",          outputDir.absolutePath,
@@ -335,11 +381,17 @@ tasks.register<Exec>("createNativeExe") {
 		jpackageArgs.add(option)
 	}
 	
-	if (useExe) {
+	if (packageType == "exe") {
 		jpackageArgs.addAll(listOf("--win-dir-chooser", "--win-menu", "--win-shortcut"))
 	}
 	
-	file("src/main/resources/image/icon/favicon.ico").takeIf { it.exists() }?.let { icon ->
+	val iconFile = when {
+		isWindows -> file("src/main/resources/image/icon/favicon.ico").takeIf { it.exists() }
+		isLinux -> file("src/main/resources/image/icon/favicon.png").takeIf { it.exists() }
+		else -> null
+	}
+
+	iconFile?.let { icon ->
 		jpackageArgs.addAll(listOf("--icon", icon.absolutePath))
 	}
 
