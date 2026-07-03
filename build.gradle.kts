@@ -166,6 +166,7 @@ val isWindows = osName.contains("win")
 val isLinux = osName.contains("linux")
 val isMac = osName.contains("mac")
 val isGitHubActions = System.getenv("GITHUB_ACTIONS") == "true"
+val requestedPackageType = System.getenv("SIMPLELAUNCHER_PACKAGE_TYPE")?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
 
 fun Project.toJpackageAppVersion(): String {
 	val parts = version.toString()
@@ -315,7 +316,7 @@ tasks.register<Exec>("createRuntimeImage") {
 
 tasks.register<Exec>("createNativeExe") {
 	group       = "distribution"
-	description = "Creates a native executable using jpackage"
+	description = "Creates a native package using jpackage"
 	
 	dependsOn("createRuntimeImage")
 
@@ -333,7 +334,14 @@ tasks.register<Exec>("createNativeExe") {
 	val javafxJars         = filterJavaFxJars(allJars)
 	
 	val useExe = isWindows && !isGitHubActions && hasCommand("light.exe")
-	val packageType = if (isWindows && isGitHubActions) "app-image" else if (useExe) "exe" else "app-image"
+	val defaultPackageType = when {
+		isWindows && isGitHubActions -> "app-image"
+		isLinux && isGitHubActions -> "deb"
+		isMac && isGitHubActions -> "dmg"
+		useExe -> "exe"
+		else -> "app-image"
+	}
+	val packageType = requestedPackageType ?: defaultPackageType
 
 	doFirst {
 		// Validation
