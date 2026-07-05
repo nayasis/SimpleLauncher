@@ -54,7 +54,8 @@
   -fx-background-insets: 0;
 }
 
-.token-field:focused {
+.token-field:focused,
+.token-field:input-focused {
   -fx-border-color: transparent;
   -fx-background-color: -fx-focus-color, white;
   -fx-background-insets: -0.4, 1.2;
@@ -67,8 +68,17 @@
   -fx-max-height: 18px;
   -fx-background-color: transparent;
   -fx-border-color: transparent;
+  -fx-border-width: 0;
   -fx-background-insets: 0;
   -fx-padding: 0 2px;
+  -fx-focus-color: transparent;
+  -fx-faint-focus-color: transparent;
+}
+
+.token-field-input:focused {
+  -fx-background-color: transparent;
+  -fx-border-color: transparent;
+  -fx-background-insets: 0;
 }
 
 .token-chip {
@@ -88,15 +98,25 @@
 .search-token-chip.and {
   -fx-background-color: #eef5e8;
   -fx-border-color: #c6ddb7;
-  -fx-font-size: 9px;
+  -fx-font: 7px Arial;
   -fx-text-fill: #687960;
 }
 
 .search-token-chip.or {
   -fx-background-color: #fff0dc;
   -fx-border-color: #e6c48f;
-  -fx-font-size: 9px;
+  -fx-font: 7px Arial;
   -fx-text-fill: #8a7047;
+}
+
+.search-token-chip.operator-word {
+  -fx-font: 7px Arial;
+  -fx-font-size: 7px;
+}
+
+.search-token-chip.operator-word .text {
+  -fx-font: 7px Arial;
+  -fx-font-size: 7px;
 }
 
 .search-token-chip.paren {
