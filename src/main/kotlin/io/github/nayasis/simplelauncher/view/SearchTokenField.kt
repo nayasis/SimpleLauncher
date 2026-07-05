@@ -2,13 +2,15 @@ package io.github.nayasis.simplelauncher.view
 
 import io.github.nayasis.simplelauncher.service.SearchToken
 import io.github.nayasis.simplelauncher.service.SearchTokenKind
+import io.github.nayasis.simplelauncher.service.createCommandOrTermSearchToken
+import io.github.nayasis.simplelauncher.service.createLiteralTermSearchToken
 import io.github.nayasis.simplelauncher.service.createOperatorSearchToken
-import io.github.nayasis.simplelauncher.service.createTermSearchToken
 import io.github.nayasis.simplelauncher.service.hasAdjacentSearchOperatorToken
 import io.github.nayasis.simplelauncher.service.searchTokenLabel
 import javafx.beans.property.StringProperty
 import javafx.scene.input.KeyCode
 import javafx.scene.input.KeyEvent.KEY_PRESSED
+import kotlin.math.max
 import kotlin.math.min
 
 data class SearchFieldState(
@@ -32,7 +34,9 @@ data class SearchFieldState(
 
 }
 
-class SearchTokenField: TokenInputPane("search-token-chip", 12) {
+private const val SEARCH_INPUT_COLUMNS = 12
+
+class SearchTokenField: TokenInputPane("search-token-chip", SEARCH_INPUT_COLUMNS) {
 
     private data class UndoSnapshot(
         val tokens: List<SearchToken>,
@@ -58,6 +62,7 @@ class SearchTokenField: TokenInputPane("search-token-chip", 12) {
         styleClass.add("search-token-field")
         input.styleClass.add("search-token-field-input")
         input.textProperty().addListener { _, _, _ ->
+            updateInputColumns()
             if(!suppressSearchChange) fireSearchChanged()
         }
         input.addEventFilter(KEY_PRESSED) { event ->
@@ -76,6 +81,10 @@ class SearchTokenField: TokenInputPane("search-token-chip", 12) {
                 }
                 event.code == KeyCode.ENTER && event.isControlDown -> {
                     addTermTokenFromInput()
+                    event.consume()
+                }
+                event.code == KeyCode.ENTER && event.isShiftDown -> {
+                    addCommandOrTermTokenFromInput()
                     event.consume()
                 }
                 event.code == KeyCode.ENTER -> {
@@ -153,7 +162,13 @@ class SearchTokenField: TokenInputPane("search-token-chip", 12) {
     }
 
     private fun addTermTokenFromInput() {
-        val token = createTermSearchToken(text) ?: return
+        val token = createLiteralTermSearchToken(text) ?: return
+        insertToken(token)
+    }
+
+    private fun addCommandOrTermTokenFromInput() {
+        val token = createCommandOrTermSearchToken(text) ?: return
+        if (token.kind in listOf(SearchTokenKind.AND, SearchTokenKind.OR) && hasAdjacentSearchOperatorToken(tokens, cursorIndex)) return
         insertToken(token)
     }
 
@@ -193,16 +208,30 @@ class SearchTokenField: TokenInputPane("search-token-chip", 12) {
     private fun render() {
         children.clear()
         tokens.take(cursorIndex).forEachIndexed { index, token -> addTokenButton(index, token) }
+        updateInputColumns()
         addInput()
         tokens.drop(cursorIndex).forEachIndexed { offset, token -> addTokenButton(cursorIndex + offset, token) }
     }
 
     private fun addTokenButton(index: Int, token: SearchToken) {
-        children += tokenButton(searchTokenLabel(token), token.kind.name.lowercase()) { removeTokenAt(index) }
+        val label = searchTokenLabel(token)
+        val styleClasses = mutableListOf(token.kind.name.lowercase())
+        if (token.kind in listOf(SearchTokenKind.AND, SearchTokenKind.OR)) {
+            styleClasses += "operator-word"
+        }
+        children += tokenButton(label, *styleClasses.toTypedArray()) { removeTokenAt(index) }
     }
 
     private fun fireSearchChanged() {
         onSearchChanged?.invoke()
+    }
+
+    private fun updateInputColumns() {
+        input.prefColumnCount = if (tokens.isEmpty()) {
+            SEARCH_INPUT_COLUMNS
+        } else {
+            max(text.length + 1, 1)
+        }
     }
 
 }

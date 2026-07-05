@@ -100,6 +100,18 @@ fun createTermSearchToken(value: String): SearchToken? {
     return SearchToken(SearchTokenKind.TERM, clean)
 }
 
+fun createLiteralTermSearchToken(value: String): SearchToken? {
+    val clean = value.trim()
+    if (clean.isEmpty()) return null
+    return SearchToken(SearchTokenKind.TERM, clean)
+}
+
+fun createCommandOrTermSearchToken(value: String): SearchToken? {
+    val clean = value.trim()
+    if (clean.isTextOperatorWord()) return createOperatorSearchToken(clean)
+    return createLiteralTermSearchToken(clean)
+}
+
 fun createOperatorSearchToken(value: String): SearchToken? {
     val clean = value.trim()
     return when {
@@ -160,10 +172,13 @@ private fun String.isAndOperatorText(): Boolean =
     this == "" || this == "&" || this == "&&" || uppercase() == "AND"
 
 private fun String.isOrOperatorText(): Boolean =
-    this == "," || this == "|"
+    this == "," || this == "|" || uppercase() == "OR"
 
 private fun String.isSearchParenthesisText(): Boolean =
     this in listOf("(", ")", "[", "]", "{", "}")
+
+private fun String.isTextOperatorWord(): Boolean =
+    uppercase() == "AND" || uppercase() == "OR"
 
 private fun <T> Stack<T>.popOrNull(): T? =
     if (isEmpty()) null else pop()
