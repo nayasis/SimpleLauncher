@@ -30,6 +30,8 @@ import io.github.nayasis.simplelauncher.model.formatTokens
 import io.github.nayasis.simplelauncher.model.Link
 import io.github.nayasis.simplelauncher.service.LinkExecutor
 import io.github.nayasis.simplelauncher.service.LinkService
+import io.github.nayasis.simplelauncher.service.ShortcutAction
+import io.github.nayasis.simplelauncher.service.ShortcutSettings
 import io.github.nayasis.simplelauncher.service.TextMatcher
 import io.github.nayasis.simplelauncher.service.matchesSearchTokens
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -97,6 +99,7 @@ class Main: View("application.title".message()), CoroutineScope {
     val menuImportData: MenuItem by fxid()
     val menuExportData: MenuItem by fxid()
     val menuDeleteAll: MenuItem by fxid()
+    val menuShortcutSettings: MenuItem by fxid()
 
     val inputKeyword: SearchTokenField by fxid()
     val inputGroup: SearchTokenField by fxid()
@@ -137,6 +140,7 @@ class Main: View("application.title".message()), CoroutineScope {
     private var childWindowLifecycleBound = false
     private var closeRequestBound = false
     private val searchSubmitTracker = SearchSubmitTracker()
+    private var shortcuts = ShortcutSettings.load(Context.config.shortcuts)
 
     private val favicon       = resources.image("/image/icon/favicon.png")
     private val faviconPinned = resources.image("/image/icon/favicon-pinned.png")
@@ -146,6 +150,7 @@ class Main: View("application.title".message()), CoroutineScope {
         WindowHeaderHelper(titleBar)
         initEvent()
         initTable()
+        applyShortcutSettings()
     }
 
     override fun onBeforeShow() {
@@ -346,31 +351,33 @@ class Main: View("application.title".message()), CoroutineScope {
         }
 
         tableMain.setOnKeyPressed { e ->
-            when(e.code) {
-                ENTER -> tableMain.selectedItem?.let { linkExecutor.run(it) }
-                ESCAPE -> inputKeyword.focusInput()
-                DELETE -> tableMain.selectedItem?.let{
-                    e.consume()
-                    deleteLink(it)
+            when {
+                shortcuts.matches(ShortcutAction.RUN_SELECTED_LINK, e) -> {
+                    tableMain.selectedItem?.let { linkExecutor.run(it) }
                 }
-                TAB -> {
-                    if( ! e.isShiftDown ) {
+                shortcuts.matches(ShortcutAction.FOCUS_SEARCH, e) -> {
+                    inputKeyword.focusInput()
+                }
+                shortcuts.matches(ShortcutAction.DELETE_SELECTED_LINK, e) -> {
+                    tableMain.selectedItem?.let {
                         e.consume()
-                        if(lastFocused == null || lastFocused == tableMain) {
-                            descGroupName.focusInput()
-                        } else {
-                            lastFocused!!.requestFocus()
-                        }
+                        deleteLink(it)
                     }
                 }
-                C -> if(e.isControlDown) {
+                shortcuts.matches(ShortcutAction.MOVE_FOCUS_TO_DETAIL, e) && !e.isShiftDown -> {
+                    e.consume()
+                    if(lastFocused == null || lastFocused == tableMain) {
+                        descGroupName.focusInput()
+                    } else {
+                        lastFocused!!.requestFocus()
+                    }
+                }
+                shortcuts.matches(ShortcutAction.COPY_FOLDER_FROM_TABLE, e) -> {
                     tableMain.selectedItem?.let {
                         e.consume()
                         linkService.copyFolder(it)
                     }
                 }
-
-                else -> {}
             }
         }
 
@@ -412,38 +419,34 @@ class Main: View("application.title".message()), CoroutineScope {
         descGridPane.maxWidth = Double.MAX_VALUE
         descGridPane.widthProperty().addListener { _, _, _ -> updateDescEditorWidth() }
 
-        // global shortcut
         root.setOnKeyPressed { e ->
-            if( e.isControlDown ) {
-                when(e.code) {
-                    S -> buttonSave.let { if(!it.isDisable) it.fire() }
-                    D -> buttonCopy.let { if(!it.isDisable) it.fire() }
-                    N -> {
-                        e.consume()
-                        if( e.isShiftDown) {
-                            buttonAddFile.fireEvent(MOUSE_CLICK)
-                        } else {
-                            buttonNew.let { if(!it.isDisable) it.fire() }
-                        }
-                    }
-                    O -> buttonOpenFolder.let { if(!it.isDisable) it.fire() }
-                    C -> {
-                        e.consume()
-                        if( e.isShiftDown ) {
-                            buttonCopyFolder.let { if(!it.isDisable) it.fire() }
-                        }
-                    }
-                    I -> if(!e.isShiftDown) changeIcon()
-                    E -> {
-                        e.consume()
-                        menuViewDesc.isSelected = !menuViewDesc.isSelected
-                    }
-                    else -> {}
+            when {
+                shortcuts.matches(ShortcutAction.SAVE_DETAIL, e) -> {
+                    buttonSave.let { if(!it.isDisable) it.fire() }
                 }
-            } else if (e.isShiftDown ) {
-                when(e.code) {
-                    DELETE -> buttonDelete.let { if(!it.isDisable) it.fire() }
-                    else -> {}
+                shortcuts.matches(ShortcutAction.COPY_DETAIL, e) -> {
+                    buttonCopy.let { if(!it.isDisable) it.fire() }
+                }
+                shortcuts.matches(ShortcutAction.ADD_FILE, e) -> {
+                    e.consume()
+                    buttonAddFile.fireEvent(MOUSE_CLICK)
+                }
+                shortcuts.matches(ShortcutAction.CREATE_DETAIL, e) -> {
+                    e.consume()
+                    buttonNew.let { if(!it.isDisable) it.fire() }
+                }
+                shortcuts.matches(ShortcutAction.OPEN_FOLDER, e) -> {
+                    buttonOpenFolder.let { if(!it.isDisable) it.fire() }
+                }
+                shortcuts.matches(ShortcutAction.COPY_FOLDER, e) -> {
+                    e.consume()
+                    buttonCopyFolder.let { if(!it.isDisable) it.fire() }
+                }
+                shortcuts.matches(ShortcutAction.CHANGE_ICON, e) -> {
+                    changeIcon()
+                }
+                shortcuts.matches(ShortcutAction.DELETE_DETAIL, e) -> {
+                    buttonDelete.let { if(!it.isDisable) it.fire() }
                 }
             }
         }
@@ -471,6 +474,15 @@ class Main: View("application.title".message()), CoroutineScope {
             if(Dialog.confirm("msg.confirm.delete.all".message())) {
                 linkService.deleteAll()
                 clearDetail()
+            }
+        }
+
+        menuShortcutSettings.setOnAction {
+            ShortcutEditorDialog.show(currentStage, shortcuts)?.let { updated ->
+                shortcuts = updated
+                Context.config.shortcuts = shortcuts.toConfigMap()
+                Context.config.save()
+                applyShortcutSettings()
             }
         }
 
@@ -630,6 +642,28 @@ class Main: View("application.title".message()), CoroutineScope {
         descGroupName.onTokenChanged = { buttonSave.isDisable = false }
         descIcon.imageProperty().addListener(listener)
 
+    }
+
+    private fun applyShortcutSettings() {
+        menuImportData.accelerator = shortcuts[ShortcutAction.IMPORT_DATA]
+        menuExportData.accelerator = shortcuts[ShortcutAction.EXPORT_DATA]
+        menuViewDesc.accelerator = shortcuts[ShortcutAction.TOGGLE_DESCRIPTION]
+        menuViewMenuBar.accelerator = shortcuts[ShortcutAction.TOGGLE_MENU_BAR]
+        menuShowInputGroup.accelerator = shortcuts[ShortcutAction.TOGGLE_GROUP_FILTER]
+        menuAlwaysOnTop.accelerator = shortcuts[ShortcutAction.TOGGLE_ALWAYS_ON_TOP]
+        menuHelp.accelerator = shortcuts[ShortcutAction.SHOW_ABOUT]
+        updateShortcutTooltips()
+    }
+
+    private fun updateShortcutTooltips() {
+        buttonSave.tooltip(shortcuts.displayText(ShortcutAction.SAVE_DETAIL))
+        buttonDelete.tooltip(shortcuts.displayText(ShortcutAction.DELETE_DETAIL))
+        buttonCopy.tooltip(shortcuts.displayText(ShortcutAction.COPY_DETAIL))
+        buttonNew.tooltip(shortcuts.displayText(ShortcutAction.CREATE_DETAIL))
+        buttonOpenFolder.tooltip(shortcuts.displayText(ShortcutAction.OPEN_FOLDER))
+        buttonCopyFolder.tooltip(shortcuts.displayText(ShortcutAction.COPY_FOLDER))
+        descIcon.tooltip("${"shortcut.action.changeIcon".message()} (${shortcuts.displayText(ShortcutAction.CHANGE_ICON)})")
+        buttonAddFile.tooltip("${"shortcut.action.addFile".message()} (${shortcuts.displayText(ShortcutAction.ADD_FILE)})")
     }
 
     private fun updateDescEditorWidth() {
