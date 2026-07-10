@@ -1,8 +1,12 @@
 package io.github.nayasis.simplelauncher.service
 
 import io.github.nayasis.kotlin.javafx.stage.progress.ProgressDialog
+import io.github.nayasis.simplelauncher.common.Context
 import io.github.nayasis.simplelauncher.view.Terminal
 import javafx.application.Platform
+import javafx.geometry.Rectangle2D
+import javafx.stage.Screen
+import javafx.stage.Stage
 import javafx.stage.Window
 import javafx.stage.WindowEvent
 import tornadofx.runLater
@@ -15,6 +19,7 @@ internal class LauncherChildWindows {
     private val terminals = LinkedHashSet<Terminal>()
     private val hiddenTerminals = LinkedHashSet<Terminal>()
     private var visible = true
+    private val progressDialogGap = 12.0
 
     fun hide() {
         synchronized(this) {
@@ -102,6 +107,7 @@ internal class LauncherChildWindows {
 
     private fun bindHiddenState(dialog: ProgressDialog) {
         dialog.stage.addEventHandler(WindowEvent.WINDOW_SHOWN) {
+            placeProgressDialog(dialog)
             hideIfParentHidden(dialog)
         }
         hideIfParentHidden(dialog)
@@ -214,6 +220,69 @@ internal class LauncherChildWindows {
                 block()
             }
         }
+    }
+
+    private fun placeProgressDialog(dialog: ProgressDialog) {
+        val mainStage = Context.main.currentStage ?: return
+        val dialogStage = dialog.stage
+        val dialogWidth = dialogStage.width.takeIf { it > 0 } ?: return
+        val dialogHeight = dialogStage.height.takeIf { it > 0 } ?: return
+        val screenBounds = Screen.getScreensForRectangle(
+            mainStage.x,
+            mainStage.y,
+            mainStage.width.coerceAtLeast(1.0),
+            mainStage.height.coerceAtLeast(1.0),
+        ).firstOrNull()?.visualBounds ?: Screen.getPrimary().visualBounds
+
+        val candidates = listOfNotNull(
+            placeAbove(mainStage, dialogWidth, dialogHeight, screenBounds),
+            placeRight(mainStage, dialogWidth, dialogHeight, screenBounds),
+            placeLeft(mainStage, dialogWidth, dialogHeight, screenBounds),
+            placeBelow(mainStage, dialogWidth, dialogHeight, screenBounds),
+        )
+
+        val position = candidates.firstOrNull() ?: fallbackBottomRight(mainStage, dialogWidth, dialogHeight, screenBounds)
+        dialogStage.x = position.minX
+        dialogStage.y = position.minY
+    }
+
+    private fun placeAbove(mainStage: Stage, dialogWidth: Double, dialogHeight: Double, bounds: Rectangle2D): Rectangle2D? {
+        val y = mainStage.y - progressDialogGap - dialogHeight
+        if(y < bounds.minY) return null
+        val x = clamp(mainStage.x + (mainStage.width - dialogWidth) / 2, bounds.minX, bounds.maxX - dialogWidth)
+        return Rectangle2D(x, y, dialogWidth, dialogHeight)
+    }
+
+    private fun placeRight(mainStage: Stage, dialogWidth: Double, dialogHeight: Double, bounds: Rectangle2D): Rectangle2D? {
+        val x = mainStage.x + mainStage.width + progressDialogGap
+        if(x + dialogWidth > bounds.maxX) return null
+        val y = clamp(mainStage.y + (mainStage.height - dialogHeight) / 2, bounds.minY, bounds.maxY - dialogHeight)
+        return Rectangle2D(x, y, dialogWidth, dialogHeight)
+    }
+
+    private fun placeLeft(mainStage: Stage, dialogWidth: Double, dialogHeight: Double, bounds: Rectangle2D): Rectangle2D? {
+        val x = mainStage.x - progressDialogGap - dialogWidth
+        if(x < bounds.minX) return null
+        val y = clamp(mainStage.y + (mainStage.height - dialogHeight) / 2, bounds.minY, bounds.maxY - dialogHeight)
+        return Rectangle2D(x, y, dialogWidth, dialogHeight)
+    }
+
+    private fun placeBelow(mainStage: Stage, dialogWidth: Double, dialogHeight: Double, bounds: Rectangle2D): Rectangle2D? {
+        val y = mainStage.y + mainStage.height + progressDialogGap
+        if(y + dialogHeight > bounds.maxY) return null
+        val x = clamp(mainStage.x + (mainStage.width - dialogWidth) / 2, bounds.minX, bounds.maxX - dialogWidth)
+        return Rectangle2D(x, y, dialogWidth, dialogHeight)
+    }
+
+    private fun fallbackBottomRight(mainStage: Stage, dialogWidth: Double, dialogHeight: Double, bounds: Rectangle2D): Rectangle2D {
+        val x = clamp(mainStage.x + mainStage.width - dialogWidth, bounds.minX, bounds.maxX - dialogWidth)
+        val y = clamp(mainStage.y + mainStage.height - dialogHeight, bounds.minY, bounds.maxY - dialogHeight)
+        return Rectangle2D(x, y, dialogWidth, dialogHeight)
+    }
+
+    private fun clamp(value: Double, min: Double, max: Double): Double {
+        if(max < min) return min
+        return value.coerceIn(min, max)
     }
 
 }

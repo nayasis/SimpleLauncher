@@ -478,7 +478,7 @@ class Main: View("application.title".message()), CoroutineScope {
         }
 
         menuShortcutSettings.setOnAction {
-            ShortcutEditorDialog.show(currentStage, shortcuts)?.let { updated ->
+            ShortcutEditor().showDialog(currentStage, shortcuts)?.let { updated ->
                 shortcuts = updated
                 Context.config.shortcuts = shortcuts.toConfigMap()
                 Context.config.save()

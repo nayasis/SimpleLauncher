@@ -1,0 +1,103 @@
+.shortcut-dialog-root {
+  -fx-padding: 4 4 8 4;
+  -fx-background-color: white;
+}
+
+.shortcut-dialog-footer {
+  -fx-padding: 8 0 0 0;
+  -fx-alignment: center-left;
+}
+
+.shortcut-dialog-scroll {
+  -fx-padding: 0;
+  -fx-background-insets: 0;
+  -fx-background-color: transparent;
+}
+
+.shortcut-dialog-content {
+  -fx-spacing: 6;
+  -fx-padding: 2 2 6 2;
+}
+
+.shortcut-group-title {
+  -fx-font-family: "Malgun Gothic", "Segoe UI", Arial;
+  -fx-font-size: 14px;
+  -fx-font-weight: 900;
+  -fx-text-fill: #111111;
+}
+
+.shortcut-help-box {
+  -fx-alignment: center-left;
+  -fx-spacing: 8;
+  -fx-padding: 6 8 6 8;
+  -fx-border-color: #a9bfd8;
+  -fx-border-width: 1.2;
+  -fx-border-radius: 6;
+  -fx-background-radius: 6;
+  -fx-background-color: #f7fafc;
+}
+
+.shortcut-help-icon {
+  -fx-alignment: center;
+  -fx-min-width: 18;
+  -fx-min-height: 18;
+  -fx-pref-width: 18;
+  -fx-pref-height: 18;
+  -fx-font-size: 11px;
+  -fx-font-weight: bold;
+  -fx-text-fill: #2f6db3;
+  -fx-background-color: white;
+  -fx-border-color: #2f6db3;
+  -fx-border-width: 1.4;
+  -fx-border-radius: 9;
+  -fx-background-radius: 9;
+}
+
+.shortcut-help-text {
+  -fx-wrap-text: true;
+}
+
+.shortcut-duplicate-1,
+.shortcut-duplicate-2,
+.shortcut-duplicate-3,
+.shortcut-duplicate-4,
+.shortcut-duplicate-5,
+.shortcut-duplicate-6,
+.shortcut-duplicate-7 {
+  -fx-border-width: 2;
+}
+
+.shortcut-duplicate-1 {
+  -fx-text-inner-color: #c62828;
+  -fx-border-color: #c62828;
+}
+
+.shortcut-duplicate-2 {
+  -fx-text-inner-color: #1565c0;
+  -fx-border-color: #1565c0;
+}
+
+.shortcut-duplicate-3 {
+  -fx-text-inner-color: #2e7d32;
+  -fx-border-color: #2e7d32;
+}
+
+.shortcut-duplicate-4 {
+  -fx-text-inner-color: #6a1b9a;
+  -fx-border-color: #6a1b9a;
+}
+
+.shortcut-duplicate-5 {
+  -fx-text-inner-color: #ef6c00;
+  -fx-border-color: #ef6c00;
+}
+
+.shortcut-duplicate-6 {
+  -fx-text-inner-color: #00838f;
+  -fx-border-color: #00838f;
+}
+
+.shortcut-duplicate-7 {
+  -fx-text-inner-color: #5d4037;
+  -fx-border-color: #5d4037;
+}
