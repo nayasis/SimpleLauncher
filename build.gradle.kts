@@ -26,8 +26,25 @@ plugins {
 	application
 	kotlin("jvm") version "2.2.0"
 	id("com.google.devtools.ksp") version "2.2.0-2.0.2"
-	id("org.openjfx.javafxplugin") version "0.1.0"
 	id("com.gradleup.shadow") version "9.4.1"
+}
+
+val osName = System.getProperty("os.name").lowercase()
+val osArch = System.getProperty("os.arch").lowercase()
+val isWindows = osName.contains("win")
+val isLinux = osName.contains("linux")
+val isMac = osName.contains("mac")
+val javafxVersion = "26"
+val javafxModules = listOf("javafx.graphics", "javafx.controls", "javafx.fxml", "javafx.swing")
+val javafxPlatform = when {
+	isWindows && (osArch.contains("aarch64") || osArch.contains("arm64")) -> "win-aarch64"
+	isWindows && (osArch == "x86" || osArch == "i386") -> "win-x86"
+	isWindows -> "win"
+	isLinux && (osArch.contains("aarch64") || osArch.contains("arm64")) -> "linux-aarch64"
+	isLinux -> "linux"
+	isMac && (osArch.contains("aarch64") || osArch.contains("arm64")) -> "mac-aarch64"
+	isMac -> "mac"
+	else -> throw GradleException("Unsupported JavaFX platform: $osName / $osArch")
 }
 
 val appJvmArgs = listOf(
@@ -54,11 +71,6 @@ java {
 	}
 }
 
-javafx {
-	version = "26"
-	modules = listOf("javafx.graphics","javafx.controls","javafx.fxml","javafx.swing")
-}
-
 repositories {
 	mavenLocal()
 	mavenCentral()
@@ -81,6 +93,11 @@ dependencies {
 
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.10.2")
+	implementation("org.openjfx:javafx-base:$javafxVersion:$javafxPlatform")
+	implementation("org.openjfx:javafx-graphics:$javafxVersion:$javafxPlatform")
+	implementation("org.openjfx:javafx-controls:$javafxVersion:$javafxPlatform")
+	implementation("org.openjfx:javafx-fxml:$javafxVersion:$javafxPlatform")
+	implementation("org.openjfx:javafx-swing:$javafxVersion:$javafxPlatform")
 
 	// exposed
 	ksp("io.github.nayasis:exposed-crud-processor:0.1.0")
@@ -98,7 +115,7 @@ dependencies {
 	implementation("io.github.oshai:kotlin-logging-jvm:7.0.3")
 	implementation("de.jensd:fontawesomefx:8.9")
 
-	// jeditermfx for terminal UI
+	// jediterm-fx for terminal UI
 	implementation("com.techsenger.jeditermfx:jeditermfx-core:1.1.0")
 	implementation("com.techsenger.jeditermfx:jeditermfx-ui:1.1.0")
 	implementation("com.techsenger.jeditermfx:jeditermfx-app:1.0.0") {
@@ -150,6 +167,7 @@ tasks.withType<JavaExec> {
 
 tasks.named<JavaExec>("run") {
 	jvmArgs(appJvmArgs)
+	useJavaFxModulePath()
 }
 
 tasks.register<JavaExec>("runChildWindowLifecycleTest") {
@@ -158,13 +176,17 @@ tasks.register<JavaExec>("runChildWindowLifecycleTest") {
 	classpath = sourceSets["test"].runtimeClasspath
 	mainClass.set("io.github.nayasis.simplelauncher.view.lifecycle.ChildWindowLifecycleTestKt")
 	jvmArgs(appJvmArgs)
+	useJavaFxModulePath()
 }
 
-val osName = System.getProperty("os.name").lowercase()
-val osArch = System.getProperty("os.arch").lowercase()
-val isWindows = osName.contains("win")
-val isLinux = osName.contains("linux")
-val isMac = osName.contains("mac")
+tasks.register<JavaExec>("runShortcutEditorTest") {
+	group = "verification"
+	description = "Runs the shortcut settings dialog only"
+	classpath = sourceSets["test"].runtimeClasspath
+	mainClass.set("io.github.nayasis.simplelauncher.view.shortcut.ShortcutEditorManualTestKt")
+	jvmArgs(appJvmArgs)
+	useJavaFxModulePath()
+}
 val isGitHubActions = System.getenv("GITHUB_ACTIONS") == "true"
 val requestedPackageType = System.getenv("SIMPLELAUNCHER_PACKAGE_TYPE")?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
 
@@ -230,6 +252,25 @@ fun filterJavaFxJars(jars: Collection<File>): List<File> {
 		.filter { jar ->
 			jar.hasSuffix(platformSuffixes) || !jar.hasSuffix(allSuffixes)
 		}
+}
+
+fun isJavaFxJar(file: File): Boolean =
+	file.name.startsWith("javafx", ignoreCase = true) && filterJavaFxJars(listOf(file)).isNotEmpty()
+
+fun JavaExec.useJavaFxModulePath() {
+	val originalClasspath = classpath
+	val javaFxClasspath = originalClasspath.filter(::isJavaFxJar)
+	classpath = originalClasspath.filter { !isJavaFxJar(it) }
+	jvmArgumentProviders.add(
+		org.gradle.process.CommandLineArgumentProvider {
+			val modulePath = javaFxClasspath.asPath
+			if (modulePath.isBlank()) {
+				emptyList()
+			} else {
+				listOf("--module-path", modulePath, "--add-modules", javafxModules.joinToString(","))
+			}
+		}
+	)
 }
 
 fun deleteRecursivelyForce(target: File) {
@@ -407,8 +448,8 @@ tasks.register("deploy") {
 	doLast {
 		val appName = application.applicationName
 		val sourceDir = file("build/dist/$appName")
-		val targetDir = file("d:/app/SimpleLauncher")
-//		val targetDir = file("c:/app/SimpleLauncher")
+//		val targetDir = file("d:/app/SimpleLauncher")
+		val targetDir = file("c:/app/SimpleLauncher")
 		val executable = "$appName.exe"
 
 		if (isWindows) {
