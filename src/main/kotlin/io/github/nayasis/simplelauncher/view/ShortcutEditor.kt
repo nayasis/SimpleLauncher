@@ -255,7 +255,11 @@ class ShortcutEditor: View("shortcut.dialog.title".message()) {
     }
 
     private fun GridPane.addGroupCell(node: Node, columnIndex: Int, rowIndex: Int) {
-        add(node, columnIndex, rowIndex)
+        if(node.parent === this) {
+            GridPane.setConstraints(node, columnIndex, rowIndex)
+        } else {
+            add(node, columnIndex, rowIndex)
+        }
         when(columnIndex) {
             2 -> GridPane.setMargin(node, Insets(0.0, 0.0, 0.0, 8.0))
             else -> GridPane.setMargin(node, Insets.EMPTY)
