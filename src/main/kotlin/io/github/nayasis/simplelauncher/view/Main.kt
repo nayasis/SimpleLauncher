@@ -70,6 +70,36 @@ private const val CLASS_ON_DRAG        = "table-row-on-drag"
 private const val DEFAULT_LINK_EDITOR_WIDTH = 400.0
 private const val MIN_LINK_EDITOR_WIDTH = 300.0
 private const val TABLE_ICON_SIZE = 18.0
+private val TABLE_ITEM_SHORTCUT_ACTIONS = listOf(
+    ShortcutAction.RUN_SELECTED_LINK,
+    ShortcutAction.COPY_FOLDER_FROM_TABLE,
+    ShortcutAction.DELETE_SELECTED_LINK,
+)
+
+internal fun createTableItemContextMenu(
+    shortcutSettings: () -> ShortcutSettings,
+    onAction: (ShortcutAction) -> Unit,
+): ContextMenu {
+    val actionItems = TABLE_ITEM_SHORTCUT_ACTIONS.associateWith { action ->
+        MenuItem(action.messageKey.message()).apply {
+            userData = action
+            setOnAction { onAction(action) }
+        }
+    }
+    fun refreshAccelerators() {
+        val shortcuts = shortcutSettings()
+        actionItems.forEach { (action, item) -> item.accelerator = shortcuts[action] }
+    }
+    refreshAccelerators()
+    return ContextMenu(
+        actionItems.getValue(ShortcutAction.RUN_SELECTED_LINK),
+        actionItems.getValue(ShortcutAction.COPY_FOLDER_FROM_TABLE),
+        SeparatorMenuItem(),
+        actionItems.getValue(ShortcutAction.DELETE_SELECTED_LINK),
+    ).apply {
+        setOnShowing { refreshAccelerators() }
+    }
+}
 
 class Main: View("application.title".message()), CoroutineScope {
 
@@ -353,7 +383,7 @@ class Main: View("application.title".message()), CoroutineScope {
         tableMain.setOnKeyPressed { e ->
             when {
                 shortcuts.matches(ShortcutAction.RUN_SELECTED_LINK, e) -> {
-                    tableMain.selectedItem?.let { linkExecutor.run(it) }
+                    tableMain.selectedItem?.let { performTableItemAction(ShortcutAction.RUN_SELECTED_LINK, it) }
                 }
                 shortcuts.matches(ShortcutAction.FOCUS_SEARCH, e) -> {
                     inputKeyword.focusInput()
@@ -361,7 +391,7 @@ class Main: View("application.title".message()), CoroutineScope {
                 shortcuts.matches(ShortcutAction.DELETE_SELECTED_LINK, e) -> {
                     tableMain.selectedItem?.let {
                         e.consume()
-                        deleteLink(it)
+                        performTableItemAction(ShortcutAction.DELETE_SELECTED_LINK, it)
                     }
                 }
                 shortcuts.matches(ShortcutAction.MOVE_FOCUS_TO_DETAIL, e) && !e.isShiftDown -> {
@@ -375,7 +405,7 @@ class Main: View("application.title".message()), CoroutineScope {
                 shortcuts.matches(ShortcutAction.COPY_FOLDER_FROM_TABLE, e) -> {
                     tableMain.selectedItem?.let {
                         e.consume()
-                        linkService.copyFolder(it)
+                        performTableItemAction(ShortcutAction.COPY_FOLDER_FROM_TABLE, it)
                     }
                 }
             }
@@ -384,6 +414,17 @@ class Main: View("application.title".message()), CoroutineScope {
         tableMain.setRowFactory {
             TableRow<Link>().apply {
                 val row = this
+                val rowMenu = createTableItemContextMenu({ shortcuts }) { action ->
+                    row.item?.let { performTableItemAction(action, it) }
+                }
+                itemProperty().addListener { _, _, item ->
+                    contextMenu = if(item == null) null else rowMenu
+                }
+                setOnMousePressed { event ->
+                    if(event.button == MouseButton.SECONDARY && !row.isEmpty) {
+                        tableMain.selectionModel.select(row.item)
+                    }
+                }
                 setOnDragOver { event ->
                     if( row.isEmpty ) return@setOnDragOver
                     if( hasFile(event) ) {
@@ -412,6 +453,15 @@ class Main: View("application.title".message()), CoroutineScope {
 
         currentStage?.requestFocus()
 
+    }
+
+    private fun performTableItemAction(action: ShortcutAction, link: Link) {
+        when(action) {
+            ShortcutAction.RUN_SELECTED_LINK -> linkExecutor.run(link)
+            ShortcutAction.COPY_FOLDER_FROM_TABLE -> linkService.copyFolder(link)
+            ShortcutAction.DELETE_SELECTED_LINK -> deleteLink(link)
+            else -> Unit
+        }
     }
 
     private fun initEvent() {
