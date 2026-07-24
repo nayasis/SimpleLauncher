@@ -73,12 +73,16 @@ private const val TABLE_ICON_SIZE = 18.0
 private val TABLE_ITEM_SHORTCUT_ACTIONS = listOf(
     ShortcutAction.RUN_SELECTED_LINK,
     ShortcutAction.COPY_FOLDER_FROM_TABLE,
+    ShortcutAction.OPEN_FOLDER_FROM_TABLE,
     ShortcutAction.DELETE_SELECTED_LINK,
 )
+
+internal const val CONTEXT_MENU_SHOW_DETAIL_ID = "context-menu-show-detail"
 
 internal fun createTableItemContextMenu(
     shortcutSettings: () -> ShortcutSettings,
     onAction: (ShortcutAction) -> Unit,
+    onShowDetail: () -> Unit,
 ): ContextMenu {
     val actionItems = TABLE_ITEM_SHORTCUT_ACTIONS.associateWith { action ->
         MenuItem(action.messageKey.message()).apply {
@@ -86,14 +90,22 @@ internal fun createTableItemContextMenu(
             setOnAction { onAction(action) }
         }
     }
+    val showDetailItem = MenuItem("shortcut.action.showDetailEditor".message()).apply {
+        id = CONTEXT_MENU_SHOW_DETAIL_ID
+        setOnAction { onShowDetail() }
+    }
     fun refreshAccelerators() {
         val shortcuts = shortcutSettings()
         actionItems.forEach { (action, item) -> item.accelerator = shortcuts[action] }
+        showDetailItem.accelerator = shortcuts[ShortcutAction.TOGGLE_DESCRIPTION]
     }
     refreshAccelerators()
     return ContextMenu(
         actionItems.getValue(ShortcutAction.RUN_SELECTED_LINK),
+        showDetailItem,
+        SeparatorMenuItem(),
         actionItems.getValue(ShortcutAction.COPY_FOLDER_FROM_TABLE),
+        actionItems.getValue(ShortcutAction.OPEN_FOLDER_FROM_TABLE),
         SeparatorMenuItem(),
         actionItems.getValue(ShortcutAction.DELETE_SELECTED_LINK),
     ).apply {
@@ -190,7 +202,7 @@ class Main: View("application.title".message()), CoroutineScope {
 
         // set minimum window size
         currentStage?.let { stage ->
-            stage.minWidth  = 460.0
+            stage.minWidth  = 430.0
             stage.minHeight = 150.0
         }
 
@@ -408,15 +420,23 @@ class Main: View("application.title".message()), CoroutineScope {
                         performTableItemAction(ShortcutAction.COPY_FOLDER_FROM_TABLE, it)
                     }
                 }
+                shortcuts.matches(ShortcutAction.OPEN_FOLDER_FROM_TABLE, e) -> {
+                    tableMain.selectedItem?.let {
+                        e.consume()
+                        performTableItemAction(ShortcutAction.OPEN_FOLDER_FROM_TABLE, it)
+                    }
+                }
             }
         }
 
         tableMain.setRowFactory {
             TableRow<Link>().apply {
                 val row = this
-                val rowMenu = createTableItemContextMenu({ shortcuts }) { action ->
-                    row.item?.let { performTableItemAction(action, it) }
-                }
+                val rowMenu = createTableItemContextMenu(
+                    { shortcuts },
+                    { action -> row.item?.let { performTableItemAction(action, it) } },
+                    { row.item?.let { showDetailEditor(it) } },
+                )
                 itemProperty().addListener { _, _, item ->
                     contextMenu = if(item == null) null else rowMenu
                 }
@@ -459,8 +479,17 @@ class Main: View("application.title".message()), CoroutineScope {
         when(action) {
             ShortcutAction.RUN_SELECTED_LINK -> linkExecutor.run(link)
             ShortcutAction.COPY_FOLDER_FROM_TABLE -> linkService.copyFolder(link)
+            ShortcutAction.OPEN_FOLDER_FROM_TABLE -> linkService.openFolder(link)
             ShortcutAction.DELETE_SELECTED_LINK -> deleteLink(link)
             else -> Unit
+        }
+    }
+
+    private fun showDetailEditor(link: Link) {
+        tableMain.focusBy(link)
+        menuViewDesc.isSelected = !menuViewDesc.isSelected
+        if (menuViewDesc.isSelected) {
+            descGroupName.focusInput()
         }
     }
 

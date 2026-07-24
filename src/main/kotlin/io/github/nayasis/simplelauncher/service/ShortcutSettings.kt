@@ -50,6 +50,7 @@ enum class ShortcutAction(
     DELETE_SELECTED_LINK("shortcut.action.deleteSelectedLink", ShortcutGroup.TABLE, { KeyCodeCombination(KeyCode.DELETE) }),
     MOVE_FOCUS_TO_DETAIL("shortcut.action.moveFocusToDetail", ShortcutGroup.TABLE, { KeyCodeCombination(KeyCode.TAB) }),
     COPY_FOLDER_FROM_TABLE("shortcut.action.copyFolderFromTable", ShortcutGroup.TABLE, { commandShortcut(KeyCode.C, it) }),
+    OPEN_FOLDER_FROM_TABLE("shortcut.action.openFolderFromTable", ShortcutGroup.TABLE, { commandShortcut(KeyCode.O, it, KeyCombination.SHIFT_DOWN) }),
     ;
 
     val defaultCombination: KeyCombination
