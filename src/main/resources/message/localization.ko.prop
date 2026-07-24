@@ -95,3 +95,5 @@ shortcut.action.focusSearch         = 검색창으로 이동
 shortcut.action.deleteSelectedLink  = 삭제
 shortcut.action.moveFocusToDetail   = 상세 편집기로 이동
 shortcut.action.copyFolderFromTable = 폴더경로 복사
+shortcut.action.openFolderFromTable = 폴더열기
+shortcut.action.showDetailEditor    = 상세설정
