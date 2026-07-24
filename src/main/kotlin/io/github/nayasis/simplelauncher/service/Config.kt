@@ -23,6 +23,8 @@ class Config {
     var lastSearchState: SearchFieldState? = null
     var lastFocusedLinkId: Long? = null
     var descEditorWidth: Double? = null
+    var progressDialogX: Double? = null
+    var progressDialogY: Double? = null
     var shortcuts = mutableMapOf<String, String>()
 
     fun save() = configPath.writeText(Reflector.toJson(this,true))
