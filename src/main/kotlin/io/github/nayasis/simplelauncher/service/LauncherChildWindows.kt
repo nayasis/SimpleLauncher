@@ -1,5 +1,6 @@
 package io.github.nayasis.simplelauncher.service
 
+import io.github.nayasis.kotlin.javafx.stage.BoundaryChecker
 import io.github.nayasis.kotlin.javafx.stage.progress.ProgressDialog
 import io.github.nayasis.simplelauncher.common.Context
 import io.github.nayasis.simplelauncher.view.Terminal
@@ -7,7 +8,6 @@ import javafx.application.Platform
 import javafx.geometry.Point2D
 import javafx.geometry.Rectangle2D
 import javafx.stage.Screen
-import javafx.stage.Stage
 import javafx.stage.Window
 import javafx.stage.WindowEvent
 import tornadofx.runLater
@@ -20,8 +20,8 @@ internal class LauncherChildWindows {
     private val terminals = LinkedHashSet<Terminal>()
     private val hiddenTerminals = LinkedHashSet<Terminal>()
     private var visible = true
-    private val progressDialogGap = 12.0
-    private var lastProgressDialogPosition: Point2D? = null
+    private val boundaryChecker = BoundaryChecker()
+    private var lastProgressDialogPosition: Point2D? = loadSavedProgressDialogPosition()
 
     fun hide() {
         synchronized(this) {
@@ -232,24 +232,11 @@ internal class LauncherChildWindows {
         val dialogStage = dialog.stage
         val dialogWidth = dialogStage.width.takeIf { it > 0 } ?: return
         val dialogHeight = dialogStage.height.takeIf { it > 0 } ?: return
-        val screenBounds = Screen.getScreensForRectangle(
-            mainStage.x,
-            mainStage.y,
-            mainStage.width.coerceAtLeast(1.0),
-            mainStage.height.coerceAtLeast(1.0),
-        ).firstOrNull()?.visualBounds ?: Screen.getPrimary().visualBounds
-
-        val candidates = listOfNotNull(
-            placeAbove(mainStage, dialogWidth, dialogHeight, screenBounds),
-            placeRight(mainStage, dialogWidth, dialogHeight, screenBounds),
-            placeLeft(mainStage, dialogWidth, dialogHeight, screenBounds),
-            placeBelow(mainStage, dialogWidth, dialogHeight, screenBounds),
-        )
 
         val position = lastProgressDialogPosition
-            ?.let { fitOnScreen(it, dialogWidth, dialogHeight) }
-            ?: candidates.firstOrNull()
-            ?: fallbackBottomRight(mainStage, dialogWidth, dialogHeight, screenBounds)
+            ?.let { asVisibleRect(it, dialogWidth, dialogHeight) }
+            ?: centerOnMainScreen(mainStage, dialogWidth, dialogHeight)
+
         dialogStage.x = position.minX
         dialogStage.y = position.minY
         lastProgressDialogPosition = Point2D(position.minX, position.minY)
@@ -258,60 +245,44 @@ internal class LauncherChildWindows {
     private fun rememberProgressDialogPosition(dialog: ProgressDialog) {
         val x = dialog.stage.x
         val y = dialog.stage.y
-        if(x.isFinite() && y.isFinite()) {
-            lastProgressDialogPosition = Point2D(x, y)
+        if(!x.isFinite() || !y.isFinite()) return
+        val position = Point2D(x, y)
+        lastProgressDialogPosition = position
+        saveProgressDialogPosition(position)
+    }
+
+    private fun asVisibleRect(position: Point2D, dialogWidth: Double, dialogHeight: Double): Rectangle2D? {
+        val rect = Rectangle2D(position.x, position.y, dialogWidth, dialogHeight)
+        return if(boundaryChecker.isShownOnScreen(rect)) rect else null
+    }
+
+    private fun centerOnMainScreen(mainStage: Window, dialogWidth: Double, dialogHeight: Double): Rectangle2D {
+        val bounds = majorScreenBoundsOf(mainStage)
+        val x = bounds.minX + (bounds.width - dialogWidth) / 2.0
+        val y = bounds.minY + (bounds.height - dialogHeight) / 2.0
+        return Rectangle2D(x, y, dialogWidth, dialogHeight)
+    }
+
+    private fun majorScreenBoundsOf(window: Window): Rectangle2D {
+        return runCatching { boundaryChecker.getMajorScreen(window).visualBounds }
+            .getOrElse { Screen.getPrimary().visualBounds }
+    }
+
+    private fun saveProgressDialogPosition(position: Point2D) {
+        runCatching {
+            val config = Context.config
+            config.progressDialogX = position.x
+            config.progressDialogY = position.y
+            config.save()
         }
     }
 
-    private fun fitOnScreen(position: Point2D, dialogWidth: Double, dialogHeight: Double): Rectangle2D? {
-        val bounds = Screen.getScreensForRectangle(
-            position.x,
-            position.y,
-            dialogWidth,
-            dialogHeight,
-        ).firstOrNull()?.visualBounds ?: return null
-        val x = clamp(position.x, bounds.minX, bounds.maxX - dialogWidth)
-        val y = clamp(position.y, bounds.minY, bounds.maxY - dialogHeight)
-        return Rectangle2D(x, y, dialogWidth, dialogHeight)
-    }
-
-    private fun placeAbove(mainStage: Stage, dialogWidth: Double, dialogHeight: Double, bounds: Rectangle2D): Rectangle2D? {
-        val y = mainStage.y - progressDialogGap - dialogHeight
-        if(y < bounds.minY) return null
-        val x = clamp(mainStage.x + (mainStage.width - dialogWidth) / 2, bounds.minX, bounds.maxX - dialogWidth)
-        return Rectangle2D(x, y, dialogWidth, dialogHeight)
-    }
-
-    private fun placeRight(mainStage: Stage, dialogWidth: Double, dialogHeight: Double, bounds: Rectangle2D): Rectangle2D? {
-        val x = mainStage.x + mainStage.width + progressDialogGap
-        if(x + dialogWidth > bounds.maxX) return null
-        val y = clamp(mainStage.y + (mainStage.height - dialogHeight) / 2, bounds.minY, bounds.maxY - dialogHeight)
-        return Rectangle2D(x, y, dialogWidth, dialogHeight)
-    }
-
-    private fun placeLeft(mainStage: Stage, dialogWidth: Double, dialogHeight: Double, bounds: Rectangle2D): Rectangle2D? {
-        val x = mainStage.x - progressDialogGap - dialogWidth
-        if(x < bounds.minX) return null
-        val y = clamp(mainStage.y + (mainStage.height - dialogHeight) / 2, bounds.minY, bounds.maxY - dialogHeight)
-        return Rectangle2D(x, y, dialogWidth, dialogHeight)
-    }
-
-    private fun placeBelow(mainStage: Stage, dialogWidth: Double, dialogHeight: Double, bounds: Rectangle2D): Rectangle2D? {
-        val y = mainStage.y + mainStage.height + progressDialogGap
-        if(y + dialogHeight > bounds.maxY) return null
-        val x = clamp(mainStage.x + (mainStage.width - dialogWidth) / 2, bounds.minX, bounds.maxX - dialogWidth)
-        return Rectangle2D(x, y, dialogWidth, dialogHeight)
-    }
-
-    private fun fallbackBottomRight(mainStage: Stage, dialogWidth: Double, dialogHeight: Double, bounds: Rectangle2D): Rectangle2D {
-        val x = clamp(mainStage.x + mainStage.width - dialogWidth, bounds.minX, bounds.maxX - dialogWidth)
-        val y = clamp(mainStage.y + mainStage.height - dialogHeight, bounds.minY, bounds.maxY - dialogHeight)
-        return Rectangle2D(x, y, dialogWidth, dialogHeight)
-    }
-
-    private fun clamp(value: Double, min: Double, max: Double): Double {
-        if(max < min) return min
-        return value.coerceIn(min, max)
+    private fun loadSavedProgressDialogPosition(): Point2D? {
+        val x = Context.config.progressDialogX
+        val y = Context.config.progressDialogY
+        if(x == null || y == null) return null
+        if(!x.isFinite() || !y.isFinite()) return null
+        return Point2D(x, y)
     }
 
 }
