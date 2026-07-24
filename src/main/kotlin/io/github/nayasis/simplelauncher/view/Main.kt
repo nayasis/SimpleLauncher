@@ -190,7 +190,7 @@ class Main: View("application.title".message()), CoroutineScope {
 
         // set minimum window size
         currentStage?.let { stage ->
-            stage.minWidth  = 400.0
+            stage.minWidth  = 460.0
             stage.minHeight = 150.0
         }
 
