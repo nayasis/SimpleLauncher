@@ -88,7 +88,7 @@ configurations.all {
 dependencies {
 
 	implementation("io.github.nayasis:basica-kt:0.3.13")
-	implementation("io.github.nayasis:basicafx-kt:0.3.0")
+	implementation("io.github.nayasis:basicafx-kt:0.3.1")
 	implementation("ch.qos.logback:logback-classic:1.5.31")
 
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")

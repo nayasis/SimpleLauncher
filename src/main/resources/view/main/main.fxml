@@ -49,7 +49,6 @@
                       <Menu mnemonicParsing="false" text="\%menu.view">
                         <items>
                               <CheckMenuItem fx:id="menuViewDesc" mnemonicParsing="false" selected="true" text="\%menu.view.description" />
-                              <CheckMenuItem fx:id="menuViewMenuBar" mnemonicParsing="false" selected="true" text="\%menu.view.showMenuBar" />
                               <CheckMenuItem fx:id="menuShowInputGroup" mnemonicParsing="false" selected="true" text="\%menu.view.showInputGroup" />
                               <CheckMenuItem fx:id="menuAlwaysOnTop" mnemonicParsing="false" text="\%menu.view.alwaysOnTop" />
                         </items>

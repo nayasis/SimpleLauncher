@@ -68,6 +68,10 @@ msg.file.icon.description   = Icon File
 msg.alert.save.link         = Save link
 msg.alert.copy.link         = Copy link
 msg.alert.create.link       = Create link
+msg.success.copy.icon       = Icon copied to clipboard.
+msg.success.save.icon       = Icon saved successfully.\n\n(%s)
+msg.error.no.icon           = No icon to save.
+msg.error.save.icon         = Error saving icon.\n\n(%s)
 
 msg.confirm.delete               = Confirm to delete ?\n\n%s
 msg.confirm.delete.all           = Confirm to initialize ?\n\n(All links will be deleted.)
@@ -98,3 +102,5 @@ shortcut.action.moveFocusToDetail = Move focus to detail editor
 shortcut.action.copyFolderFromTable = Copy folder path
 shortcut.action.openFolderFromTable = Open folder
 shortcut.action.showDetailEditor = Details
+contextmenu.icon.copy            = Copy icon
+contextmenu.icon.save            = Save icon

@@ -68,6 +68,10 @@ msg.file.icon.description           = Icon File
 msg.alert.save.link                 = 링크를 저장하였습니다.
 msg.alert.copy.link                 = 링크를 복사하였습니다.
 msg.alert.create.link               = 링크를 생성하였습니다.
+msg.success.copy.icon               = 아이콘을 클립보드에 복사하였습니다.
+msg.success.save.icon               = 아이콘을 저장하였습니다.\n\n(%s)
+msg.error.no.icon                   = 저장할 아이콘이 없습니다.
+msg.error.save.icon                 = 아이콘 저장 중 오류가 발생하였습니다.\n\n(%s)
 
 msg.confirm.delete                  = 삭제하시겠습니까 ?\n\n%s
 msg.confirm.delete.all              = 초기화를 진행하시겠습니까 ?\n\n(모든 데이터는 삭제됩니다.)
@@ -97,3 +101,5 @@ shortcut.action.moveFocusToDetail   = 상세 편집기로 이동
 shortcut.action.copyFolderFromTable = 폴더경로 복사
 shortcut.action.openFolderFromTable = 폴더열기
 shortcut.action.showDetailEditor    = 상세설정
+contextmenu.icon.copy              = 아이콘 복사
+contextmenu.icon.save              = 아이콘 저장

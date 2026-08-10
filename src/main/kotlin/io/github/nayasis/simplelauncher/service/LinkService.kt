@@ -26,8 +26,10 @@ import tornadofx.FileChooserMode
 import tornadofx.SortedFilteredList
 import tornadofx.asObservable
 import tornadofx.runLater
+import java.io.File
 import java.nio.file.Path
 import java.util.*
+import javafx.stage.FileChooser
 
 private val logger = KotlinLogging.logger {}
 
@@ -134,6 +136,18 @@ class LinkService {
 
     fun openExecutorPicker(): Path? =
         filePicker("msg.file.add","*.*","msg.file.add.description")
+
+    fun openIconSavePicker(initialDirectory: File, fileName: String): File? {
+        val fileChooser = FileChooser().apply {
+            title = "msg.file.icon".message()
+            this.initialDirectory = initialDirectory
+            this.initialFileName = fileName
+            extensionFilters.add(FileChooser.ExtensionFilter("JPEG Image (*.jpg)", "*.jpg"))
+        }
+        return fileChooser.showSaveDialog(main.primaryStage)?.also {
+            config.filePickerInitialDirectory = it.parentFile?.absolutePath
+        }
+    }
 
     private fun filePicker(
         title: String,

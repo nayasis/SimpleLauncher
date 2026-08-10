@@ -1,6 +1,8 @@
 .shortcut-dialog-root {
   -fx-padding: 4 4 8 4;
   -fx-background-color: white;
+  -fx-font-family: "Malgun Gothic", "Segoe UI", Arial;
+  -fx-font-size: 11px;
 }
 
 .shortcut-dialog-footer {
