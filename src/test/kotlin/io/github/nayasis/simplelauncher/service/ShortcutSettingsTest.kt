@@ -15,6 +15,7 @@ class ShortcutSettingsTest {
 
         settings[ShortcutAction.SAVE_DETAIL] shouldBe KeyCodeCombination(KeyCode.S, KeyCombination.CONTROL_DOWN)
         settings[ShortcutAction.ADD_FILE] shouldBe KeyCodeCombination(KeyCode.N, KeyCombination.CONTROL_DOWN, KeyCombination.SHIFT_DOWN)
+        settings[ShortcutAction.OPEN_SHORTCUT_SETTINGS] shouldBe KeyCodeCombination(KeyCode.COMMA, KeyCombination.CONTROL_DOWN)
         settings[ShortcutAction.RUN_SELECTED_LINK] shouldBe KeyCodeCombination(KeyCode.ENTER)
     }
 
@@ -24,6 +25,7 @@ class ShortcutSettingsTest {
 
         settings[ShortcutAction.SAVE_DETAIL] shouldBe KeyCodeCombination(KeyCode.S, KeyCombination.META_DOWN)
         settings[ShortcutAction.ADD_FILE] shouldBe KeyCodeCombination(KeyCode.N, KeyCombination.META_DOWN, KeyCombination.SHIFT_DOWN)
+        settings[ShortcutAction.OPEN_SHORTCUT_SETTINGS] shouldBe KeyCodeCombination(KeyCode.COMMA, KeyCombination.META_DOWN)
         settings[ShortcutAction.RUN_SELECTED_LINK] shouldBe KeyCodeCombination(KeyCode.ENTER)
     }
 

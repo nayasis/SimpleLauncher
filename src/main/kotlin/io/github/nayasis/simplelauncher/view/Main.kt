@@ -56,8 +56,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.javafx.JavaFx
 import kotlinx.coroutines.launch
 import tornadofx.*
+import java.awt.image.BufferedImage
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.time.LocalDateTime
+import javax.imageio.ImageIO
 import kotlin.coroutines.CoroutineContext
 import javafx.util.Duration
 import javafx.util.StringConverter
@@ -79,10 +83,70 @@ private val TABLE_ITEM_SHORTCUT_ACTIONS = listOf(
 
 internal const val CONTEXT_MENU_SHOW_DETAIL_ID = "context-menu-show-detail"
 
+internal class MainShortcutHandlers(
+    val onSaveDetail: () -> Unit = {},
+    val onCopyDetail: () -> Unit = {},
+    val onAddFile: () -> Unit = {},
+    val onCreateDetail: () -> Unit = {},
+    val onOpenFolder: () -> Unit = {},
+    val onCopyFolder: () -> Unit = {},
+    val onChangeIcon: () -> Unit = {},
+    val onDeleteDetail: () -> Unit = {},
+    val onImportData: () -> Unit = {},
+    val onExportData: () -> Unit = {},
+    val onOpenShortcutSettings: () -> Unit = {},
+    val onToggleDescription: () -> Unit = {},
+    val onToggleGroupFilter: () -> Unit = {},
+    val onToggleAlwaysOnTop: () -> Unit = {},
+    val onShowAbout: () -> Unit = {},
+    val onRunSelectedLink: () -> Unit = {},
+    val onFocusSearch: () -> Unit = {},
+    val onDeleteSelectedLink: () -> Unit = {},
+    val onMoveFocusToDetail: () -> Unit = {},
+    val onCopyFolderFromTable: () -> Unit = {},
+    val onOpenFolderFromTable: () -> Unit = {},
+)
+
+internal fun handleMainShortcutEvent(
+    shortcuts: ShortcutSettings,
+    event: KeyEvent,
+    tableShortcutContext: Boolean,
+    handlers: MainShortcutHandlers,
+): Boolean {
+    when {
+        shortcuts.matches(ShortcutAction.IMPORT_DATA, event) -> handlers.onImportData()
+        shortcuts.matches(ShortcutAction.EXPORT_DATA, event) -> handlers.onExportData()
+        shortcuts.matches(ShortcutAction.OPEN_SHORTCUT_SETTINGS, event) -> handlers.onOpenShortcutSettings()
+        shortcuts.matches(ShortcutAction.TOGGLE_DESCRIPTION, event) -> handlers.onToggleDescription()
+        shortcuts.matches(ShortcutAction.TOGGLE_GROUP_FILTER, event) -> handlers.onToggleGroupFilter()
+        shortcuts.matches(ShortcutAction.TOGGLE_ALWAYS_ON_TOP, event) -> handlers.onToggleAlwaysOnTop()
+        shortcuts.matches(ShortcutAction.SHOW_ABOUT, event) -> handlers.onShowAbout()
+        tableShortcutContext && shortcuts.matches(ShortcutAction.RUN_SELECTED_LINK, event) -> handlers.onRunSelectedLink()
+        tableShortcutContext && shortcuts.matches(ShortcutAction.FOCUS_SEARCH, event) -> handlers.onFocusSearch()
+        tableShortcutContext && shortcuts.matches(ShortcutAction.DELETE_SELECTED_LINK, event) -> handlers.onDeleteSelectedLink()
+        tableShortcutContext && shortcuts.matches(ShortcutAction.MOVE_FOCUS_TO_DETAIL, event) && !event.isShiftDown -> handlers.onMoveFocusToDetail()
+        tableShortcutContext && shortcuts.matches(ShortcutAction.COPY_FOLDER_FROM_TABLE, event) -> handlers.onCopyFolderFromTable()
+        tableShortcutContext && shortcuts.matches(ShortcutAction.OPEN_FOLDER_FROM_TABLE, event) -> handlers.onOpenFolderFromTable()
+        shortcuts.matches(ShortcutAction.SAVE_DETAIL, event) -> handlers.onSaveDetail()
+        shortcuts.matches(ShortcutAction.COPY_DETAIL, event) -> handlers.onCopyDetail()
+        shortcuts.matches(ShortcutAction.ADD_FILE, event) -> handlers.onAddFile()
+        shortcuts.matches(ShortcutAction.CREATE_DETAIL, event) -> handlers.onCreateDetail()
+        shortcuts.matches(ShortcutAction.OPEN_FOLDER, event) -> handlers.onOpenFolder()
+        shortcuts.matches(ShortcutAction.COPY_FOLDER, event) -> handlers.onCopyFolder()
+        shortcuts.matches(ShortcutAction.CHANGE_ICON, event) -> handlers.onChangeIcon()
+        shortcuts.matches(ShortcutAction.DELETE_DETAIL, event) -> handlers.onDeleteDetail()
+        else -> return false
+    }
+    event.consume()
+    return true
+}
+
 internal fun createTableItemContextMenu(
     shortcutSettings: () -> ShortcutSettings,
     onAction: (ShortcutAction) -> Unit,
     onShowDetail: () -> Unit,
+    onCopyIcon: () -> Unit = {},
+    onSaveIcon: () -> Unit = {},
 ): ContextMenu {
     val actionItems = TABLE_ITEM_SHORTCUT_ACTIONS.associateWith { action ->
         MenuItem(action.messageKey.message()).apply {
@@ -93,6 +157,12 @@ internal fun createTableItemContextMenu(
     val showDetailItem = MenuItem("shortcut.action.showDetailEditor".message()).apply {
         id = CONTEXT_MENU_SHOW_DETAIL_ID
         setOnAction { onShowDetail() }
+    }
+    val copyIconItem = MenuItem("contextmenu.icon.copy".message()).apply {
+        setOnAction { onCopyIcon() }
+    }
+    val saveIconItem = MenuItem("contextmenu.icon.save".message()).apply {
+        setOnAction { onSaveIcon() }
     }
     fun refreshAccelerators() {
         val shortcuts = shortcutSettings()
@@ -106,6 +176,9 @@ internal fun createTableItemContextMenu(
         SeparatorMenuItem(),
         actionItems.getValue(ShortcutAction.COPY_FOLDER_FROM_TABLE),
         actionItems.getValue(ShortcutAction.OPEN_FOLDER_FROM_TABLE),
+        SeparatorMenuItem(),
+        copyIconItem,
+        saveIconItem,
         SeparatorMenuItem(),
         actionItems.getValue(ShortcutAction.DELETE_SELECTED_LINK),
     ).apply {
@@ -134,7 +207,6 @@ class Main: View("application.title".message()), CoroutineScope {
 
     val menubarTop: MenuBar by fxid()
     val menuViewDesc: CheckMenuItem by fxid()
-    val menuViewMenuBar: CheckMenuItem by fxid()
     val menuShowInputGroup: CheckMenuItem by fxid()
     val menuAlwaysOnTop: CheckMenuItem by fxid()
     val menuHelp: MenuItem by fxid()
@@ -181,6 +253,8 @@ class Main: View("application.title".message()), CoroutineScope {
     private var ignoreDescEditorWidthChange = false
     private var childWindowLifecycleBound = false
     private var closeRequestBound = false
+    private var installedShortcutScene: javafx.scene.Scene? = null
+    private var sceneShortcutListenerBound = false
     private val searchSubmitTracker = SearchSubmitTracker()
     private var shortcuts = ShortcutSettings.load(Context.config.shortcuts)
 
@@ -192,11 +266,13 @@ class Main: View("application.title".message()), CoroutineScope {
         WindowHeaderHelper(titleBar)
         initEvent()
         initTable()
+        bindSceneShortcutsWhenSceneIsReady()
         applyShortcutSettings()
     }
 
     override fun onBeforeShow() {
         currentStage?.loadDefaultIcon()
+        currentStage?.scene?.let(::installSceneShortcutFilter)
         bindChildWindowLifecycle()
         bindCloseRequest()
 
@@ -392,43 +468,6 @@ class Main: View("application.title".message()), CoroutineScope {
             drawDetail(link)
         }
 
-        tableMain.setOnKeyPressed { e ->
-            when {
-                shortcuts.matches(ShortcutAction.RUN_SELECTED_LINK, e) -> {
-                    tableMain.selectedItem?.let { performTableItemAction(ShortcutAction.RUN_SELECTED_LINK, it) }
-                }
-                shortcuts.matches(ShortcutAction.FOCUS_SEARCH, e) -> {
-                    inputKeyword.focusInput()
-                }
-                shortcuts.matches(ShortcutAction.DELETE_SELECTED_LINK, e) -> {
-                    tableMain.selectedItem?.let {
-                        e.consume()
-                        performTableItemAction(ShortcutAction.DELETE_SELECTED_LINK, it)
-                    }
-                }
-                shortcuts.matches(ShortcutAction.MOVE_FOCUS_TO_DETAIL, e) && !e.isShiftDown -> {
-                    e.consume()
-                    if(lastFocused == null || lastFocused == tableMain) {
-                        descGroupName.focusInput()
-                    } else {
-                        lastFocused!!.requestFocus()
-                    }
-                }
-                shortcuts.matches(ShortcutAction.COPY_FOLDER_FROM_TABLE, e) -> {
-                    tableMain.selectedItem?.let {
-                        e.consume()
-                        performTableItemAction(ShortcutAction.COPY_FOLDER_FROM_TABLE, it)
-                    }
-                }
-                shortcuts.matches(ShortcutAction.OPEN_FOLDER_FROM_TABLE, e) -> {
-                    tableMain.selectedItem?.let {
-                        e.consume()
-                        performTableItemAction(ShortcutAction.OPEN_FOLDER_FROM_TABLE, it)
-                    }
-                }
-            }
-        }
-
         tableMain.setRowFactory {
             TableRow<Link>().apply {
                 val row = this
@@ -436,6 +475,8 @@ class Main: View("application.title".message()), CoroutineScope {
                     { shortcuts },
                     { action -> row.item?.let { performTableItemAction(action, it) } },
                     { row.item?.let { showDetailEditor(it) } },
+                    onCopyIcon = { row.item?.let { copyIconToClipboard(it) } },
+                    onSaveIcon = { row.item?.let { saveIconToFile(it) } },
                 )
                 itemProperty().addListener { _, _, item ->
                     contextMenu = if(item == null) null else rowMenu
@@ -498,38 +539,6 @@ class Main: View("application.title".message()), CoroutineScope {
         descGridPane.maxWidth = Double.MAX_VALUE
         descGridPane.widthProperty().addListener { _, _, _ -> updateDescEditorWidth() }
 
-        root.setOnKeyPressed { e ->
-            when {
-                shortcuts.matches(ShortcutAction.SAVE_DETAIL, e) -> {
-                    buttonSave.let { if(!it.isDisable) it.fire() }
-                }
-                shortcuts.matches(ShortcutAction.COPY_DETAIL, e) -> {
-                    buttonCopy.let { if(!it.isDisable) it.fire() }
-                }
-                shortcuts.matches(ShortcutAction.ADD_FILE, e) -> {
-                    e.consume()
-                    buttonAddFile.fireEvent(MOUSE_CLICK)
-                }
-                shortcuts.matches(ShortcutAction.CREATE_DETAIL, e) -> {
-                    e.consume()
-                    buttonNew.let { if(!it.isDisable) it.fire() }
-                }
-                shortcuts.matches(ShortcutAction.OPEN_FOLDER, e) -> {
-                    buttonOpenFolder.let { if(!it.isDisable) it.fire() }
-                }
-                shortcuts.matches(ShortcutAction.COPY_FOLDER, e) -> {
-                    e.consume()
-                    buttonCopyFolder.let { if(!it.isDisable) it.fire() }
-                }
-                shortcuts.matches(ShortcutAction.CHANGE_ICON, e) -> {
-                    changeIcon()
-                }
-                shortcuts.matches(ShortcutAction.DELETE_DETAIL, e) -> {
-                    buttonDelete.let { if(!it.isDisable) it.fire() }
-                }
-            }
-        }
-
         menuImportData.setOnAction {
             linkService.openImportPicker()?.let { file ->
                 runAwait {
@@ -556,14 +565,7 @@ class Main: View("application.title".message()), CoroutineScope {
             }
         }
 
-        menuShortcutSettings.setOnAction {
-            ShortcutEditor().showDialog(currentStage, shortcuts)?.let { updated ->
-                shortcuts = updated
-                Context.config.shortcuts = shortcuts.toConfigMap()
-                Context.config.save()
-                applyShortcutSettings()
-            }
-        }
+        menuShortcutSettings.setOnAction { openShortcutSettings() }
 
         menuViewDesc.selectedProperty().addListener { _, _, show ->
             when {
@@ -572,12 +574,6 @@ class Main: View("application.title".message()), CoroutineScope {
             }
         }
 
-        menuViewMenuBar.selectedProperty().addListener { _, _, show ->
-            menubarTop.let {
-                it.isVisible = show
-                it.repack()
-            }
-        }
 
         menuShowInputGroup.selectedProperty().addListener{_,_,show ->
             val group = inputGroup.parent as HBox
@@ -613,8 +609,10 @@ class Main: View("application.title".message()), CoroutineScope {
         buttonCopyFolder.setOnAction { tableMain.selectedItem?.let { linkService.copyFolder(it) } }
 
         descIcon.setOnMouseClicked { e ->
-            if( e.button == MouseButton.PRIMARY && e.clickCount > 1 )
-                changeIcon()
+            when {
+                e.button == MouseButton.PRIMARY && e.clickCount > 1 -> changeIcon()
+                e.button == MouseButton.SECONDARY -> showIconContextMenu(e)
+            }
         }
         descIcon.setOnDragOver { hasFile(it) }
         descIcon.setOnDragDropped { e ->
@@ -726,12 +724,104 @@ class Main: View("application.title".message()), CoroutineScope {
     private fun applyShortcutSettings() {
         menuImportData.accelerator = shortcuts[ShortcutAction.IMPORT_DATA]
         menuExportData.accelerator = shortcuts[ShortcutAction.EXPORT_DATA]
+        menuShortcutSettings.accelerator = shortcuts[ShortcutAction.OPEN_SHORTCUT_SETTINGS]
         menuViewDesc.accelerator = shortcuts[ShortcutAction.TOGGLE_DESCRIPTION]
-        menuViewMenuBar.accelerator = shortcuts[ShortcutAction.TOGGLE_MENU_BAR]
         menuShowInputGroup.accelerator = shortcuts[ShortcutAction.TOGGLE_GROUP_FILTER]
         menuAlwaysOnTop.accelerator = shortcuts[ShortcutAction.TOGGLE_ALWAYS_ON_TOP]
         menuHelp.accelerator = shortcuts[ShortcutAction.SHOW_ABOUT]
         updateShortcutTooltips()
+    }
+
+    private fun bindSceneShortcutsWhenSceneIsReady() {
+        root.scene?.let(::installSceneShortcutFilter) ?: bindSceneShortcutListener()
+    }
+
+    private fun bindSceneShortcutListener() {
+        if(sceneShortcutListenerBound) return
+        root.sceneProperty().addListener { _, _, attachedScene ->
+            if(attachedScene != null) {
+                installSceneShortcutFilter(attachedScene)
+            }
+        }
+        sceneShortcutListenerBound = true
+    }
+
+    private fun installSceneShortcutFilter(scene: javafx.scene.Scene) {
+        if(installedShortcutScene === scene) return
+
+        scene.addEventFilter(KEY_PRESSED) { event ->
+            handleMainShortcutEvent(
+                shortcuts = shortcuts,
+                event = event,
+                tableShortcutContext = isShortcutContextNode(tableMain, scene.focusOwner),
+                handlers = MainShortcutHandlers(
+                    onSaveDetail = { buttonSave.let { if(!it.isDisable) it.fire() } },
+                    onCopyDetail = { buttonCopy.let { if(!it.isDisable) it.fire() } },
+                    onAddFile = { buttonAddFile.fireEvent(MOUSE_CLICK) },
+                    onCreateDetail = { buttonNew.let { if(!it.isDisable) it.fire() } },
+                    onOpenFolder = { buttonOpenFolder.let { if(!it.isDisable) it.fire() } },
+                    onCopyFolder = { buttonCopyFolder.let { if(!it.isDisable) it.fire() } },
+                    onChangeIcon = { changeIcon() },
+                    onDeleteDetail = { buttonDelete.let { if(!it.isDisable) it.fire() } },
+                    onImportData = { menuImportData.fire() },
+                    onExportData = { menuExportData.fire() },
+                    onOpenShortcutSettings = { openShortcutSettings() },
+                    onToggleDescription = { menuViewDesc.isSelected = !menuViewDesc.isSelected },
+                    onToggleGroupFilter = { menuShowInputGroup.isSelected = !menuShowInputGroup.isSelected },
+                    onToggleAlwaysOnTop = { menuAlwaysOnTop.isSelected = !menuAlwaysOnTop.isSelected },
+                    onShowAbout = { menuHelp.fire() },
+                    onRunSelectedLink = { tableMain.selectedItem?.let { performTableItemAction(ShortcutAction.RUN_SELECTED_LINK, it) } },
+                    onFocusSearch = { inputKeyword.focusInput() },
+                    onDeleteSelectedLink = {
+                        tableMain.selectedItem?.let {
+                            performTableItemAction(ShortcutAction.DELETE_SELECTED_LINK, it)
+                        }
+                    },
+                    onMoveFocusToDetail = {
+                        if(lastFocused == null || lastFocused == tableMain) {
+                            descGroupName.focusInput()
+                        } else {
+                            lastFocused!!.requestFocus()
+                        }
+                    },
+                    onCopyFolderFromTable = {
+                        tableMain.selectedItem?.let {
+                            performTableItemAction(ShortcutAction.COPY_FOLDER_FROM_TABLE, it)
+                        }
+                    },
+                    onOpenFolderFromTable = {
+                        tableMain.selectedItem?.let {
+                            performTableItemAction(ShortcutAction.OPEN_FOLDER_FROM_TABLE, it)
+                        }
+                    },
+                ),
+            )
+        }
+
+        installedShortcutScene = scene
+        sceneShortcutListenerBound = false
+        applyShortcutSettings()
+    }
+
+    private fun isShortcutContextNode(rootNode: Node, target: Any?): Boolean {
+        var current = target as? Node
+        while(current != null) {
+            if(current === rootNode) return true
+            current = current.parent
+        }
+        return false
+    }
+
+    private fun openShortcutSettings() {
+        ShortcutEditor().showDialog(currentStage, shortcuts)?.let { updated ->
+            shortcuts = updated
+            Context.config.shortcuts = shortcuts.toConfigMap()
+            Context.config.save()
+            runLater {
+                currentStage?.requestFocus()
+                applyShortcutSettings()
+            }
+        }
     }
 
     private fun updateShortcutTooltips() {
@@ -1121,6 +1211,81 @@ class Main: View("application.title".message()), CoroutineScope {
             descIcon.image = icon
             buttonSave.isDisable = false
         }
+    }
+
+    private fun copyIconToClipboard(link: Link) {
+        link.iconImage?.let { image ->
+            val content = ClipboardContent()
+            content.putImage(image)
+            Clipboard.getSystemClipboard().setContent(content)
+            printStatus("msg.success.copy.icon".message())
+        } ?: run {
+            Dialog.alert("msg.error.no.icon".message())
+        }
+    }
+
+    private fun saveIconToFile(link: Link) {
+        link.iconImage?.let { image ->
+            try {
+                // 초기 위치: 실행파일 경로, 없으면 바탕화면, 그 다음 홈 디렉토리
+                val initialDir = when {
+                    !link.path.isNullOrBlank() -> File(link.path).parentFile?.absolutePath
+                    else -> null
+                } ?: System.getProperty("user.home")?.let { File(it, "Desktop").absolutePath }
+                ?: System.getProperty("user.home")
+
+                val fileName = (link.title?.take(50)?.replace("[/\\\\:*?\"<>|]".toRegex(), "_") ?: "icon") + ".jpg"
+                
+                // 파일 선택 대화상자 열기
+                val selectedFile = linkService.openIconSavePicker(File(initialDir), fileName) ?: return
+
+                // JavaFX Image를 BufferedImage로 변환
+                val width = image.width.toInt()
+                val height = image.height.toInt()
+                val bufferedImage = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
+
+                val pixelReader = image.pixelReader
+                for (y in 0 until height) {
+                    for (x in 0 until width) {
+                        val argb = pixelReader.getArgb(x, y)
+                        // JPG는 알파 채널을 지원하지 않으므로 흰색 배경에 합성
+                        val alpha = (argb shr 24) and 0xFF
+                        val red = (argb shr 16) and 0xFF
+                        val green = (argb shr 8) and 0xFF
+                        val blue = argb and 0xFF
+
+                        val finalRed = if (alpha == 0) 255 else ((red * alpha + 255 * (255 - alpha)) / 255)
+                        val finalGreen = if (alpha == 0) 255 else ((green * alpha + 255 * (255 - alpha)) / 255)
+                        val finalBlue = if (alpha == 0) 255 else ((blue * alpha + 255 * (255 - alpha)) / 255)
+
+                        val rgb = (finalRed shl 16) or (finalGreen shl 8) or finalBlue
+                        bufferedImage.setRGB(x, y, rgb)
+                    }
+                }
+
+                ImageIO.write(bufferedImage, "jpg", selectedFile)
+                printStatus("msg.success.save.icon".message().format(selectedFile.absolutePath))
+            } catch (e: Exception) {
+                logger.error(e)
+                Dialog.alert("msg.error.save.icon".message().format(e.message))
+            }
+        } ?: run {
+            Dialog.alert("msg.error.no.icon".message())
+        }
+    }
+
+    private fun showIconContextMenu(event: MouseEvent) {
+        if (detail == null) return
+        
+        val contextMenu = ContextMenu(
+            MenuItem("contextmenu.icon.copy".message()).apply {
+                setOnAction { detail?.let { copyIconToClipboard(it) } }
+            },
+            MenuItem("contextmenu.icon.save".message()).apply {
+                setOnAction { detail?.let { saveIconToFile(it) } }
+            }
+        )
+        contextMenu.show(descIcon, event.screenX, event.screenY)
     }
 
     private fun toTabPressEvent(event: KeyEvent) = KeyEvent(
