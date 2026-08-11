@@ -1,26 +1,5 @@
 group   = "io.github.nayasis"
-
-fun Project.findReleaseVersionFromBranch(): String? {
-	val branchName = providers.environmentVariable("GITHUB_REF_NAME").orNull?.trim().takeUnless { it.isNullOrBlank() } ?: run {
-		try {
-			val process = ProcessBuilder("git", "rev-parse", "--abbrev-ref", "HEAD")
-				.redirectErrorStream(true)
-				.start()
-			process.waitFor()
-			process.inputStream.bufferedReader().readText().trim().takeUnless { it.isBlank() || it == "HEAD" }
-		} catch (_: Exception) {
-			return null
-		}
-	}
-
-	return branchName
-		?.removePrefix("refs/heads/")
-		?.takeIf { it.startsWith("release/") }
-		?.removePrefix("release/")
-		?.takeIf { it.isNotBlank() }
-}
-
-version = findReleaseVersionFromBranch() ?: "0.1.5"
+version = findReleaseVersionFromBranch() ?: "0.1.0-SNAPSHOT"
 
 plugins {
 	application
@@ -88,7 +67,8 @@ configurations.all {
 dependencies {
 
 	implementation("io.github.nayasis:basica-kt:0.3.13")
-	implementation("io.github.nayasis:basicafx-kt:0.3.1")
+//	implementation("io.github.nayasis:basicafx-kt:0.3.1")
+	implementation("io.github.nayasis:basicafx-kt:0.1.0-SNAPSHOT")
 	implementation("ch.qos.logback:logback-classic:1.5.31")
 
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
@@ -448,8 +428,9 @@ tasks.register("deploy") {
 	doLast {
 		val appName = application.applicationName
 		val sourceDir = file("build/dist/$appName")
-		val targetDir = file("d:/app/SimpleLauncher")
-//		val targetDir = file("c:/app/SimpleLauncher")
+		val targetDir = file("d:/app/SimpleLauncher").takeIf{ it.exists() }
+			?: file("c:/app/SimpleLauncher").takeIf{ it.exists() }
+			?: return@doLast
 		val executable = "$appName.exe"
 
 		if (isWindows) {
@@ -469,4 +450,24 @@ tasks.register("deploy") {
 		copyRecursivelyForce(sourceDir.resolve("runtime"), targetDir.resolve("runtime"))
 		copyRecursivelyForce(sourceDir.resolve(executable), targetDir.resolve(executable))
 	}
+}
+
+fun Project.findReleaseVersionFromBranch(): String? {
+	val branchName = providers.environmentVariable("GITHUB_REF_NAME").orNull?.trim().takeUnless { it.isNullOrBlank() } ?: run {
+		try {
+			val process = ProcessBuilder("git", "rev-parse", "--abbrev-ref", "HEAD")
+				.redirectErrorStream(true)
+				.start()
+			process.waitFor()
+			process.inputStream.bufferedReader().readText().trim().takeUnless { it.isBlank() || it == "HEAD" }
+		} catch (_: Exception) {
+			return null
+		}
+	}
+
+	return branchName
+		?.removePrefix("refs/heads/")
+		?.takeIf { it.startsWith("release/") }
+		?.removePrefix("release/")
+		?.takeIf { it.isNotBlank() }
 }

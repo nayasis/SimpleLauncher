@@ -21,15 +21,14 @@ import io.github.nayasis.simplelauncher.model.LinkTable
 import io.github.nayasis.simplelauncher.model.repo
 import io.github.nayasis.simplelauncher.model.vo.JsonLink
 import io.github.oshai.kotlinlogging.KotlinLogging
+import javafx.stage.FileChooser
 import org.jetbrains.exposed.v1.jdbc.deleteAll
 import tornadofx.FileChooserMode
 import tornadofx.SortedFilteredList
 import tornadofx.asObservable
 import tornadofx.runLater
-import java.io.File
 import java.nio.file.Path
 import java.util.*
-import javafx.stage.FileChooser
 
 private val logger = KotlinLogging.logger {}
 
@@ -37,6 +36,7 @@ private val logger = KotlinLogging.logger {}
 class LinkService {
 
     val links = SortedFilteredList(mutableListOf<Link>().asObservable())
+
     private val tokenReferences = TokenReferenceIndex()
 
     fun save(link: Link, refreshTable: Boolean = true) {
@@ -61,7 +61,7 @@ class LinkService {
         val links = file.readText().toObject<List<JsonLink>>().map { it.toLink() }
         logger.debug { "write links to DB (count: ${links.size})" }
         tx {
-            links.forEachIndexed { i, link ->
+            links.forEach { link ->
                 LinkTable.repo.create(link)
             }
         }
@@ -117,10 +117,6 @@ class LinkService {
         return tokenReferences.groupSuggestions(excludedTokens)
     }
 
-    fun groupTokenSuggestions(selectedTokens: Iterable<String>, excludedTokens: Iterable<String>): List<String> {
-        return tokenReferences.groupSuggestions(selectedTokens, excludedTokens)
-    }
-
     fun hashtagSuggestions(excludedTokens: Iterable<String> = emptyList()): List<String> {
         return tokenReferences.hashtagSuggestions(excludedTokens)
     }
@@ -129,7 +125,7 @@ class LinkService {
         filePicker("msg.file.import","*.json","msg.file.import.description")
 
     fun openExportPicker(): Path? =
-        filePicker("msg.file.export","*.json","msg.file.import.description", FileChooserMode.Save)
+        filePicker("msg.file.export","*.json","msg.file.import.description", mode = FileChooserMode.Save)
 
     fun openIconPicker(): Path? =
         filePicker("msg.file.icon","*.*","msg.file.icon.description")
@@ -137,29 +133,31 @@ class LinkService {
     fun openExecutorPicker(): Path? =
         filePicker("msg.file.add","*.*","msg.file.add.description")
 
-    fun openIconSavePicker(initialDirectory: File, fileName: String): File? {
-        val fileChooser = FileChooser().apply {
-            title = "msg.file.icon".message()
-            this.initialDirectory = initialDirectory
-            this.initialFileName = fileName
-            extensionFilters.add(FileChooser.ExtensionFilter("JPEG Image (*.jpg)", "*.jpg"))
-        }
-        return fileChooser.showSaveDialog(main.primaryStage)?.also {
-            config.filePickerInitialDirectory = it.parentFile?.absolutePath
-        }
+    fun openIconSavePicker(initialDirectory: Path, initialFileName: String): Path? {
+        return filePicker(
+            "msg.file.icon",
+            "*.jpg",
+            "msg.file.icon.save.description",
+            initialDirectory,
+            initialFileName,
+            FileChooserMode.Save,
+        )
     }
 
     private fun filePicker(
         title: String,
         extension: String,
         description: String,
+        initialDirectory: Path? = null,
+        initialFileName: String? = null,
         mode: FileChooserMode = FileChooserMode.Single
     ): Path? {
         return Dialog.filePicker(
             title = title.message(),
             extension = extension,
             description = description.message(),
-            initialDirectory = config.filePickerInitialDirectory?.toPath(),
+            initialDirectory = initialDirectory ?: config.filePickerInitialDirectory?.toPath(),
+            initialFileName = initialFileName,
             mode = mode,
             owner = main.primaryStage
         ).firstOrNull().also {
@@ -194,9 +192,8 @@ private data class LinkTokenSnapshot(
 private class TokenReferenceIndex {
 
     private val snapshots = HashMap<Long, LinkTokenSnapshot>()
-    private val groupCounts = HashMap<String, Int>()
-    private val hashtagCounts = HashMap<String, Int>()
-    private val groupContextCounts = HashMap<Set<String>, MutableMap<String, Int>>()
+    private val groups    = HashMap<String, Int>()
+    private val hashtags  = HashMap<String, Int>()
 
     fun rebuild(links: Iterable<Link>) {
         clear()
@@ -218,25 +215,17 @@ private class TokenReferenceIndex {
 
     fun clear() {
         snapshots.clear()
-        groupCounts.clear()
-        hashtagCounts.clear()
-        groupContextCounts.clear()
+        groups.clear()
+        hashtags.clear()
     }
 
     fun groupSuggestions(excludedTokens: Iterable<String>): List<String> {
-        return rank(groupCounts, excludedTokens.normalizedTokenSet())
+        return rank(groups, excludedTokens.normalizedTokenSet())
     }
 
-    fun groupSuggestions(selectedTokens: Iterable<String>, excludedTokens: Iterable<String>): List<String> {
-        val selected = selectedTokens.normalizedTokenSet()
-        if(selected.isEmpty()) {
-            return groupSuggestions(excludedTokens)
-        }
-        return rank(groupContextCounts[selected] ?: emptyMap(), excludedTokens.normalizedTokenSet() + selected)
-    }
 
     fun hashtagSuggestions(excludedTokens: Iterable<String>): List<String> {
-        return rank(hashtagCounts, excludedTokens.normalizedTokenSet())
+        return rank(hashtags, excludedTokens.normalizedTokenSet())
     }
 
     private fun add(snapshot: LinkTokenSnapshot) {
@@ -245,45 +234,13 @@ private class TokenReferenceIndex {
     }
 
     private fun addCounts(snapshot: LinkTokenSnapshot) {
-        adjust(groupCounts, snapshot.group, 1)
-        adjust(hashtagCounts, snapshot.hashtag, 1)
-        adjustGroupContexts(snapshot.group, 1)
+        adjust(groups, snapshot.group, 1)
+        adjust(hashtags, snapshot.hashtag, 1)
     }
 
     private fun removeCounts(snapshot: LinkTokenSnapshot) {
-        adjust(groupCounts, snapshot.group, -1)
-        adjust(hashtagCounts, snapshot.hashtag, -1)
-        adjustGroupContexts(snapshot.group, -1)
-    }
-
-    private fun adjustGroupContexts(group: Set<String>, delta: Int) {
-        if(group.size < 2) return
-        properSubsets(group.toList()).forEach { selected ->
-            val candidates = group - selected
-            val counts = groupContextCounts.getOrPut(selected) { HashMap() }
-            adjust(counts, candidates, delta)
-            if(counts.isEmpty()) {
-                groupContextCounts.remove(selected)
-            }
-        }
-    }
-
-    private fun properSubsets(tokens: List<String>): List<Set<String>> {
-        val subsets = ArrayList<Set<String>>()
-        fun collect(index: Int, selected: LinkedHashSet<String>) {
-            if(index == tokens.size) {
-                if(selected.isNotEmpty() && selected.size < tokens.size) {
-                    subsets += HashSet(selected)
-                }
-                return
-            }
-            collect(index + 1, selected)
-            selected += tokens[index]
-            collect(index + 1, selected)
-            selected -= tokens[index]
-        }
-        collect(0, LinkedHashSet())
-        return subsets
+        adjust(groups, snapshot.group, -1)
+        adjust(hashtags, snapshot.hashtag, -1)
     }
 
     private fun adjust(counts: MutableMap<String, Int>, tokens: Iterable<String>, delta: Int) {

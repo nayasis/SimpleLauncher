@@ -7,6 +7,7 @@ import impl.org.controlsfx.autocompletion.SuggestionProvider
 import io.github.nayasis.kotlin.basica.core.extension.ifNull
 import io.github.nayasis.kotlin.basica.core.localdate.toString
 import io.github.nayasis.kotlin.basica.core.string.message
+import io.github.nayasis.kotlin.basica.core.string.toPath
 import io.github.nayasis.kotlin.basica.etc.error
 import io.github.nayasis.kotlin.javafx.control.basic.allChildren
 import io.github.nayasis.kotlin.javafx.control.basic.hmargin
@@ -980,7 +981,7 @@ class Main: View("application.title".message()), CoroutineScope {
         }
 
         applySearchHistory(inputKeyword) { compactSearchHistory(Context.config.historySearch) }
-        applyAutoCompletion(inputGroup.input, { groupTokenSuggestions(inputGroup.currentTermValues()) })
+        applyAutoCompletion(inputGroup.input, { allGroupTokenSuggestions(inputGroup.currentTermValues()) })
         applyLiveAutoCompletion(descGroupName.input, { allGroupTokenSuggestions(descGroupName.currentTokens()) }) {
             descGroupName.commitInput()
         }
@@ -1186,12 +1187,6 @@ class Main: View("application.title".message()), CoroutineScope {
         }
     }
 
-    private fun groupTokenSuggestions(selectedTokens: Iterable<String>): HistorySet<String> {
-        return HistorySet<String>(512).apply {
-            linkService.groupTokenSuggestions(selectedTokens, selectedTokens).forEach { add(it) }
-        }
-    }
-
     private fun changeIcon() {
         if( detail == null ) return
         linkService.openIconPicker()?.let { changeIcon(it.toFile()) }
@@ -1235,9 +1230,9 @@ class Main: View("application.title".message()), CoroutineScope {
                 ?: System.getProperty("user.home")
 
                 val fileName = (link.title?.take(50)?.replace("[/\\\\:*?\"<>|]".toRegex(), "_") ?: "icon") + ".jpg"
-                
+
                 // 파일 선택 대화상자 열기
-                val selectedFile = linkService.openIconSavePicker(File(initialDir), fileName) ?: return
+                val selectedFile = linkService.openIconSavePicker(initialDir.toPath(), fileName) ?: return
 
                 // JavaFX Image를 BufferedImage로 변환
                 val width = image.width.toInt()
@@ -1263,8 +1258,8 @@ class Main: View("application.title".message()), CoroutineScope {
                     }
                 }
 
-                ImageIO.write(bufferedImage, "jpg", selectedFile)
-                printStatus("msg.success.save.icon".message().format(selectedFile.absolutePath))
+                ImageIO.write(bufferedImage, "jpg", selectedFile.toFile())
+                printStatus("msg.success.save.icon".message().format(selectedFile))
             } catch (e: Exception) {
                 logger.error(e)
                 Dialog.alert("msg.error.save.icon".message().format(e.message))
@@ -1276,7 +1271,7 @@ class Main: View("application.title".message()), CoroutineScope {
 
     private fun showIconContextMenu(event: MouseEvent) {
         if (detail == null) return
-        
+
         val contextMenu = ContextMenu(
             MenuItem("contextmenu.icon.copy".message()).apply {
                 setOnAction { detail?.let { copyIconToClipboard(it) } }
