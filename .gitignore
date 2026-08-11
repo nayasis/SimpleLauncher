@@ -48,3 +48,6 @@ HELP.md
 /.gradle-home/
 /.kotlin/
 /file/
+/.agents/
+/.claude/
+/.codex/
