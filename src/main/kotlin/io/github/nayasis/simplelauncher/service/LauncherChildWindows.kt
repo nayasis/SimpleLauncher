@@ -1,12 +1,15 @@
 package io.github.nayasis.simplelauncher.service
 
 import io.github.nayasis.kotlin.javafx.stage.BoundaryChecker
+import io.github.nayasis.kotlin.javafx.property.PositionProperty
 import io.github.nayasis.kotlin.javafx.stage.progress.ProgressDialog
 import io.github.nayasis.simplelauncher.common.Context
 import io.github.nayasis.simplelauncher.view.Terminal
 import javafx.application.Platform
+import javafx.geometry.Dimension2D
 import javafx.geometry.Point2D
 import javafx.geometry.Rectangle2D
+import javafx.scene.Parent
 import javafx.stage.Screen
 import javafx.stage.Window
 import javafx.stage.WindowEvent
@@ -105,6 +108,20 @@ internal class LauncherChildWindows {
 
     fun refreshProgressQueue(dialog: ProgressDialog) {
         progressQueuePopOvers[dialog]?.refreshIfShowing()
+    }
+
+    fun progressDialogPosition(dialog: ProgressDialog): PositionProperty? {
+        val mainStage = Context.main.currentStage ?: return null
+        val dialogSize = measureProgressDialog(dialog) ?: return null
+        val mainBounds = majorScreenBoundsOf(mainStage)
+        val position = resolveProgressDialogPosition(
+            lastPosition = lastProgressDialogPosition,
+            dialogWidth = dialogSize.width,
+            dialogHeight = dialogSize.height,
+            mainBounds = mainBounds,
+            isShownOnScreen = boundaryChecker::isShownOnScreen,
+        )
+        return PositionProperty(position.x.toInt(), position.y.toInt())
     }
 
     private fun bindHiddenState(dialog: ProgressDialog) {
@@ -233,13 +250,17 @@ internal class LauncherChildWindows {
         val dialogWidth = dialogStage.width.takeIf { it > 0 } ?: return
         val dialogHeight = dialogStage.height.takeIf { it > 0 } ?: return
 
-        val position = lastProgressDialogPosition
-            ?.let { asVisibleRect(it, dialogWidth, dialogHeight) }
-            ?: centerOnMainScreen(mainStage, dialogWidth, dialogHeight)
+        val position = resolveProgressDialogPosition(
+            lastPosition = lastProgressDialogPosition,
+            dialogWidth = dialogWidth,
+            dialogHeight = dialogHeight,
+            mainBounds = majorScreenBoundsOf(mainStage),
+            isShownOnScreen = boundaryChecker::isShownOnScreen,
+        )
 
-        dialogStage.x = position.minX
-        dialogStage.y = position.minY
-        lastProgressDialogPosition = Point2D(position.minX, position.minY)
+        dialogStage.x = position.x
+        dialogStage.y = position.y
+        lastProgressDialogPosition = position
     }
 
     private fun rememberProgressDialogPosition(dialog: ProgressDialog) {
@@ -251,16 +272,20 @@ internal class LauncherChildWindows {
         saveProgressDialogPosition(position)
     }
 
-    private fun asVisibleRect(position: Point2D, dialogWidth: Double, dialogHeight: Double): Rectangle2D? {
-        val rect = Rectangle2D(position.x, position.y, dialogWidth, dialogHeight)
-        return if(boundaryChecker.isShownOnScreen(rect)) rect else null
-    }
-
-    private fun centerOnMainScreen(mainStage: Window, dialogWidth: Double, dialogHeight: Double): Rectangle2D {
-        val bounds = majorScreenBoundsOf(mainStage)
-        val x = bounds.minX + (bounds.width - dialogWidth) / 2.0
-        val y = bounds.minY + (bounds.height - dialogHeight) / 2.0
-        return Rectangle2D(x, y, dialogWidth, dialogHeight)
+    private fun measureProgressDialog(dialog: ProgressDialog): Dimension2D? {
+        val stage = dialog.stage
+        val root = stage.scene?.root as? Parent ?: return null
+        root.applyCss()
+        root.autosize()
+        val width = stage.width.takeIf { it > 0.0 }
+            ?: root.prefWidth(-1.0).takeIf { it > 0.0 }
+            ?: root.layoutBounds.width.takeIf { it > 0.0 }
+            ?: return null
+        val height = stage.height.takeIf { it > 0.0 }
+            ?: root.prefHeight(width).takeIf { it > 0.0 }
+            ?: root.layoutBounds.height.takeIf { it > 0.0 }
+            ?: return null
+        return Dimension2D(width, height)
     }
 
     private fun majorScreenBoundsOf(window: Window): Rectangle2D {
@@ -285,4 +310,27 @@ internal class LauncherChildWindows {
         return Point2D(x, y)
     }
 
+}
+
+internal fun resolveProgressDialogPosition(
+    lastPosition: Point2D?,
+    dialogWidth: Double,
+    dialogHeight: Double,
+    mainBounds: Rectangle2D,
+    isShownOnScreen: (Rectangle2D) -> Boolean,
+): Point2D {
+    if(dialogWidth <= 0.0 || dialogHeight <= 0.0) {
+        return Point2D(mainBounds.minX, mainBounds.minY)
+    }
+
+    val savedPosition = lastPosition?.takeIf {
+        isShownOnScreen(Rectangle2D(it.x, it.y, dialogWidth, dialogHeight))
+    }
+    if(savedPosition != null) {
+        return savedPosition
+    }
+
+    val x = mainBounds.minX + (mainBounds.width - dialogWidth) / 2.0
+    val y = mainBounds.minY + (mainBounds.height - dialogHeight) / 2.0
+    return Point2D(x, y)
 }
