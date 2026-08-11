@@ -7,6 +7,7 @@ import io.github.nayasis.kotlin.basica.exec.CommandExecutor
 import io.github.nayasis.kotlin.javafx.app.di.Inject
 import io.github.nayasis.kotlin.javafx.misc.runAwait
 import io.github.nayasis.kotlin.javafx.stage.Dialog
+import io.github.nayasis.kotlin.javafx.stage.Stages
 import io.github.nayasis.kotlin.javafx.stage.progress.ProgressDialog
 import io.github.nayasis.simplelauncher.common.Context.Companion.linkService
 import io.github.nayasis.simplelauncher.common.Context.Companion.main
@@ -100,8 +101,9 @@ class LinkExecutor{
     }
 
     private fun openProgressDialog(title: String?): ProgressDialog {
-        return Dialog.progress(title).also {
-            registerProgressDialog(it)
+        return createProgressDialog(title).also { dialog ->
+            registerProgressDialog(dialog)
+            dialog.showAt(childWindows.progressDialogPosition(dialog))
         }
     }
 
@@ -111,9 +113,9 @@ class LinkExecutor{
             updateProgress(dialog, queue, queue.currentItem())
             refreshProgressQueue(dialog)
         }
-        dialog = Dialog.progress(title, headerButton = context.queueButton).also {
-            registerProgressDialog(it, context.popOver)
-        }
+        dialog = createProgressDialog(title, context.queueButton)
+        registerProgressDialog(dialog, context.popOver)
+        dialog.showAt(childWindows.progressDialogPosition(dialog))
         return dialog
     }
 
@@ -127,15 +129,22 @@ class LinkExecutor{
             updateProgress(dialog, queue, queue.currentItem())
             refreshProgressQueue(dialog)
         }
-        dialog = Dialog.progress(title, headerButton = context.queueButton).setOnDone {
+        dialog = createProgressDialog(title, context.queueButton).setOnDone {
             context.control.updateExecutor(null)
             unregisterProgressDialog(dialog)
         }
         registerProgressDialog(dialog, context.popOver)
-        dialog.runAsync {
+        dialog.runAsync(childWindows.progressDialogPosition(dialog)) {
             task(it, context.control)
         }
         return dialog
+    }
+
+    private fun createProgressDialog(title: String?, headerButton: Button? = null): ProgressDialog {
+        return ProgressDialog(title).apply {
+            initOwner(Stages.focusedWindow)
+            headerButton?.let { addHeaderRight(it) }
+        }
     }
 
     private fun createProgressQueueContext(queue: ProgressFileQueue, onPendingRemoved: () -> Unit): ProgressQueueContext {
