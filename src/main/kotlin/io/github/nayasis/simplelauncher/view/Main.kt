@@ -54,13 +54,14 @@ import javafx.stage.Stage
 import javafx.stage.WindowEvent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.javafx.JavaFx
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import tornadofx.*
 import java.awt.image.BufferedImage
 import java.io.File
-import java.nio.file.Files
-import java.nio.file.Paths
 import java.time.LocalDateTime
 import javax.imageio.ImageIO
 import kotlin.coroutines.CoroutineContext
@@ -258,6 +259,8 @@ class Main: View("application.title".message()), CoroutineScope {
     private var installedShortcutScene: javafx.scene.Scene? = null
     private var sceneShortcutListenerBound = false
     private val searchSubmitTracker = SearchSubmitTracker()
+    private var searchJob: Job? = null
+    private var searchGeneration = 0L
     private var shortcuts = ShortcutSettings.load(Context.config.shortcuts)
 
     private val favicon       = resources.image("/image/icon/favicon.png")
@@ -301,13 +304,15 @@ class Main: View("application.title".message()), CoroutineScope {
             }
         }
 
-        initSearchFilter()
-
-        runLater {
-            linkService.links.firstOrNull { it.id == Context.config.lastFocusedLinkId }?.let {
-                tableMain.selectBy(it)
-                tableMain.scrollBy(it)
-            } ?: tableMain.selectFirst()
+        // filtering is asynchronous, so restore the selection after it is applied
+        initSearchFilter {
+            val focused = linkService.links.firstOrNull { it.id == Context.config.lastFocusedLinkId }
+            runLater {
+                focused?.let {
+                    tableMain.selectBy(it)
+                    tableMain.scrollBy(it)
+                } ?: tableMain.selectFirst()
+            }
         }
 
         DefaultPreloader.close()
@@ -968,32 +973,69 @@ class Main: View("application.title".message()), CoroutineScope {
         descGridPane.maxWidth = Double.MAX_VALUE
     }
 
-    private fun initSearchFilter() {
+    private fun initSearchFilter(onApplied: (() -> Unit)? = null) {
         restoreSearchState()
         keywordMatcher.setKeyword(inputKeyword.text)
         groupMatcher.setKeyword(inputGroup.text)
-        setSearchFilter()
+        setSearchFilter(onApplied)
         setSearchEvent()
     }
 
-    private fun setSearchFilter() {
-        val hasKeyword = inputKeyword.text.isNotBlank()
-        val hasGroup   = inputGroup.text.isNotBlank()
-        linkService.links.predicate = {
-            val keywordHaystack = listOf(it.title) + it.hashtag
-            val inKeyword = when {
-                inputKeyword.hasTokens() -> matchesSearchTokens(keywordHaystack, inputKeyword.tokens())
-                hasKeyword -> keywordMatcher.isMatch(keywordHaystack)
-                else -> true
-            }
-            val inGroup = when {
-                inputGroup.hasTokens() -> matchesSearchTokens(it.group, inputGroup.tokens())
-                hasGroup -> groupMatcher.isMatch(it.group)
-                else -> true
-            }
-            inKeyword && inGroup
+    /**
+     * build the matcher on the FX thread (UI controls must not be read from
+     * another thread), then evaluate links in background.
+     */
+    private fun setSearchFilter(onApplied: (() -> Unit)? = null) {
+        val keywordTokens  = inputKeyword.tokens()
+        val groupTokens    = inputGroup.tokens()
+        val hasKeywordText = inputKeyword.text.isNotBlank()
+        val hasGroupText   = inputGroup.text.isNotBlank()
+
+        searchJob?.cancel()
+        val generation = ++searchGeneration
+
+        if(keywordTokens.isEmpty() && !hasKeywordText && groupTokens.isEmpty() && !hasGroupText) {
+            linkService.links.predicate = { true }
+            printSearchResult()
+            onApplied?.invoke()
+            return
         }
-        printSearchResult()
+
+        val matches: (Link) -> Boolean = { link ->
+            val keywordHaystack = listOf(link.title) + link.hashtag
+            val inKeyword = when {
+                keywordTokens.isNotEmpty() -> matchesSearchTokens(keywordHaystack, keywordTokens)
+                hasKeywordText -> keywordMatcher.isMatch(keywordHaystack)
+                else -> true
+            }
+            inKeyword && when {
+                groupTokens.isNotEmpty() -> matchesSearchTokens(link.group, groupTokens)
+                hasGroupText -> groupMatcher.isMatch(link.group)
+                else -> true
+            }
+        }
+
+        val snapshot = ArrayList(linkService.links.items)
+        searchJob = launch(Dispatchers.Default) {
+            val evaluated = HashSet<Long>(snapshot.size)
+            val matched   = HashSet<Long>()
+            for(link in snapshot) {
+                if(!isActive) return@launch
+                evaluated.add(link.id)
+                if(matches(link)) matched.add(link.id)
+            }
+            val applied = withContext(Dispatchers.JavaFx) {
+                if(generation != searchGeneration) return@withContext false
+                // links added after the snapshot are evaluated inline, so they are never hidden silently
+                linkService.links.predicate = { link ->
+                    if(link.id in evaluated) link.id in matched else matches(link)
+                }
+                printSearchResult()
+                true
+            }
+            // callback runs off the FX thread. it should wrap its own table commands with runLater.
+            if(applied) onApplied?.invoke()
+        }
     }
 
     private fun setSearchEvent() {
@@ -1019,10 +1061,10 @@ class Main: View("application.title".message()), CoroutineScope {
             ?: inputKeyword.setSearchText(Context.config.lastSearchKeyword)
     }
 
-    private fun submitSearch(saveKeywordHistory: Boolean = false) {
+    private fun submitSearch(saveKeywordHistory: Boolean = false, onApplied: (() -> Unit)? = null) {
         keywordMatcher.setKeyword(inputKeyword.text)
         groupMatcher.setKeyword(inputGroup.text)
-        setSearchFilter()
+        setSearchFilter(onApplied)
         if(saveKeywordHistory) {
             saveSubmittedKeyword()
         }
@@ -1032,9 +1074,12 @@ class Main: View("application.title".message()), CoroutineScope {
         val snapshot = searchSubmitSnapshot()
         when(searchSubmitTracker.nextAction(snapshot)) {
             SearchSubmitAction.SUBMIT -> {
-                submitSearch(saveKeywordHistory)
-                if(snapshot.isBlank() && tableMain.visibleRows in 1..10) {
-                    runFirstSearchResult()
+                submitSearch(saveKeywordHistory) {
+                    if(snapshot.isBlank()) {
+                        runLater {
+                            if(tableMain.visibleRows in 1..10) runFirstSearchResult()
+                        }
+                    }
                 }
             }
             SearchSubmitAction.RUN_FIRST_RESULT -> runFirstSearchResult()
