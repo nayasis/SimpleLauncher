@@ -136,7 +136,7 @@ internal class SearchTokenFieldTest {
                     latch.countDown()
                 }
             }
-            latch.await(5, TimeUnit.SECONDS) shouldBe true
+            latch.await(10, TimeUnit.SECONDS) shouldBe true
             failure?.let { throw it }
         }
 

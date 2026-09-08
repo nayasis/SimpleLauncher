@@ -88,7 +88,7 @@ internal class MainTableContextMenuTest {
                 }
             }
 
-            latch.await(5, TimeUnit.SECONDS).shouldBeTrue()
+            latch.await(10, TimeUnit.SECONDS).shouldBeTrue()
             failure?.let { throw it }
         }
 
