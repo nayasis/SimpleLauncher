@@ -3,8 +3,8 @@ version = findReleaseVersionFromBranch() ?: "0.1.0-SNAPSHOT"
 
 plugins {
 	application
-	kotlin("jvm") version "2.2.0"
-	id("com.google.devtools.ksp") version "2.2.0-2.0.2"
+	kotlin("jvm") version "2.2.20"
+	id("com.google.devtools.ksp") version "2.2.20-2.0.4"
 	id("com.gradleup.shadow") version "9.4.1"
 }
 
@@ -13,7 +13,7 @@ val osArch = System.getProperty("os.arch").lowercase()
 val isWindows = osName.contains("win")
 val isLinux = osName.contains("linux")
 val isMac = osName.contains("mac")
-val javafxVersion = "26"
+val javafxVersion = "26.0.2"
 val javafxModules = listOf("javafx.graphics", "javafx.controls", "javafx.fxml", "javafx.swing")
 val javafxPlatform = when {
 	isWindows && (osArch.contains("aarch64") || osArch.contains("arm64")) -> "win-aarch64"
@@ -66,7 +66,7 @@ configurations.all {
 
 dependencies {
 
-	implementation("io.github.nayasis:basica-kt:0.3.13")
+	implementation("io.github.nayasis:basica-kt:0.3.14")
 	implementation("io.github.nayasis:basicafx-kt:0.3.3")
 	implementation("ch.qos.logback:logback-classic:1.5.31")
 
