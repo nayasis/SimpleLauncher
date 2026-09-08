@@ -51,3 +51,5 @@ HELP.md
 /.agents/
 /.claude/
 /.codex/
+/.bkit/
+/.claude/
