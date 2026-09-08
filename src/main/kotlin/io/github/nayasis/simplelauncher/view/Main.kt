@@ -75,6 +75,7 @@ private const val CLASS_ON_DRAG        = "table-row-on-drag"
 private const val DEFAULT_LINK_EDITOR_WIDTH = 400.0
 private const val MIN_LINK_EDITOR_WIDTH = 300.0
 private const val TABLE_ICON_SIZE = 18.0
+private const val TABLE_ROW_HEIGHT = 24.0
 private val TABLE_ITEM_SHORTCUT_ACTIONS = listOf(
     ShortcutAction.RUN_SELECTED_LINK,
     ShortcutAction.COPY_FOLDER_FROM_TABLE,
@@ -419,21 +420,42 @@ class Main: View("application.title".message()), CoroutineScope {
 
     private fun initTable() {
 
+        // let VirtualFlow calculate row offsets instead of measuring cell heights
+        tableMain.fixedCellSize = TABLE_ROW_HEIGHT
+
         colGroup.setCellValueFactory { SimpleStringProperty(formatTokens(it.value.group)) }
-        colTitle.cellValueByDefault().cellFormat {
-            graphic = hbox {
-                imageview {
-                    image = it.iconImage
+        // create graphic nodes once per cell and reuse them.
+        // creating them on each updateItem forces a CSS re-match.
+        colTitle.cellValueByDefault().setCellFactory {
+            object: TableCell<Link,Link>() {
+
+                private val icon = ImageView().apply {
                     fitWidth = TABLE_ICON_SIZE
                     fitHeight = TABLE_ICON_SIZE
                     isPreserveRatio = true
-                    hmargin = Insets(0,0,0,2)
                 }
-                label {
-                    text = it.title ?: ""
-                    hmargin = Insets(0,0,0,5)
+
+                private val label = Label()
+
+                private val graphicBox = HBox(icon, label).apply {
+                    alignment = Pos.CENTER_LEFT
+                    icon.hmargin = Insets(0,0,0,2)
+                    label.hmargin = Insets(0,0,0,5)
                 }
-                alignment = Pos.CENTER_LEFT
+
+                override fun updateItem(item: Link?, empty: Boolean) {
+                    super.updateItem(item, empty)
+                    if(empty || item == null) {
+                        graphic = null
+                        icon.image = null
+                        label.text = ""
+                        return
+                    }
+                    icon.image = item.iconImage
+                    label.text = item.title ?: ""
+                    graphic = graphicBox
+                }
+
             }
         }
 
