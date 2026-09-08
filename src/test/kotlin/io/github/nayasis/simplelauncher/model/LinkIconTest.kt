@@ -18,7 +18,7 @@ class LinkIconTest : FunSpec({
             JFXPanel() // triggers JavaFX initialization
             latch.countDown()
         }
-        latch.await(5, TimeUnit.SECONDS)
+        latch.await(10, TimeUnit.SECONDS)
     }
 
     test("setIcon should load and encode various image formats") {
