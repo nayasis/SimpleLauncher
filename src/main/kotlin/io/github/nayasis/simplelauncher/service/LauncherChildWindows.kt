@@ -13,7 +13,7 @@ import javafx.scene.Parent
 import javafx.stage.Screen
 import javafx.stage.Window
 import javafx.stage.WindowEvent
-import tornadofx.runLater
+import io.github.nayasis.kotlin.javafx.misc.runLater
 
 internal class LauncherChildWindows {
 

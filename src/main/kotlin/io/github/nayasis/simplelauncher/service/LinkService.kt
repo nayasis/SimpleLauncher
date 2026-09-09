@@ -10,9 +10,12 @@ import io.github.nayasis.kotlin.basica.core.string.toPath
 import io.github.nayasis.kotlin.basica.reflection.Reflector
 import io.github.nayasis.kotlin.basica.reflection.toObject
 import io.github.nayasis.kotlin.javafx.app.di.Inject
+import io.github.nayasis.kotlin.javafx.collection.FilterSortList
 import io.github.nayasis.kotlin.javafx.misc.Desktop
+import io.github.nayasis.kotlin.javafx.misc.runLater
 import io.github.nayasis.kotlin.javafx.misc.set
 import io.github.nayasis.kotlin.javafx.stage.Dialog
+import io.github.nayasis.kotlin.javafx.stage.FilePickerMode
 import io.github.nayasis.simplelauncher.common.Context.Companion.config
 import io.github.nayasis.simplelauncher.common.Context.Companion.main
 import io.github.nayasis.simplelauncher.common.ExposedHelper.tx
@@ -22,10 +25,6 @@ import io.github.nayasis.simplelauncher.model.repo
 import io.github.nayasis.simplelauncher.model.vo.JsonLink
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jetbrains.exposed.v1.jdbc.deleteAll
-import tornadofx.FileChooserMode
-import tornadofx.SortedFilteredList
-import tornadofx.asObservable
-import tornadofx.runLater
 import java.nio.file.Path
 import java.util.*
 
@@ -34,7 +33,7 @@ private val logger = KotlinLogging.logger {}
 @Inject
 class LinkService {
 
-    val links = SortedFilteredList(mutableListOf<Link>().asObservable())
+    val links = FilterSortList<Link>()
 
     private val tokenIndex = TokenReferenceIndex()
 
@@ -106,7 +105,7 @@ class LinkService {
         filePicker("msg.file.import", "*.json", "msg.file.import.description")
 
     fun openExportPicker(): Path? =
-        filePicker("msg.file.export", "*.json", "msg.file.import.description", mode = FileChooserMode.Save)
+        filePicker("msg.file.export", "*.json", "msg.file.import.description", mode = FilePickerMode.Save)
 
     fun openIconPicker(): Path? =
         filePicker("msg.file.icon", "*.*", "msg.file.icon.description")
@@ -115,7 +114,7 @@ class LinkService {
         filePicker("msg.file.add", "*.*", "msg.file.add.description")
 
     fun openIconSavePicker(initialDirectory: Path, initialFileName: String): Path? =
-        filePicker("msg.file.icon", "*.jpg", "msg.file.icon.save.description", initialDirectory, initialFileName, FileChooserMode.Save)
+        filePicker("msg.file.icon", "*.jpg", "msg.file.icon.save.description", initialDirectory, initialFileName, FilePickerMode.Save)
 
     private fun filePicker(
         title: String,
@@ -123,7 +122,7 @@ class LinkService {
         description: String,
         initialDirectory: Path? = null,
         initialFileName: String? = null,
-        mode: FileChooserMode = FileChooserMode.Single,
+        mode: FilePickerMode = FilePickerMode.Single,
     ): Path? = Dialog.filePicker(
         title            = title.message(),
         extension        = extension,

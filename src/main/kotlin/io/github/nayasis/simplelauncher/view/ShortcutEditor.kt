@@ -1,6 +1,7 @@
 package io.github.nayasis.simplelauncher.view
 
 import io.github.nayasis.kotlin.basica.core.string.message
+import io.github.nayasis.kotlin.javafx.app.FxView
 import io.github.nayasis.simplelauncher.service.ShortcutAction
 import io.github.nayasis.simplelauncher.service.ShortcutGroup
 import io.github.nayasis.simplelauncher.service.ShortcutSettings
@@ -11,31 +12,24 @@ import javafx.geometry.Insets
 import javafx.scene.Node
 import javafx.scene.Scene
 import javafx.scene.control.Alert
+import javafx.scene.control.Button
+import javafx.scene.control.Label
 import javafx.scene.control.ScrollPane
 import javafx.scene.control.TextField
 import javafx.scene.input.KeyCombination
 import javafx.scene.input.KeyEvent.KEY_PRESSED
+import javafx.scene.layout.BorderPane
 import javafx.scene.layout.ColumnConstraints
 import javafx.scene.layout.GridPane
+import javafx.scene.layout.HBox
 import javafx.scene.layout.Priority
+import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import javafx.stage.Modality
 import javafx.stage.Stage
-import tornadofx.View
-import tornadofx.action
-import tornadofx.borderpane
-import tornadofx.button
-import tornadofx.gridpane
-import tornadofx.hbox
-import tornadofx.hgrow
-import tornadofx.label
-import tornadofx.region
-import tornadofx.scrollpane
-import tornadofx.textfield
-import tornadofx.vbox
 import java.util.EnumMap
 
-class ShortcutEditor: View("shortcut.dialog.title".message()) {
+class ShortcutEditor: FxView("shortcut.dialog.title".message()) {
 
     companion object {
         private const val STYLESHEET_PATH = "/view/main/shortcut-dialog.css"
@@ -59,7 +53,7 @@ class ShortcutEditor: View("shortcut.dialog.title".message()) {
     private var result: ShortcutSettings? = null
     private var dialogStage: Stage? = null
 
-    private val contentScroll: ScrollPane = scrollpane {
+    private val contentScroll = ScrollPane().apply {
         styleClass += "shortcut-dialog-scroll"
         isFitToWidth = true
         prefViewportWidth = 730.0
@@ -67,11 +61,11 @@ class ShortcutEditor: View("shortcut.dialog.title".message()) {
         padding = Insets.EMPTY
     }
 
-    private val resetAllButton = button("btn.reset.all".message()) {
-        action { resetBindingsToDefault() }
+    private val resetAllButton = Button("btn.reset.all".message()).apply {
+        setOnAction { resetBindingsToDefault() }
     }
 
-    private val saveButton = button("btn.save".message()).apply {
+    private val saveButton = Button("btn.save".message()).apply {
         addEventFilter(ActionEvent.ACTION) { event ->
             val duplicates = findDuplicateShortcuts(bindings)
             if(duplicates.isNotEmpty()) {
@@ -84,22 +78,20 @@ class ShortcutEditor: View("shortcut.dialog.title".message()) {
         }
     }
 
-    private val cancelButton = button("btn.cancel".message()) {
-        action { dialogStage?.close() }
+    private val cancelButton = Button("btn.cancel".message()).apply {
+        setOnAction { dialogStage?.close() }
     }
 
-    override val root = borderpane {
+    override val root = BorderPane().apply {
         styleClass += "shortcut-dialog-root"
         stylesheets += stylesheetUrl
         center = contentScroll
-        bottom = hbox(8.0) {
+        bottom = HBox(8.0).apply {
             styleClass += "shortcut-dialog-footer"
-            add(resetAllButton)
-            region {
-                hgrow = Priority.ALWAYS
-            }
-            add(saveButton)
-            add(cancelButton)
+            children.add(resetAllButton)
+            children.add(Region().apply { HBox.setHgrow(this, Priority.ALWAYS) })
+            children.add(saveButton)
+            children.add(cancelButton)
         }
     }
 
@@ -131,35 +123,35 @@ class ShortcutEditor: View("shortcut.dialog.title".message()) {
     }
 
     private fun buildContent(): VBox {
-        return vbox {
+        return VBox().apply {
             styleClass += "shortcut-dialog-content"
-            add(buildHelpBox())
+            children.add(buildHelpBox())
             ShortcutGroup.entries.forEach { group ->
-                add(buildGroupTitle(group.messageKey.message()))
-                add(buildGroup(group))
+                children.add(buildGroupTitle(group.messageKey.message()))
+                children.add(buildGroup(group))
             }
         }
     }
 
-    private fun buildGroupTitle(text: String) = label(text) {
+    private fun buildGroupTitle(text: String) = Label(text).apply {
         styleClass += "shortcut-group-title"
     }
 
-    private fun buildHelpBox() = hbox {
+    private fun buildHelpBox() = HBox().apply {
         styleClass += "shortcut-help-box"
-        label("i") {
+        children.add(Label("i").apply {
             styleClass += "shortcut-help-icon"
-        }
-        label("shortcut.dialog.help".message()) {
+        })
+        children.add(Label("shortcut.dialog.help".message()).apply {
             styleClass += "shortcut-help-text"
             isWrapText = true
             maxWidth = Double.MAX_VALUE
-            hgrow = Priority.ALWAYS
-        }
+            HBox.setHgrow(this, Priority.ALWAYS)
+        })
     }
 
     private fun buildGroup(group: ShortcutGroup): GridPane {
-        return gridpane {
+        return GridPane().apply {
             hgap = 1.0
             vgap = 8.0
             padding = Insets(0.0, 0.0, 6.0, 4.0)
@@ -173,19 +165,19 @@ class ShortcutEditor: View("shortcut.dialog.title".message()) {
                 ColumnConstraints().apply { prefWidth = 70.0 },
             )
 
-            addGroupCell(label("shortcut.column.action".message()), 0, 0)
-            addGroupCell(label("shortcut.column.current".message()), 1, 0)
-            addGroupCell(label("shortcut.column.default".message()), 2, 0)
+            addGroupCell(Label("shortcut.column.action".message()), 0, 0)
+            addGroupCell(Label("shortcut.column.current".message()), 1, 0)
+            addGroupCell(Label("shortcut.column.default".message()), 2, 0)
 
             var row = 1
             ShortcutAction.entries
                 .filter { it.group == group }
                 .forEach { action ->
-                    addGroupCell(label(action.messageKey.message()), 0, row)
+                    addGroupCell(Label(action.messageKey.message()), 0, row)
                     addGroupCell(createEditor(action), 1, row)
-                    addGroupCell(label(action.defaultCombination.displayText), 2, row)
-                    addGroupCell(button("btn.reset".message()) {
-                        action {
+                    addGroupCell(Label(action.defaultCombination.displayText), 2, row)
+                    addGroupCell(Button("btn.reset".message()).apply {
+                        setOnAction {
                             bindings[action] = action.defaultCombination
                             editors[action]?.text = action.defaultCombination.displayText
                             refreshDuplicateHighlighting()
@@ -197,7 +189,7 @@ class ShortcutEditor: View("shortcut.dialog.title".message()) {
     }
 
     private fun createEditor(action: ShortcutAction): TextField {
-        return textfield(bindings[action]?.displayText ?: action.defaultCombination.displayText) {
+        return TextField(bindings[action]?.displayText ?: action.defaultCombination.displayText).apply {
             id = "shortcut-${action.name}"
             isEditable = false
             isFocusTraversable = true

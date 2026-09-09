@@ -13,6 +13,7 @@ import io.github.nayasis.kotlin.basica.core.string.toPath
 import io.github.nayasis.kotlin.basica.etc.error
 import io.github.nayasis.kotlin.basica.exec.Command
 import io.github.nayasis.kotlin.javafx.misc.runAwait
+import io.github.nayasis.kotlin.javafx.misc.runLater
 import io.github.nayasis.kotlin.javafx.property.InsetProperty
 import io.github.nayasis.kotlin.javafx.property.StageProperty
 import io.github.nayasis.kotlin.javafx.stage.watchMaximized
@@ -24,10 +25,8 @@ import javafx.animation.Timeline
 import javafx.event.EventHandler
 import javafx.scene.Scene
 import javafx.scene.layout.Pane
+import javafx.scene.layout.VBox
 import javafx.stage.Stage
-import tornadofx.attachTo
-import tornadofx.runLater
-import tornadofx.vbox
 import java.nio.charset.StandardCharsets
 import kotlin.io.path.exists
 
@@ -42,7 +41,7 @@ class Terminal(
 
     private lateinit var terminal: JediTermFxWidget
 
-    private val vbox = vbox(spacing = 0)
+    private val vbox = VBox(0.0)
 
     init {
 
@@ -74,7 +73,7 @@ class Terminal(
             terminal.pane.also {
                 it.bindSizeProperties(this)
             }
-            terminal.pane.attachTo(this)
+            children.add(terminal.pane)
         }
         runAwait {
             waitFor()

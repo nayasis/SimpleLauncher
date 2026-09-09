@@ -15,6 +15,10 @@ import io.github.nayasis.kotlin.javafx.control.basic.repack
 import io.github.nayasis.kotlin.javafx.control.tableview.*
 import io.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
 import io.github.nayasis.kotlin.javafx.control.tableview.column.cellValueByDefault
+import io.github.nayasis.kotlin.javafx.app.FxView
+import io.github.nayasis.kotlin.javafx.app.fxid
+import io.github.nayasis.kotlin.javafx.app.fxml
+import io.github.nayasis.kotlin.javafx.misc.runLater
 import io.github.nayasis.kotlin.javafx.geometry.Insets
 import io.github.nayasis.kotlin.javafx.misc.Desktop
 import io.github.nayasis.kotlin.javafx.misc.runAwait
@@ -37,12 +41,14 @@ import io.github.nayasis.simplelauncher.service.TextMatcher
 import io.github.nayasis.simplelauncher.service.matchesSearchTokens
 import io.github.oshai.kotlinlogging.KotlinLogging
 import javafx.animation.PauseTransition
+import javafx.application.Platform
 import javafx.beans.property.SimpleStringProperty
 import javafx.beans.value.ChangeListener
 import javafx.beans.value.ObservableValue
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.control.*
+import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.input.*
 import javafx.scene.input.KeyCode.*
@@ -52,21 +58,14 @@ import javafx.scene.layout.GridPane
 import javafx.scene.layout.HBox
 import javafx.stage.Stage
 import javafx.stage.WindowEvent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.javafx.JavaFx
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import tornadofx.*
 import java.awt.image.BufferedImage
 import java.io.File
 import java.time.LocalDateTime
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.imageio.ImageIO
-import kotlin.coroutines.CoroutineContext
 import javafx.util.Duration
 import javafx.util.StringConverter
+import kotlin.concurrent.thread
 import kotlin.system.exitProcess
 
 private val logger = KotlinLogging.logger {}
@@ -85,6 +84,33 @@ private val TABLE_ITEM_SHORTCUT_ACTIONS = listOf(
 )
 
 internal const val CONTEXT_MENU_SHOW_DETAIL_ID = "context-menu-show-detail"
+
+/**
+ * attach a tooltip. a Control owns its tooltip, anything else needs it installed.
+ */
+private fun Node.tooltip(text: String?): Tooltip = Tooltip(text).also {
+    if(this is Control) tooltip = it else Tooltip.install(this, it)
+}
+
+/**
+ * render a cell with [format], resetting the cell when there is no item.
+ */
+private fun <S,T> TableColumn<S,T>.cellFormat(format: TableCell<S,T>.(T) -> Unit) {
+    setCellFactory {
+        object: TableCell<S,T>() {
+            override fun updateItem(item: T?, empty: Boolean) {
+                super.updateItem(item, empty)
+                if(item == null || empty) {
+                    text    = null
+                    graphic = null
+                    style   = ""
+                } else {
+                    format(item)
+                }
+            }
+        }
+    }
+}
 
 internal class MainShortcutHandlers(
     val onSaveDetail: () -> Unit = {},
@@ -189,13 +215,10 @@ internal fun createTableItemContextMenu(
     }
 }
 
-class Main: View("application.title".message()), CoroutineScope {
+class Main: FxView("application.title".message()) {
 
-    override val coroutineContext: CoroutineContext
-        get() = Dispatchers.JavaFx
-
-    private val linkService: LinkService by di()
-    private val linkExecutor: LinkExecutor by di()
+    private val linkService: LinkService by lazy { Context.linkService }
+    private val linkExecutor: LinkExecutor by lazy { Context.linkExecutor }
 
     override val root: AnchorPane by fxml("/view/main/main.fxml")
 
@@ -259,12 +282,12 @@ class Main: View("application.title".message()), CoroutineScope {
     private var installedShortcutScene: javafx.scene.Scene? = null
     private var sceneShortcutListenerBound = false
     private val searchSubmitTracker = SearchSubmitTracker()
-    private var searchJob: Job? = null
+    private var searchCancelled: AtomicBoolean? = null
     private var searchGeneration = 0L
     private var shortcuts = ShortcutSettings.load(Context.config.shortcuts)
 
-    private val favicon       = resources.image("/image/icon/favicon.png")
-    private val faviconPinned = resources.image("/image/icon/favicon-pinned.png")
+    private val favicon       = Image(Main::class.java.getResourceAsStream("/image/icon/favicon.png"))
+    private val faviconPinned = Image(Main::class.java.getResourceAsStream("/image/icon/favicon-pinned.png"))
 
     init {
         Localizator(root)
@@ -306,13 +329,10 @@ class Main: View("application.title".message()), CoroutineScope {
 
         // filtering is asynchronous, so restore the selection after it is applied
         initSearchFilter {
-            val focused = linkService.links.firstOrNull { it.id == Context.config.lastFocusedLinkId }
-            runLater {
-                focused?.let {
-                    tableMain.selectBy(it)
-                    tableMain.scrollBy(it)
-                } ?: tableMain.selectFirst()
-            }
+            linkService.links.firstOrNull { it.id == Context.config.lastFocusedLinkId }?.let {
+                tableMain.selectBy(it)
+                tableMain.scrollBy(it)
+            } ?: tableMain.selectionModel.selectFirst()
         }
 
         DefaultPreloader.close()
@@ -416,7 +436,7 @@ class Main: View("application.title".message()), CoroutineScope {
     private fun saveAppState() {
         Context.config.run {
             updateDescEditorWidth()
-            lastFocusedLinkId = tableMain.selectedItem?.id
+            lastFocusedLinkId = tableMain.selectionModel.selectedItem?.id
             stageMain = StageProperty(currentStage!!)
             descEditorWidth = this@Main.descEditorWidth
             save()
@@ -482,7 +502,7 @@ class Main: View("application.title".message()), CoroutineScope {
 
         tableMain.setOnMouseClicked { event ->
             if(event.button == MouseButton.PRIMARY && event.clickCount > 1) {
-                tableMain.selectedItem?.let { link -> linkExecutor.run(link) }
+                tableMain.selectionModel.selectedItem?.let { link -> linkExecutor.run(link) }
             }
         }
 
@@ -492,7 +512,7 @@ class Main: View("application.title".message()), CoroutineScope {
             }
         }
 
-        tableMain.onSelectionChange { link ->
+        tableMain.selectionModel.selectedItemProperty().addListener { _, _, link ->
             drawDetail(link)
         }
 
@@ -570,12 +590,10 @@ class Main: View("application.title".message()), CoroutineScope {
         menuImportData.setOnAction {
             linkService.openImportPicker()?.let { file ->
                 runAwait {
-                    launch {
-                        linkService.importData(file)
-                        linkService.loadAll()
-                        Dialog.alert( "msg.success.import".message().format(file) )
-                    }
+                    linkService.importData(file)
+                    linkService.loadAll()
                 }
+                Dialog.alert( "msg.success.import".message().format(file) )
             }
         }
 
@@ -620,8 +638,8 @@ class Main: View("application.title".message()), CoroutineScope {
         menuAlwaysOnTop.selectedProperty().addListener { _, _, alwaysOnTop ->
             primaryStage.isAlwaysOnTop = alwaysOnTop
             when {
-                alwaysOnTop -> setStageIcon(faviconPinned)
-                else        -> setStageIcon(favicon)
+                alwaysOnTop -> primaryStage.icons.setAll(faviconPinned)
+                else        -> primaryStage.icons.setAll(favicon)
             }
         }
 
@@ -633,8 +651,8 @@ class Main: View("application.title".message()), CoroutineScope {
         buttonDelete.setOnAction { detail?.let{ deleteLink(it) } }
         buttonCopy.setOnAction { copyDetail() }
         buttonNew.setOnAction { createDetail() }
-        buttonOpenFolder.setOnAction { tableMain.selectedItem?.let { linkService.openFolder(it) } }
-        buttonCopyFolder.setOnAction { tableMain.selectedItem?.let { linkService.copyFolder(it) } }
+        buttonOpenFolder.setOnAction { tableMain.selectionModel.selectedItem?.let { linkService.openFolder(it) } }
+        buttonCopyFolder.setOnAction { tableMain.selectionModel.selectedItem?.let { linkService.copyFolder(it) } }
 
         descIcon.setOnMouseClicked { e ->
             when {
@@ -701,7 +719,7 @@ class Main: View("application.title".message()), CoroutineScope {
                         tableMain.requestFocus()
                     }
                 }
-                it.textProperty().onChange { buttonSave.isDisable = false }
+                it.textProperty().addListener { _, _, _ -> buttonSave.isDisable = false }
             }
             children.filterIsInstance<CheckBox>().forEach {
                 it.addEventFilter(KEY_PRESSED) { e ->
@@ -798,10 +816,10 @@ class Main: View("application.title".message()), CoroutineScope {
                     onToggleGroupFilter = { menuShowInputGroup.isSelected = !menuShowInputGroup.isSelected },
                     onToggleAlwaysOnTop = { menuAlwaysOnTop.isSelected = !menuAlwaysOnTop.isSelected },
                     onShowAbout = { menuHelp.fire() },
-                    onRunSelectedLink = { tableMain.selectedItem?.let { performTableItemAction(ShortcutAction.RUN_SELECTED_LINK, it) } },
+                    onRunSelectedLink = { tableMain.selectionModel.selectedItem?.let { performTableItemAction(ShortcutAction.RUN_SELECTED_LINK, it) } },
                     onFocusSearch = { inputKeyword.focusInput() },
                     onDeleteSelectedLink = {
-                        tableMain.selectedItem?.let {
+                        tableMain.selectionModel.selectedItem?.let {
                             performTableItemAction(ShortcutAction.DELETE_SELECTED_LINK, it)
                         }
                     },
@@ -813,12 +831,12 @@ class Main: View("application.title".message()), CoroutineScope {
                         }
                     },
                     onCopyFolderFromTable = {
-                        tableMain.selectedItem?.let {
+                        tableMain.selectionModel.selectedItem?.let {
                             performTableItemAction(ShortcutAction.COPY_FOLDER_FROM_TABLE, it)
                         }
                     },
                     onOpenFolderFromTable = {
-                        tableMain.selectedItem?.let {
+                        tableMain.selectionModel.selectedItem?.let {
                             performTableItemAction(ShortcutAction.OPEN_FOLDER_FROM_TABLE, it)
                         }
                     },
@@ -991,7 +1009,9 @@ class Main: View("application.title".message()), CoroutineScope {
         val hasKeywordText = inputKeyword.text.isNotBlank()
         val hasGroupText   = inputGroup.text.isNotBlank()
 
-        searchJob?.cancel()
+        searchCancelled?.set(true)
+        val cancelled = AtomicBoolean(false)
+        searchCancelled = cancelled
         val generation = ++searchGeneration
 
         if(keywordTokens.isEmpty() && !hasKeywordText && groupTokens.isEmpty() && !hasGroupText) {
@@ -1016,25 +1036,23 @@ class Main: View("application.title".message()), CoroutineScope {
         }
 
         val snapshot = ArrayList(linkService.links.items)
-        searchJob = launch(Dispatchers.Default) {
+        thread(name = "link-search", isDaemon = true) {
             val evaluated = HashSet<Long>(snapshot.size)
             val matched   = HashSet<Long>()
             for(link in snapshot) {
-                if(!isActive) return@launch
+                if(cancelled.get()) return@thread
                 evaluated.add(link.id)
                 if(matches(link)) matched.add(link.id)
             }
-            val applied = withContext(Dispatchers.JavaFx) {
-                if(generation != searchGeneration) return@withContext false
+            Platform.runLater {
+                if(generation != searchGeneration) return@runLater
                 // links added after the snapshot are evaluated inline, so they are never hidden silently
                 linkService.links.predicate = { link ->
                     if(link.id in evaluated) link.id in matched else matches(link)
                 }
                 printSearchResult()
-                true
+                onApplied?.invoke()
             }
-            // callback runs off the FX thread. it should wrap its own table commands with runLater.
-            if(applied) onApplied?.invoke()
         }
     }
 
@@ -1075,10 +1093,8 @@ class Main: View("application.title".message()), CoroutineScope {
         when(searchSubmitTracker.nextAction(snapshot)) {
             SearchSubmitAction.SUBMIT -> {
                 submitSearch(saveKeywordHistory) {
-                    if(snapshot.isBlank()) {
-                        runLater {
-                            if(tableMain.visibleRows in 1..10) runFirstSearchResult()
-                        }
+                    if(snapshot.isBlank() && tableMain.visibleRows in 1..10) {
+                        runFirstSearchResult()
                     }
                 }
             }
@@ -1148,7 +1164,7 @@ class Main: View("application.title".message()), CoroutineScope {
         field.input.addEventFilter(KEY_PRESSED) { e ->
             when {
                 e.code == ESCAPE -> {
-                    field.input.removeClass(CLASS_AUTO_COMPLETER)
+                    field.input.styleClass.removeAll(CLASS_AUTO_COMPLETER)
                     autoCompleter?.dispose()
                     autoCompleter = null
                     suggestion = null
@@ -1157,10 +1173,10 @@ class Main: View("application.title".message()), CoroutineScope {
                     when (e.code) {
                         DOWN -> if(autoCompleter == null) {
                             suggestion = suggestions()
-                            field.input.addClass(CLASS_AUTO_COMPLETER)
+                            field.input.styleClass.add(CLASS_AUTO_COMPLETER)
                             autoCompleter = SearchHistoryAutoCompletionText(field.input, suggestion!!)
                             autoCompleter?.setOnAutoCompleted { event ->
-                                field.input.removeClass(CLASS_AUTO_COMPLETER)
+                                field.input.styleClass.removeAll(CLASS_AUTO_COMPLETER)
                                 autoCompleter?.dispose()
                                 autoCompleter = null
                                 suggestion = null
@@ -1193,7 +1209,7 @@ class Main: View("application.title".message()), CoroutineScope {
         textField.addEventFilter(KEY_PRESSED) { e ->
             when {
                 e.code == ESCAPE -> {
-                    textField.removeClass(CLASS_AUTO_COMPLETER)
+                    textField.styleClass.removeAll(CLASS_AUTO_COMPLETER)
                     autoCompleter?.dispose()
                     autoCompleter = null
                     suggestion = null
@@ -1202,10 +1218,10 @@ class Main: View("application.title".message()), CoroutineScope {
                     when (e.code) {
                         DOWN -> if( autoCompleter == null ) {
                             suggestion = suggestions()
-                            textField.addClass(CLASS_AUTO_COMPLETER)
+                            textField.styleClass.add(CLASS_AUTO_COMPLETER)
                             autoCompleter = AutoCompletionText(textField, suggestion!!)
                             autoCompleter?.setOnAutoCompleted {
-                                textField.removeClass(CLASS_AUTO_COMPLETER)
+                                textField.styleClass.removeAll(CLASS_AUTO_COMPLETER)
                                 autoCompleter?.dispose()
                                 autoCompleter = null
                                 suggestion = null

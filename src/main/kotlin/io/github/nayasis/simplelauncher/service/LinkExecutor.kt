@@ -16,7 +16,7 @@ import io.github.nayasis.simplelauncher.view.Terminal
 import io.github.oshai.kotlinlogging.KotlinLogging
 import javafx.scene.control.Button
 import javafx.scene.control.Tooltip
-import tornadofx.runLater
+import io.github.nayasis.kotlin.javafx.misc.runLater
 import java.io.File
 import java.time.LocalDateTime
 
