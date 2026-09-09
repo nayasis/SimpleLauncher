@@ -13,7 +13,7 @@ import javafx.scene.layout.Priority
 import javafx.scene.layout.Region
 import javafx.scene.layout.VBox
 import org.controlsfx.control.PopOver
-import tornadofx.runLater
+import io.github.nayasis.kotlin.javafx.misc.runLater
 import java.io.File
 
 private const val MAX_VISIBLE_ITEMS = 20
