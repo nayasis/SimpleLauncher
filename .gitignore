@@ -52,4 +52,5 @@ HELP.md
 /.claude/
 /.codex/
 /.bkit/
-/.claude/
+/.orca/
+/docs/
