@@ -7,13 +7,12 @@ import javafx.application.Platform
 import javafx.scene.Scene
 import javafx.scene.paint.Color
 import javafx.stage.Stage
-import tornadofx.launch
 import kotlin.system.exitProcess
 
 private val logger = KotlinLogging.logger {}
 
 fun main() {
-    launch<TerminalBuilderTest>()
+    Application.launch(TerminalBuilderTest::class.java)
 }
 
 class TerminalBuilderTest: Application() {

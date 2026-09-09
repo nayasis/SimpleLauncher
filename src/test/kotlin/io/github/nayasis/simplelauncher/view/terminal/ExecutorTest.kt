@@ -2,16 +2,15 @@ package io.github.nayasis.simplelauncher.view.terminal
 
 import io.github.nayasis.kotlin.basica.exec.Command
 import io.github.nayasis.kotlin.javafx.stage.Dialog
+import javafx.application.Application
 import javafx.stage.Stage
-import tornadofx.App
-import tornadofx.launch
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
-    launch<ExecutorTest>(args)
+    Application.launch(ExecutorTest::class.java, *args)
 }
 
-class ExecutorTest: App() {
+class ExecutorTest: Application() {
     override fun start(stage: Stage) {
 
         val cd = "d:\\download\\test\\chd"

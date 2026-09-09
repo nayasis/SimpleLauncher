@@ -7,13 +7,11 @@ import io.github.nayasis.simplelauncher.view.Terminal
 import javafx.application.Application
 import javafx.geometry.Insets
 import javafx.scene.Scene
+import javafx.scene.control.Button
 import javafx.scene.control.Label
 import javafx.scene.layout.VBox
 import javafx.stage.Stage
 import javafx.stage.WindowEvent
-import tornadofx.action
-import tornadofx.button
-import tornadofx.label
 
 fun main(args: Array<String>) {
     System.setProperty("javafx.suppressUnsupportedConfiguration", "true")
@@ -44,10 +42,11 @@ class ChildWindowLifecycleTest: Application() {
             VBox(8.0).apply {
                 padding = Insets(12.0)
                 prefWidth = 360.0
-                button("Open progress and terminal") {
-                    action { openChildren() }
-                }
-                status = label("Idle")
+                children.add(Button("Open progress and terminal").apply {
+                    setOnAction { openChildren() }
+                })
+                status = Label("Idle")
+                children.add(status)
             }
         )
         stage.show()
