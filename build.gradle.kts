@@ -71,8 +71,6 @@ dependencies {
 	implementation("io.github.nayasis:basicafx-kt:0.1.0-SNAPSHOT")
 	implementation("ch.qos.logback:logback-classic:1.5.31")
 
-	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.10.2")
 	implementation("org.openjfx:javafx-base:$javafxVersion:$javafxPlatform")
 	implementation("org.openjfx:javafx-graphics:$javafxVersion:$javafxPlatform")
 	implementation("org.openjfx:javafx-controls:$javafxVersion:$javafxPlatform")
@@ -85,9 +83,6 @@ dependencies {
 	implementation("com.h2database:h2:2.3.232")
 
 	// UI
-	implementation("no.tornado:tornadofx:1.7.20") {
-		exclude("org.jetbrains.kotlin")
-	}
 	implementation("org.controlsfx:controlsfx:11.2.2")
 	implementation("com.github.vatbub:mslinks:1.0.6.2")
 	implementation("commons-cli:commons-cli:1.4")
@@ -289,7 +284,6 @@ val requiredJdkModules = listOf(
 	"java.sql",
 	"java.xml",
 	"java.naming",
-	"java.scripting",  // Required for javax.script.* (used by tornadofx)
 	"jdk.unsupported",  // Required for JavaFX
 	"jdk.crypto.ec"
 )

@@ -8483,18 +8483,6 @@
     },
     {
       "type": "sun.util.resources.cldr.CalendarData"
-    },
-    {
-      "type": "tornadofx.Component"
-    },
-    {
-      "type": "tornadofx.SmartTableCell"
-    },
-    {
-      "type": "tornadofx.UIComponent"
-    },
-    {
-      "type": "tornadofx.View"
     }
   ],
   "resources": [
@@ -8557,12 +8545,6 @@
     },
     {
       "glob": "META-INF/services/org.slf4j.spi.SLF4JServiceProvider"
-    },
-    {
-      "glob": "META-INF/services/tornadofx.ChildInterceptor"
-    },
-    {
-      "glob": "META-INF/services/tornadofx.Stylesheet"
     },
     {
       "glob": "Messages.properties"
@@ -12826,15 +12808,6 @@
     },
     {
       "glob": "org/h2/util/data.zip"
-    },
-    {
-      "glob": "tornadofx/i18n/ViewModel.properties"
-    },
-    {
-      "glob": "tornadofx/i18n/ViewModel_ko.properties"
-    },
-    {
-      "glob": "tornadofx/i18n/ViewModel_ko_KR.properties"
     },
     {
       "glob": "view/main/main.fxml"
@@ -18764,9 +18737,6 @@
     },
     {
       "bundle": "sun.awt.resources.awt"
-    },
-    {
-      "bundle": "tornadofx/i18n/ViewModel"
     }
   ]
 }

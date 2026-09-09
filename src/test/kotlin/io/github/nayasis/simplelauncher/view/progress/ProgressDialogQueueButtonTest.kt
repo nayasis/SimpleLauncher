@@ -5,17 +5,14 @@ import io.github.nayasis.kotlin.javafx.stage.Dialog
 import io.github.nayasis.simplelauncher.service.ProgressFileQueue
 import io.github.nayasis.simplelauncher.service.ProgressQueueControl
 import io.github.nayasis.simplelauncher.service.ProgressQueuePopOver
+import io.github.nayasis.kotlin.javafx.misc.runLater
+import javafx.application.Application
 import javafx.scene.Scene
 import javafx.scene.control.Button
 import javafx.scene.control.Label
 import javafx.scene.control.Tooltip
 import javafx.scene.layout.VBox
 import javafx.stage.Stage
-import tornadofx.action
-import tornadofx.button
-import tornadofx.label
-import tornadofx.launch
-import tornadofx.runLater
 import java.io.OutputStream
 import java.io.PrintStream
 import java.io.File
@@ -23,10 +20,10 @@ import java.io.File
 fun main(args: Array<String>) {
     System.setProperty("javafx.suppressUnsupportedConfiguration", "true")
     suppressJavaFxTestWarnings()
-    launch<ProgressDialogQueueButtonTest>(args)
+    Application.launch(ProgressDialogQueueButtonTest::class.java, *args)
 }
 
-class ProgressDialogQueueButtonTest: tornadofx.App() {
+class ProgressDialogQueueButtonTest: Application() {
 
     private lateinit var status: Label
 
@@ -38,10 +35,11 @@ class ProgressDialogQueueButtonTest: tornadofx.App() {
                 prefWidth = 360.0
                 prefHeight = 120.0
                 style = "-fx-padding: 12;"
-                button("Add 5 dummy files") {
-                    action { openProgressQueue() }
-                }
-                status = label("Idle")
+                children.add(Button("Add 5 dummy files").apply {
+                    setOnAction { openProgressQueue() }
+                })
+                status = Label("Idle")
+                children.add(status)
             }
         )
         stage.show()
