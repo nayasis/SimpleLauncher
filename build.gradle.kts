@@ -166,9 +166,11 @@ val isGitHubActions = System.getenv("GITHUB_ACTIONS") == "true"
 val requestedPackageType = System.getenv("SIMPLELAUNCHER_PACKAGE_TYPE")?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
 
 fun Project.toJpackageAppVersion(): String {
+	// jpackage only accepts numeric components, so drop any qualifier (-SNAPSHOT, -rc1, ...)
 	val parts = version.toString()
+		.substringBefore('-')
 		.split('.')
-		.filter { it.isNotBlank() }
+		.mapNotNull { it.trim().toIntOrNull() }
 		.take(3)
 		.toMutableList()
 
@@ -176,8 +178,8 @@ fun Project.toJpackageAppVersion(): String {
 		return "1"
 	}
 
-	if (isMac && (parts[0].toIntOrNull() ?: 0) <= 0) {
-		parts[0] = "1"
+	if (isMac && parts[0] <= 0) {
+		parts[0] = 1
 	}
 
 	return parts.joinToString(".")
@@ -284,6 +286,7 @@ val requiredJdkModules = listOf(
 	"java.sql",
 	"java.xml",
 	"java.naming",
+	"java.scripting",  // Required by javafx.fxml: FXMLLoader references javax.script for fx:script handlers
 	"jdk.unsupported",  // Required for JavaFX
 	"jdk.crypto.ec"
 )
