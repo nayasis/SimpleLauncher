@@ -185,6 +185,27 @@ fun Project.toJpackageAppVersion(): String {
 	return parts.joinToString(".")
 }
 
+/**
+ * Does [option] target a javafx.* named module?
+ *
+ * jpackage feeds the JavaFX jars through --input, so they land on the classpath
+ * and JavaFX is not a named module in the packaged app. Such options are no-ops
+ * there and only make the JVM print "WARNING: Unknown module: javafx.graphics"
+ * on every start. They are still needed for `gradlew run`, where JavaFX *is*
+ * resolved as named modules, so they stay in [appJvmArgs] and are filtered out
+ * only when handed to jpackage.
+ */
+fun isJavaFxModuleOption(option: String): Boolean {
+	val module = when {
+		option.startsWith("--add-exports=") || option.startsWith("--add-opens=") ->
+			option.substringAfter('=').substringBefore('/')
+		option.startsWith("--enable-native-access=") ->
+			option.substringAfter('=')
+		else -> return false
+	}
+	return module.startsWith("javafx.")
+}
+
 fun hasCommand(command: String): Boolean {
 	if (isWindows) {
 		return runCatching {
@@ -394,7 +415,7 @@ tasks.register<Exec>("createNativeExe") {
 		"--runtime-image", runtimeImageDir.absolutePath
 	)
 	
-	application.applicationDefaultJvmArgs.forEach { option ->
+	application.applicationDefaultJvmArgs.filterNot(::isJavaFxModuleOption).forEach { option ->
 		jpackageArgs.add("--java-options")
 		jpackageArgs.add(option)
 	}
