@@ -4,7 +4,9 @@ import io.github.nayasis.kotlin.basica.core.extension.runIfNotEmpty
 import io.github.nayasis.kotlin.basica.model.Messages
 import io.github.nayasis.kotlin.basica.model.Messages.Companion.loadMessages
 import io.github.nayasis.kotlin.basica.net.Networks
+import io.github.nayasis.kotlin.javafx.app.Environment
 import io.github.nayasis.kotlin.javafx.app.FxApp
+import io.github.nayasis.kotlin.javafx.app.di.SimpleDiContainer
 import io.github.nayasis.kotlin.javafx.preloader.DefaultPreloader
 import io.github.nayasis.kotlin.javafx.stage.Stages
 import io.github.nayasis.simplelauncher.common.ExposedHelper
@@ -23,6 +25,18 @@ import java.util.logging.Logger
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * Message bundles, listed one by one on purpose.
+ *
+ * A glob pattern over the message directory needs a classpath scan, and a GraalVM
+ * native image has no classpath to scan, so the glob silently resolves to nothing
+ * and every label falls back to its key. Add new bundles here.
+ */
+private val MESSAGE_BUNDLES = listOf(
+    "/message/localization.en.prop",
+    "/message/localization.ko.prop",
+)
+
 fun main(args: Array<String>) {
 
     // turn off external logs
@@ -32,13 +46,26 @@ fun main(args: Array<String>) {
     System.setProperty("javafx.enablePreview", "true")
 
     Networks.ignoreCerts()
-    "/message/**.prop".loadMessages()
+    MESSAGE_BUNDLES.forEach { it.loadMessages() }
     DefaultPreloader.set(Splash::class)
 
     Application.launch(Simplelauncher::class.java, *args)
 }
 
 class Simplelauncher: FxApp(Main::class) {
+
+    /**
+     * Register the @Inject services explicitly.
+     *
+     * FxApp also scans the application package, but that walks .class resources on
+     * the classpath, which a GraalVM native image does not have. Registering here
+     * keeps both the JVM and the native image working; the scan simply finds these
+     * already created.
+     */
+    override fun beforeInitialization(context: SimpleDiContainer, environment: Environment) {
+        context.create(LinkService::class)
+        context.create(LinkExecutor::class)
+    }
 
     override fun onStart(command: CommandLine) {
         // set favicon

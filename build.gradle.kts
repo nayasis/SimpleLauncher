@@ -6,6 +6,7 @@ plugins {
 	kotlin("jvm") version "2.2.20"
 	id("com.google.devtools.ksp") version "2.2.20-2.0.4"
 	id("com.gradleup.shadow") version "9.4.1"
+	id("org.graalvm.buildtools.native") version "1.1.12"
 }
 
 val osName = System.getProperty("os.name").lowercase()
@@ -488,4 +489,57 @@ fun Project.findReleaseVersionFromBranch(): String? {
 		?.takeIf { it.startsWith("release/") }
 		?.removePrefix("release/")
 		?.takeIf { it.isNotBlank() }
+}
+// ─── GraalVM native-image (AOT) ──────────────────────────────────────────────
+// Requires a GraalVM-based JDK 25 on JAVA_HOME (Liberica NIK 25 here) plus MSVC
+// build tools on Windows. Build with: ./gradlew nativeCompile
+graalvmNative {
+	// use whatever GraalVM is running Gradle instead of resolving a toolchain,
+	// so the build does not silently pick a non-GraalVM JDK 25
+	toolchainDetection = false
+
+	// The plugin's own downloader cannot fetch the shared metadata repository from
+	// GitHub releases behind this proxy, and `enabled = false` still evaluates the
+	// download. Point it at a local copy when one is cached:
+	//   curl -L -o ~/.gradle/graalvm-metadata/graalvm-reachability-metadata-1.0.13.zip \
+	//     https://github.com/oracle/graalvm-reachability-metadata/releases/download/1.0.13/graalvm-reachability-metadata-1.0.13.zip
+	metadataRepository {
+		val cached = file("${System.getProperty("user.home")}/.gradle/graalvm-metadata/graalvm-reachability-metadata-1.0.13.zip")
+		if (cached.exists()) {
+			uri(cached)
+		}
+	}
+
+	binaries {
+		named("main") {
+			imageName    = "simplelauncher"
+			mainClass    = "io.github.nayasis.simplelauncher.SimplelauncherKt"
+			fallback     = false
+			verbose      = true
+
+			// bundle src/main/resources (fxml, css, images, message bundles) into
+			// the image; a native image cannot read them off a classpath
+			resources.autodetect()
+
+			// JavaFX must come from the JDK, not from Maven. Liberica NIK "full"
+			// bundles JavaFX as JDK modules along with the static libs that
+			// native-image links (glass.lib, prism_d3d.lib, ...). Feeding the
+			// org.openjfx jars in as well would put a second, different JavaFX on
+			// the classpath whose JNI does not match those static libs.
+			classpath.setFrom(
+				sourceSets["main"].runtimeClasspath.filter { !it.name.startsWith("javafx-") }
+			)
+
+			buildArgs.addAll(
+				"--add-modules", javafxModules.joinToString(","),
+				// JavaFX is a real named module here, so the same internal-API
+				// exports the JVM run needs apply at image build time. Without
+				// them com.sun.javafx.application.LauncherImpl (used by
+				// DefaultPreloader) fails with NoClassDefFoundError at runtime.
+				*appJvmArgs.filter { it.startsWith("--add-exports=") || it.startsWith("--add-opens=") }.toTypedArray(),
+				"--enable-native-access=ALL-UNNAMED",
+				"-H:+ReportExceptionStackTraces",
+			)
+		}
+	}
 }
