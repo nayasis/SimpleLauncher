@@ -28,9 +28,13 @@ The UI is plain JavaFX (FXML + code), with the `basicafx-kt` library supplying t
 # Create fat JAR
 ./gradlew shadowJar
 
-# Create native executable (requires Java 14+ with jpackage)
+# Bundle a JVM with the app (jpackage)
 ./gradlew createNativeExe
 # Output: build/dist/simplelauncher/
+
+# Compile ahead of time to a real native binary (GraalVM native-image)
+native-build.bat
+# Output: build/native/nativeCompile/simplelauncher.exe
 ```
 
 ## Architecture
@@ -241,7 +245,37 @@ Always verify module changes with `./gradlew createNativeExe` and by running the
 
 The version comes from the branch name: `release/x.y.z` yields `x.y.z`, anything else yields `0.1.0-SNAPSHOT`.
 
-### Native Executable
+### GraalVM native-image (true AOT binary)
+
+```bash
+native-build.bat
+# Output: build/native/nativeCompile/simplelauncher.exe  (~93MB, ~2m30s)
+```
+
+Do not call `./gradlew nativeCompile` directly — native-image drives `cl.exe`, and
+without the MSVC environment it fails with `fatal error C1034: stdio.h`.
+`native-build.bat` runs `vcvars64.bat` first, then Gradle.
+
+Requirements:
+- **Liberica NIK 25 "full"** at `%NATIVE_JAVA_HOME%` (default:
+  `%USERPROFILE%\.sdkman\candidates\java\25.0.4.1-nikfull`). Download the *full*
+  bundle from <https://bell-sw.com/pages/downloads/native-image-kit/>; sdkman's
+  Windows NIK candidate is the plain bundle and will not work.
+- Visual Studio 2022 Build Tools, C++ workload plus Windows SDK.
+- A local copy of the shared reachability metadata (the plugin cannot fetch it
+  from GitHub releases here); see the comment in `build.gradle.kts`.
+
+Things that cost time to rediscover:
+
+| Trap | Why |
+|---|---|
+| Requires the **full** NIK bundle | Only it ships JavaFX as JDK modules *and* the static libs native-image links (`glass.lib`, `prism_d3d.lib`, `javafx_font.lib`, `javafx_iio.lib`). With the plain bundle the link step fails with `LNK2001` on `JNI_OnLoad_glass` and every `Java_com_sun_glass_ui_win_*` symbol. |
+| JavaFX comes from the JDK, not Maven | The `org.openjfx` jars are filtered out of the image classpath. The static libs match the JDK's JavaFX, so a second JavaFX from Maven would mismatch. Note this means the native binary runs JavaFX 25.0.4.1 while `gradlew run` uses 26.0.2. |
+| No classpath to scan at runtime | Anything built on `Classes.findResources` glob patterns silently finds nothing. That is why message bundles are listed explicitly in `Simplelauncher.kt` and the `@Inject` services are registered in `beforeInitialization()` instead of relying on `FxApp`'s package scan. Adding a new `@Inject` service means registering it there too. |
+| Concrete `Application`/`Preloader` subclasses need a no-arg constructor | native-image's `JavaFXFeature` registers every reachable subtype for reflective instantiation. This is why `DefaultSplash` in basicafx-kt is `abstract`. |
+| `.bat` files must stay CRLF | An LF-only batch file makes `cmd.exe` produce no output at all. Enforced by `.gitattributes`. |
+
+### Native Executable (jpackage — bundles a JVM)
 Two-stage process:
 1. **jlink**: Creates custom runtime with only required modules
    ```bash
