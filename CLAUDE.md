@@ -6,7 +6,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Simple Launcher** is a JavaFX desktop application for organizing and launching applications with advanced search capabilities. It features a database-backed link catalog with Boolean search operators, keyboard shortcuts, drag-and-drop support, and embedded terminal execution.
 
-**Tech Stack**: Kotlin 2.2.0, JavaFX 21, TornadoFX, Exposed ORM with KSP code generation, H2 database, JediTermFx terminal emulator.
+**Tech Stack**: Kotlin 2.2.20, JavaFX 26, Exposed ORM with KSP code generation, H2 database, JediTermFx terminal emulator. Java toolchain 25.
+
+The UI is plain JavaFX (FXML + code), with the `basicafx-kt` library supplying the `FxApp`/`FxView` base classes, dialogs and helpers. TornadoFX was removed — do not reintroduce its DSL. Neither is `kotlinx-coroutines` used directly: background work goes through `runAsync`/`runAwait` from `basicafx-kt`, or a plain thread plus `Platform.runLater`.
 
 ## Build Commands
 
@@ -36,23 +38,32 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ### Layered Structure
 
 ```
-view/         # JavaFX UI (Main, Terminal, Splash)
-├── Main.kt       # Primary window with table, editor, search
-└── Terminal.kt   # PTY terminal wrapper using JediTermFx
+view/         # JavaFX UI
+├── Main.kt            # Primary window (FxView backed by main.fxml)
+├── ShortcutEditor.kt  # Shortcut settings dialog (built in code)
+├── Terminal.kt        # PTY terminal wrapper using JediTermFx
+├── Splash.kt          # Preloader splash
+└── TokenField.kt, SearchTokenField.kt, TokenInputPane.kt  # token input controls
 
 service/      # Business logic
-├── LinkService.kt    # CRUD operations for links
-├── LinkExecutor.kt   # Command execution engine
-├── TextMatcher.kt    # Search with Boolean operators
-└── KeywordParser.kt  # Converts search to postfix notation (RPN)
+├── LinkService.kt       # CRUD operations for links, file pickers
+├── LinkExecutor.kt      # Command execution engine
+├── LinkCommand.kt       # Command template parameter binding
+├── TextMatcher.kt       # Search with Boolean operators
+├── KeywordParser.kt     # Converts search to postfix notation (RPN)
+├── SearchToken.kt       # Token-based search terms
+├── ShortcutSettings.kt  # Shortcut actions and user bindings
+├── Config.kt            # Persisted app state
+└── LauncherChildWindows.kt, ProgressQueuePopOver.kt
 
 model/        # Domain entities
-├── Link.kt       # Main entity with @Entity annotation for code gen
-└── JsonLink.kt   # Import/export DTO
+├── Link.kt        # Main entity with @Entity annotation for code gen
+├── Hashtags.kt    # Token set helpers
+└── vo/JsonLink.kt # Import/export DTO
 
 common/       # Utilities
 ├── Context.kt        # Service locator pattern
-├── ExposedHelper.kt  # Database initialization
+├── ExposedHelper.kt  # Database connection and transactions
 └── Commons.kt        # Extension functions
 ```
 
@@ -117,40 +128,50 @@ Used for drag-and-drop file handling and batch operations.
 
 ### H2 Database
 - **Location**: `~/.nayasis/simplelauncher/data.mv.db` (or in-memory for tests)
-- **Initialization**: `ExposedHelper.kt:init()`
-- **Schema**: Auto-created via `SchemaUtils.create(LinkTable)`
+- **Initialization**: `ExposedHelper.connectDatabase()`, called from `Simplelauncher.onStart()`
+- **Schema**: auto-created inside `connectDatabase()` via `SchemaUtils.create(LinkTable)`
 
 ### Transactions
-Use `ExposedHelper.runInTransaction {}` for all database operations:
+Use `ExposedHelper.tx {}` for all database operations. Pass `readOnly = true` for queries:
 ```kotlin
-ExposedHelper.runInTransaction {
+ExposedHelper.tx {
     LinkTable.repo.create(link)
+}
+
+ExposedHelper.tx(readOnly = true) {
+    LinkTable.repo.select().count()
 }
 ```
 
 ### Testing with Database
+`connectDatabase` creates the schema, so no separate `SchemaUtils` call is needed:
 ```kotlin
-@BeforeTest
-fun setup() {
-    ExposedHelper.init("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1")
-    transaction {
-        SchemaUtils.create(LinkTable)
-    }
+ExposedHelper.connectDatabase(
+    url      = "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1",
+    user     = "user",
+    password = "1234",
+)
+tx {
+    // ...
 }
 ```
 
 ## UI Components
 
 ### Main Window (Main.kt)
-- **Search field**: Live filtering with 300ms debounce
-- **Link table**: `SortedFilteredList` with reactive binding
-- **Editor panel**: Toggle with Alt+E
-- **Keyboard shortcuts**: See README.md for complete list
+`Main` extends `FxView` and loads `/view/main/main.fxml`. Nodes are bound with the `by fxid()` delegate (the property name is the `fx:id`), and `onBeforeShow()`/`onUndock()` are the lifecycle hooks.
+
+- **Search field**: live filtering with 300ms debounce
+- **Link table**: `FilterSortList` (from `basicafx-kt`) bound via `bindTo(tableView)`; `predicate` filters, `items` is the full list
+- **Editor panel**: toggle with Alt+E
+- **Keyboard shortcuts**: see README.md for complete list
 
 Key methods:
-- `searchKeyword()`: Filters table using `TextMatcher`
-- `save()`: Persists link via `LinkService`
-- `execute()`: Runs selected link via `LinkExecutor`
+- `setSearchFilter()`: evaluates links on a background thread, then applies the predicate on the FX thread. A generation counter drops superseded searches, so callers that need the result use its `onApplied` callback.
+- `submitSearch()`: re-reads the inputs and runs `setSearchFilter()`
+- `saveDetail()`: persists the edited link via `LinkService`
+- `drawDetail(link)`: fills the editor panel from a link
+- Execution goes through `Context.linkExecutor.run(link)`
 
 ### Terminal (Terminal.kt)
 Wraps commands in PTY-based terminal using JediTermFx:
@@ -161,9 +182,11 @@ Wraps commands in PTY-based terminal using JediTermFx:
 ## Testing
 
 ### Test Structure
-- **Unit tests**: `KeywordParserTest`, `TextMatcherTest`
-- **Integration tests**: `LinksTest` (database), `LinkExecutorTest` (marked `@Ignored`)
-- **Framework**: JUnit 5 + Kotest StringSpec
+- **Unit tests**: `KeywordParserTest`, `TextMatcherTest`, `SearchTokenTest`, `ShortcutSettingsTest`, `SearchSubmitTrackerTest`, `MainShortcutRoutingTest`
+- **Integration tests**: `LinksTest` (database), `LinkExecutorTest` (disabled)
+- **Framework**: JUnit 5 + Kotest assertions
+
+Not everything under `src/test` is an automated test. Several files are manual demo apps — they have a `fun main()`, extend `Application`, and assert nothing (`ExecutorTest`, `TerminalBuilderTest`, `ChildWindowLifecycleTest`, `ProgressDialogQueueButtonTest`, `ShortcutEditorManualTest`, `TerminalFx*`). Gradle does not run them; launch them by hand. Don't assume a `*Test` name means there is coverage.
 
 ### Running Tests
 ```bash
@@ -187,20 +210,36 @@ ExposedHelper.init("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1")
 
 JavaFX requires special JVM arguments for reflection access:
 ```kotlin
+--enable-native-access=ALL-UNNAMED
+--enable-native-access=javafx.graphics
+--add-exports=javafx.base/com.sun.javafx.event=ALL-UNNAMED
 --add-exports=javafx.graphics/com.sun.javafx.application=ALL-UNNAMED
 --add-exports=javafx.graphics/com.sun.javafx.tk=ALL-UNNAMED
 --add-opens=javafx.graphics/javafx.scene=ALL-UNNAMED
 ```
 
-These are configured in `build.gradle.kts:application.applicationDefaultJvmArgs` and automatically applied to `createNativeExe`.
+These live in `build.gradle.kts:appJvmArgs`, are wired into `application.applicationDefaultJvmArgs`, and are passed to `createNativeExe` as `--java-options`.
+
+The packaged app puts the JavaFX jars on the classpath rather than the module path, so it logs `WARNING: Unknown module: javafx.graphics specified to --add-exports` on startup. This is expected noise, not a failure.
+
+### jlink module list
+
+`requiredJdkModules` in `build.gradle.kts` drives `createRuntimeImage`. Two entries are easy to get wrong:
+
+- `java.scripting` — required by `javafx.fxml`: `FXMLLoader` references `javax.script.Bindings` for `fx:script` support. Removing it still passes `./gradlew run` (the full JDK is present) but makes the packaged app die with `NoClassDefFoundError: javax/script/Bindings` on its first FXML load.
+- `jdk.unsupported` — required by JavaFX.
+
+Always verify module changes with `./gradlew createNativeExe` and by running the produced executable, not just `./gradlew run`.
 
 ## Distribution
 
 ### Fat JAR
 ```bash
 ./gradlew shadowJar
-# Output: build/libs/simplelauncher-0.1.5-all.jar
+# Output: build/libs/simplelauncher-<version>-all.jar
 ```
+
+The version comes from the branch name: `release/x.y.z` yields `x.y.z`, anything else yields `0.1.0-SNAPSHOT`.
 
 ### Native Executable
 Two-stage process:
@@ -223,12 +262,13 @@ Platform-specific notes:
 ## Dependencies of Note
 
 - **basica-kt**: Custom utility library (path, string, reflection helpers)
-- **basicafx-kt**: Custom JavaFX utilities
+- **basicafx-kt**: Custom JavaFX library. Supplies `FxApp`/`FxView` with the `fxml`/`fxid` delegates, `Dialog`, progress dialogs, `FilterSortList`, `runAsync`/`runAwait`/`runLater`, `StageProperty`, `Localizator`. Developed in parallel at `C:\project_nayasis\basicafx-kt` and consumed from mavenLocal as `0.1.0-SNAPSHOT`, so run `./gradlew publishToMavenLocal` there after changing it.
 - **Exposed 1.0.0-rc-4**: Database ORM
 - **Exposed-CRUD**: KSP code generator for repositories
-- **TornadoFX**: Kotlin DSL for JavaFX
 - **JediTermFx**: Terminal emulator component
 - **mslinks**: Windows .lnk file parser
+
+`kotlinx-coroutines` appears on the classpath transitively through Exposed and is needed at runtime, but is not used by this project's own code.
 
 ## Common Development Patterns
 
@@ -240,9 +280,10 @@ Platform-specific notes:
 5. Migration: Database recreates on first run (H2 in user directory)
 
 ### Adding a New Service
-1. Create service in `service/` package
-2. Add lazy property to `Context.kt`
-3. Initialize in `Context.init()`
+1. Create the service in the `service/` package and annotate it `@Inject` — `FxApp.init()` scans the application package and registers it in `SimpleDiContainer`
+2. Add a lazy property to `Context.kt` that resolves it with `bean(YourService::class)`
+
+Views are not DI beans and must not be annotated: `FxApp.find()` instantiates them through their no-arg constructor and caches them.
 
 ### Modifying Search Logic
 - **Parser**: `KeywordParser.kt:toPostfix()` (infix to RPN)
@@ -250,25 +291,32 @@ Platform-specific notes:
 - **Indexing**: `Link.kt:keywords` property (space-delimited)
 
 ### Adding Keyboard Shortcuts
-- **Global**: Register in `Main.kt:init()` using `setOnKeyPressed`
-- **Menu**: Use TornadoFX `item("Name", "Shortcut") { action }`
-- **Context menu**: Add to `contextmenu { }` block
+Shortcuts are data, not hardcoded key handlers. They are user-rebindable through the shortcut settings dialog.
+
+1. Add an entry to the `ShortcutAction` enum in `ShortcutSettings.kt` with its message key, `ShortcutGroup` and default `KeyCombination`
+2. Add the message key to `src/main/resources/message/`
+3. Handle it in `handleMainShortcutEvent()` in `Main.kt` and add the matching lambda to `MainShortcutHandlers`
+4. For table context-menu entries, add the action to `TABLE_ITEM_SHORTCUT_ACTIONS` in `Main.kt`
+
+Menu items live in `main.fxml`; wire their `setOnAction` in `Main.kt:initEvent()`.
 
 ## Icon Handling
 
 Icons are stored as PNG bytes in database:
-- **Extraction**: From .exe, .ico, .lnk files via `Link.kt:extractIcon()`
-- **Conversion**: All formats converted to PNG on import
+- **Extraction**: from .exe, .ico, .lnk files via `Link.kt:setIcon(file)`
+- **Conversion**: all formats converted to PNG on import
 - **Export**: Base64-encoded in JSON
-- **Display**: Lazy-loaded from `iconBase64` property
+- **Display**: lazy-loaded through the `iconImage` property
 
-When adding icon support for new file types, modify `Link.kt:extractIcon()`.
+When adding icon support for new file types, modify `Link.kt:setIcon()`.
 
 ## Recent Changes
 
+- Removed TornadoFX and direct coroutine use; the UI runs on plain JavaFX with `FxView`/`FxApp` from `basicafx-kt`. Design notes: `docs/superpowers/specs/2026-09-08-remove-tornadofx-design.md`
+- Fixed native packaging: `java.scripting` must stay in the jlink module list (FXMLLoader needs it), and `toJpackageAppVersion()` now strips version qualifiers so `createNativeExe` works off `release/*` branches
+- Table rendering uses a fixed cell size and reuses cell graphics; search filtering runs off the FX thread
 - Migrated from Komapper to Exposed ORM (commit: 4543400)
 - Added jpackage support for native executables (commit: be3b3b3)
-- Improved transaction handling in ExposedHelper (commit: da523b1)
 
 ## Contact
 
