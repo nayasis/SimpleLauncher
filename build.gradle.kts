@@ -10,33 +10,13 @@ plugins {
 }
 
 val osName = System.getProperty("os.name").lowercase()
-val osArch = System.getProperty("os.arch").lowercase()
 val isWindows = osName.contains("win")
 val isLinux = osName.contains("linux")
 val isMac = osName.contains("mac")
-val javafxVersion = "26.0.2"
-val javafxModules = listOf("javafx.graphics", "javafx.controls", "javafx.fxml", "javafx.swing")
-val javafxPlatform = when {
-	isWindows && (osArch.contains("aarch64") || osArch.contains("arm64")) -> "win-aarch64"
-	isWindows && (osArch == "x86" || osArch == "i386") -> "win-x86"
-	isWindows -> "win"
-	isLinux && (osArch.contains("aarch64") || osArch.contains("arm64")) -> "linux-aarch64"
-	isLinux -> "linux"
-	isMac && (osArch.contains("aarch64") || osArch.contains("arm64")) -> "mac-aarch64"
-	isMac -> "mac"
-	else -> throw GradleException("Unsupported JavaFX platform: $osName / $osArch")
-}
 
 val appJvmArgs = listOf(
-	"-Djavafx.enablePreview=true",
-	"-Djavafx.suppressPreviewWarning=true",
-	"-Djavafx.suppressUnsupportedConfiguration=true",
+	// JNA (pty4j) and FlatLaf load native libraries
 	"--enable-native-access=ALL-UNNAMED",
-	"--enable-native-access=javafx.graphics",
-	"--add-exports=javafx.base/com.sun.javafx.event=ALL-UNNAMED",
-	"--add-exports=javafx.graphics/com.sun.javafx.application=ALL-UNNAMED",
-	"--add-exports=javafx.graphics/com.sun.javafx.tk=ALL-UNNAMED",
-	"--add-opens=javafx.graphics/javafx.scene=ALL-UNNAMED",
 )
 
 application {
@@ -56,6 +36,10 @@ repositories {
 	mavenCentral()
 	google()
 	gradlePluginPortal()
+	// the Swing JediTerm is published only here
+	maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies") {
+		content { includeGroup("org.jetbrains.jediterm") }
+	}
 }
 
 configurations.all {
@@ -68,41 +52,31 @@ configurations.all {
 dependencies {
 
 	implementation("io.github.nayasis:basica-kt:0.3.14")
-//	implementation("io.github.nayasis:basicafx-kt:0.3.3")
-	implementation("io.github.nayasis:basicafx-kt:0.1.0-SNAPSHOT")
+	implementation("io.github.nayasis:basica-swing:0.1.0-SNAPSHOT")
 	implementation("ch.qos.logback:logback-classic:1.5.31")
 
-	implementation("org.openjfx:javafx-base:$javafxVersion:$javafxPlatform")
-	implementation("org.openjfx:javafx-graphics:$javafxVersion:$javafxPlatform")
-	implementation("org.openjfx:javafx-controls:$javafxVersion:$javafxPlatform")
-	implementation("org.openjfx:javafx-fxml:$javafxVersion:$javafxPlatform")
-	implementation("org.openjfx:javafx-swing:$javafxVersion:$javafxPlatform")
+	// UI
+	implementation("com.formdev:flatlaf:3.7.2")
+	implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.11.0"))
+	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-swing")
+	implementation("com.github.vatbub:mslinks:1.0.6.2")
+	implementation("commons-cli:commons-cli:1.11.0")
+	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.21.1")
+	implementation("io.github.oshai:kotlin-logging-jvm:7.0.3")
 
 	// exposed
 	ksp("io.github.nayasis:exposed-crud-processor:0.1.0")
 	implementation("io.github.nayasis:exposed-crud:0.1.0")
 	implementation("com.h2database:h2:2.3.232")
 
-	// UI
-	implementation("org.controlsfx:controlsfx:11.2.2")
-	implementation("com.github.vatbub:mslinks:1.0.6.2")
-	implementation("commons-cli:commons-cli:1.4")
-	implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.21.1")
-	implementation("io.github.oshai:kotlin-logging-jvm:7.0.3")
-	implementation("de.jensd:fontawesomefx:8.9")
-
-	// jediterm-fx for terminal UI
-	implementation("com.techsenger.jeditermfx:jeditermfx-core:1.1.0")
-	implementation("com.techsenger.jeditermfx:jeditermfx-ui:1.1.0")
-	implementation("com.techsenger.jeditermfx:jeditermfx-app:1.0.0") {
-		exclude(group = "org.jetbrains.pty4j", module = "purejavacomm")
-	}
+	// terminal: 3.73+ needs kotlin-stdlib 2.4, which this compiler cannot read
+	implementation("org.jetbrains.jediterm:jediterm-core:3.72")
+	implementation("org.jetbrains.jediterm:jediterm-ui:3.72")
 	implementation("org.jetbrains.pty4j:pty4j:0.13.10")
 
 	testImplementation("org.apache.pdfbox:pdfbox:2.0.24")
 	testImplementation("com.levigo.jbig2:levigo-jbig2-imageio:2.0")
 	testImplementation("org.apache.httpcomponents.client5:httpclient5:5.3.1")
-	testImplementation("org.jetbrains.pty4j:pty4j:0.12.34")
 	implementation(kotlin("scripting-compiler-embeddable"))
 
 	// JNA (windows)
@@ -112,7 +86,6 @@ dependencies {
 	testImplementation(kotlin("test"))
 	testImplementation("io.kotest:kotest-runner-junit5:5.8.0")
 	testImplementation("io.github.classgraph:classgraph:4.8.184")
-	testImplementation("org.testfx:testfx-junit5:4.0.18")
 	testImplementation("org.yaml:snakeyaml:2.2")
 
 }
@@ -135,24 +108,7 @@ tasks.withType<JavaCompile> {
 }
 
 tasks.withType<JavaExec> {
-	jvmArgs(
-		"-Djavafx.suppressUnsupportedConfiguration=true",
-		"--enable-native-access=ALL-UNNAMED",
-	)
-}
-
-tasks.named<JavaExec>("run") {
 	jvmArgs(appJvmArgs)
-	useJavaFxModulePath()
-}
-
-tasks.register<JavaExec>("runChildWindowLifecycleTest") {
-	group = "verification"
-	description = "Runs the manual child-window hide/restore viewer"
-	classpath = sourceSets["test"].runtimeClasspath
-	mainClass.set("io.github.nayasis.simplelauncher.view.lifecycle.ChildWindowLifecycleTestKt")
-	jvmArgs(appJvmArgs)
-	useJavaFxModulePath()
 }
 
 tasks.register<JavaExec>("runShortcutEditorTest") {
@@ -160,9 +116,15 @@ tasks.register<JavaExec>("runShortcutEditorTest") {
 	description = "Runs the shortcut settings dialog only"
 	classpath = sourceSets["test"].runtimeClasspath
 	mainClass.set("io.github.nayasis.simplelauncher.view.shortcut.ShortcutEditorManualTestKt")
-	jvmArgs(appJvmArgs)
-	useJavaFxModulePath()
 }
+
+tasks.register<JavaExec>("runTerminalDemo") {
+	group = "verification"
+	description = "Runs a command in the terminal window only"
+	classpath = sourceSets["test"].runtimeClasspath
+	mainClass.set("io.github.nayasis.simplelauncher.view.terminal.TerminalDemoKt")
+}
+
 val isGitHubActions = System.getenv("GITHUB_ACTIONS") == "true"
 val requestedPackageType = System.getenv("SIMPLELAUNCHER_PACKAGE_TYPE")?.trim()?.lowercase()?.takeIf { it.isNotBlank() }
 
@@ -184,27 +146,6 @@ fun Project.toJpackageAppVersion(): String {
 	}
 
 	return parts.joinToString(".")
-}
-
-/**
- * Does [option] target a javafx.* named module?
- *
- * jpackage feeds the JavaFX jars through --input, so they land on the classpath
- * and JavaFX is not a named module in the packaged app. Such options are no-ops
- * there and only make the JVM print "WARNING: Unknown module: javafx.graphics"
- * on every start. They are still needed for `gradlew run`, where JavaFX *is*
- * resolved as named modules, so they stay in [appJvmArgs] and are filtered out
- * only when handed to jpackage.
- */
-fun isJavaFxModuleOption(option: String): Boolean {
-	val module = when {
-		option.startsWith("--add-exports=") || option.startsWith("--add-opens=") ->
-			option.substringAfter('=').substringBefore('/')
-		option.startsWith("--enable-native-access=") ->
-			option.substringAfter('=')
-		else -> return false
-	}
-	return module.startsWith("javafx.")
 }
 
 fun hasCommand(command: String): Boolean {
@@ -229,47 +170,6 @@ fun hasCommand(command: String): Boolean {
 			}
 			.waitFor() == 0
 	}.getOrDefault(false)
-}
-
-fun File.hasSuffix(suffixes: Set<String>): Boolean =
-	suffixes.any { suffix -> name.contains(suffix, ignoreCase = true) }
-
-fun filterJavaFxJars(jars: Collection<File>): List<File> {
-	val platformSuffixes = when {
-		isWindows && (osArch.contains("aarch64") || osArch.contains("arm64")) -> setOf("-win-aarch64")
-		isWindows && (osArch == "x86" || osArch == "i386") -> setOf("-win-x86")
-		isWindows -> setOf("-win")
-		isLinux && (osArch.contains("aarch64") || osArch.contains("arm64")) -> setOf("-linux-aarch64")
-		isLinux -> setOf("-linux")
-		isMac && (osArch.contains("aarch64") || osArch.contains("arm64")) -> setOf("-mac-aarch64")
-		isMac -> setOf("-mac")
-		else -> emptySet()
-	}
-	val allSuffixes = setOf("-win", "-win-x86", "-win-aarch64", "-linux", "-linux-aarch64", "-mac", "-mac-aarch64")
-	return jars
-		.filter { it.name.startsWith("javafx", ignoreCase = true) }
-		.filter { jar ->
-			jar.hasSuffix(platformSuffixes) || !jar.hasSuffix(allSuffixes)
-		}
-}
-
-fun isJavaFxJar(file: File): Boolean =
-	file.name.startsWith("javafx", ignoreCase = true) && filterJavaFxJars(listOf(file)).isNotEmpty()
-
-fun JavaExec.useJavaFxModulePath() {
-	val originalClasspath = classpath
-	val javaFxClasspath = originalClasspath.filter(::isJavaFxJar)
-	classpath = originalClasspath.filter { !isJavaFxJar(it) }
-	jvmArgumentProviders.add(
-		org.gradle.process.CommandLineArgumentProvider {
-			val modulePath = javaFxClasspath.asPath
-			if (modulePath.isBlank()) {
-				emptyList()
-			} else {
-				listOf("--module-path", modulePath, "--add-modules", javafxModules.joinToString(","))
-			}
-		}
-	)
 }
 
 fun deleteRecursivelyForce(target: File) {
@@ -308,8 +208,8 @@ val requiredJdkModules = listOf(
 	"java.sql",
 	"java.xml",
 	"java.naming",
-	"java.scripting",  // Required by javafx.fxml: FXMLLoader references javax.script for fx:script handlers
-	"jdk.unsupported",  // Required for JavaFX
+	"java.scripting",   // javax.script, used by the embedded kotlin scripting compiler
+	"jdk.unsupported",  // sun.misc.Unsafe, used by JNA (pty4j) and kotlinx-coroutines
 	"jdk.crypto.ec"
 )
 
@@ -324,22 +224,11 @@ tasks.register<Exec>("createRuntimeImage") {
 	val jlinkPath       = javaHome.resolve("bin/jlink${if (isWindows) ".exe" else ""}")
 	val runtimeImageDir = file("build/runtime-image")
 	
-	val allJars         = configurations.runtimeClasspath.get().files.filter { it.name.endsWith(".jar") }
-	val javafxJars      = filterJavaFxJars(allJars).map { it.parentFile.absolutePath }.distinct()
-	val javaFxModulePath = javafxJars.joinToString(File.pathSeparator)
-	
-	val modulePath = if (javaFxModulePath.isNotEmpty()) {
-		"${javaHome.resolve("jmods").absolutePath}${File.pathSeparator}$javaFxModulePath"
-	} else {
-		javaHome.resolve("jmods").absolutePath
-	}
-	
+	val modulePath      = javaHome.resolve("jmods").absolutePath
+
 	doFirst {
 		logger.info("Creating custom runtime image with jlink...")
 		logger.info("Required modules: ${requiredJdkModules.joinToString(", ")}")
-		if (javaFxModulePath.isNotEmpty()) {
-			logger.info("JavaFX module path: $javaFxModulePath")
-		}
 	}
 	
 	commandLine(
@@ -371,7 +260,6 @@ tasks.register<Exec>("createNativeExe") {
 	
 	val runtimeClasspath   = configurations.runtimeClasspath.get().files
 	val allJars            = runtimeClasspath.filter { it.name.endsWith(".jar") }
-	val javafxJars         = filterJavaFxJars(allJars)
 	
 	val useExe = isWindows && !isGitHubActions && hasCommand("light.exe")
 	val defaultPackageType = when {
@@ -397,7 +285,7 @@ tasks.register<Exec>("createNativeExe") {
 		jpackageInputDir.deleteRecursively()
 		jpackageInputDir.mkdirs()
 		jarFile.copyTo(jpackageInputDir.resolve(jarFile.name), overwrite = true)
-		(allJars.filterNot { it.name.startsWith("javafx", ignoreCase = true) } + javafxJars).forEach { jar ->
+		allJars.forEach { jar ->
 			jar.copyTo(jpackageInputDir.resolve(jar.name), overwrite = true)
 		}
 		
@@ -416,7 +304,7 @@ tasks.register<Exec>("createNativeExe") {
 		"--runtime-image", runtimeImageDir.absolutePath
 	)
 	
-	application.applicationDefaultJvmArgs.filterNot(::isJavaFxModuleOption).forEach { option ->
+	application.applicationDefaultJvmArgs.forEach { option ->
 		jpackageArgs.add("--java-options")
 		jpackageArgs.add(option)
 	}
@@ -517,26 +405,11 @@ graalvmNative {
 			fallback     = false
 			verbose      = true
 
-			// bundle src/main/resources (fxml, css, images, message bundles) into
-			// the image; a native image cannot read them off a classpath
+			// bundle src/main/resources (images, message bundles) into the image;
+			// a native image cannot read them off a classpath
 			resources.autodetect()
 
-			// JavaFX must come from the JDK, not from Maven. Liberica NIK "full"
-			// bundles JavaFX as JDK modules along with the static libs that
-			// native-image links (glass.lib, prism_d3d.lib, ...). Feeding the
-			// org.openjfx jars in as well would put a second, different JavaFX on
-			// the classpath whose JNI does not match those static libs.
-			classpath.setFrom(
-				sourceSets["main"].runtimeClasspath.filter { !it.name.startsWith("javafx-") }
-			)
-
 			buildArgs.addAll(
-				"--add-modules", javafxModules.joinToString(","),
-				// JavaFX is a real named module here, so the same internal-API
-				// exports the JVM run needs apply at image build time. Without
-				// them com.sun.javafx.application.LauncherImpl (used by
-				// DefaultPreloader) fails with NoClassDefFoundError at runtime.
-				*appJvmArgs.filter { it.startsWith("--add-exports=") || it.startsWith("--add-opens=") }.toTypedArray(),
 				"--enable-native-access=ALL-UNNAMED",
 				"-H:+ReportExceptionStackTraces",
 			)
