@@ -11,6 +11,7 @@ menu.view.showMenuBar               = 메뉴
 menu.view.description               = 상세
 menu.view.alwaysOnTop               = 창 항상 위로 고정
 menu.view.showInputGroup            = 그룹 검색조건
+menu.view.theme                     = 테마
 menu.help                           = 도움말
 menu.help.about                     = 정보
 search.keyword                      = 검색어

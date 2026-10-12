@@ -1,38 +1,50 @@
-@file:Suppress("MemberVisibilityCanBePrivate","JAVA_MODULE_DOES_NOT_EXPORT_PACKAGE")
+@file:Suppress("MemberVisibilityCanBePrivate")
 
 package io.github.nayasis.simplelauncher.view
 
-import impl.org.controlsfx.autocompletion.AutoCompletionTextFieldBinding
-import impl.org.controlsfx.autocompletion.SuggestionProvider
-import io.github.nayasis.kotlin.basica.core.extension.ifNull
+import com.formdev.flatlaf.FlatClientProperties
 import io.github.nayasis.kotlin.basica.core.localdate.toString
 import io.github.nayasis.kotlin.basica.core.string.message
 import io.github.nayasis.kotlin.basica.core.string.toPath
 import io.github.nayasis.kotlin.basica.etc.error
-import io.github.nayasis.kotlin.javafx.control.basic.allChildren
-import io.github.nayasis.kotlin.javafx.control.basic.hmargin
-import io.github.nayasis.kotlin.javafx.control.basic.repack
-import io.github.nayasis.kotlin.javafx.control.tableview.*
-import io.github.nayasis.kotlin.javafx.control.tableview.column.cellValue
-import io.github.nayasis.kotlin.javafx.control.tableview.column.cellValueByDefault
-import io.github.nayasis.kotlin.javafx.app.FxView
-import io.github.nayasis.kotlin.javafx.app.fxid
-import io.github.nayasis.kotlin.javafx.app.fxml
-import io.github.nayasis.kotlin.javafx.misc.runLater
-import io.github.nayasis.kotlin.javafx.geometry.Insets
-import io.github.nayasis.kotlin.javafx.misc.Desktop
-import io.github.nayasis.kotlin.javafx.misc.runAwait
-import io.github.nayasis.kotlin.javafx.misc.set
-import io.github.nayasis.kotlin.javafx.preloader.DefaultPreloader
-import io.github.nayasis.kotlin.javafx.property.StageProperty
-import io.github.nayasis.kotlin.javafx.stage.Dialog
-import io.github.nayasis.kotlin.javafx.stage.Localizator
-import io.github.nayasis.kotlin.javafx.stage.loadDefaultIcon
-import io.github.nayasis.kotlin.javafx.stage.WindowHeaderHelper
+import io.github.nayasis.kotlin.swing.app.SwingView
+import io.github.nayasis.kotlin.swing.collection.HistorySet
+import io.github.nayasis.kotlin.swing.control.AutoCompletion
+import io.github.nayasis.kotlin.swing.control.addTextChanged
+import io.github.nayasis.kotlin.swing.control.table.ListTableModel
+import io.github.nayasis.kotlin.swing.control.table.ScrollMode
+import io.github.nayasis.kotlin.swing.control.table.bind
+import io.github.nayasis.kotlin.swing.control.table.clipTextInsteadOfEllipsis
+import io.github.nayasis.kotlin.swing.control.table.findColumnBy
+import io.github.nayasis.kotlin.swing.control.table.focusBy
+import io.github.nayasis.kotlin.swing.control.table.installColumnVisibilityMenu
+import io.github.nayasis.kotlin.swing.control.table.scrollBy
+import io.github.nayasis.kotlin.swing.control.table.select
+import io.github.nayasis.kotlin.swing.control.table.selectBy
+import io.github.nayasis.kotlin.swing.control.table.visibleRows
+import io.github.nayasis.kotlin.swing.control.token.TokenField
+import io.github.nayasis.kotlin.swing.control.token.TokenInputPane
+import io.github.nayasis.kotlin.swing.misc.Desktop
+import io.github.nayasis.kotlin.swing.misc.displayText
+import io.github.nayasis.kotlin.swing.misc.launchUi
+import io.github.nayasis.kotlin.swing.misc.onFileDrop
+import io.github.nayasis.kotlin.swing.misc.onLookAndFeelChange
+import io.github.nayasis.kotlin.swing.misc.removeAlpha
+import io.github.nayasis.kotlin.swing.misc.runLater
+import io.github.nayasis.kotlin.swing.misc.set
+import io.github.nayasis.kotlin.swing.window.Dialog
+import io.github.nayasis.kotlin.swing.window.Windows
+import io.github.nayasis.kotlin.swing.window.addCloseRequest
+import io.github.nayasis.kotlin.swing.window.isMaximized
+import io.github.nayasis.kotlin.swing.window.loadDefaultIcon
+import io.github.nayasis.kotlin.swing.window.runWhenShown
+import io.github.nayasis.kotlin.swing.window.watchMaximized
+import io.github.nayasis.kotlin.swing.property.WindowProperty
 import io.github.nayasis.simplelauncher.common.Context
 import io.github.nayasis.simplelauncher.common.ICON_NEW
-import io.github.nayasis.simplelauncher.model.formatTokens
 import io.github.nayasis.simplelauncher.model.Link
+import io.github.nayasis.simplelauncher.model.formatTokens
+import io.github.nayasis.simplelauncher.model.normalizeHashtags
 import io.github.nayasis.simplelauncher.service.LinkExecutor
 import io.github.nayasis.simplelauncher.service.LinkService
 import io.github.nayasis.simplelauncher.service.ShortcutAction
@@ -40,42 +52,79 @@ import io.github.nayasis.simplelauncher.service.ShortcutSettings
 import io.github.nayasis.simplelauncher.service.TextMatcher
 import io.github.nayasis.simplelauncher.service.matchesSearchTokens
 import io.github.oshai.kotlinlogging.KotlinLogging
-import javafx.animation.PauseTransition
-import javafx.application.Platform
-import javafx.beans.property.SimpleStringProperty
-import javafx.beans.value.ChangeListener
-import javafx.beans.value.ObservableValue
-import javafx.geometry.Pos
-import javafx.scene.Node
-import javafx.scene.control.*
-import javafx.scene.image.Image
-import javafx.scene.image.ImageView
-import javafx.scene.input.*
-import javafx.scene.input.KeyCode.*
-import javafx.scene.input.KeyEvent.KEY_PRESSED
-import javafx.scene.layout.AnchorPane
-import javafx.scene.layout.GridPane
-import javafx.scene.layout.HBox
-import javafx.stage.Stage
-import javafx.stage.WindowEvent
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.withContext
+import java.awt.BorderLayout
+import java.awt.Color
+import java.awt.Component
+import java.awt.Cursor
+import java.awt.Dimension
+import java.awt.GridBagConstraints
+import java.awt.GridBagLayout
+import java.awt.Image
+import java.awt.Insets
+import java.awt.KeyEventDispatcher
+import java.awt.KeyboardFocusManager
+import java.awt.Window
+import java.awt.event.ComponentAdapter
+import java.awt.event.ComponentEvent
+import java.awt.event.FocusAdapter
+import java.awt.event.FocusEvent
+import java.awt.event.ItemEvent
+import java.awt.event.KeyAdapter
+import java.awt.event.KeyEvent
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
+import java.awt.event.WindowAdapter
+import java.awt.event.WindowEvent
 import java.awt.image.BufferedImage
 import java.io.File
 import java.time.LocalDateTime
-import java.util.concurrent.atomic.AtomicBoolean
+import java.util.WeakHashMap
 import javax.imageio.ImageIO
-import javafx.util.Duration
-import javafx.util.StringConverter
-import kotlin.concurrent.thread
-import kotlin.system.exitProcess
+import javax.swing.BorderFactory
+import javax.swing.DropMode
+import javax.swing.Icon
+import javax.swing.ImageIcon
+import javax.swing.ButtonGroup
+import javax.swing.JButton
+import javax.swing.JCheckBox
+import javax.swing.JCheckBoxMenuItem
+import javax.swing.JComponent
+import javax.swing.JFrame
+import javax.swing.JLabel
+import javax.swing.JMenu
+import javax.swing.JMenuBar
+import javax.swing.JMenuItem
+import javax.swing.JPanel
+import javax.swing.JPopupMenu
+import javax.swing.JRadioButtonMenuItem
+import javax.swing.JScrollPane
+import javax.swing.JSplitPane
+import javax.swing.JTable
+import javax.swing.JTextArea
+import javax.swing.JTextField
+import javax.swing.ListSelectionModel
+import javax.swing.MenuSelectionManager
+import javax.swing.SwingConstants
+import javax.swing.SwingUtilities
+import javax.swing.WindowConstants
+import javax.swing.event.PopupMenuEvent
+import javax.swing.event.PopupMenuListener
+import javax.swing.table.DefaultTableCellRenderer
+import javax.swing.text.JTextComponent
 
 private val logger = KotlinLogging.logger {}
 
-private const val CLASS_AUTO_COMPLETER = "auto-completer"
-private const val CLASS_ON_DRAG        = "table-row-on-drag"
-private const val DEFAULT_LINK_EDITOR_WIDTH = 400.0
-private const val MIN_LINK_EDITOR_WIDTH = 300.0
-private const val TABLE_ICON_SIZE = 18.0
-private const val TABLE_ROW_HEIGHT = 24.0
+private const val DEFAULT_LINK_EDITOR_WIDTH = 400
+private const val MIN_LINK_EDITOR_WIDTH = 300
+private const val MIN_TABLE_WIDTH = 150
+private const val TABLE_ICON_SIZE = 18
+private const val TABLE_ROW_HEIGHT = 24
+private const val DETAIL_ICON_SIZE = 23
+private const val ADD_FILE_ICON_SIZE = 26
 private val TABLE_ITEM_SHORTCUT_ACTIONS = listOf(
     ShortcutAction.RUN_SELECTED_LINK,
     ShortcutAction.COPY_FOLDER_FROM_TABLE,
@@ -84,33 +133,7 @@ private val TABLE_ITEM_SHORTCUT_ACTIONS = listOf(
 )
 
 internal const val CONTEXT_MENU_SHOW_DETAIL_ID = "context-menu-show-detail"
-
-/**
- * attach a tooltip. a Control owns its tooltip, anything else needs it installed.
- */
-private fun Node.tooltip(text: String?): Tooltip = Tooltip(text).also {
-    if(this is Control) tooltip = it else Tooltip.install(this, it)
-}
-
-/**
- * render a cell with [format], resetting the cell when there is no item.
- */
-private fun <S,T> TableColumn<S,T>.cellFormat(format: TableCell<S,T>.(T) -> Unit) {
-    setCellFactory {
-        object: TableCell<S,T>() {
-            override fun updateItem(item: T?, empty: Boolean) {
-                super.updateItem(item, empty)
-                if(item == null || empty) {
-                    text    = null
-                    graphic = null
-                    style   = ""
-                } else {
-                    format(item)
-                }
-            }
-        }
-    }
-}
+internal const val CONTEXT_MENU_ACTION_KEY = "shortcutAction"
 
 internal class MainShortcutHandlers(
     val onSaveDetail: () -> Unit = {},
@@ -176,22 +199,22 @@ internal fun createTableItemContextMenu(
     onShowDetail: () -> Unit,
     onCopyIcon: () -> Unit = {},
     onSaveIcon: () -> Unit = {},
-): ContextMenu {
+): JPopupMenu {
     val actionItems = TABLE_ITEM_SHORTCUT_ACTIONS.associateWith { action ->
-        MenuItem(action.messageKey.message()).apply {
-            userData = action
-            setOnAction { onAction(action) }
+        JMenuItem(action.messageKey.message()).apply {
+            putClientProperty(CONTEXT_MENU_ACTION_KEY, action)
+            addActionListener { onAction(action) }
         }
     }
-    val showDetailItem = MenuItem("shortcut.action.showDetailEditor".message()).apply {
-        id = CONTEXT_MENU_SHOW_DETAIL_ID
-        setOnAction { onShowDetail() }
+    val showDetailItem = JMenuItem("shortcut.action.showDetailEditor".message()).apply {
+        name = CONTEXT_MENU_SHOW_DETAIL_ID
+        addActionListener { onShowDetail() }
     }
-    val copyIconItem = MenuItem("contextmenu.icon.copy".message()).apply {
-        setOnAction { onCopyIcon() }
+    val copyIconItem = JMenuItem("contextmenu.icon.copy".message()).apply {
+        addActionListener { onCopyIcon() }
     }
-    val saveIconItem = MenuItem("contextmenu.icon.save".message()).apply {
-        setOnAction { onSaveIcon() }
+    val saveIconItem = JMenuItem("contextmenu.icon.save".message()).apply {
+        addActionListener { onSaveIcon() }
     }
     fun refreshAccelerators() {
         val shortcuts = shortcutSettings()
@@ -199,188 +222,340 @@ internal fun createTableItemContextMenu(
         showDetailItem.accelerator = shortcuts[ShortcutAction.TOGGLE_DESCRIPTION]
     }
     refreshAccelerators()
-    return ContextMenu(
-        actionItems.getValue(ShortcutAction.RUN_SELECTED_LINK),
-        showDetailItem,
-        SeparatorMenuItem(),
-        actionItems.getValue(ShortcutAction.COPY_FOLDER_FROM_TABLE),
-        actionItems.getValue(ShortcutAction.OPEN_FOLDER_FROM_TABLE),
-        SeparatorMenuItem(),
-        copyIconItem,
-        saveIconItem,
-        SeparatorMenuItem(),
-        actionItems.getValue(ShortcutAction.DELETE_SELECTED_LINK),
-    ).apply {
-        setOnShowing { refreshAccelerators() }
+    return JPopupMenu().apply {
+        add(actionItems.getValue(ShortcutAction.RUN_SELECTED_LINK))
+        add(showDetailItem)
+        addSeparator()
+        add(actionItems.getValue(ShortcutAction.COPY_FOLDER_FROM_TABLE))
+        add(actionItems.getValue(ShortcutAction.OPEN_FOLDER_FROM_TABLE))
+        addSeparator()
+        add(copyIconItem)
+        add(saveIconItem)
+        addSeparator()
+        add(actionItems.getValue(ShortcutAction.DELETE_SELECTED_LINK))
+        addPopupMenuListener(object: PopupMenuListener {
+            override fun popupMenuWillBecomeVisible(e: PopupMenuEvent) = refreshAccelerators()
+            override fun popupMenuWillBecomeInvisible(e: PopupMenuEvent) {}
+            override fun popupMenuCanceled(e: PopupMenuEvent) {}
+        })
     }
 }
 
-class Main: FxView("application.title".message()) {
+/** [image] fitted into a [size] square, keeping its aspect ratio. */
+private fun scaledIcon(image: Image, size: Int): ImageIcon {
+    val width  = image.getWidth(null).coerceAtLeast(1)
+    val height = image.getHeight(null).coerceAtLeast(1)
+    val scale  = size.toDouble() / maxOf(width, height)
+    val w = (width * scale).toInt().coerceAtLeast(1)
+    val h = (height * scale).toInt().coerceAtLeast(1)
+    return ImageIcon(image.getScaledInstance(w, h, Image.SCALE_SMOOTH))
+}
+
+private fun readResourceImage(path: String): BufferedImage? =
+    runCatching { Main::class.java.getResource(path)?.let { ImageIO.read(it) } }.getOrNull()
+
+class Main: SwingView("application.title".message()) {
 
     private val linkService: LinkService by lazy { Context.linkService }
     private val linkExecutor: LinkExecutor by lazy { Context.linkExecutor }
 
-    override val root: AnchorPane by fxml("/view/main/main.fxml")
+    // ─── menu ────────────────────────────────────────────────────────────────
 
-    val titleBar: HBox by fxid()
+    val menuImportData       = JMenuItem("menu.file.import".message())
+    val menuExportData       = JMenuItem("menu.file.export".message())
+    val menuDeleteAll        = JMenuItem("menu.file.clear".message())
+    val menuShortcutSettings = JMenuItem("menu.settings.shortcut".message())
+    // named components are saved and restored with the window state
+    val menuViewDesc         = JCheckBoxMenuItem("menu.view.description".message(), true).apply { name = "menuViewDesc" }
+    val menuShowInputGroup   = JCheckBoxMenuItem("menu.view.showInputGroup".message(), true).apply { name = "menuShowInputGroup" }
+    val menuAlwaysOnTop      = JCheckBoxMenuItem("menu.view.alwaysOnTop".message(), false).apply { name = "menuAlwaysOnTop" }
+    val menuHelp             = JMenuItem("menu.help.about".message())
+    val menuTheme            = JMenu("menu.view.theme".message()).apply {
+        name = "menuTheme"
+        val group   = ButtonGroup()
+        val current = AppTheme.of(Context.config.theme)
+        AppTheme.entries.forEach { theme ->
+            add(JRadioButtonMenuItem(theme.label, theme == current).apply {
+                group.add(this)
+                addActionListener { changeTheme(theme) }
+            })
+        }
+    }
 
-    val contentPane: SplitPane by fxid()
-    val tableMain: TableView<Link> by fxid()
-    val colGroup: TableColumn<Link,String> by fxid()
-    val colTitle: TableColumn<Link,Link> by fxid()
-    val colLastUsedDt: TableColumn<Link,LocalDateTime?> by fxid()
-    val colExecCount: TableColumn<Link,Int> by fxid()
+    val menubarTop = JMenuBar().apply {
+        add(JMenu("menu.file".message()).apply {
+            add(menuImportData)
+            add(menuExportData)
+            add(menuDeleteAll)
+        })
+        add(JMenu("menu.settings".message()).apply {
+            add(menuShortcutSettings)
+        })
+        add(JMenu("menu.view".message()).apply {
+            add(menuViewDesc)
+            add(menuShowInputGroup)
+            add(menuAlwaysOnTop)
+            addSeparator()
+            add(menuTheme)
+        })
+        add(JMenu("menu.help".message()).apply {
+            add(menuHelp)
+        })
+    }
 
-    val menubarTop: MenuBar by fxid()
-    val menuViewDesc: CheckMenuItem by fxid()
-    val menuShowInputGroup: CheckMenuItem by fxid()
-    val menuAlwaysOnTop: CheckMenuItem by fxid()
-    val menuHelp: MenuItem by fxid()
-    val menuImportData: MenuItem by fxid()
-    val menuExportData: MenuItem by fxid()
-    val menuDeleteAll: MenuItem by fxid()
-    val menuShortcutSettings: MenuItem by fxid()
+    // ─── search bar ──────────────────────────────────────────────────────────
 
-    val inputKeyword: SearchTokenField by fxid()
-    val inputGroup: SearchTokenField by fxid()
+    val inputKeyword = SearchTokenField().apply {
+        minimumSize = Dimension(100, preferredSize.height)
+    }
 
-    val buttonNew: Button by fxid()
-    val buttonSave: Button by fxid()
-    val buttonDelete: Button by fxid()
-    val buttonOpenFolder: Button by fxid()
-    val buttonCopyFolder: Button by fxid()
-    val buttonCopy: Button by fxid()
-    val buttonAddFile: ImageView by fxid()
+    val inputGroup = SearchTokenField().apply {
+        preferredSize = Dimension(220, preferredSize.height)
+        minimumSize = Dimension(140, preferredSize.height)
+    }
 
-    val descGridPane: GridPane by fxid()
-    val descGroupName: TokenField by fxid()
-    val descShowConsole: CheckBox by fxid()
-    val descSeqExecution: CheckBox by fxid()
-    val descTitle: TextField by fxid()
-    val descHashtag: TokenField by fxid()
-    val descDescription: TextArea by fxid()
-    val descIcon: ImageView by fxid()
-    val descExecPath: TextField by fxid()
-    val descArg: TextField by fxid()
-    val descCmdPrefix: TextField by fxid()
-    val descCmdNext: TextArea by fxid()
-    val descCmdPrev: TextArea by fxid()
+    private val groupFilter = JPanel(BorderLayout(5, 0)).apply {
+        isOpaque = false
+        border = BorderFactory.createEmptyBorder(0, 10, 0, 0)
+        add(JLabel("search.group".message()), BorderLayout.WEST)
+        add(inputGroup, BorderLayout.CENTER)
+    }
 
-    val labelStatus: Label by fxid()
-    val labelCmd: Label by fxid()
+    val buttonAddFile = JLabel().apply {
+        readResourceImage("/image/icon/add.png")?.let { icon = scaledIcon(it, ADD_FILE_ICON_SIZE) }
+        cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+    }
+
+    private val searchBar = JPanel(GridBagLayout()).apply {
+        border = BorderFactory.createEmptyBorder(2, 0, 2, 0)
+        val c = GridBagConstraints().apply { gridy = 0; anchor = GridBagConstraints.WEST }
+        add(JLabel("search.keyword".message()), c.apply { gridx = 0; insets = Insets(0, 2, 0, 0) })
+        add(inputKeyword, c.apply { gridx = 1; weightx = 1.0; fill = GridBagConstraints.HORIZONTAL; insets = Insets(0, 5, 0, 0) })
+        add(groupFilter, c.apply { gridx = 2; weightx = 0.0; fill = GridBagConstraints.NONE; insets = Insets(0, 0, 0, 0) })
+        add(buttonAddFile, c.apply { gridx = 3; insets = Insets(0, 15, 0, 10) })
+    }
+
+    // ─── table ───────────────────────────────────────────────────────────────
+
+    val tableModel = ListTableModel(linkService.links)
+        .column<String>("table.groupName".message(), id = "colGroup", getter = { formatTokens(it.group) })
+        .column<Link>("table.title".message(), id = "colTitle", comparator = compareBy { it.title.orEmpty() }, getter = { it })
+        .column<LocalDateTime>("table.lastUsedDt".message(), id = "colLastUsedDt", getter = { it.executedAt })
+        .column<Int>("table.execCount".message(), id = "colExecCount", getter = { it.executeCount })
+
+    val tableMain = JTable().apply {
+        name = "tableMain"
+        bind(tableModel)
+        rowHeight = TABLE_ROW_HEIGHT
+        selectionModel.selectionMode = ListSelectionModel.SINGLE_SELECTION
+        fillsViewportHeight = true
+        dropMode = DropMode.ON
+        installColumnVisibilityMenu()
+    }
+
+    private val tableScroll = JScrollPane(tableMain).apply {
+        minimumSize = Dimension(MIN_TABLE_WIDTH, 0)
+    }
+
+    // ─── detail editor ───────────────────────────────────────────────────────
+
+    val descGroupName    = TokenField(8, ::normalizeHashtags)
+    val descShowConsole  = JCheckBox("desc.showConsole".message())
+    val descSeqExecution = JCheckBox("desc.execution.sequential".message())
+    val descTitle        = detailTextField()
+    val descHashtag      = TokenField(8, ::normalizeHashtags)
+    val descDescription  = textArea()
+    val descIcon         = JLabel().apply {
+        preferredSize = Dimension(DETAIL_ICON_SIZE, DETAIL_ICON_SIZE)
+        horizontalAlignment = SwingConstants.CENTER
+    }
+    val descExecPath     = detailTextField()
+    val descArg          = detailTextField()
+    val descCmdPrefix    = detailTextField()
+    val descCmdPrev      = textArea()
+    val descCmdNext      = textArea()
+
+    val buttonNew        = button("btn.new")
+    val buttonDelete     = button("btn.delete")
+    val buttonCopy       = button("btn.copy")
+    val buttonSave       = button("btn.save")
+    val buttonOpenFolder = button("btn.open.folder")
+    val buttonCopyFolder = button("btn.copy.folder")
+
+    val descPanel = JPanel(GridBagLayout()).apply {
+        minimumSize = Dimension(MIN_LINK_EDITOR_WIDTH, 0)
+        border = BorderFactory.createEmptyBorder(0, 4, 0, 0)
+
+        fun label(key: String, row: Int) = add(JLabel(key.message()), GridBagConstraints().apply {
+            gridx = 0; gridy = row
+            anchor = GridBagConstraints.NORTHEAST
+            insets = Insets(6, 0, 3, 5)
+        })
+        fun field(component: Component, row: Int, weighty: Double = 0.0) = add(component, GridBagConstraints().apply {
+            gridx = 1; gridy = row
+            weightx = 1.0
+            this.weighty = weighty
+            fill = if (weighty > 0) GridBagConstraints.BOTH else GridBagConstraints.HORIZONTAL
+            insets = Insets(2, 0, 2, 0)
+        })
+        fun row(vararg components: Component, stretch: Component? = null) = JPanel(GridBagLayout()).apply {
+            isOpaque = false
+            components.forEachIndexed { index, component ->
+                add(component, GridBagConstraints().apply {
+                    gridx = index
+                    weightx = if (component === stretch) 1.0 else 0.0
+                    fill = if (component === stretch) GridBagConstraints.HORIZONTAL else GridBagConstraints.NONE
+                    anchor = GridBagConstraints.EAST
+                    insets = Insets(0, if (index == 0) 0 else 5, 0, 0)
+                })
+            }
+        }
+
+        fun spacer() = JPanel().apply { isOpaque = false }
+
+        spacer().let { field(row(it, buttonNew, buttonDelete, buttonCopy, buttonSave, stretch = it), 0) }
+        label("desc.groupName", 1);   field(row(descGroupName, descShowConsole, descSeqExecution, stretch = descGroupName), 1)
+        label("desc.title", 2);       field(descTitle, 2)
+        label("desc.hashtag", 3);     field(descHashtag, 3)
+        label("desc.description", 4); field(scroll(descDescription), 4, weighty = 2.0)
+        label("desc.execPath", 5);    field(row(descIcon, descExecPath, stretch = descExecPath), 5)
+        spacer().let { field(row(it, buttonCopyFolder, buttonOpenFolder, stretch = it), 6) }
+        label("desc.arg", 7);         field(descArg, 7)
+        label("desc.execCmdPrefix", 8); field(descCmdPrefix, 8)
+        label("desc.cmdPrev", 9);     field(scroll(descCmdPrev), 9, weighty = 1.0)
+        label("desc.cmdNext", 10);    field(scroll(descCmdNext), 10, weighty = 1.0)
+    }
+
+    private val splitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT).apply {
+        // extra width goes to the table, the editor keeps its width
+        resizeWeight = 1.0
+        isContinuousLayout = true
+        border = BorderFactory.createEmptyBorder()
+        leftComponent = tableScroll
+        rightComponent = descPanel
+    }
+
+    private val contentHolder = JPanel(BorderLayout()).apply {
+        add(splitPane, BorderLayout.CENTER)
+    }
+
+    // ─── status bar ──────────────────────────────────────────────────────────
+
+    val labelStatus = JLabel(" ")
+    val labelCmd    = JLabel(" ").apply { horizontalAlignment = SwingConstants.RIGHT }
+
+    private val statusBar = JPanel(BorderLayout(10, 0)).apply {
+        border = BorderFactory.createEmptyBorder(2, 0, 2, 0)
+        add(labelStatus, BorderLayout.WEST)
+        add(labelCmd, BorderLayout.CENTER)
+    }
+
+    override val root = JPanel(BorderLayout()).apply {
+        border = BorderFactory.createEmptyBorder(0, 5, 0, 5)
+        preferredSize = Dimension(1000, 659)
+        add(searchBar, BorderLayout.NORTH)
+        add(contentHolder, BorderLayout.CENTER)
+        add(statusBar, BorderLayout.SOUTH)
+    }
+
+    // ─── state ───────────────────────────────────────────────────────────────
 
     var detail: Link? = null
+    private var detailIcon: BufferedImage? = null
 
     val keywordMatcher = TextMatcher()
     val groupMatcher = TextMatcher()
 
-    private var lastFocused: Node? = null
-    private var descEditorWidth = Context.config.descEditorWidth?.takeIf { it > 0 } ?: DEFAULT_LINK_EDITOR_WIDTH
-    private var ignoreDescEditorWidthChange = false
-    private var childWindowLifecycleBound = false
-    private var closeRequestBound = false
-    private var installedShortcutScene: javafx.scene.Scene? = null
-    private var sceneShortcutListenerBound = false
+    private var lastFocused: Component? = null
+    private var descEditorWidth = Context.config.descEditorWidth?.toInt()?.takeIf { it > 0 } ?: DEFAULT_LINK_EDITOR_WIDTH
+    // while the saved window state is applied, toggles must not resize the already restored window
+    private var restoringState = false
     private val searchSubmitTracker = SearchSubmitTracker()
-    private var searchCancelled: AtomicBoolean? = null
-    private var searchGeneration = 0L
+    private var searchJob: Job? = null
     private var shortcuts = ShortcutSettings.load(Context.config.shortcuts)
 
-    private val favicon       = Image(Main::class.java.getResourceAsStream("/image/icon/favicon.png"))
-    private val faviconPinned = Image(Main::class.java.getResourceAsStream("/image/icon/favicon-pinned.png"))
+    private val faviconPinned = readResourceImage("/image/icon/favicon-pinned.png")
+
+    private val tableMenu = createTableItemContextMenu(
+        { shortcuts },
+        { action -> selectedLink()?.let { performTableItemAction(action, it) } },
+        { selectedLink()?.let { showDetailEditor(it) } },
+        onCopyIcon = { selectedLink()?.let { copyIconToClipboard(it) } },
+        onSaveIcon = { selectedLink()?.let { saveIconToFile(it) } },
+    )
 
     init {
-        Localizator(root)
-        WindowHeaderHelper(titleBar)
         initEvent()
         initTable()
-        bindSceneShortcutsWhenSceneIsReady()
         applyShortcutSettings()
+        // the context menu and the half of the layout swapped out with the editor are outside the window
+        onLookAndFeelChange {
+            listOf(tableMenu, splitPane, tableScroll, descPanel)
+                .filter { SwingUtilities.getWindowAncestor(it) == null }
+                .forEach(SwingUtilities::updateComponentTreeUI)
+        }
+    }
+
+    private fun changeTheme(theme: AppTheme) {
+        if (theme == AppTheme.of(Context.config.theme)) return
+        theme.apply()
+        Context.config.theme = theme.name
+        Context.config.save()
     }
 
     override fun onBeforeShow() {
-        currentStage?.loadDefaultIcon()
-        currentStage?.scene?.let(::installSceneShortcutFilter)
-        bindChildWindowLifecycle()
-        bindCloseRequest()
-
-        // set minimum window size
-        currentStage?.let { stage ->
-            stage.minWidth  = 430.0
-            stage.minHeight = 150.0
+        val frame = primaryFrame
+        frame.jMenuBar = menubarTop
+        // FlatLaf can only center the title or put it after the menus; draw it ourselves next to the window icon
+        frame.rootPane.putClientProperty(FlatClientProperties.TITLE_BAR_SHOW_TITLE, false)
+        menubarTop.add(JLabel(frame.title).apply {
+            border = BorderFactory.createEmptyBorder(0, 2, 0, 12)
+            putClientProperty(FlatClientProperties.COMPONENT_TITLE_BAR_CAPTION, true)
+        }, 0)
+        frame.minimumSize = Dimension(430, 150)
+        frame.loadDefaultIcon()
+        frame.watchMaximized()
+        frame.defaultCloseOperation = WindowConstants.DO_NOTHING_ON_CLOSE
+        frame.addCloseRequest {
+            if(confirmClose()) {
+                saveAppState()
+                frame.dispose()
+            }
         }
+        bindChildWindowLifecycle(frame)
+        installShortcutDispatcher(frame)
 
-        Context.config.stageMain?.let {
+        Context.config.windowMain?.let { property ->
+            restoringState = true
             try {
-                it.excludeKlass.add(Button::class)
-                it.bind(currentStage)
-                menubarTop.repack()
+                property.excludeKlass.add(JButton::class)
+                property.bind(frame)
             } catch (e: Throwable) {
                 logger.error(e)
+            } finally {
+                restoringState = false
             }
         }
-
-        runAwait {
-            val total = linkService.countAll()
-            linkService.loadAll { i, link ->
-                DefaultPreloader.notifyProgress(i+1, total, link.title)
-            }
-        }
+        frame.runWhenShown { applyDescEditorWidth(descEditorWidth) }
 
         // filtering is asynchronous, so restore the selection after it is applied
         initSearchFilter {
             linkService.links.firstOrNull { it.id == Context.config.lastFocusedLinkId }?.let {
                 tableMain.selectBy(it)
                 tableMain.scrollBy(it)
-            } ?: tableMain.selectionModel.selectFirst()
-        }
-
-        DefaultPreloader.close()
-
-    }
-
-    private fun bindChildWindowLifecycle() {
-        if(childWindowLifecycleBound) return
-        currentStage?.let(::bindChildWindowLifecycle) ?: root.sceneProperty().addListener { _, _, scene ->
-            scene?.windowProperty()?.addListener { _, _, window ->
-                (window as? Stage)?.let(::bindChildWindowLifecycle)
-            }
+            } ?: run { if (tableMain.rowCount > 0) tableMain.select(0) }
         }
     }
 
-    private fun bindChildWindowLifecycle(stage: Stage) {
-        if(childWindowLifecycleBound) return
-        stage.addEventHandler(WindowEvent.WINDOW_HIDDEN) {
-            linkExecutor.hideChildWindows()
-        }
-        stage.addEventHandler(WindowEvent.WINDOW_SHOWN) {
-            linkExecutor.restoreChildWindows()
-        }
-        stage.iconifiedProperty().addListener { _, _, iconified ->
-            when(iconified) {
-                true -> linkExecutor.hideChildWindows()
-                else -> linkExecutor.restoreChildWindows()
-            }
-        }
-        stage.showingProperty().addListener { _, _, showing ->
-            when(showing) {
-                true -> linkExecutor.restoreChildWindows()
-                else -> linkExecutor.hideChildWindows()
-            }
-        }
-        childWindowLifecycleBound = true
-    }
-
-    private fun bindCloseRequest() {
-        if(closeRequestBound) return
-        currentStage?.setOnCloseRequest { event ->
-            if(!confirmClose()) {
-                event.consume()
-            } else {
-                saveAppState()
-            }
-        }
-        closeRequestBound = true
+    private fun bindChildWindowLifecycle(frame: JFrame) {
+        frame.addWindowListener(object: WindowAdapter() {
+            override fun windowIconified(e: WindowEvent) = linkExecutor.hideChildWindows()
+            override fun windowDeiconified(e: WindowEvent) = linkExecutor.restoreChildWindows()
+        })
+        frame.addComponentListener(object: ComponentAdapter() {
+            override fun componentHidden(e: ComponentEvent) = linkExecutor.hideChildWindows()
+            override fun componentShown(e: ComponentEvent) = linkExecutor.restoreChildWindows()
+        })
     }
 
     private fun confirmClose(): Boolean {
@@ -398,7 +573,7 @@ class Main: FxView("application.title".message()) {
     private fun hasUnsavedChanges(): Boolean {
         val link = detail ?: return false
         if(link.id <= 0) {
-            return !buttonSave.isDisable
+            return buttonSave.isEnabled
         }
         return isDetailModified(link)
     }
@@ -417,7 +592,7 @@ class Main: FxView("application.title".message()) {
             || normalizedText(descCmdNext.text) != normalizedText(link.commandNext)
             || descHashtag.hasPendingInput()
             || descHashtag.currentTokens() != link.hashtag
-            || descIcon.image != link.iconImage
+            || detailIcon !== link.iconImage
     }
 
     private fun normalizedTrimmed(value: String?): String? {
@@ -428,139 +603,71 @@ class Main: FxView("application.title".message()) {
         return value?.takeIf { it.isNotEmpty() }
     }
 
-    override fun onUndock() {
-        saveAppState()
-        exitProcess(0)
-    }
-
     private fun saveAppState() {
         Context.config.run {
-            updateDescEditorWidth()
-            lastFocusedLinkId = tableMain.selectionModel.selectedItem?.id
-            stageMain = StageProperty(currentStage!!)
-            descEditorWidth = this@Main.descEditorWidth
+            if(isDescEditorShown) descPanel.width.takeIf { it > 0 }?.let { this@Main.descEditorWidth = it }
+            lastFocusedLinkId = selectedLink()?.id
+            windowMain = WindowProperty(primaryFrame)
+            this.descEditorWidth = this@Main.descEditorWidth.toDouble()
             save()
         }
     }
 
+    private fun selectedLink(): Link? =
+        tableMain.selectedRow.takeIf { it in 0 until tableModel.rowCount }?.let { tableModel.getRowObject(it) }
+
     private fun initTable() {
 
-        // let VirtualFlow calculate row offsets instead of measuring cell heights
-        tableMain.fixedCellSize = TABLE_ROW_HEIGHT
-
-        colGroup.setCellValueFactory { SimpleStringProperty(formatTokens(it.value.group)) }
-        // create graphic nodes once per cell and reuse them.
-        // creating them on each updateItem forces a CSS re-match.
-        colTitle.cellValueByDefault().setCellFactory {
-            object: TableCell<Link,Link>() {
-
-                private val icon = ImageView().apply {
-                    fitWidth = TABLE_ICON_SIZE
-                    fitHeight = TABLE_ICON_SIZE
-                    isPreserveRatio = true
-                }
-
-                private val label = Label()
-
-                private val graphicBox = HBox(icon, label).apply {
-                    alignment = Pos.CENTER_LEFT
-                    icon.hmargin = Insets(0,0,0,2)
-                    label.hmargin = Insets(0,0,0,5)
-                }
-
-                override fun updateItem(item: Link?, empty: Boolean) {
-                    super.updateItem(item, empty)
-                    if(empty || item == null) {
-                        graphic = null
-                        icon.image = null
-                        label.text = ""
-                        return
-                    }
-                    icon.image = item.iconImage
-                    label.text = item.title ?: ""
-                    graphic = graphicBox
-                }
-
-            }
-        }
-
-        colTitle.setComparator { o1, o2 -> o1.title.ifNull{""}.compareTo(o2.title.ifNull{""}) }
-
-        colLastUsedDt.cellValue(Link::executedAt).cellFormat {
-            text = it?.toString("YYYY-MM-DD HH:MI:SS")
-            alignment = Pos.CENTER
-        }
-        colExecCount.cellValue(Link::executeCount).cellFormat {
-            text = it.toString()
-            alignment = Pos.CENTER_RIGHT
-        }
-
-
-        linkService.links.bindTo(tableMain)
-
-        tableMain.selectionModel.selectionMode = SelectionMode.SINGLE
-
-        tableMain.setOnMouseClicked { event ->
-            if(event.button == MouseButton.PRIMARY && event.clickCount > 1) {
-                tableMain.selectionModel.selectedItem?.let { link -> linkExecutor.run(link) }
-            }
-        }
-
-        tableMain.focusedProperty().addListener { _, _, newVal ->
-            if( newVal == true && tableMain.selectionModel.focusedIndex <= 0 ) {
-                tableMain.selectionModel.selectFirst()
-            }
-        }
-
-        tableMain.selectionModel.selectedItemProperty().addListener { _, _, link ->
-            drawDetail(link)
-        }
-
-        tableMain.setRowFactory {
-            TableRow<Link>().apply {
-                val row = this
-                val rowMenu = createTableItemContextMenu(
-                    { shortcuts },
-                    { action -> row.item?.let { performTableItemAction(action, it) } },
-                    { row.item?.let { showDetailEditor(it) } },
-                    onCopyIcon = { row.item?.let { copyIconToClipboard(it) } },
-                    onSaveIcon = { row.item?.let { saveIconToFile(it) } },
-                )
-                itemProperty().addListener { _, _, item ->
-                    contextMenu = if(item == null) null else rowMenu
-                }
-                setOnMousePressed { event ->
-                    if(event.button == MouseButton.SECONDARY && !row.isEmpty) {
-                        tableMain.selectionModel.select(row.item)
-                    }
-                }
-                setOnDragOver { event ->
-                    if( row.isEmpty ) return@setOnDragOver
-                    if( hasFile(event) ) {
-                        if( ! row.styleClass.contains(CLASS_ON_DRAG) ) {
-                            row.styleClass.add(CLASS_ON_DRAG)
-                        }
-                    }
-                }
-                setOnDragExited {
-                    row.styleClass.remove(CLASS_ON_DRAG)
-                }
-                setOnDragDropped { event ->
-                    event.run {
-                        dragboard.let {
-                            if( it.hasFiles() ) {
-                                tableMain.focusBy(row.item)
-                                linkExecutor.run(row.item,it.files)
-                            }
-                        }
-                        isDropCompleted = true
-                        consume()
-                    }
+        tableMain.findColumnBy("colGroup").apply { preferredWidth = 100; minWidth = 50 }
+        tableMain.findColumnBy("colTitle").apply { preferredWidth = 253; minWidth = 80 }
+        tableMain.findColumnBy("colLastUsedDt").apply {
+            preferredWidth = 139
+            minWidth = 80
+            cellRenderer = object: DefaultTableCellRenderer() {
+                init { horizontalAlignment = SwingConstants.CENTER }
+                override fun setValue(value: Any?) {
+                    text = (value as? LocalDateTime)?.toString("YYYY-MM-DD HH:MI:SS") ?: ""
                 }
             }
         }
+        tableMain.findColumnBy("colExecCount").apply { preferredWidth = 50; minWidth = 50; maxWidth = 200 }
+        tableMain.findColumnBy("colTitle").cellRenderer = TitleRenderer()
+        tableMain.clipTextInsteadOfEllipsis()
 
-        currentStage?.requestFocus()
+        tableMain.addMouseListener(object: MouseAdapter() {
+            override fun mouseClicked(e: MouseEvent) {
+                if(SwingUtilities.isLeftMouseButton(e) && e.clickCount > 1) {
+                    selectedLink()?.let { linkExecutor.run(it) }
+                }
+            }
+            override fun mousePressed(e: MouseEvent) = showMenuIfTrigger(e)
+            override fun mouseReleased(e: MouseEvent) = showMenuIfTrigger(e)
+            private fun showMenuIfTrigger(e: MouseEvent) {
+                if(!e.isPopupTrigger) return
+                val row = tableMain.rowAtPoint(e.point).takeIf { it >= 0 } ?: return
+                tableMain.select(row)
+                tableMain.requestFocusInWindow()
+                tableMenu.show(tableMain, e.x, e.y)
+            }
+        })
+
+        tableMain.addFocusListener(object: FocusAdapter() {
+            override fun focusGained(e: FocusEvent) {
+                if(tableMain.selectedRow < 0 && tableMain.rowCount > 0) tableMain.select(0)
+            }
+        })
+
+        tableMain.selectionModel.addListSelectionListener { e ->
+            if(!e.valueIsAdjusting) selectedLink()?.let { drawDetail(it) }
+        }
+
+        tableMain.onFileDrop { files, support ->
+            val row = (support.dropLocation as? JTable.DropLocation)?.row ?: -1
+            if(row !in 0 until tableModel.rowCount) return@onFileDrop
+            val link = tableModel.getRowObject(row)
+            tableMain.focusBy(link)
+            linkExecutor.run(link, files)
+        }
 
     }
 
@@ -584,187 +691,162 @@ class Main: FxView("application.title".message()) {
 
     private fun initEvent() {
 
-        descGridPane.maxWidth = Double.MAX_VALUE
-        descGridPane.widthProperty().addListener { _, _, _ -> updateDescEditorWidth() }
-
-        menuImportData.setOnAction {
+        menuImportData.addActionListener {
             linkService.openImportPicker()?.let { file ->
-                runAwait {
+                launchUi {
                     linkService.importData(file)
                     linkService.loadAll()
+                    printSearchResult()
+                    Dialog.alert( "msg.success.import".message().format(file) )
                 }
-                Dialog.alert( "msg.success.import".message().format(file) )
             }
         }
 
-        menuExportData.setOnAction {
+        menuExportData.addActionListener {
             linkService.openExportPicker()?.let { file ->
-                linkService.exportData(file)
-                Dialog.alert( "msg.success.export".message().format(file) )
-            }
-        }
-
-        menuDeleteAll.setOnAction {
-            if(Dialog.confirm("msg.confirm.delete.all".message())) {
-                linkService.deleteAll()
-                clearDetail()
-            }
-        }
-
-        menuShortcutSettings.setOnAction { openShortcutSettings() }
-
-        menuViewDesc.selectedProperty().addListener { _, _, show ->
-            when {
-                show -> showDescEditor()
-                else -> hideDescEditor()
-            }
-        }
-
-
-        menuShowInputGroup.selectedProperty().addListener{_,_,show ->
-            val group = inputGroup.parent as HBox
-            (inputKeyword.parent as HBox).children.also {
-                if(show && group !in it) {
-                    it.add(it.indexOf(inputKeyword) + 1, group)
-                    inputGroup.focusInput()
-                } else {
-                    it.remove(group)
-                    inputGroup.clearTokens()
-                    submitSearch()
+                launchUi {
+                    linkService.exportData(file)
+                    Dialog.alert( "msg.success.export".message().format(file) )
                 }
             }
         }
 
-        menuAlwaysOnTop.selectedProperty().addListener { _, _, alwaysOnTop ->
-            primaryStage.isAlwaysOnTop = alwaysOnTop
-            when {
-                alwaysOnTop -> primaryStage.icons.setAll(faviconPinned)
-                else        -> primaryStage.icons.setAll(favicon)
+        menuDeleteAll.addActionListener {
+            if(Dialog.confirm("msg.confirm.delete.all".message())) {
+                launchUi {
+                    linkService.deleteAll()
+                    clearDetail()
+                    printSearchResult()
+                }
             }
         }
 
-        menuHelp.setOnAction{
+        menuShortcutSettings.addActionListener { openShortcutSettings() }
+
+        menuViewDesc.addItemListener { e ->
+            if(e.stateChange == ItemEvent.SELECTED) showDescEditor() else hideDescEditor()
+        }
+
+        menuShowInputGroup.addItemListener { e ->
+            val show = e.stateChange == ItemEvent.SELECTED
+            groupFilter.isVisible = show
+            searchBar.revalidate()
+            if(show) {
+                if(!restoringState) inputGroup.focusInput()
+            } else {
+                inputGroup.clearTokens()
+                submitSearch()
+            }
+        }
+
+        menuAlwaysOnTop.addItemListener { e ->
+            val alwaysOnTop = e.stateChange == ItemEvent.SELECTED
+            primaryFrame.isAlwaysOnTop = alwaysOnTop
+            primaryFrame.iconImages = when {
+                alwaysOnTop && faviconPinned != null -> listOf(faviconPinned)
+                else -> Windows.defaultIcons.icons
+            }
+        }
+
+        menuHelp.addActionListener {
             Desktop.browse("stage.help.url".message())
         }
 
-        buttonSave.setOnAction { saveDetail() }
-        buttonDelete.setOnAction { detail?.let{ deleteLink(it) } }
-        buttonCopy.setOnAction { copyDetail() }
-        buttonNew.setOnAction { createDetail() }
-        buttonOpenFolder.setOnAction { tableMain.selectionModel.selectedItem?.let { linkService.openFolder(it) } }
-        buttonCopyFolder.setOnAction { tableMain.selectionModel.selectedItem?.let { linkService.copyFolder(it) } }
+        buttonSave.addActionListener { saveDetail() }
+        buttonDelete.addActionListener { detail?.let{ deleteLink(it) } }
+        buttonCopy.addActionListener { copyDetail() }
+        buttonNew.addActionListener { createDetail() }
+        buttonOpenFolder.addActionListener { selectedLink()?.let { linkService.openFolder(it) } }
+        buttonCopyFolder.addActionListener { selectedLink()?.let { linkService.copyFolder(it) } }
 
-        descIcon.setOnMouseClicked { e ->
-            when {
-                e.button == MouseButton.PRIMARY && e.clickCount > 1 -> changeIcon()
-                e.button == MouseButton.SECONDARY -> showIconContextMenu(e)
+        descIcon.addMouseListener(object: MouseAdapter() {
+            override fun mouseClicked(e: MouseEvent) {
+                if(SwingUtilities.isLeftMouseButton(e) && e.clickCount > 1) changeIcon()
             }
-        }
-        descIcon.setOnDragOver { hasFile(it) }
-        descIcon.setOnDragDropped { e ->
-            e.dragboard.files.firstOrNull()?.let {
-                changeIcon(it)
+            override fun mousePressed(e: MouseEvent) = showMenuIfTrigger(e)
+            override fun mouseReleased(e: MouseEvent) = showMenuIfTrigger(e)
+            private fun showMenuIfTrigger(e: MouseEvent) {
+                if(e.isPopupTrigger) showIconContextMenu(e)
             }
-        }
+        })
+        descIcon.onFileDrop { files, _ -> changeIcon(files.first()) }
 
-        descIcon.tooltip("btn.change.icon.tooltip".message())
-        buttonAddFile.tooltip("btn.addfile.tooltip".message())
-
-        descExecPath.setOnDragOver { hasFile(it) }
-        descExecPath.setOnDragDropped { e ->
-            e.dragboard.files.firstOrNull()?.let {
-                detail?.setPath(it)
-                descExecPath.text = detail?.path
-                changeIcon(it)
-            }
+        descExecPath.onFileDrop { files, _ ->
+            val file = files.first()
+            detail?.setPath(file)
+            descExecPath.text = detail?.path
+            changeIcon(file)
         }
 
-        buttonAddFile.setOnDragOver { hasFile(it) }
-        buttonAddFile.setOnDragDropped { e ->
-            e.dragboard.files.forEach { file ->
-                drawDetailForAdd(Link(file))
-                currentStage?.requestFocus()
-            }
+        buttonAddFile.onFileDrop { files, _ ->
+            files.forEach { file -> drawDetailForAdd(Link(file)) }
+            primaryFrame.toFront()
         }
-        buttonAddFile.setOnMouseClicked { e ->
-            if( e.button == MouseButton.PRIMARY ) {
-                linkService.openExecutorPicker()?.let { path ->
-                    drawDetailForAdd(Link(path.toFile()))
+        buttonAddFile.addMouseListener(object: MouseAdapter() {
+            override fun mouseClicked(e: MouseEvent) {
+                if(SwingUtilities.isLeftMouseButton(e)) addFileByPicker()
+            }
+        })
+
+        labelCmd.addMouseListener(object: MouseAdapter() {
+            override fun mouseClicked(e: MouseEvent) {
+                if(SwingUtilities.isLeftMouseButton(e) && e.clickCount > 1) {
+                    Desktop.clipboard.set(labelCmd.text)
                 }
             }
-        }
-
-        labelCmd.setOnMouseClicked { e ->
-            if(e.button == MouseButton.PRIMARY && e.clickCount > 1) {
-                Desktop.clipboard.set(labelCmd.text)
-            }
-        }
+        })
 
         inputKeyword.onPlainEnter = {
+            inputKeyword.commitPendingTextNextToChips()
             handleSearchEnter(saveKeywordHistory = true)
         }
         inputKeyword.onEscape = {
-            tableMain.requestFocus()
+            tableMain.requestFocusInWindow()
         }
 
         inputGroup.onEscape = {
             inputKeyword.focusInput()
         }
 
-        descGridPane.allChildren.let{ children ->
-            children.filterIsInstance<TextInputControl>().forEach {
-                it.addEventFilter(KEY_PRESSED) { e ->
-                    if( e.code == ESCAPE ) {
-                        lastFocused = it
-                        tableMain.requestFocus()
-                    }
-                }
-                it.textProperty().addListener { _, _, _ -> buttonSave.isDisable = false }
-            }
-            children.filterIsInstance<CheckBox>().forEach {
-                it.addEventFilter(KEY_PRESSED) { e ->
-                    if( e.code == ESCAPE ) {
-                        lastFocused = it
-                        tableMain.requestFocus()
-                    }
-                }
-                it.selectedProperty().addListener { _, _, _ -> buttonSave.isDisable = false }
-            }
-            children.filterIsInstance<TextArea>().forEach {
-                it.addEventFilter(KEY_PRESSED) { e ->
-                    if( e.code == ESCAPE ) {
-                        lastFocused = it
-                        tableMain.requestFocus()
-                    } else if( e.code == TAB && ! e.isShiftDown && ! e.isControlDown ) {
-                        e.consume()
-                        (e.source as Node).fireEvent(toTabPressEvent(e))
-                    }
-                }
-            }
+        // Escape leaves the editor for the table; Tab moves on, even out of a text area
+        val markEdited = { buttonSave.isEnabled = true }
+        listOf<JTextComponent>(descTitle, descExecPath, descArg, descCmdPrefix, descDescription, descCmdPrev, descCmdNext).forEach { field ->
+            field.leaveOnEscape(field)
+            field.addTextChanged(markEdited)
+        }
+        listOf(descDescription, descCmdPrev, descCmdNext).forEach { area ->
+            area.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, null)
+            area.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, null)
+        }
+        listOf(descShowConsole, descSeqExecution).forEach { check ->
+            check.leaveOnEscape(check)
+            check.addItemListener { markEdited() }
+        }
+        listOf(descGroupName, descHashtag).forEach { tokens ->
+            tokens.input.leaveOnEscape(tokens)
+            tokens.onTokenChanged = markEdited
         }
 
-        // 상세내역 변경시 버튼 컨트롤
-        val listener: (observable: ObservableValue<*>, oldValue: Any?, newValue: Any?) -> Unit =
-            { _,_,_ -> buttonSave.isDisable = false }
-        descGridPane.children.filterIsInstance<TextInputControl>().forEach {
-            it.textProperty().addListener(listener)
-        }
-        descHashtag.addEventFilter(KEY_PRESSED) { e ->
-            if( e.code == ESCAPE ) {
-                lastFocused = descHashtag
-                tableMain.requestFocus()
-            }
-        }
-        descHashtag.onTokenChanged = { buttonSave.isDisable = false }
-        descGroupName.addEventFilter(KEY_PRESSED) { e ->
-            if( e.code == ESCAPE ) {
-                lastFocused = descGroupName
-                tableMain.requestFocus()
-            }
-        }
-        descGroupName.onTokenChanged = { buttonSave.isDisable = false }
-        descIcon.imageProperty().addListener(listener)
+        descIcon.toolTipText = "btn.change.icon.tooltip".message()
+        buttonAddFile.toolTipText = "btn.addfile.tooltip".message()
 
+    }
+
+    /** on Escape, remember [target] for coming back with Tab, and move to the table. */
+    private fun Component.leaveOnEscape(target: Component) {
+        addKeyListener(object: KeyAdapter() {
+            override fun keyPressed(e: KeyEvent) {
+                if(e.isConsumed || e.keyCode != KeyEvent.VK_ESCAPE) return
+                lastFocused = target
+                tableMain.requestFocusInWindow()
+            }
+        })
+    }
+
+    private fun addFileByPicker() {
+        linkService.openExecutorPicker()?.let { path ->
+            drawDetailForAdd(Link(path.toFile()))
+        }
     }
 
     private fun applyShortcutSettings() {
@@ -778,218 +860,130 @@ class Main: FxView("application.title".message()) {
         updateShortcutTooltips()
     }
 
-    private fun bindSceneShortcutsWhenSceneIsReady() {
-        root.scene?.let(::installSceneShortcutFilter) ?: bindSceneShortcutListener()
-    }
-
-    private fun bindSceneShortcutListener() {
-        if(sceneShortcutListenerBound) return
-        root.sceneProperty().addListener { _, _, attachedScene ->
-            if(attachedScene != null) {
-                installSceneShortcutFilter(attachedScene)
-            }
-        }
-        sceneShortcutListenerBound = true
-    }
-
-    private fun installSceneShortcutFilter(scene: javafx.scene.Scene) {
-        if(installedShortcutScene === scene) return
-
-        scene.addEventFilter(KEY_PRESSED) { event ->
+    /**
+     * route the shortcuts of the main window, before any component sees the key.
+     *
+     * menu accelerators only show the bindings: this dispatcher consumes the keys first.
+     */
+    private fun installShortcutDispatcher(frame: JFrame) {
+        val handlers = MainShortcutHandlers(
+            onSaveDetail = { if(buttonSave.isEnabled) saveDetail() },
+            onCopyDetail = { if(buttonCopy.isEnabled) copyDetail() },
+            onAddFile = { addFileByPicker() },
+            onCreateDetail = { if(buttonNew.isEnabled) createDetail() },
+            onOpenFolder = { buttonOpenFolder.doClick() },
+            onCopyFolder = { buttonCopyFolder.doClick() },
+            onChangeIcon = { changeIcon() },
+            onDeleteDetail = { if(buttonDelete.isEnabled) detail?.let { deleteLink(it) } },
+            onImportData = { menuImportData.doClick() },
+            onExportData = { menuExportData.doClick() },
+            onOpenShortcutSettings = { openShortcutSettings() },
+            onToggleDescription = { menuViewDesc.isSelected = !menuViewDesc.isSelected },
+            onToggleGroupFilter = { menuShowInputGroup.isSelected = !menuShowInputGroup.isSelected },
+            onToggleAlwaysOnTop = { menuAlwaysOnTop.isSelected = !menuAlwaysOnTop.isSelected },
+            onShowAbout = { menuHelp.doClick() },
+            onRunSelectedLink = { selectedLink()?.let { performTableItemAction(ShortcutAction.RUN_SELECTED_LINK, it) } },
+            onFocusSearch = { inputKeyword.focusInput() },
+            onDeleteSelectedLink = { selectedLink()?.let { performTableItemAction(ShortcutAction.DELETE_SELECTED_LINK, it) } },
+            onMoveFocusToDetail = {
+                when(val target = lastFocused) {
+                    null, tableMain -> descGroupName.focusInput()
+                    is TokenInputPane -> target.focusInput()
+                    else -> target.requestFocusInWindow()
+                }
+            },
+            onCopyFolderFromTable = { selectedLink()?.let { performTableItemAction(ShortcutAction.COPY_FOLDER_FROM_TABLE, it) } },
+            onOpenFolderFromTable = { selectedLink()?.let { performTableItemAction(ShortcutAction.OPEN_FOLDER_FROM_TABLE, it) } },
+        )
+        KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(KeyEventDispatcher { event ->
+            if(event.id != KeyEvent.KEY_PRESSED) return@KeyEventDispatcher false
+            val source = event.component ?: return@KeyEventDispatcher false
+            val window = source as? Window ?: SwingUtilities.getWindowAncestor(source)
+            if(window !== frame) return@KeyEventDispatcher false
+            // an open menu or popup navigates with the keys itself
+            if(MenuSelectionManager.defaultManager().selectedPath.isNotEmpty()) return@KeyEventDispatcher false
             handleMainShortcutEvent(
                 shortcuts = shortcuts,
                 event = event,
-                tableShortcutContext = isShortcutContextNode(tableMain, scene.focusOwner),
-                handlers = MainShortcutHandlers(
-                    onSaveDetail = { buttonSave.let { if(!it.isDisable) it.fire() } },
-                    onCopyDetail = { buttonCopy.let { if(!it.isDisable) it.fire() } },
-                    onAddFile = { buttonAddFile.fireEvent(MOUSE_CLICK) },
-                    onCreateDetail = { buttonNew.let { if(!it.isDisable) it.fire() } },
-                    onOpenFolder = { buttonOpenFolder.let { if(!it.isDisable) it.fire() } },
-                    onCopyFolder = { buttonCopyFolder.let { if(!it.isDisable) it.fire() } },
-                    onChangeIcon = { changeIcon() },
-                    onDeleteDetail = { buttonDelete.let { if(!it.isDisable) it.fire() } },
-                    onImportData = { menuImportData.fire() },
-                    onExportData = { menuExportData.fire() },
-                    onOpenShortcutSettings = { openShortcutSettings() },
-                    onToggleDescription = { menuViewDesc.isSelected = !menuViewDesc.isSelected },
-                    onToggleGroupFilter = { menuShowInputGroup.isSelected = !menuShowInputGroup.isSelected },
-                    onToggleAlwaysOnTop = { menuAlwaysOnTop.isSelected = !menuAlwaysOnTop.isSelected },
-                    onShowAbout = { menuHelp.fire() },
-                    onRunSelectedLink = { tableMain.selectionModel.selectedItem?.let { performTableItemAction(ShortcutAction.RUN_SELECTED_LINK, it) } },
-                    onFocusSearch = { inputKeyword.focusInput() },
-                    onDeleteSelectedLink = {
-                        tableMain.selectionModel.selectedItem?.let {
-                            performTableItemAction(ShortcutAction.DELETE_SELECTED_LINK, it)
-                        }
-                    },
-                    onMoveFocusToDetail = {
-                        if(lastFocused == null || lastFocused == tableMain) {
-                            descGroupName.focusInput()
-                        } else {
-                            lastFocused!!.requestFocus()
-                        }
-                    },
-                    onCopyFolderFromTable = {
-                        tableMain.selectionModel.selectedItem?.let {
-                            performTableItemAction(ShortcutAction.COPY_FOLDER_FROM_TABLE, it)
-                        }
-                    },
-                    onOpenFolderFromTable = {
-                        tableMain.selectionModel.selectedItem?.let {
-                            performTableItemAction(ShortcutAction.OPEN_FOLDER_FROM_TABLE, it)
-                        }
-                    },
-                ),
+                tableShortcutContext = SwingUtilities.isDescendingFrom(source, tableMain),
+                handlers = handlers,
             )
-        }
-
-        installedShortcutScene = scene
-        sceneShortcutListenerBound = false
-        applyShortcutSettings()
-    }
-
-    private fun isShortcutContextNode(rootNode: Node, target: Any?): Boolean {
-        var current = target as? Node
-        while(current != null) {
-            if(current === rootNode) return true
-            current = current.parent
-        }
-        return false
+        })
     }
 
     private fun openShortcutSettings() {
-        ShortcutEditor().showDialog(currentStage, shortcuts)?.let { updated ->
+        ShortcutEditor().showDialog(primaryFrame, shortcuts)?.let { updated ->
             shortcuts = updated
             Context.config.shortcuts = shortcuts.toConfigMap()
             Context.config.save()
-            runLater {
-                currentStage?.requestFocus()
-                applyShortcutSettings()
-            }
+            applyShortcutSettings()
         }
     }
 
     private fun updateShortcutTooltips() {
-        buttonSave.tooltip(shortcuts.displayText(ShortcutAction.SAVE_DETAIL))
-        buttonDelete.tooltip(shortcuts.displayText(ShortcutAction.DELETE_DETAIL))
-        buttonCopy.tooltip(shortcuts.displayText(ShortcutAction.COPY_DETAIL))
-        buttonNew.tooltip(shortcuts.displayText(ShortcutAction.CREATE_DETAIL))
-        buttonOpenFolder.tooltip(shortcuts.displayText(ShortcutAction.OPEN_FOLDER))
-        buttonCopyFolder.tooltip(shortcuts.displayText(ShortcutAction.COPY_FOLDER))
-        descIcon.tooltip("${"shortcut.action.changeIcon".message()} (${shortcuts.displayText(ShortcutAction.CHANGE_ICON)})")
-        buttonAddFile.tooltip("${"shortcut.action.addFile".message()} (${shortcuts.displayText(ShortcutAction.ADD_FILE)})")
+        buttonSave.toolTipText = shortcuts.displayText(ShortcutAction.SAVE_DETAIL)
+        buttonDelete.toolTipText = shortcuts.displayText(ShortcutAction.DELETE_DETAIL)
+        buttonCopy.toolTipText = shortcuts.displayText(ShortcutAction.COPY_DETAIL)
+        buttonNew.toolTipText = shortcuts.displayText(ShortcutAction.CREATE_DETAIL)
+        buttonOpenFolder.toolTipText = shortcuts.displayText(ShortcutAction.OPEN_FOLDER)
+        buttonCopyFolder.toolTipText = shortcuts.displayText(ShortcutAction.COPY_FOLDER)
+        descIcon.toolTipText = "${"shortcut.action.changeIcon".message()} (${shortcuts.displayText(ShortcutAction.CHANGE_ICON)})"
+        buttonAddFile.toolTipText = "${"shortcut.action.addFile".message()} (${shortcuts.displayText(ShortcutAction.ADD_FILE)})"
     }
 
-    private fun updateDescEditorWidth() {
-        if(ignoreDescEditorWidthChange) {
-            return
-        }
-        if(descGridPane !in contentPane.items) {
-            return
-        }
-        if(descGridPane.width > 0) {
-            descEditorWidth = descGridPane.width
-        }
-    }
+    // ─── detail editor visibility ────────────────────────────────────────────
 
+    private val isDescEditorShown: Boolean
+        get() = splitPane.parent === contentHolder
+
+    /** show the editor, widening the window by the editor so the table keeps its width. */
     private fun showDescEditor() {
-        if(descGridPane in contentPane.items) return
+        if(isDescEditorShown) return
         val width = descEditorWidth
-        val targetPaneWidth = contentPane.width + width
-        ignoreDescEditorWidthChange = true
-        constrainDescEditorWidth(width)
-        contentPane.items.add(descGridPane)
-        currentStage?.let { stage -> stage.width += width }
-        restoreDescEditorWidthWhenReady(width, targetPaneWidth)
+        contentHolder.removeAll()
+        splitPane.leftComponent = tableScroll
+        splitPane.rightComponent = descPanel
+        contentHolder.add(splitPane, BorderLayout.CENTER)
+        resizeFrameWidth(width + splitPane.dividerSize)
+        contentHolder.revalidate()
+        contentHolder.repaint()
+        applyDescEditorWidth(width)
     }
 
+    /** hide the editor, narrowing the window by the editor. */
     private fun hideDescEditor() {
-        if(descGridPane !in contentPane.items) return
-        val width = descGridPane.width.takeIf { it > 0 } ?: descEditorWidth
+        if(!isDescEditorShown) return
+        val width = descPanel.width.takeIf { it > 0 } ?: descEditorWidth
         descEditorWidth = width
-        ignoreDescEditorWidthChange = true
-        if(contentPane.width > 0 && descGridPane.width > 0) {
-            currentStage?.let { stage -> stage.width -= width }
-        }
-        contentPane.items.remove(descGridPane)
-        runLater {
-            descEditorWidth = width
-            ignoreDescEditorWidthChange = false
-        }
+        contentHolder.removeAll()
+        contentHolder.add(tableScroll, BorderLayout.CENTER)
+        resizeFrameWidth(-(width + splitPane.dividerSize))
+        contentHolder.revalidate()
+        contentHolder.repaint()
     }
 
-    private fun restoreDescEditorWidth(editorWidth: Double = descEditorWidth) {
-        if(descGridPane !in contentPane.items) {
+    private fun resizeFrameWidth(delta: Int) {
+        if(restoringState) return
+        val frame = runCatching { primaryFrame }.getOrNull() ?: return
+        if(!frame.isShowing || frame.isMaximized) return
+        frame.setSize((frame.width + delta).coerceAtLeast(frame.minimumSize.width), frame.height)
+        frame.validate()
+    }
+
+    private fun applyDescEditorWidth(editorWidth: Int) {
+        if(!isDescEditorShown) return
+        splitPane.validate()
+        val total = splitPane.width
+        if(total <= 0) {
+            runLater { applyDescEditorWidth(editorWidth) }
             return
         }
-        val width = contentPane.width
-        if(width <= editorWidth) {
-            return
-        }
-        val divider = ((width - splitPaneDividerWidth() - editorWidth) / width).coerceIn(0.1, 0.9)
-        contentPane.setDividerPositions(divider)
+        val location = (total - splitPane.dividerSize - editorWidth).coerceIn(MIN_TABLE_WIDTH, (total - splitPane.dividerSize - MIN_LINK_EDITOR_WIDTH).coerceAtLeast(MIN_TABLE_WIDTH))
+        splitPane.dividerLocation = location
         descEditorWidth = editorWidth
     }
 
-    private fun restoreDescEditorWidthWhenReady(editorWidth: Double, targetPaneWidth: Double) {
-        var applied = false
-        var listener: ChangeListener<Number>? = null
-        fun applyIfReady(force: Boolean) {
-            if(applied) return
-            val ready = isDescEditorLayoutReady(targetPaneWidth)
-            if(!ready && !force) return
-            applied = true
-            listener?.let { contentPane.widthProperty().removeListener(it) }
-            restoreDescEditorWidth(editorWidth)
-            PauseTransition(Duration.millis(80.0)).apply {
-                setOnFinished {
-                    releaseDescEditorWidthConstraint(editorWidth)
-                    descEditorWidth = descGridPane.width.takeIf { it > 0 } ?: editorWidth
-                    ignoreDescEditorWidthChange = false
-                }
-                play()
-            }
-        }
-        listener = ChangeListener { _, _, _ ->
-            runLater { applyIfReady(false) }
-        }
-        contentPane.widthProperty().addListener(listener)
-        runLater { applyIfReady(false) }
-        PauseTransition(Duration.millis(250.0)).apply {
-            setOnFinished { applyIfReady(true) }
-            play()
-        }
-    }
-
-    private fun isDescEditorLayoutReady(targetPaneWidth: Double): Boolean {
-        return contentPane.width >= targetPaneWidth - 1
-            && tableMain.width > 0
-            && descGridPane.width > 0
-            && splitPaneDividerWidth() > 0
-    }
-
-    private fun splitPaneDividerWidth(): Double {
-        val dividerNodeWidth = contentPane.lookupAll(".split-pane-divider")
-            .sumOf { it.boundsInParent.width }
-            .takeIf { it > 0 }
-        if(dividerNodeWidth != null) return dividerNodeWidth
-
-        val itemWidth = contentPane.items.sumOf { it.boundsInParent.width }
-        return (contentPane.width - itemWidth).coerceAtLeast(0.0)
-    }
-
-    private fun constrainDescEditorWidth(width: Double) {
-        descGridPane.minWidth = width
-        descGridPane.prefWidth = width
-        descGridPane.maxWidth = width
-    }
-
-    private fun releaseDescEditorWidthConstraint(width: Double) {
-        descGridPane.minWidth = MIN_LINK_EDITOR_WIDTH
-        descGridPane.prefWidth = width
-        descGridPane.maxWidth = Double.MAX_VALUE
-    }
+    // ─── search ──────────────────────────────────────────────────────────────
 
     private fun initSearchFilter(onApplied: (() -> Unit)? = null) {
         restoreSearchState()
@@ -1000,8 +994,8 @@ class Main: FxView("application.title".message()) {
     }
 
     /**
-     * build the matcher on the FX thread (UI controls must not be read from
-     * another thread), then evaluate links in background.
+     * read the search inputs on the event dispatch thread, evaluate the links in the background, then apply
+     * the result. a newer search cancels the running one, so only the latest result is ever applied.
      */
     private fun setSearchFilter(onApplied: (() -> Unit)? = null) {
         val keywordTokens  = inputKeyword.tokens()
@@ -1009,12 +1003,10 @@ class Main: FxView("application.title".message()) {
         val hasKeywordText = inputKeyword.text.isNotBlank()
         val hasGroupText   = inputGroup.text.isNotBlank()
 
-        searchCancelled?.set(true)
-        val cancelled = AtomicBoolean(false)
-        searchCancelled = cancelled
-        val generation = ++searchGeneration
+        searchJob?.cancel()
 
         if(keywordTokens.isEmpty() && !hasKeywordText && groupTokens.isEmpty() && !hasGroupText) {
+            searchJob = null
             linkService.links.predicate = { true }
             printSearchResult()
             onApplied?.invoke()
@@ -1036,31 +1028,34 @@ class Main: FxView("application.title".message()) {
         }
 
         val snapshot = ArrayList(linkService.links.items)
-        thread(name = "link-search", isDaemon = true) {
+        searchJob = launchUi {
             val evaluated = HashSet<Long>(snapshot.size)
             val matched   = HashSet<Long>()
-            for(link in snapshot) {
-                if(cancelled.get()) return@thread
-                evaluated.add(link.id)
-                if(matches(link)) matched.add(link.id)
-            }
-            Platform.runLater {
-                if(generation != searchGeneration) return@runLater
-                // links added after the snapshot are evaluated inline, so they are never hidden silently
-                linkService.links.predicate = { link ->
-                    if(link.id in evaluated) link.id in matched else matches(link)
+            withContext(Dispatchers.Default) {
+                for(link in snapshot) {
+                    ensureActive()
+                    evaluated.add(link.id)
+                    if(matches(link)) matched.add(link.id)
                 }
-                printSearchResult()
-                onApplied?.invoke()
             }
+            // links added after the snapshot are evaluated inline, so they are never hidden silently
+            linkService.links.predicate = { link ->
+                if(link.id in evaluated) link.id in matched else matches(link)
+            }
+            printSearchResult()
+            onApplied?.invoke()
         }
     }
 
     private fun setSearchEvent() {
 
         inputGroup.onPlainEnter = {
+            inputGroup.commitPendingTextNextToChips()
             handleSearchEnter()
         }
+        // a chip is a committed condition, so apply it right away; plain text still waits for Enter
+        inputKeyword.onTokensChanged = { submitSearch() }
+        inputGroup.onTokensChanged = { submitSearch() }
 
         applySearchHistory(inputKeyword) { compactSearchHistory(Context.config.historySearch) }
         applyAutoCompletion(inputGroup.input, { allGroupTokenSuggestions(inputGroup.currentTermValues()) })
@@ -1110,9 +1105,9 @@ class Main: FxView("application.title".message()) {
     }
 
     private fun runFirstSearchResult() {
-        val link = tableMain.items.firstOrNull() ?: return
-        tableMain.focus(0)
-        tableMain.selectionModel.select(link)
+        if(tableModel.rowCount == 0) return
+        val link = tableModel.getRowObject(0)
+        tableMain.select(0)
         linkExecutor.run(link)
     }
 
@@ -1149,113 +1144,85 @@ class Main: FxView("application.title".message()) {
         }
     }
 
+    /**
+     * Alt+Down lists the matching history, newest first. Alt+Left / Alt+Right step through it.
+     */
     private fun applySearchHistory(
         field: SearchTokenField,
         suggestions: () -> HistorySet<SearchFieldState>,
     ) {
-        var autoCompleter: SearchHistoryAutoCompletionText? = null
-        var suggestion: HistorySet<SearchFieldState>? = null
-
-        fun setSearch(state: SearchFieldState?) {
-            state ?: return
+        var history: HistorySet<SearchFieldState>? = null
+        val completion = AutoCompletion<SearchFieldState>(field.input, { it.displayText() }) { state ->
+            history = null
             field.setSearchState(state)
         }
-
-        field.input.addEventFilter(KEY_PRESSED) { e ->
-            when {
-                e.code == ESCAPE -> {
-                    field.input.styleClass.removeAll(CLASS_AUTO_COMPLETER)
-                    autoCompleter?.dispose()
-                    autoCompleter = null
-                    suggestion = null
-                }
-                e.isAltDown -> {
-                    when (e.code) {
-                        DOWN -> if(autoCompleter == null) {
-                            suggestion = suggestions()
-                            field.input.styleClass.add(CLASS_AUTO_COMPLETER)
-                            autoCompleter = SearchHistoryAutoCompletionText(field.input, suggestion!!)
-                            autoCompleter?.setOnAutoCompleted { event ->
-                                field.input.styleClass.removeAll(CLASS_AUTO_COMPLETER)
-                                autoCompleter?.dispose()
-                                autoCompleter = null
-                                suggestion = null
-                                field.setSearchState(event.completion)
-                            }
-                            autoCompleter?.show()
-                        }
-                        LEFT -> {
-                            setSearch((suggestion ?: suggestions().also { suggestion = it }).prev())
-                            e.consume()
-                        }
-                        RIGHT -> {
-                            setSearch((suggestion ?: suggestions().also { suggestion = it }).next())
-                            e.consume()
-                        }
-                        else -> {}
+        field.input.addKeyListener(object: KeyAdapter() {
+            override fun keyPressed(e: KeyEvent) {
+                if(e.isConsumed || !e.isAltDown) return
+                when(e.keyCode) {
+                    KeyEvent.VK_DOWN -> {
+                        val text = field.text.trim()
+                        completion.show(suggestions().toList().reversed().filter {
+                            text.isEmpty() || it.displayText().contains(text, ignoreCase = true)
+                        })
                     }
+                    KeyEvent.VK_LEFT  -> (history ?: suggestions().also { history = it }).prev()?.let { field.setSearchState(it) }
+                    KeyEvent.VK_RIGHT -> (history ?: suggestions().also { history = it }).next()?.let { field.setSearchState(it) }
+                    else -> return
                 }
+                e.consume()
             }
-        }
+        })
     }
 
+    /**
+     * Alt+Down lists the suggestions matching the text. Alt+Left / Alt+Right step through them.
+     */
     private fun applyAutoCompletion(
-        textField: TextField,
+        textField: JTextField,
         suggestions: () -> HistorySet<String>,
         onAutoCompleted: (() -> Unit)? = null,
     ) {
-        var autoCompleter: AutoCompletionText? = null
         var suggestion: HistorySet<String>? = null
-        textField.addEventFilter(KEY_PRESSED) { e ->
-            when {
-                e.code == ESCAPE -> {
-                    textField.styleClass.removeAll(CLASS_AUTO_COMPLETER)
-                    autoCompleter?.dispose()
-                    autoCompleter = null
-                    suggestion = null
-                }
-                e.isAltDown -> {
-                    when (e.code) {
-                        DOWN -> if( autoCompleter == null ) {
-                            suggestion = suggestions()
-                            textField.styleClass.add(CLASS_AUTO_COMPLETER)
-                            autoCompleter = AutoCompletionText(textField, suggestion!!)
-                            autoCompleter?.setOnAutoCompleted {
-                                textField.styleClass.removeAll(CLASS_AUTO_COMPLETER)
-                                autoCompleter?.dispose()
-                                autoCompleter = null
-                                suggestion = null
-                                onAutoCompleted?.invoke()
-                            }
-                            autoCompleter?.show()
-                        }
-                        LEFT  -> (suggestion ?: suggestions().also { suggestion = it }).prev()?.let { textField.text = it }
-                        RIGHT -> (suggestion ?: suggestions().also { suggestion = it }).next()?.let { textField.text = it }
-                        else -> {}
-                    }
-                }
-            }
-        }
-    }
-
-    private fun applyLiveAutoCompletion(
-        textField: TextField,
-        suggestions: () -> HistorySet<String>,
-        onAutoCompleted: (() -> Unit)? = null,
-    ) {
-        val autoCompleter = AutoCompletionTextFieldBinding<String>(textField) { request ->
-            val userText = request.userText?.trim() ?: ""
-            if(request.isCancelled || userText.isBlank()) {
-                emptyList()
-            } else {
-                suggestions().toList().filter { it.contains(userText, ignoreCase = true) }
-            }
-        }
-        autoCompleter.setDelay(0)
-        autoCompleter.setOnAutoCompleted {
+        val completion = AutoCompletion<String>(textField) {
+            suggestion = null
+            textField.text = it
             onAutoCompleted?.invoke()
         }
-        textField.properties["liveAutoCompleter"] = autoCompleter
+        textField.addKeyListener(object: KeyAdapter() {
+            override fun keyPressed(e: KeyEvent) {
+                if(e.isConsumed) return
+                if(e.keyCode == KeyEvent.VK_ESCAPE) {
+                    suggestion = null
+                    return
+                }
+                if(!e.isAltDown) return
+                when(e.keyCode) {
+                    KeyEvent.VK_DOWN -> {
+                        val text = textField.text.trim()
+                        completion.show(suggestions().toList().filter { text.isEmpty() || it.contains(text, ignoreCase = true) })
+                    }
+                    KeyEvent.VK_LEFT  -> (suggestion ?: suggestions().also { suggestion = it }).prev()?.let { textField.text = it }
+                    KeyEvent.VK_RIGHT -> (suggestion ?: suggestions().also { suggestion = it }).next()?.let { textField.text = it }
+                    else -> return
+                }
+                e.consume()
+            }
+        })
+    }
+
+    /** suggestions follow every edit of the text. */
+    private fun applyLiveAutoCompletion(
+        textField: JTextField,
+        suggestions: () -> HistorySet<String>,
+        onAutoCompleted: (() -> Unit)? = null,
+    ) {
+        AutoCompletion<String>(textField) {
+            textField.text = it
+            onAutoCompleted?.invoke()
+        }.live { text ->
+            suggestions().toList().filter { it.contains(text, ignoreCase = true) }
+        }
     }
 
     private fun hashtagSuggestions(): HistorySet<String> {
@@ -1270,32 +1237,30 @@ class Main: FxView("application.title".message()) {
         }
     }
 
+    // ─── icon ────────────────────────────────────────────────────────────────
+
     private fun changeIcon() {
         if( detail == null ) return
         linkService.openIconPicker()?.let { changeIcon(it.toFile()) }
     }
 
-    private fun hasFile(e: DragEvent): Boolean {
-        return if (e.dragboard.hasFiles()) {
-            e.acceptTransferModes(TransferMode.COPY)
-            true
-        } else {
-            false
+    /** show the icon of [file] in the editor. the link takes it on save. */
+    private fun changeIcon(file: File) {
+        if( detail == null ) return
+        Link.readIcon(file)?.let { icon ->
+            setDetailIcon(icon)
+            buttonSave.isEnabled = true
         }
     }
 
-    private fun changeIcon(file: File) {
-        detail?.setIcon(file)?.let { icon ->
-            descIcon.image = icon
-            buttonSave.isDisable = false
-        }
+    private fun setDetailIcon(image: BufferedImage?) {
+        detailIcon = image
+        descIcon.icon = image?.let { scaledIcon(it, DETAIL_ICON_SIZE) }
     }
 
     private fun copyIconToClipboard(link: Link) {
         link.iconImage?.let { image ->
-            val content = ClipboardContent()
-            content.putImage(image)
-            Clipboard.getSystemClipboard().setContent(content)
+            Desktop.clipboard.set(image)
             printStatus("msg.success.copy.icon".message())
         } ?: run {
             Dialog.alert("msg.error.no.icon".message())
@@ -1305,43 +1270,19 @@ class Main: FxView("application.title".message()) {
     private fun saveIconToFile(link: Link) {
         link.iconImage?.let { image ->
             try {
-                // 초기 위치: 실행파일 경로, 없으면 바탕화면, 그 다음 홈 디렉토리
+                // initial location: the executable's directory, else the desktop, else the home directory
                 val initialDir = when {
-                    !link.path.isNullOrBlank() -> File(link.path).parentFile?.absolutePath
+                    !link.path.isNullOrBlank() -> File(link.path!!).parentFile?.absolutePath
                     else -> null
                 } ?: System.getProperty("user.home")?.let { File(it, "Desktop").absolutePath }
                 ?: System.getProperty("user.home")
 
                 val fileName = (link.title?.take(50)?.replace("[/\\\\:*?\"<>|]".toRegex(), "_") ?: "icon") + ".jpg"
 
-                // 파일 선택 대화상자 열기
                 val selectedFile = linkService.openIconSavePicker(initialDir.toPath(), fileName) ?: return
 
-                // JavaFX Image를 BufferedImage로 변환
-                val width = image.width.toInt()
-                val height = image.height.toInt()
-                val bufferedImage = BufferedImage(width, height, BufferedImage.TYPE_INT_RGB)
-
-                val pixelReader = image.pixelReader
-                for (y in 0 until height) {
-                    for (x in 0 until width) {
-                        val argb = pixelReader.getArgb(x, y)
-                        // JPG는 알파 채널을 지원하지 않으므로 흰색 배경에 합성
-                        val alpha = (argb shr 24) and 0xFF
-                        val red = (argb shr 16) and 0xFF
-                        val green = (argb shr 8) and 0xFF
-                        val blue = argb and 0xFF
-
-                        val finalRed = if (alpha == 0) 255 else ((red * alpha + 255 * (255 - alpha)) / 255)
-                        val finalGreen = if (alpha == 0) 255 else ((green * alpha + 255 * (255 - alpha)) / 255)
-                        val finalBlue = if (alpha == 0) 255 else ((blue * alpha + 255 * (255 - alpha)) / 255)
-
-                        val rgb = (finalRed shl 16) or (finalGreen shl 8) or finalBlue
-                        bufferedImage.setRGB(x, y, rgb)
-                    }
-                }
-
-                ImageIO.write(bufferedImage, "jpg", selectedFile.toFile())
+                // JPEG has no alpha channel: blend the transparent parts onto white
+                ImageIO.write(image.removeAlpha(Color.WHITE), "jpg", selectedFile.toFile())
                 printStatus("msg.success.save.icon".message().format(selectedFile))
             } catch (e: Exception) {
                 logger.error(e)
@@ -1354,32 +1295,20 @@ class Main: FxView("application.title".message()) {
 
     private fun showIconContextMenu(event: MouseEvent) {
         if (detail == null) return
-
-        val contextMenu = ContextMenu(
-            MenuItem("contextmenu.icon.copy".message()).apply {
-                setOnAction { detail?.let { copyIconToClipboard(it) } }
-            },
-            MenuItem("contextmenu.icon.save".message()).apply {
-                setOnAction { detail?.let { saveIconToFile(it) } }
-            }
-        )
-        contextMenu.show(descIcon, event.screenX, event.screenY)
+        JPopupMenu().apply {
+            add(JMenuItem("contextmenu.icon.copy".message()).apply {
+                addActionListener { detail?.let { copyIconToClipboard(it) } }
+            })
+            add(JMenuItem("contextmenu.icon.save".message()).apply {
+                addActionListener { detail?.let { saveIconToFile(it) } }
+            })
+        }.show(descIcon, event.x, event.y)
     }
 
-    private fun toTabPressEvent(event: KeyEvent) = KeyEvent(
-        event.source,
-        event.target,
-        event.eventType,
-        event.character,
-        event.text,
-        event.code,
-        event.isShiftDown,
-        true,
-        event.isAltDown,
-        event.isMetaDown
-    )
+    // ─── detail ──────────────────────────────────────────────────────────────
 
     private fun clearDetail() {
+        detail = null
         // reset description
         descTitle.text               = null
         descHashtag.clearTokens()
@@ -1392,18 +1321,18 @@ class Main: FxView("application.title".message()) {
         descCmdPrefix.text           = null
         descCmdPrev.text             = null
         descCmdNext.text             = null
-        descIcon.image               = null
+        setDetailIcon(null)
         // reset button status
-        buttonNew.isDisable    = false
-        buttonDelete.isDisable = false
-        buttonCopy.isDisable   = false
-        buttonSave.isDisable   = false
+        buttonNew.isEnabled    = true
+        buttonDelete.isEnabled = true
+        buttonCopy.isEnabled   = true
+        buttonSave.isEnabled   = true
     }
 
     fun drawDetail(link: Link?) {
-        if( link == null || detail?.id == link.id ) return
+        if( link == null || detail === link || (link.id > 0 && detail?.id == link.id) ) return
         detail = link
-        with(detail!!) {
+        with(link) {
             descTitle.text               = title
             descHashtag.setTokens(hashtag)
             descShowConsole.isSelected   = showConsole
@@ -1415,12 +1344,13 @@ class Main: FxView("application.title".message()) {
             descCmdPrefix.text           = commandPrefix
             descCmdPrev.text             = commandPrev
             descCmdNext.text             = commandNext
-            descIcon.image               = iconImage
+            setDetailIcon(iconImage)
         }
-        buttonNew.isDisable    = false
-        buttonDelete.isDisable = false
-        buttonCopy.isDisable   = false
-        buttonSave.isDisable   = true
+        listOf(descDescription, descCmdPrev, descCmdNext).forEach { it.caretPosition = 0 }
+        buttonNew.isEnabled    = true
+        buttonDelete.isEnabled = true
+        buttonCopy.isEnabled   = true
+        buttonSave.isEnabled   = false
     }
 
     fun drawDetailForAdd(link: Link?) {
@@ -1428,10 +1358,10 @@ class Main: FxView("application.title".message()) {
         menuViewDesc.isSelected = true
 
         drawDetail(link)
-        buttonNew.isDisable    = false
-        buttonDelete.isDisable = true
-        buttonCopy.isDisable   = true
-        buttonSave.isDisable   = false
+        buttonNew.isEnabled    = true
+        buttonDelete.isEnabled = false
+        buttonCopy.isEnabled   = false
+        buttonSave.isEnabled   = true
         descGroupName.focusInput()
     }
 
@@ -1444,65 +1374,63 @@ class Main: FxView("application.title".message()) {
 
         if( ! Dialog.confirm("msg.confirm.delete".message().format(summary)) ) return
 
-        val prev = tableMain.focused
+        val prev = tableMain.selectedRow
 
-        linkService.delete(link)
-
-        clearDetail()
-        tableMain.select(prev.row)
-
-        printSearchResult()
+        launchUi {
+            linkService.delete(link)
+            clearDetail()
+            if(tableMain.rowCount > 0) tableMain.select(prev.coerceIn(0, tableMain.rowCount - 1))
+            printSearchResult()
+        }
 
     }
 
     fun saveDetail() {
-        detail?.let {
+        val link = detail ?: return
 
-            it.title         = descTitle.text?.trim()
-            it.hashtag       = descHashtag.getTokens()
-            it.showConsole   = descShowConsole.isSelected
-            it.executeEach   = descSeqExecution.isSelected
-            it.group         = descGroupName.getTokens()
-            it.description   = descDescription.text?.trim()
-            it.path          = descExecPath.text?.trim()
-            it.argument      = descArg.text?.trim()
-            it.commandPrefix = descCmdPrefix.text?.trim()
-            it.commandPrev   = descCmdPrev.text
-            it.commandNext   = descCmdNext.text
-            it.iconImage     = descIcon.image
+        link.title         = descTitle.text?.trim()
+        link.hashtag       = descHashtag.getTokens()
+        link.showConsole   = descShowConsole.isSelected
+        link.executeEach   = descSeqExecution.isSelected
+        link.group         = descGroupName.getTokens()
+        link.description   = descDescription.text?.trim()
+        link.path          = descExecPath.text?.trim()
+        link.argument      = descArg.text?.trim()
+        link.commandPrefix = descCmdPrefix.text?.trim()
+        link.commandPrev   = descCmdPrev.text
+        link.commandNext   = descCmdNext.text
+        if(detailIcon !== link.iconImage) link.iconImage = detailIcon
 
-            linkService.save(it)
+        buttonDelete.isEnabled = true
+        buttonCopy.isEnabled   = true
+        buttonSave.isEnabled   = false
 
-            runLater {
-                tableMain.selectBy(it)
-                tableMain.scrollBy(it)
-                printSearchResult()
-                printStatus("msg.alert.save.link".message())
-            }
-
-            buttonDelete.isDisable = false
-            buttonCopy.isDisable = false
-            buttonSave.isDisable = true
+        launchUi {
+            linkService.save(link)
+            tableMain.selectBy(link)
+            tableMain.scrollBy(link, ScrollMode.OUTBOUND_TO_MIDDLE)
+            printSearchResult()
+            printStatus("msg.alert.save.link".message())
         }
     }
 
     fun copyDetail() {
-        if( detail == null || detail!!.id <= 0 ) return
-        drawDetail( detail!!.clone() )
-        descTitle.requestFocus()
+        val link = detail?.takeIf { it.id > 0 } ?: return
+        drawDetail( link.clone() )
+        descTitle.requestFocusInWindow()
         printStatus("msg.alert.copy.link".message())
-        buttonDelete.isDisable = true
-        buttonCopy.isDisable = true
-        buttonSave.isDisable = false
+        buttonDelete.isEnabled = false
+        buttonCopy.isEnabled   = false
+        buttonSave.isEnabled   = true
     }
 
     fun createDetail() {
         drawDetail(Link(icon = ICON_NEW))
         descGroupName.focusInput()
         printStatus("msg.alert.create.link".message())
-        buttonDelete.isDisable = true
-        buttonCopy.isDisable = true
-        buttonSave.isDisable = false
+        buttonDelete.isEnabled = false
+        buttonCopy.isEnabled   = false
+        buttonSave.isEnabled   = true
     }
 
     fun printCommand(command: String? = null) = runLater {
@@ -1518,59 +1446,52 @@ class Main: FxView("application.title".message()) {
         linkService.links.items.size
     ))
 
-}
+    // ─── table rendering ─────────────────────────────────────────────────────
 
-private val MOUSE_CLICK = MouseEvent(
-    MouseEvent.MOUSE_CLICKED,
-    0.0,
-    0.0,
-    0.0,
-    0.0,
-    MouseButton.PRIMARY,
-    1,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
-    false,
-    null
-)
+    /** title with the link's icon. scaled icons are cached by the icon bytes they come from. */
+    private class TitleRenderer: DefaultTableCellRenderer() {
 
-class AutoCompletionText(
-    val textField: TextField,
-    val suggestion: HistorySet<String>
-): AutoCompletionTextFieldBinding<String>(textField, SuggestionProvider.create(suggestion.toList())) {
-    fun show() {
-        if(suggestion.isEmpty() || textField.text.isBlank() ) return
-        super.setUserInput(textField.text)
-        super.showPopup()
-    }
-}
+        private val icons = WeakHashMap<ByteArray, Icon>()
 
-class SearchHistoryAutoCompletionText(
-    val textField: TextField,
-    val suggestion: HistorySet<SearchFieldState>
-): AutoCompletionTextFieldBinding<SearchFieldState>(
-    textField,
-    SuggestionProvider.create({ it.displayText() }, suggestion.toList()),
-    object: StringConverter<SearchFieldState>() {
-        override fun toString(value: SearchFieldState?): String {
-            return value?.displayText() ?: ""
+        init {
+            iconTextGap = 5
         }
 
-        override fun fromString(value: String?): SearchFieldState {
-            return SearchFieldState(text = value?.trim())
+        override fun getTableCellRendererComponent(table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
+            super.getTableCellRendererComponent(table, null, isSelected, hasFocus, row, column)
+            val link = value as? Link
+            text = link?.title ?: ""
+            icon = link?.let { tableIcon(it) }
+            return this
         }
-    },
-) {
-    fun show() {
-        if(suggestion.isEmpty() || textField.text.isBlank() ) return
-        super.setUserInput(textField.text)
-        super.showPopup()
+
+        private fun tableIcon(link: Link): Icon? {
+            val bytes = link.icon ?: return null
+            icons[bytes]?.let { return it }
+            val icon = link.iconImage?.let { scaledIcon(it, TABLE_ICON_SIZE) } ?: return null
+            icons[bytes] = icon
+            return icon
+        }
+
     }
+
+}
+
+private fun textArea() = JTextArea(3, 20).apply {
+    lineWrap = true
+    wrapStyleWord = true
+}
+
+// GridBagLayout switches every cell to its minimum size once the panel is narrower than the preferred width,
+// and a text field without columns prefers the width of its text, so a long path would change the row heights
+private fun detailTextField() = JTextField(1)
+
+private fun scroll(component: JComponent) = JScrollPane(component).apply {
+    preferredSize = Dimension(100, 60)
+    minimumSize = Dimension(50, 40)
+}
+
+private fun button(key: String) = JButton(key.message()).apply {
+    isFocusable = false
+    margin = Insets(2, 8, 2, 8)
 }
