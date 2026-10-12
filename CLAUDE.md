@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**Simple Launcher** is a JavaFX desktop application for organizing and launching applications with advanced search capabilities. It features a database-backed link catalog with Boolean search operators, keyboard shortcuts, drag-and-drop support, and embedded terminal execution.
+**Simple Launcher** is a Swing desktop application for organizing and launching applications with advanced search capabilities. It features a database-backed link catalog with Boolean search operators, keyboard shortcuts, drag-and-drop support, and embedded terminal execution.
 
-**Tech Stack**: Kotlin 2.2.20, JavaFX 26, Exposed ORM with KSP code generation, H2 database, JediTermFx terminal emulator. Java toolchain 25.
+**Tech Stack**: Kotlin 2.2.20, Swing with FlatLaf (IntelliJ theme), kotlinx-coroutines (`Dispatchers.Swing`), Exposed ORM with KSP code generation, H2 database, JediTerm (Swing) terminal emulator with pty4j. Java toolchain 25.
 
-The UI is plain JavaFX (FXML + code), with the `basicafx-kt` library supplying the `FxApp`/`FxView` base classes, dialogs and helpers. TornadoFX was removed — do not reintroduce its DSL. Neither is `kotlinx-coroutines` used directly: background work goes through `runAsync`/`runAwait` from `basicafx-kt`, or a plain thread plus `Platform.runLater`.
+The UI is plain Swing built in code (no form files), with the `basica-swing` library supplying the `SwingApp`/`SwingView` base classes, dialogs, controls and coroutine helpers. JavaFX, TornadoFX and `basicafx-kt` were removed — do not reintroduce them.
 
 ## Build Commands
 
@@ -24,6 +24,10 @@ The UI is plain JavaFX (FXML + code), with the `basicafx-kt` library supplying t
 
 # Run a specific test class
 ./gradlew test --tests "io.github.nayasis.simplelauncher.service.KeywordParserTest"
+
+# Manual demos (assert nothing)
+./gradlew runTerminalDemo
+./gradlew runShortcutEditorTest
 
 # Create fat JAR
 ./gradlew shadowJar
@@ -42,21 +46,23 @@ native-build.bat
 ### Layered Structure
 
 ```
-view/         # JavaFX UI
-├── Main.kt            # Primary window (FxView backed by main.fxml)
-├── ShortcutEditor.kt  # Shortcut settings dialog (built in code)
-├── Terminal.kt        # PTY terminal wrapper using JediTermFx
-├── Splash.kt          # Preloader splash
-└── TokenField.kt, SearchTokenField.kt, TokenInputPane.kt  # token input controls
+view/         # Swing UI
+├── Main.kt              # Primary window (SwingView, built in code)
+├── ShortcutEditor.kt    # Shortcut settings dialog
+├── Terminal.kt          # JFrame wrapping a JediTerm widget over a pty4j process
+├── SearchTokenField.kt  # search input with token chips (extends basica-swing TokenInputPane)
+├── SearchSubmitTracker.kt
+├── Splash.kt            # Preloader splash
+└── theme/BlackTerminalTheme.kt
 
 service/      # Business logic
-├── LinkService.kt       # CRUD operations for links, file pickers
-├── LinkExecutor.kt      # Command execution engine
+├── LinkService.kt       # CRUD operations for links (suspend functions), file pickers
+├── LinkExecutor.kt      # Command execution engine (coroutines)
 ├── LinkCommand.kt       # Command template parameter binding
 ├── TextMatcher.kt       # Search with Boolean operators
 ├── KeywordParser.kt     # Converts search to postfix notation (RPN)
 ├── SearchToken.kt       # Token-based search terms
-├── ShortcutSettings.kt  # Shortcut actions and user bindings
+├── ShortcutSettings.kt  # Shortcut actions and user bindings (KeyStroke)
 ├── Config.kt            # Persisted app state
 └── LauncherChildWindows.kt, ProgressQueuePopOver.kt
 
@@ -70,6 +76,10 @@ common/       # Utilities
 ├── ExposedHelper.kt  # Database connection and transactions
 └── Commons.kt        # Extension functions
 ```
+
+### What belongs in basica-swing
+
+Generic, app-independent code goes into `basica-swing` (`C:\project_nayasis\basica-swing`), not here: token input controls (`TokenInputPane`, `TokenField`, `TokenChip`), `AutoCompletion`, `PopOver`, `HistorySet`, `KeyStroke` helpers (`toKeyStroke()`, `displayText`, `matches`), file drop (`onFileDrop`), image helpers, table helpers (`installColumnVisibilityMenu`). Only launcher-specific logic stays in this project.
 
 ### Code Generation with KSP
 
@@ -94,7 +104,15 @@ Context.linkExecutor
 Context.main
 ```
 
-### 2. Boolean Search Engine
+### 2. Coroutines
+Coroutines are the concurrency model; do not add raw threads or `SwingWorker`.
+
+- UI code runs on `Dispatchers.Swing`. Helpers from `basica-swing`: `launchUi`, `launchAsync`, `withUi`, `withBackground`, `runUiAndWait`, `runLater`.
+- `LinkService` exposes `suspend` functions: database work runs in the background, mutation of the shared link list happens on the EDT. `launchSave(link)` is the fire-and-forget variant.
+- `LinkExecutor` owns a `CoroutineScope(SupervisorJob() + Dispatchers.Swing + CoroutineExceptionHandler)`. `run(link, files)` returns a `Job`; blocking waits on processes go through `runInterruptible(Dispatchers.IO)`.
+- The search filter in `Main` is a cancellable job: a new search cancels the previous one, and the evaluation runs on `Dispatchers.Default` with `ensureActive()` checks.
+
+### 3. Boolean Search Engine
 Search syntax supports Boolean operators with precedence:
 - **AND**: space (highest precedence after NOT)
 - **OR**: comma
@@ -108,7 +126,7 @@ Implementation:
 - `TextMatcher.kt`: Evaluates postfix expression against keyword sets
 - Uses LRU cache (20 entries) for parsed queries
 
-### 3. Relative Path Support
+### 4. Relative Path Support
 Links store both absolute and relative paths with fallback resolution:
 1. Try absolute path
 2. Try relative to application root
@@ -116,7 +134,7 @@ Links store both absolute and relative paths with fallback resolution:
 
 This enables portable link catalogs across machines.
 
-### 4. Command Parameter Binding
+### 5. Command Parameter Binding
 `LinkCommand.kt` templates support variables:
 - `${path}`: Full file path
 - `${dir}`: Directory
@@ -131,8 +149,8 @@ Used for drag-and-drop file handling and batch operations.
 ## Database Layer
 
 ### H2 Database
-- **Location**: `~/.nayasis/simplelauncher/data.mv.db` (or in-memory for tests)
-- **Initialization**: `ExposedHelper.connectDatabase()`, called from `Simplelauncher.onStart()`
+- **Location**: `./db/simplelauncher` (set in `application.yml`; in-memory for tests)
+- **Initialization**: `ExposedHelper.connectDatabase()`, called from `Simplelauncher.afterInitialization()`
 - **Schema**: auto-created inside `connectDatabase()` via `SchemaUtils.create(LinkTable)`
 
 ### Transactions
@@ -162,35 +180,40 @@ tx {
 
 ## UI Components
 
-### Main Window (Main.kt)
-`Main` extends `FxView` and loads `/view/main/main.fxml`. Nodes are bound with the `by fxid()` delegate (the property name is the `fx:id`), and `onBeforeShow()`/`onUndock()` are the lifecycle hooks.
+### Look and feel
+`Simplelauncher.setupLookAndFeel()` calls `FlatIntelliJLaf.setup()`. Use FlatLaf client properties for styling (for example `"JComponent.outline"` for error outlines, `"JComponent.focusOwner"` for composite focus borders) instead of custom painting.
 
-- **Search field**: live filtering with 300ms debounce
-- **Link table**: `FilterSortList` (from `basicafx-kt`) bound via `bindTo(tableView)`; `predicate` filters, `items` is the full list
-- **Editor panel**: toggle with Alt+E
-- **Keyboard shortcuts**: see README.md for complete list
+### Main Window (Main.kt)
+`Main` extends `SwingView` and builds its whole component tree in code. Components that tests or menus look up carry a `name` (`tableMain`, `menuViewDesc`, `menuShowInputGroup`, `menuAlwaysOnTop`, ...).
+
+- **Search field**: `SearchTokenField` plus group/hashtag token fields, with `AutoCompletion` popups for history, groups and hashtags
+- **Link table**: `FilterSortList` bound to a `JTable` through `ListTableModel`; `predicate` filters, `items` is the full list. Titles are drawn with a renderer that caches icons per link.
+- **Editor panel**: lives in a split pane that is swapped in and out to show/hide it (Alt+E)
+- **Window state**: saved in `Config.windowMain` / `Config.windowTerminal` as `WindowProperty`
 
 Key methods:
-- `setSearchFilter()`: evaluates links on a background thread, then applies the predicate on the FX thread. A generation counter drops superseded searches, so callers that need the result use its `onApplied` callback.
+- `setSearchFilter()`: cancels the previous search job, evaluates links off the EDT, then applies the predicate on the EDT. Callers that need the result use its `onApplied` callback.
 - `submitSearch()`: re-reads the inputs and runs `setSearchFilter()`
 - `saveDetail()`: persists the edited link via `LinkService`
 - `drawDetail(link)`: fills the editor panel from a link
 - Execution goes through `Context.linkExecutor.run(link)`
 
 ### Terminal (Terminal.kt)
-Wraps commands in PTY-based terminal using JediTermFx:
-- Executes command and captures output
-- Handles ANSI color codes
-- Configurable theme (`BlackTerminalTheme`)
+`Terminal` is a `JFrame` holding a JediTerm `JediTermWidget`:
+- `suspend fun run(command)` starts the command through pty4j (`PtyProcessTtyConnector`, UTF-8) and resumes when it exits
+- `BlackTerminalTheme` sets colors and the font. The font comes from `StyleContext` so that it is a composite font with glyph fallback; a plain `Font("Consolas")` renders Hangul as boxes.
+- JediTerm is pinned to 3.72 from the JetBrains repository: 3.73+ needs kotlin-stdlib 2.4.
 
 ## Testing
 
 ### Test Structure
-- **Unit tests**: `KeywordParserTest`, `TextMatcherTest`, `SearchTokenTest`, `ShortcutSettingsTest`, `SearchSubmitTrackerTest`, `MainShortcutRoutingTest`
-- **Integration tests**: `LinksTest` (database), `LinkExecutorTest` (disabled)
+- **Unit tests**: `KeywordParserTest`, `TextMatcherTest`, `SearchTokenTest`, `ShortcutSettingsTest`, `SearchSubmitTrackerTest`, `MainShortcutRoutingTest`, `MainTableContextMenuTest`, `SearchTokenFieldTest`, `ShortcutEditorTest`, `LauncherChildWindowsTest`, `TerminalStagePropertyTest`
+- **Integration tests**: `LinksTest` (database), `LinkServiceSuggestionTest`, `LinkExecutorTest` (disabled)
 - **Framework**: JUnit 5 + Kotest assertions
 
-Not everything under `src/test` is an automated test. Several files are manual demo apps — they have a `fun main()`, extend `Application`, and assert nothing (`ExecutorTest`, `TerminalBuilderTest`, `ChildWindowLifecycleTest`, `ProgressDialogQueueButtonTest`, `ShortcutEditorManualTest`, `TerminalFx*`). Gradle does not run them; launch them by hand. Don't assume a `*Test` name means there is coverage.
+Swing tests run their body on the EDT with `runUiAndWait<Unit> { ... }`. The explicit `<Unit>` matters: a test written as `fun x() = runUiAndWait { ... }` whose block ends in an assertion returns a non-`Unit` value, and JUnit silently skips non-void test methods.
+
+Not everything under `src/test` is an automated test. `TerminalDemo` and `ShortcutEditorManualTest` are manual demos with a `fun main()` that assert nothing; run them with `./gradlew runTerminalDemo` / `./gradlew runShortcutEditorTest`. Don't assume a `*Test` name means there is coverage.
 
 ### Running Tests
 ```bash
@@ -204,36 +227,13 @@ Not everything under `src/test` is an automated test. Several files are manual d
 ./gradlew test --info
 ```
 
-### Test Database
-Tests use H2 in-memory database with automatic cleanup:
-```kotlin
-ExposedHelper.init("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1")
-```
+## JVM arguments
 
-## Module System Exports
-
-JavaFX requires special JVM arguments for reflection access:
-```kotlin
---enable-native-access=ALL-UNNAMED
---enable-native-access=javafx.graphics
---add-exports=javafx.base/com.sun.javafx.event=ALL-UNNAMED
---add-exports=javafx.graphics/com.sun.javafx.application=ALL-UNNAMED
---add-exports=javafx.graphics/com.sun.javafx.tk=ALL-UNNAMED
---add-opens=javafx.graphics/javafx.scene=ALL-UNNAMED
-```
-
-These live in `build.gradle.kts:appJvmArgs`, are wired into `application.applicationDefaultJvmArgs`, and are passed to `createNativeExe` as `--java-options`.
-
-The packaged app puts the JavaFX jars on the classpath rather than the module path, so it logs `WARNING: Unknown module: javafx.graphics specified to --add-exports` on startup. This is expected noise, not a failure.
+`build.gradle.kts:appJvmArgs` holds `--enable-native-access=ALL-UNNAMED` (JNA for pty4j, FlatLaf native libraries). It is wired into `application.applicationDefaultJvmArgs`, every `JavaExec` task, and passed to `createNativeExe` as `--java-options`.
 
 ### jlink module list
 
-`requiredJdkModules` in `build.gradle.kts` drives `createRuntimeImage`. Two entries are easy to get wrong:
-
-- `java.scripting` — required by `javafx.fxml`: `FXMLLoader` references `javax.script.Bindings` for `fx:script` support. Removing it still passes `./gradlew run` (the full JDK is present) but makes the packaged app die with `NoClassDefFoundError: javax/script/Bindings` on its first FXML load.
-- `jdk.unsupported` — required by JavaFX.
-
-Always verify module changes with `./gradlew createNativeExe` and by running the produced executable, not just `./gradlew run`.
+`requiredJdkModules` in `build.gradle.kts` drives `createRuntimeImage`. Removing a module still passes `./gradlew run` (the full JDK is present) but can break the packaged app at runtime, so always verify module changes with `./gradlew createNativeExe` and by running the produced executable, not just `./gradlew run`.
 
 ## Distribution
 
@@ -249,18 +249,17 @@ The version comes from the branch name: `release/x.y.z` yields `x.y.z`, anything
 
 ```bash
 native-build.bat
-# Output: build/native/nativeCompile/simplelauncher.exe  (~93MB, ~2m30s)
+# Output: build/native/nativeCompile/simplelauncher.exe
 ```
+
+Not re-verified since the move to Swing.
 
 Do not call `./gradlew nativeCompile` directly — native-image drives `cl.exe`, and
 without the MSVC environment it fails with `fatal error C1034: stdio.h`.
 `native-build.bat` runs `vcvars64.bat` first, then Gradle.
 
 Requirements:
-- **Liberica NIK 25 "full"** at `%NATIVE_JAVA_HOME%` (default:
-  `%USERPROFILE%\.sdkman\candidates\java\25.0.4.1-nikfull`). Download the *full*
-  bundle from <https://bell-sw.com/pages/downloads/native-image-kit/>; sdkman's
-  Windows NIK candidate is the plain bundle and will not work.
+- A GraalVM-based JDK 25 (Liberica NIK 25) at `%NATIVE_JAVA_HOME%`.
 - Visual Studio 2022 Build Tools, C++ workload plus Windows SDK.
 - A local copy of the shared reachability metadata (the plugin cannot fetch it
   from GitHub releases here); see the comment in `build.gradle.kts`.
@@ -269,10 +268,7 @@ Things that cost time to rediscover:
 
 | Trap | Why |
 |---|---|
-| Requires the **full** NIK bundle | Only it ships JavaFX as JDK modules *and* the static libs native-image links (`glass.lib`, `prism_d3d.lib`, `javafx_font.lib`, `javafx_iio.lib`). With the plain bundle the link step fails with `LNK2001` on `JNI_OnLoad_glass` and every `Java_com_sun_glass_ui_win_*` symbol. |
-| JavaFX comes from the JDK, not Maven | The `org.openjfx` jars are filtered out of the image classpath. The static libs match the JDK's JavaFX, so a second JavaFX from Maven would mismatch. Note this means the native binary runs JavaFX 25.0.4.1 while `gradlew run` uses 26.0.2. |
-| No classpath to scan at runtime | Anything built on `Classes.findResources` glob patterns silently finds nothing. That is why message bundles are listed explicitly in `Simplelauncher.kt` and the `@Inject` services are registered in `beforeInitialization()` instead of relying on `FxApp`'s package scan. Adding a new `@Inject` service means registering it there too. |
-| Concrete `Application`/`Preloader` subclasses need a no-arg constructor | native-image's `JavaFXFeature` registers every reachable subtype for reflective instantiation. This is why `DefaultSplash` in basicafx-kt is `abstract`. |
+| No classpath to scan at runtime | Anything built on `Classes.findResources` glob patterns silently finds nothing. That is why message bundles are listed explicitly in `Simplelauncher.kt` and the `@Inject` services are registered in `beforeInitialization()` instead of relying on `SwingApp`'s package scan. Adding a new `@Inject` service means registering it there too. |
 | `.bat` files must stay CRLF | An LF-only batch file makes `cmd.exe` produce no output at all. Enforced by `.gitattributes`. |
 
 ### Native Executable (jpackage — bundles a JVM)
@@ -296,13 +292,13 @@ Platform-specific notes:
 ## Dependencies of Note
 
 - **basica-kt**: Custom utility library (path, string, reflection helpers)
-- **basicafx-kt**: Custom JavaFX library. Supplies `FxApp`/`FxView` with the `fxml`/`fxid` delegates, `Dialog`, progress dialogs, `FilterSortList`, `runAsync`/`runAwait`/`runLater`, `StageProperty`, `Localizator`. Developed in parallel at `C:\project_nayasis\basicafx-kt` and consumed from mavenLocal as `0.1.0-SNAPSHOT`, so run `./gradlew publishToMavenLocal` there after changing it.
+- **basica-swing**: Custom Swing library. Supplies `SwingApp`/`SwingView`, `SimpleDiContainer`, `Dialog`, `ProgressDialog`, `DefaultPreloader`, `FilterSortList`/`ListTableModel`, `WindowProperty`, token controls, `AutoCompletion`, `PopOver`, `HistorySet`, `KeyStroke` helpers and the coroutine helpers. Developed in parallel at `C:\project_nayasis\basica-swing` and consumed from mavenLocal as `0.1.0-SNAPSHOT`, so run `./gradlew publishToMavenLocal` there after changing it.
+- **FlatLaf**: look and feel (IntelliJ theme)
+- **kotlinx-coroutines-swing**: `Dispatchers.Swing`
 - **Exposed 1.0.0-rc-4**: Database ORM
 - **Exposed-CRUD**: KSP code generator for repositories
-- **JediTermFx**: Terminal emulator component
+- **JediTerm 3.72 + pty4j**: Terminal emulator component
 - **mslinks**: Windows .lnk file parser
-
-`kotlinx-coroutines` appears on the classpath transitively through Exposed and is needed at runtime, but is not used by this project's own code.
 
 ## Common Development Patterns
 
@@ -311,13 +307,14 @@ Platform-specific notes:
 2. Run `./gradlew clean kspKotlin` to regenerate `LinkTable.kt`
 3. Update UI bindings in `Main.kt`
 4. Update JSON export/import in `JsonLink.kt`
-5. Migration: Database recreates on first run (H2 in user directory)
+5. Migration: Database recreates on first run
 
 ### Adding a New Service
-1. Create the service in the `service/` package and annotate it `@Inject` — `FxApp.init()` scans the application package and registers it in `SimpleDiContainer`
-2. Add a lazy property to `Context.kt` that resolves it with `bean(YourService::class)`
+1. Create the service in the `service/` package and annotate it `@Inject`
+2. Register it in `Simplelauncher.beforeInitialization()` (the package scan does not work in a native image)
+3. Add a lazy property to `Context.kt` that resolves it
 
-Views are not DI beans and must not be annotated: `FxApp.find()` instantiates them through their no-arg constructor and caches them.
+Views are not DI beans and must not be annotated: `SwingApp.find()` instantiates them through their no-arg constructor and caches them.
 
 ### Modifying Search Logic
 - **Parser**: `KeywordParser.kt:toPostfix()` (infix to RPN)
@@ -325,30 +322,28 @@ Views are not DI beans and must not be annotated: `FxApp.find()` instantiates th
 - **Indexing**: `Link.kt:keywords` property (space-delimited)
 
 ### Adding Keyboard Shortcuts
-Shortcuts are data, not hardcoded key handlers. They are user-rebindable through the shortcut settings dialog.
+Shortcuts are data, not hardcoded key handlers. They are user-rebindable through the shortcut settings dialog and stored as `KeyStroke`s; the config keeps them as text like `Ctrl+Shift+N` (strings saved by the JavaFX version still parse).
 
-1. Add an entry to the `ShortcutAction` enum in `ShortcutSettings.kt` with its message key, `ShortcutGroup` and default `KeyCombination`
+1. Add an entry to the `ShortcutAction` enum in `ShortcutSettings.kt` with its message key, `ShortcutGroup` and default key stroke
 2. Add the message key to `src/main/resources/message/`
 3. Handle it in `handleMainShortcutEvent()` in `Main.kt` and add the matching lambda to `MainShortcutHandlers`
 4. For table context-menu entries, add the action to `TABLE_ITEM_SHORTCUT_ACTIONS` in `Main.kt`
 
-Menu items live in `main.fxml`; wire their `setOnAction` in `Main.kt:initEvent()`.
+Main-window shortcuts are routed by a global `KeyEventDispatcher`, which ignores key events while a menu is open. Menus are built in `Main.kt`.
 
 ## Icon Handling
 
-Icons are stored as PNG bytes in database:
-- **Extraction**: from .exe, .ico, .lnk files via `Link.kt:setIcon(file)`
-- **Conversion**: all formats converted to PNG on import
+Icons are stored as image bytes in the database:
+- **Extraction**: `Link.readIcon(file)` / `Link.setIcon(file)` read images and .ico files directly; anything else (.exe, .lnk, ...) uses the system icon (`File.toSystemIconImage`)
 - **Export**: Base64-encoded in JSON
-- **Display**: lazy-loaded through the `iconImage` property
+- **Display**: decoded lazily through the `iconImage` property (`BufferedImage`)
 
-When adding icon support for new file types, modify `Link.kt:setIcon()`.
+When adding icon support for new file types, modify `Link.readIcon()`.
 
 ## Recent Changes
 
-- Removed TornadoFX and direct coroutine use; the UI runs on plain JavaFX with `FxView`/`FxApp` from `basicafx-kt`. Design notes: `docs/superpowers/specs/2026-09-08-remove-tornadofx-design.md`
-- Fixed native packaging: `java.scripting` must stay in the jlink module list (FXMLLoader needs it), and `toJpackageAppVersion()` now strips version qualifiers so `createNativeExe` works off `release/*` branches
-- Table rendering uses a fixed cell size and reuses cell graphics; search filtering runs off the FX thread
+- Moved from JavaFX to Swing + FlatLaf IntelliJ, from `basicafx-kt` to `basica-swing`, and from JediTermFx to JediTerm Swing. Concurrency now uses coroutines. Generic controls moved into basica-swing. Window state saved by the JavaFX version (`stageMain`/`stageTerminal`) is not migrated.
+- Table rendering caches icons; search filtering runs off the EDT
 - Migrated from Komapper to Exposed ORM (commit: 4543400)
 - Added jpackage support for native executables (commit: be3b3b3)
 
