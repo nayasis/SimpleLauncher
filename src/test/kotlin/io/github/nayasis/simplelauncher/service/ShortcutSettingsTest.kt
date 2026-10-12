@@ -1,11 +1,15 @@
 package io.github.nayasis.simplelauncher.service
 
+import io.github.nayasis.kotlin.swing.misc.displayText
+import io.github.nayasis.kotlin.swing.misc.keyStroke
+import io.github.nayasis.kotlin.swing.misc.toKeyStroke
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.shouldBe
-import javafx.scene.input.KeyCode
-import javafx.scene.input.KeyCodeCombination
-import javafx.scene.input.KeyCombination
 import org.junit.jupiter.api.Test
+import java.awt.event.InputEvent.CTRL_DOWN_MASK
+import java.awt.event.InputEvent.META_DOWN_MASK
+import java.awt.event.InputEvent.SHIFT_DOWN_MASK
+import java.awt.event.KeyEvent
 
 class ShortcutSettingsTest {
 
@@ -13,20 +17,20 @@ class ShortcutSettingsTest {
     fun windowsDefaultsShouldUseControlShortcuts() {
         val settings = ShortcutSettings.load(emptyMap(), ShortcutPlatform.WINDOWS_LINUX)
 
-        settings[ShortcutAction.SAVE_DETAIL] shouldBe KeyCodeCombination(KeyCode.S, KeyCombination.CONTROL_DOWN)
-        settings[ShortcutAction.ADD_FILE] shouldBe KeyCodeCombination(KeyCode.N, KeyCombination.CONTROL_DOWN, KeyCombination.SHIFT_DOWN)
-        settings[ShortcutAction.OPEN_SHORTCUT_SETTINGS] shouldBe KeyCodeCombination(KeyCode.COMMA, KeyCombination.CONTROL_DOWN)
-        settings[ShortcutAction.RUN_SELECTED_LINK] shouldBe KeyCodeCombination(KeyCode.ENTER)
+        settings[ShortcutAction.SAVE_DETAIL] shouldBe keyStroke(KeyEvent.VK_S, CTRL_DOWN_MASK)
+        settings[ShortcutAction.ADD_FILE] shouldBe keyStroke(KeyEvent.VK_N, CTRL_DOWN_MASK or SHIFT_DOWN_MASK)
+        settings[ShortcutAction.OPEN_SHORTCUT_SETTINGS] shouldBe keyStroke(KeyEvent.VK_COMMA, CTRL_DOWN_MASK)
+        settings[ShortcutAction.RUN_SELECTED_LINK] shouldBe keyStroke(KeyEvent.VK_ENTER)
     }
 
     @Test
     fun macDefaultsShouldUseMetaShortcuts() {
         val settings = ShortcutSettings.load(emptyMap(), ShortcutPlatform.MAC)
 
-        settings[ShortcutAction.SAVE_DETAIL] shouldBe KeyCodeCombination(KeyCode.S, KeyCombination.META_DOWN)
-        settings[ShortcutAction.ADD_FILE] shouldBe KeyCodeCombination(KeyCode.N, KeyCombination.META_DOWN, KeyCombination.SHIFT_DOWN)
-        settings[ShortcutAction.OPEN_SHORTCUT_SETTINGS] shouldBe KeyCodeCombination(KeyCode.COMMA, KeyCombination.META_DOWN)
-        settings[ShortcutAction.RUN_SELECTED_LINK] shouldBe KeyCodeCombination(KeyCode.ENTER)
+        settings[ShortcutAction.SAVE_DETAIL] shouldBe keyStroke(KeyEvent.VK_S, META_DOWN_MASK)
+        settings[ShortcutAction.ADD_FILE] shouldBe keyStroke(KeyEvent.VK_N, META_DOWN_MASK or SHIFT_DOWN_MASK)
+        settings[ShortcutAction.OPEN_SHORTCUT_SETTINGS] shouldBe keyStroke(KeyEvent.VK_COMMA, META_DOWN_MASK)
+        settings[ShortcutAction.RUN_SELECTED_LINK] shouldBe keyStroke(KeyEvent.VK_ENTER)
     }
 
     @Test
@@ -43,23 +47,48 @@ class ShortcutSettingsTest {
     }
 
     @Test
+    fun shortcutsSavedByTheJavaFxVersionShouldStillLoad() {
+        val settings = ShortcutSettings.load(
+            mapOf(
+                ShortcutAction.DELETE_DETAIL.name to "Shift+Delete",
+                ShortcutAction.FOCUS_SEARCH.name to "Esc",
+                ShortcutAction.OPEN_SHORTCUT_SETTINGS.name to "Ctrl+Comma",
+            ),
+            ShortcutPlatform.WINDOWS_LINUX,
+        )
+
+        settings[ShortcutAction.DELETE_DETAIL] shouldBe keyStroke(KeyEvent.VK_DELETE, SHIFT_DOWN_MASK)
+        settings[ShortcutAction.FOCUS_SEARCH] shouldBe keyStroke(KeyEvent.VK_ESCAPE)
+        settings[ShortcutAction.OPEN_SHORTCUT_SETTINGS] shouldBe keyStroke(KeyEvent.VK_COMMA, CTRL_DOWN_MASK)
+    }
+
+    @Test
+    fun savedShortcutsShouldLoadBackUnchanged() {
+        val settings = ShortcutSettings.load(emptyMap(), ShortcutPlatform.WINDOWS_LINUX)
+
+        val reloaded = ShortcutSettings.load(settings.toConfigMap(), ShortcutPlatform.MAC)
+
+        ShortcutAction.entries.forEach { reloaded[it] shouldBe settings[it] }
+    }
+
+    @Test
     fun blankConfiguredShortcutShouldFallbackToDefault() {
         val settings = ShortcutSettings.load(
             mapOf(ShortcutAction.SAVE_DETAIL.name to "   ")
         )
 
-        settings.displayText(ShortcutAction.SAVE_DETAIL) shouldBe ShortcutAction.SAVE_DETAIL.defaultCombination(ShortcutPlatform.current()).displayText
+        settings.displayText(ShortcutAction.SAVE_DETAIL) shouldBe ShortcutAction.SAVE_DETAIL.defaultKeyStroke(ShortcutPlatform.current()).displayText
     }
 
     @Test
     fun duplicateShortcutsShouldBeDetected() {
-        val duplicate = KeyCombination.valueOf("Ctrl+S")
+        val duplicate = "Ctrl+S".toKeyStroke()!!
 
         val duplicates = findDuplicateShortcuts(
             mapOf(
                 ShortcutAction.SAVE_DETAIL to duplicate,
-                ShortcutAction.COPY_DETAIL to duplicate,
-                ShortcutAction.SHOW_ABOUT to KeyCombination.valueOf("F1"),
+                ShortcutAction.COPY_DETAIL to keyStroke(KeyEvent.VK_S, CTRL_DOWN_MASK),
+                ShortcutAction.SHOW_ABOUT to "F1".toKeyStroke()!!,
             )
         )
 

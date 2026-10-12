@@ -6,6 +6,7 @@ import io.github.nayasis.simplelauncher.model.Link
 import io.github.nayasis.simplelauncher.model.LinkTable
 import io.github.nayasis.simplelauncher.model.repo
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.exposed.v1.jdbc.deleteAll
 import org.junit.jupiter.api.Test
 
@@ -27,7 +28,7 @@ internal class LinkServiceSuggestionTest {
         }
 
         val service = LinkService()
-        service.loadAll()
+        runBlocking { service.loadAll() }
 
         service.groupTokenSuggestions() shouldBe listOf("alpha", "beta", "gamma")
         service.groupTokenSuggestions(listOf("alpha")) shouldBe listOf("beta", "gamma")

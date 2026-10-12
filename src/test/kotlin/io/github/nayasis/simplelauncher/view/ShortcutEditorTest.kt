@@ -1,57 +1,35 @@
 package io.github.nayasis.simplelauncher.view
 
 import io.github.nayasis.kotlin.basica.model.Messages.Companion.loadMessages
+import io.github.nayasis.kotlin.swing.misc.runUiAndWait
+import io.github.nayasis.simplelauncher.service.ShortcutAction
 import io.kotest.matchers.booleans.shouldBeTrue
-import javafx.application.Platform
-import javafx.embed.swing.JFXPanel
-import javafx.scene.layout.VBox
+import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
+import java.awt.Container
+import javax.swing.JTextField
 
 internal class ShortcutEditorTest {
 
     @Test
-    fun buildContentShouldConstructShortcutGroupsWithoutDuplicateChildren() = runOnFxThread {
-        val editor = ShortcutEditor()
-        val method = ShortcutEditor::class.java.getDeclaredMethod("buildContent")
-        method.isAccessible = true
+    fun buildContentShouldConstructAnEditorPerAction() = runUiAndWait<Unit> {
+        val content = ShortcutEditor().buildContent()
 
-        val content = method.invoke(editor) as VBox
-
-        (content.children.isNotEmpty()).shouldBeTrue()
+        content.components.isNotEmpty().shouldBeTrue()
+        val editors = content.descendants().filterIsInstance<JTextField>().mapNotNull { it.name }
+        editors.toSet() shouldBe ShortcutAction.entries.map { "shortcut-${it.name}" }.toSet()
     }
+
+    private fun Container.descendants(): List<java.awt.Component> =
+        components.flatMap { listOf(it) + ((it as? Container)?.descendants() ?: emptyList()) }
 
     companion object {
 
         @JvmStatic
         @BeforeAll
-        fun initToolkit() {
+        fun loadMessages() {
             "/message/**.prop".loadMessages()
-            JFXPanel()
-        }
-
-        private fun runOnFxThread(block: () -> Unit) {
-            if (Platform.isFxApplicationThread()) {
-                block()
-                return
-            }
-
-            var failure: Throwable? = null
-            val latch = CountDownLatch(1)
-            Platform.runLater {
-                try {
-                    block()
-                } catch (e: Throwable) {
-                    failure = e
-                } finally {
-                    latch.countDown()
-                }
-            }
-
-            latch.await(10, TimeUnit.SECONDS).shouldBeTrue()
-            failure?.let { throw it }
         }
 
     }

@@ -1,8 +1,8 @@
 // Copyright 2020 Kalkidan Betre Use of this source code is governed by the Apache 2.0 license that can be found in the LICENSE file.
 package io.github.nayasis.sample.swing.decoratedUi.usercontrols
 
-import io.github.nayasis.kotlin.awt.drawLine
-import io.github.nayasis.kotlin.awt.drawRect
+import io.github.nayasis.kotlin.swing.awt.drawLine
+import io.github.nayasis.kotlin.swing.awt.drawRect
 import io.github.nayasis.sample.swing.decoratedUi.theme.DarkTheme
 import io.github.nayasis.sample.swing.decoratedUi.theme.Theme
 import java.awt.BasicStroke
