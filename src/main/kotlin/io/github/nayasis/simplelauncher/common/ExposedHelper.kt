@@ -1,8 +1,8 @@
 package io.github.nayasis.simplelauncher.common
 
 import io.github.nayasis.kotlin.basica.etc.error
-import io.github.nayasis.kotlin.javafx.app.Environment
-import io.github.nayasis.kotlin.javafx.app.FxApp.Companion.environment
+import io.github.nayasis.kotlin.swing.app.Environment
+import io.github.nayasis.kotlin.swing.app.SwingApp.Companion.environment
 import io.github.nayasis.simplelauncher.model.LinkTable
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jetbrains.exposed.v1.core.Transaction

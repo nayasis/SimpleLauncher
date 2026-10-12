@@ -2,82 +2,76 @@ package io.github.nayasis.simplelauncher.service
 
 import io.github.nayasis.kotlin.basica.core.string.message
 import io.github.nayasis.kotlin.basica.core.string.tokenize
+import io.github.nayasis.kotlin.basica.etc.error
 import io.github.nayasis.kotlin.basica.exec.Command
 import io.github.nayasis.kotlin.basica.exec.CommandExecutor
-import io.github.nayasis.kotlin.javafx.app.di.Inject
-import io.github.nayasis.kotlin.javafx.misc.runAwait
-import io.github.nayasis.kotlin.javafx.stage.Dialog
-import io.github.nayasis.kotlin.javafx.stage.Stages
-import io.github.nayasis.kotlin.javafx.stage.progress.ProgressDialog
+import io.github.nayasis.kotlin.swing.app.di.Inject
+import io.github.nayasis.kotlin.swing.misc.withBackground
+import io.github.nayasis.kotlin.swing.window.Dialog
+import io.github.nayasis.kotlin.swing.window.Windows
+import io.github.nayasis.kotlin.swing.window.progress.ProgressDialog
 import io.github.nayasis.simplelauncher.common.Context.Companion.linkService
 import io.github.nayasis.simplelauncher.common.Context.Companion.main
 import io.github.nayasis.simplelauncher.model.Link
 import io.github.nayasis.simplelauncher.view.Terminal
 import io.github.oshai.kotlinlogging.KotlinLogging
-import javafx.scene.control.Button
-import javafx.scene.control.Tooltip
-import io.github.nayasis.kotlin.javafx.misc.runLater
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runInterruptible
+import kotlinx.coroutines.swing.Swing
+import java.awt.Insets
 import java.io.File
 import java.time.LocalDateTime
+import javax.swing.JButton
 
 private val logger = KotlinLogging.logger{}
 
 private data class ProgressQueueContext(
-    val queueButton: Button,
+    val queueButton: JButton,
     val control: ProgressQueueControl,
     val popOver: ProgressQueuePopOver,
 )
 
+/**
+ * runs links.
+ *
+ * every run is a coroutine on the event dispatch thread. waiting for a process or a terminal suspends it
+ * instead of blocking a thread, so files dropped on a link run one after another while the UI stays live.
+ */
 @Inject
 class LinkExecutor{
 
-    private val childWindows = LauncherChildWindows()
-    private val runningExecutors = LinkedHashSet<CommandExecutor>()
-    private var runningTerminalCount = 0
+    private val supervisor = SupervisorJob()
 
-    fun run(link: Link, files: Collection<File>? = null) {
+    private val scope = CoroutineScope(supervisor + Dispatchers.Swing + CoroutineExceptionHandler { _, e ->
+        logger.error(e)
+        Dialog.error(e.message, e)
+    })
+
+    private val childWindows = LauncherChildWindows()
+
+    /**
+     * run [link], once per file of [files] when it executes each file separately.
+     *
+     * @return the run, active until every command it waits for is done
+     */
+    fun run(link: Link, files: Collection<File>? = null): Job = scope.launch {
 
         linkService.save( link.apply { executedAt = LocalDateTime.now() })
-        runLater { main.tableMain.refresh() }
 
-        runLater {
-            if( files.isNullOrEmpty() ) {
-                run(LinkCommand(link))
-            } else if( files.size == 1 ) {
-                run(LinkCommand(link,files.first()))
-            } else {
-                if( link.executeEach ) {
-                    if( ! link.showConsole ) {
-                        val queue = ProgressFileQueue(files)
-                        openProgressDialog(link.title, queue) { dialog, control ->
-                            while (queue.hasNext()) {
-                                val item = queue.next() ?: continue
-                                updateProgress(dialog, queue, item)
-                                run(LinkCommand(link, item.file), wait=true, onExecutorChanged=control::updateExecutor)
-                                queue.finish(item)
-                                control.updateExecutor(null)
-                            }
-                        }
-                    } else {
-                        val queue = ProgressFileQueue(files)
-                        val progress = openProgressDialog(link.title, queue)
-                        while (queue.hasNext()) {
-                            val item = queue.next() ?: continue
-                            updateProgress(progress, queue, item)
-                            run(LinkCommand(link, item.file), wait=true)
-                            queue.finish(item)
-                            refreshProgressQueue(progress)
-                        }
-                        progress.close()
-                        unregisterProgressDialog(progress)
-                    }
-                } else {
-                    run(LinkCommand(link,files), wait=false)
-                }
-            }
-            linkService.save( link.apply { executeCount++ })
-            runLater { main.tableMain.refresh() }
+        when {
+            files.isNullOrEmpty() -> run(LinkCommand(link))
+            files.size == 1       -> run(LinkCommand(link, files.first()))
+            link.executeEach      -> runQueue(link, files)
+            else                  -> run(LinkCommand(link, files))
         }
+
+        linkService.save( link.apply { executeCount++ })
 
     }
 
@@ -85,65 +79,40 @@ class LinkExecutor{
 
     fun restoreChildWindows() = childWindows.restore()
 
+    /** whether a run still waits for a command, or a progress dialog is open. */
     fun hasRunningWork(): Boolean {
-        if(childWindows.hasProgressDialogs()) {
-            return true
-        }
-        synchronized(runningExecutors) {
-            runningExecutors.removeIf { !it.isAlive }
-            if(runningExecutors.isNotEmpty()) {
-                return true
-            }
-        }
-        return synchronized(this) {
-            runningTerminalCount > 0
-        }
+        return childWindows.hasProgressDialogs() || supervisor.children.any { it.isActive }
     }
 
-    private fun openProgressDialog(title: String?): ProgressDialog {
-        return createProgressDialog(title).also { dialog ->
-            registerProgressDialog(dialog)
-            dialog.showAt(childWindows.progressDialogPosition(dialog))
-        }
-    }
-
-    private fun openProgressDialog(title: String?, queue: ProgressFileQueue): ProgressDialog {
+    private suspend fun runQueue(link: Link, files: Collection<File>) {
+        val queue = ProgressFileQueue(files)
         lateinit var dialog: ProgressDialog
         val context = createProgressQueueContext(queue) {
             updateProgress(dialog, queue, queue.currentItem())
-            refreshProgressQueue(dialog)
+            childWindows.refreshProgressQueue(dialog)
         }
-        dialog = createProgressDialog(title, context.queueButton)
-        registerProgressDialog(dialog, context.popOver)
+        dialog = createProgressDialog(link.title, context.queueButton)
+        childWindows.register(dialog, context.popOver)
         dialog.showAt(childWindows.progressDialogPosition(dialog))
-        return dialog
+        try {
+            while (queue.hasNext()) {
+                val item = queue.next() ?: continue
+                updateProgress(dialog, queue, item)
+                run(LinkCommand(link, item.file), wait = true, onExecutorChanged = context.control::updateExecutor)
+                queue.finish(item)
+                context.control.updateExecutor(null)
+                childWindows.refreshProgressQueue(dialog)
+            }
+        } finally {
+            dialog.close()
+            childWindows.unregister(dialog)
+        }
     }
 
-    private fun openProgressDialog(
-        title: String?,
-        queue: ProgressFileQueue,
-        task: (dialog: ProgressDialog, control: ProgressQueueControl) -> Unit,
-    ): ProgressDialog {
-        lateinit var dialog: ProgressDialog
-        val context = createProgressQueueContext(queue) {
-            updateProgress(dialog, queue, queue.currentItem())
-            refreshProgressQueue(dialog)
-        }
-        dialog = createProgressDialog(title, context.queueButton).setOnDone {
-            context.control.updateExecutor(null)
-            unregisterProgressDialog(dialog)
-        }
-        registerProgressDialog(dialog, context.popOver)
-        dialog.runAsync(childWindows.progressDialogPosition(dialog)) {
-            task(it, context.control)
-        }
-        return dialog
-    }
-
-    private fun createProgressDialog(title: String?, headerButton: Button? = null): ProgressDialog {
+    private fun createProgressDialog(title: String?, headerButton: JButton): ProgressDialog {
         return ProgressDialog(title).apply {
-            initOwner(Stages.focusedWindow)
-            headerButton?.let { addHeaderRight(it) }
+            initOwner(Windows.focusedWindow)
+            addHeaderRight(headerButton)
         }
     }
 
@@ -152,13 +121,12 @@ class LinkExecutor{
         val control = ProgressQueueControl(queue) {
             popOver.refreshIfShowing()
         }
-        val queueButton = Button("☰").apply {
-            tooltip = Tooltip("label.work.queue.tooltip".message())
-            style = "-fx-padding: 0 4 0 4; -fx-min-width: 20px; -fx-pref-width: 20px; -fx-max-width: 20px; -fx-min-height: 18px; -fx-pref-height: 18px; -fx-max-height: 18px; -fx-font-size: 10px;"
-            setOnAction { event ->
-                event.consume()
-                popOver.toggle(this)
-            }
+        val queueButton = JButton("☰").apply {
+            toolTipText = "label.work.queue.tooltip".message()
+            margin = Insets(0, 4, 0, 4)
+            isFocusable = false
+            font = font.deriveFont(font.size2D * 0.85f)
+            addActionListener { popOver.toggle(this) }
         }
         popOver = ProgressQueuePopOver(
             items = queue,
@@ -180,23 +148,7 @@ class LinkExecutor{
         )
     }
 
-    private fun registerProgressDialog(dialog: ProgressDialog) {
-        childWindows.register(dialog)
-    }
-
-    private fun registerProgressDialog(dialog: ProgressDialog, popOver: ProgressQueuePopOver) {
-        childWindows.register(dialog, popOver)
-    }
-
-    private fun unregisterProgressDialog(dialog: ProgressDialog) {
-        childWindows.unregister(dialog)
-    }
-
-    private fun refreshProgressQueue(dialog: ProgressDialog) {
-        childWindows.refreshProgressQueue(dialog)
-    }
-
-    private fun run(link: LinkCommand, wait: Boolean = false, onExecutorChanged: ((CommandExecutor?) -> Unit)? = null) {
+    private suspend fun run(link: LinkCommand, wait: Boolean = false, onExecutorChanged: ((CommandExecutor?) -> Unit)? = null) {
 
         val nextCommands = toCommands(link.commandNext, link.workingDirectory)
 
@@ -229,7 +181,7 @@ class LinkExecutor{
             .filterNot { it.isEmpty() }
     }
 
-    private fun executeSequential(commands: Collection<Command>, showConsole: Boolean, onExecutorChanged: ((CommandExecutor?) -> Unit)? = null) {
+    private suspend fun executeSequential(commands: Collection<Command>, showConsole: Boolean, onExecutorChanged: ((CommandExecutor?) -> Unit)? = null) {
         commands.forEach { command ->
             execute(
                 command = command,
@@ -241,7 +193,7 @@ class LinkExecutor{
         }
     }
 
-    private fun execute(command: Command, wait: Boolean, showConsole: Boolean, keepTerminalOpen: Boolean, onExecutorChanged: ((CommandExecutor?) -> Unit)? = null) {
+    private suspend fun execute(command: Command, wait: Boolean, showConsole: Boolean, keepTerminalOpen: Boolean, onExecutorChanged: ((CommandExecutor?) -> Unit)? = null) {
         if( command.isEmpty() ) return
         main.printCommand("$command")
         if(showConsole) {
@@ -251,88 +203,43 @@ class LinkExecutor{
         }
     }
 
-    private fun runInBackground(command: Command, wait: Boolean, onExecutorChanged: ((CommandExecutor?) -> Unit)? = null) {
-        if( command.isEmpty() ) return
+    private suspend fun runInBackground(command: Command, wait: Boolean, onExecutorChanged: ((CommandExecutor?) -> Unit)? = null) {
         logger.debug { "- command: $command" }
-        try {
-            val executor = command.run()
-            if(!wait) {
-                return
-            }
-            registerExecutor(executor)
-            onExecutorChanged?.invoke(executor)
-            try {
-                executor.waitFor()
-            } finally {
-                onExecutorChanged?.invoke(null)
-                unregisterExecutor(executor)
-            }
+        val executor = try {
+            withBackground { command.run() }
         } catch (e: Exception) {
-            throw RuntimeException("msg.error.runtime".message().format("$command")).apply { this.stackTrace = e.stackTrace }
+            throw RuntimeException("msg.error.runtime".message().format("$command"), e)
         }
-    }
-
-    private fun runInTerminal(command: Command, wait: Boolean = false ) {
-        if( command.isEmpty() ) return
-        logger.debug { "- command: $command" }
-        var runningRegistered = false
-        fun unregisterRunningTerminalOnce() {
-            synchronized(this) {
-                if(runningRegistered) {
-                    runningRegistered = false
-                    unregisterRunningTerminal()
-                }
-            }
-        }
-        val terminal = Terminal(
-            onAlways = {
-                unregisterRunningTerminalOnce()
-            },
-            onFail = { e ->
-            runAwait {
-                Dialog.error(e)
-            }
-        })
-        registerRunningTerminal()
-        runningRegistered = true
+        if(!wait) return
+        onExecutorChanged?.invoke(executor)
         try {
-            childWindows.register(terminal)
-            terminal.run {
-                childWindows.show(this)
-                runCatching { run(command) }
-                if(!wait) {
-                    close()
-                    childWindows.unregister(this)
-                }
-            }
+            runInterruptible(Dispatchers.IO) { executor.waitFor() }
         } finally {
-            unregisterRunningTerminalOnce()
+            onExecutorChanged?.invoke(null)
         }
     }
 
-    private fun registerExecutor(executor: CommandExecutor) {
-        synchronized(runningExecutors) {
-            runningExecutors.add(executor)
+    /**
+     * show [command] in a terminal window and suspend until it ends.
+     *
+     * @param keepOpen leave the window open afterwards, so the output can be read
+     */
+    private suspend fun runInTerminal(command: Command, keepOpen: Boolean) {
+        logger.debug { "- command: $command" }
+        val terminal = Terminal()
+        childWindows.register(terminal)
+        childWindows.show(terminal)
+        try {
+            terminal.run(command)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error(e)
+            Dialog.error(e)
         }
-    }
-
-    private fun unregisterExecutor(executor: CommandExecutor) {
-        synchronized(runningExecutors) {
-            runningExecutors.remove(executor)
-        }
-    }
-
-    private fun registerRunningTerminal() {
-        synchronized(this) {
-            runningTerminalCount++
-        }
-    }
-
-    private fun unregisterRunningTerminal() {
-        synchronized(this) {
-            if(runningTerminalCount > 0) {
-                runningTerminalCount--
-            }
+        if(!keepOpen) {
+            terminal.close()
+            childWindows.unregister(terminal)
         }
     }
 

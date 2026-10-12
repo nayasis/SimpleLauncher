@@ -1,10 +1,17 @@
 package io.github.nayasis.simplelauncher.service
 
-import javafx.scene.input.KeyCode
-import javafx.scene.input.KeyCodeCombination
-import javafx.scene.input.KeyCombination
-import javafx.scene.input.KeyEvent
+import io.github.nayasis.kotlin.swing.misc.displayText
+import io.github.nayasis.kotlin.swing.misc.keyStroke
+import io.github.nayasis.kotlin.swing.misc.matches
+import io.github.nayasis.kotlin.swing.misc.toKeyStroke
+import java.awt.event.InputEvent.ALT_DOWN_MASK
+import java.awt.event.InputEvent.CTRL_DOWN_MASK
+import java.awt.event.InputEvent.META_DOWN_MASK
+import java.awt.event.InputEvent.SHIFT_DOWN_MASK
+import java.awt.event.KeyEvent
+import java.awt.event.KeyEvent.*
 import java.util.EnumMap
+import javax.swing.KeyStroke
 
 enum class ShortcutGroup(val messageKey: String) {
     GENERAL("shortcut.group.general"),
@@ -28,45 +35,45 @@ enum class ShortcutPlatform {
 enum class ShortcutAction(
     val messageKey: String,
     val group: ShortcutGroup,
-    private val defaultCombinationFactory: (ShortcutPlatform) -> KeyCombination,
+    private val defaultKeyStrokeFactory: (ShortcutPlatform) -> KeyStroke,
 ) {
-    SAVE_DETAIL("btn.save", ShortcutGroup.GENERAL, { commandShortcut(KeyCode.S, it) }),
-    COPY_DETAIL("btn.copy", ShortcutGroup.GENERAL, { commandShortcut(KeyCode.D, it) }),
-    CREATE_DETAIL("btn.new", ShortcutGroup.GENERAL, { commandShortcut(KeyCode.N, it) }),
-    ADD_FILE("shortcut.action.addFile", ShortcutGroup.GENERAL, { commandShortcut(KeyCode.N, it, KeyCombination.SHIFT_DOWN) }),
-    OPEN_FOLDER("btn.open.folder", ShortcutGroup.GENERAL, { commandShortcut(KeyCode.O, it) }),
-    COPY_FOLDER("btn.copy.folder", ShortcutGroup.GENERAL, { commandShortcut(KeyCode.C, it, KeyCombination.SHIFT_DOWN) }),
-    CHANGE_ICON("shortcut.action.changeIcon", ShortcutGroup.GENERAL, { commandShortcut(KeyCode.I, it) }),
-    DELETE_DETAIL("shortcut.action.deleteDetail", ShortcutGroup.GENERAL, { KeyCodeCombination(KeyCode.DELETE, KeyCombination.SHIFT_DOWN) }),
-    IMPORT_DATA("menu.file.import", ShortcutGroup.MENU, { commandShortcut(KeyCode.I, it, KeyCombination.SHIFT_DOWN) }),
-    EXPORT_DATA("menu.file.export", ShortcutGroup.MENU, { commandShortcut(KeyCode.X, it, KeyCombination.SHIFT_DOWN) }),
-    OPEN_SHORTCUT_SETTINGS("menu.settings.shortcut", ShortcutGroup.MENU, { commandShortcut(KeyCode.COMMA, it) }),
-    TOGGLE_DESCRIPTION("menu.view.description", ShortcutGroup.MENU, { commandShortcut(KeyCode.E, it) }),
-    TOGGLE_GROUP_FILTER("menu.view.showInputGroup", ShortcutGroup.MENU, { KeyCodeCombination(KeyCode.G, KeyCombination.ALT_DOWN) }),
-    TOGGLE_ALWAYS_ON_TOP("menu.view.alwaysOnTop", ShortcutGroup.MENU, { commandShortcut(KeyCode.F, it, KeyCombination.SHIFT_DOWN) }),
-    SHOW_ABOUT("menu.help.about", ShortcutGroup.MENU, { KeyCodeCombination(KeyCode.F1) }),
-    RUN_SELECTED_LINK("shortcut.action.runSelectedLink", ShortcutGroup.TABLE, { KeyCodeCombination(KeyCode.ENTER) }),
-    FOCUS_SEARCH("shortcut.action.focusSearch", ShortcutGroup.TABLE, { KeyCodeCombination(KeyCode.ESCAPE) }),
-    DELETE_SELECTED_LINK("shortcut.action.deleteSelectedLink", ShortcutGroup.TABLE, { KeyCodeCombination(KeyCode.DELETE) }),
-    MOVE_FOCUS_TO_DETAIL("shortcut.action.moveFocusToDetail", ShortcutGroup.TABLE, { KeyCodeCombination(KeyCode.TAB) }),
-    COPY_FOLDER_FROM_TABLE("shortcut.action.copyFolderFromTable", ShortcutGroup.TABLE, { commandShortcut(KeyCode.C, it) }),
-    OPEN_FOLDER_FROM_TABLE("shortcut.action.openFolderFromTable", ShortcutGroup.TABLE, { commandShortcut(KeyCode.O, it, KeyCombination.SHIFT_DOWN) }),
+    SAVE_DETAIL("btn.save", ShortcutGroup.GENERAL, { commandShortcut(VK_S, it) }),
+    COPY_DETAIL("btn.copy", ShortcutGroup.GENERAL, { commandShortcut(VK_D, it) }),
+    CREATE_DETAIL("btn.new", ShortcutGroup.GENERAL, { commandShortcut(VK_N, it) }),
+    ADD_FILE("shortcut.action.addFile", ShortcutGroup.GENERAL, { commandShortcut(VK_N, it, SHIFT_DOWN_MASK) }),
+    OPEN_FOLDER("btn.open.folder", ShortcutGroup.GENERAL, { commandShortcut(VK_O, it) }),
+    COPY_FOLDER("btn.copy.folder", ShortcutGroup.GENERAL, { commandShortcut(VK_C, it, SHIFT_DOWN_MASK) }),
+    CHANGE_ICON("shortcut.action.changeIcon", ShortcutGroup.GENERAL, { commandShortcut(VK_I, it) }),
+    DELETE_DETAIL("shortcut.action.deleteDetail", ShortcutGroup.GENERAL, { keyStroke(VK_DELETE, SHIFT_DOWN_MASK) }),
+    IMPORT_DATA("menu.file.import", ShortcutGroup.MENU, { commandShortcut(VK_I, it, SHIFT_DOWN_MASK) }),
+    EXPORT_DATA("menu.file.export", ShortcutGroup.MENU, { commandShortcut(VK_X, it, SHIFT_DOWN_MASK) }),
+    OPEN_SHORTCUT_SETTINGS("menu.settings.shortcut", ShortcutGroup.MENU, { commandShortcut(VK_COMMA, it) }),
+    TOGGLE_DESCRIPTION("menu.view.description", ShortcutGroup.MENU, { keyStroke(VK_E, ALT_DOWN_MASK) }),
+    TOGGLE_GROUP_FILTER("menu.view.showInputGroup", ShortcutGroup.MENU, { keyStroke(VK_G, ALT_DOWN_MASK) }),
+    TOGGLE_ALWAYS_ON_TOP("menu.view.alwaysOnTop", ShortcutGroup.MENU, { commandShortcut(VK_F, it, SHIFT_DOWN_MASK) }),
+    SHOW_ABOUT("menu.help.about", ShortcutGroup.MENU, { keyStroke(VK_F1) }),
+    RUN_SELECTED_LINK("shortcut.action.runSelectedLink", ShortcutGroup.TABLE, { keyStroke(VK_ENTER) }),
+    FOCUS_SEARCH("shortcut.action.focusSearch", ShortcutGroup.TABLE, { keyStroke(VK_ESCAPE) }),
+    DELETE_SELECTED_LINK("shortcut.action.deleteSelectedLink", ShortcutGroup.TABLE, { keyStroke(VK_DELETE) }),
+    MOVE_FOCUS_TO_DETAIL("shortcut.action.moveFocusToDetail", ShortcutGroup.TABLE, { keyStroke(VK_TAB) }),
+    COPY_FOLDER_FROM_TABLE("shortcut.action.copyFolderFromTable", ShortcutGroup.TABLE, { commandShortcut(VK_C, it) }),
+    OPEN_FOLDER_FROM_TABLE("shortcut.action.openFolderFromTable", ShortcutGroup.TABLE, { commandShortcut(VK_O, it, SHIFT_DOWN_MASK) }),
     ;
 
-    val defaultCombination: KeyCombination
-        get() = defaultCombination()
+    val defaultKeyStroke: KeyStroke
+        get() = defaultKeyStroke()
 
-    fun defaultCombination(platform: ShortcutPlatform = ShortcutPlatform.current()): KeyCombination {
-        return defaultCombinationFactory(platform)
+    fun defaultKeyStroke(platform: ShortcutPlatform = ShortcutPlatform.current()): KeyStroke {
+        return defaultKeyStrokeFactory(platform)
     }
 }
 
 class ShortcutSettings private constructor(
-    private val bindings: EnumMap<ShortcutAction, KeyCombination>,
+    private val bindings: EnumMap<ShortcutAction, KeyStroke>,
 ) {
 
-    operator fun get(action: ShortcutAction): KeyCombination {
-        return bindings[action] ?: action.defaultCombination
+    operator fun get(action: ShortcutAction): KeyStroke {
+        return bindings[action] ?: action.defaultKeyStroke
     }
 
     fun displayText(action: ShortcutAction): String {
@@ -74,16 +81,17 @@ class ShortcutSettings private constructor(
     }
 
     fun matches(action: ShortcutAction, event: KeyEvent): Boolean {
-        return get(action).match(event)
+        return get(action).matches(event)
     }
 
-    fun toMutableBindings(): EnumMap<ShortcutAction, KeyCombination> {
+    fun toMutableBindings(): EnumMap<ShortcutAction, KeyStroke> {
         return EnumMap(bindings)
     }
 
+    /** bindings by action name, in the `Ctrl+Shift+N` form the JavaFX version stored as well. */
     fun toConfigMap(): MutableMap<String, String> {
         return bindings.entries
-            .associate { (action, combination) -> action.name to combination.toString() }
+            .associate { (action, keyStroke) -> action.name to keyStroke.displayText }
             .toMutableMap()
     }
 
@@ -92,17 +100,17 @@ class ShortcutSettings private constructor(
             configured: Map<String, String>?,
             platform: ShortcutPlatform = ShortcutPlatform.current(),
         ): ShortcutSettings {
-            val bindings = EnumMap<ShortcutAction, KeyCombination>(ShortcutAction::class.java)
+            val bindings = EnumMap<ShortcutAction, KeyStroke>(ShortcutAction::class.java)
             ShortcutAction.entries.forEach { action ->
-                bindings[action] = configured?.get(action.name).toKeyCombinationOrNull() ?: action.defaultCombination(platform)
+                bindings[action] = configured?.get(action.name).toKeyStroke() ?: action.defaultKeyStroke(platform)
             }
             return ShortcutSettings(bindings)
         }
 
-        fun fromBindings(bindings: Map<ShortcutAction, KeyCombination>): ShortcutSettings {
-            val copied = EnumMap<ShortcutAction, KeyCombination>(ShortcutAction::class.java)
+        fun fromBindings(bindings: Map<ShortcutAction, KeyStroke>): ShortcutSettings {
+            val copied = EnumMap<ShortcutAction, KeyStroke>(ShortcutAction::class.java)
             ShortcutAction.entries.forEach { action ->
-                copied[action] = bindings[action] ?: action.defaultCombination
+                copied[action] = bindings[action] ?: action.defaultKeyStroke
             }
             return ShortcutSettings(copied)
         }
@@ -110,46 +118,21 @@ class ShortcutSettings private constructor(
 }
 
 private fun commandShortcut(
-    keyCode: KeyCode,
+    keyCode: Int,
     platform: ShortcutPlatform,
-    vararg modifiers: KeyCombination.Modifier,
-): KeyCombination {
+    modifiers: Int = 0,
+): KeyStroke {
     val primary = when (platform) {
-        ShortcutPlatform.MAC -> KeyCombination.META_DOWN
-        ShortcutPlatform.WINDOWS_LINUX -> KeyCombination.CONTROL_DOWN
+        ShortcutPlatform.MAC -> META_DOWN_MASK
+        ShortcutPlatform.WINDOWS_LINUX -> CTRL_DOWN_MASK
     }
-    return KeyCodeCombination(keyCode, primary, *modifiers)
+    return keyStroke(keyCode, primary or modifiers)
 }
 
-fun findDuplicateShortcuts(bindings: Map<ShortcutAction, KeyCombination>): List<List<ShortcutAction>> {
+fun findDuplicateShortcuts(bindings: Map<ShortcutAction, KeyStroke>): List<List<ShortcutAction>> {
     return bindings.entries
-        .groupBy { it.value.toString() }
+        .groupBy { it.value }
         .values
         .filter { it.size > 1 }
         .map { entries -> entries.map { it.key } }
 }
-
-fun KeyEvent.toShortcutCombination(): KeyCombination? {
-    if (code in modifierKeys) return null
-    val modifiers = buildList {
-        if (isControlDown) add(KeyCombination.CONTROL_DOWN)
-        if (isShiftDown) add(KeyCombination.SHIFT_DOWN)
-        if (isAltDown) add(KeyCombination.ALT_DOWN)
-        if (isMetaDown) add(KeyCombination.META_DOWN)
-    }
-    return KeyCodeCombination(code, *modifiers.toTypedArray())
-}
-
-private fun String?.toKeyCombinationOrNull(): KeyCombination? {
-    if (this.isNullOrBlank()) return null
-    return runCatching { KeyCombination.valueOf(this) }.getOrNull()
-}
-
-private val modifierKeys = setOf(
-    KeyCode.SHIFT,
-    KeyCode.CONTROL,
-    KeyCode.ALT,
-    KeyCode.META,
-    KeyCode.WINDOWS,
-    KeyCode.COMMAND,
-)

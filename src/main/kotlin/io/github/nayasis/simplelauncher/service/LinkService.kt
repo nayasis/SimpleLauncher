@@ -9,13 +9,15 @@ import io.github.nayasis.kotlin.basica.core.string.message
 import io.github.nayasis.kotlin.basica.core.string.toPath
 import io.github.nayasis.kotlin.basica.reflection.Reflector
 import io.github.nayasis.kotlin.basica.reflection.toObject
-import io.github.nayasis.kotlin.javafx.app.di.Inject
-import io.github.nayasis.kotlin.javafx.collection.FilterSortList
-import io.github.nayasis.kotlin.javafx.misc.Desktop
-import io.github.nayasis.kotlin.javafx.misc.runLater
-import io.github.nayasis.kotlin.javafx.misc.set
-import io.github.nayasis.kotlin.javafx.stage.Dialog
-import io.github.nayasis.kotlin.javafx.stage.FilePickerMode
+import io.github.nayasis.kotlin.swing.app.di.Inject
+import io.github.nayasis.kotlin.swing.collection.FilterSortList
+import io.github.nayasis.kotlin.swing.misc.Desktop
+import io.github.nayasis.kotlin.swing.misc.launchUi
+import io.github.nayasis.kotlin.swing.misc.set
+import io.github.nayasis.kotlin.swing.misc.withBackground
+import io.github.nayasis.kotlin.swing.misc.withUi
+import io.github.nayasis.kotlin.swing.window.Dialog
+import io.github.nayasis.kotlin.swing.window.FilePickerMode
 import io.github.nayasis.simplelauncher.common.Context.Companion.config
 import io.github.nayasis.simplelauncher.common.Context.Companion.main
 import io.github.nayasis.simplelauncher.common.ExposedHelper.tx
@@ -24,71 +26,95 @@ import io.github.nayasis.simplelauncher.model.LinkTable
 import io.github.nayasis.simplelauncher.model.repo
 import io.github.nayasis.simplelauncher.model.vo.JsonLink
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.Job
 import org.jetbrains.exposed.v1.jdbc.deleteAll
 import java.nio.file.Path
-import java.util.*
 
 private val logger = KotlinLogging.logger {}
 
+/**
+ * links in the database and in memory.
+ *
+ * database work runs on a background thread inside the suspending functions. [links] and the token index
+ * are only touched on the event dispatch thread, which is where every function resumes to change them.
+ */
 @Inject
 class LinkService {
 
+    /** every link, filtered and sorted for the table. use it on the event dispatch thread. */
     val links = FilterSortList<Link>()
 
     private val tokenIndex = TokenReferenceIndex()
 
-    fun save(link: Link, refreshTable: Boolean = true) {
+    /** persist [link]. a new link joins [links]; a changed one is refiltered and redrawn. */
+    suspend fun save(link: Link) {
         val previousId = link.id
         link.syncTokenStorage()
         val isNew = link.id <= 0
-        tx {
-            LinkTable.repo.save(link)
-            if (isNew) links.add(link)
+        withBackground { tx { LinkTable.repo.save(link) } }
+        withUi {
+            if (isNew) links.add(link) else links.refresh()
+            tokenIndex.update(previousId, link)
         }
-        tokenIndex.update(previousId, link)
-        if (refreshTable) runLater { main.tableMain.refresh() }
     }
 
-    fun importData(file: Path) {
-        val list = file.readText().toObject<List<JsonLink>>().map { it.toLink() }
-        logger.debug { "write links to DB (count: ${list.size})" }
-        tx { list.forEach { LinkTable.repo.create(it) } }
+    /** [save] without waiting for it, for callers that cannot suspend. */
+    fun launchSave(link: Link): Job = launchUi { save(link) }
+
+    suspend fun importData(file: Path) {
+        withBackground {
+            val list = file.readText().toObject<List<JsonLink>>().map { it.toLink() }
+            logger.debug { "write links to DB (count: ${list.size})" }
+            tx { list.forEach { LinkTable.repo.create(it) } }
+        }
     }
 
-    fun countAll(): Int = tx(readOnly = true) { LinkTable.repo.select().count() }
+    suspend fun countAll(): Int = withBackground { tx(readOnly = true) { LinkTable.repo.select().count() } }
 
-    fun loadAll(worker: ((index: Int, link: Link) -> Unit)? = null) {
-        val buffer = LinkedList<Link>()
-        tx(readOnly = true) {
-            LinkTable.repo.select().orderBy(LinkTable.title).forEachIndexed { i, link ->
-                buffer.add(link)
-                worker?.invoke(i + 1, link)
+    /**
+     * replace [links] by the database content.
+     *
+     * @param worker called on the background thread for every link read, e.g. to report progress
+     */
+    suspend fun loadAll(worker: ((index: Int, link: Link) -> Unit)? = null) {
+        val buffer = withBackground {
+            val buffer = ArrayList<Link>()
+            tx(readOnly = true) {
+                LinkTable.repo.select().orderBy(LinkTable.title).forEachIndexed { i, link ->
+                    buffer.add(link)
+                    worker?.invoke(i + 1, link)
+                }
             }
+            buffer
         }
-        links.run {
-            clear()
-            addAll(buffer)
+        withUi {
+            links.update {
+                clear()
+                addAll(buffer)
+            }
+            tokenIndex.rebuild(buffer)
         }
-        tokenIndex.rebuild(buffer)
     }
 
-    fun exportData(file: Path) {
-        val jsonLinks = tx(readOnly = true) { LinkTable.repo.selectAll().map { JsonLink(it) } }
-        file.writeText(Reflector.toJson(jsonLinks, pretty = true))
+    suspend fun exportData(file: Path) {
+        withBackground {
+            val jsonLinks = tx(readOnly = true) { LinkTable.repo.selectAll().map { JsonLink(it) } }
+            file.writeText(Reflector.toJson(jsonLinks, pretty = true))
+        }
     }
 
-    fun deleteAll() {
-        tx {
-            LinkTable.deleteAll()
+    suspend fun deleteAll() {
+        withBackground { tx { LinkTable.deleteAll() } }
+        withUi {
             config.historyKeyword.clear()
             links.clear()
             tokenIndex.clear()
         }
     }
 
-    fun delete(link: Link) {
-        tx {
-            LinkTable.repo.delete(link)
+    suspend fun delete(link: Link) {
+        withBackground { tx { LinkTable.repo.delete(link) } }
+        withUi {
             config.historyKeyword.remove(link.title ?: "")
             links.remove(link)
             tokenIndex.remove(link)
@@ -130,7 +156,7 @@ class LinkService {
         initialDirectory = initialDirectory ?: config.filePickerInitialDirectory?.toPath(),
         initialFileName  = initialFileName,
         mode             = mode,
-        owner            = main.primaryStage,
+        owner            = main.primaryFrame,
     ).firstOrNull().also { it?.let { config.filePickerInitialDirectory = it.directory.pathString } }
 
     fun openFolder(link: Link) {

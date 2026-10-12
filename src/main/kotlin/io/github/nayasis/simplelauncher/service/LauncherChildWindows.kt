@@ -1,20 +1,28 @@
 package io.github.nayasis.simplelauncher.service
 
-import io.github.nayasis.kotlin.javafx.stage.BoundaryChecker
-import io.github.nayasis.kotlin.javafx.property.PositionProperty
-import io.github.nayasis.kotlin.javafx.stage.progress.ProgressDialog
+import io.github.nayasis.kotlin.swing.misc.isUiThread
+import io.github.nayasis.kotlin.swing.misc.runLater
+import io.github.nayasis.kotlin.swing.property.PositionProperty
+import io.github.nayasis.kotlin.swing.window.BoundaryChecker
+import io.github.nayasis.kotlin.swing.window.progress.ProgressDialog
+import io.github.nayasis.kotlin.swing.window.visibleBounds
 import io.github.nayasis.simplelauncher.common.Context
 import io.github.nayasis.simplelauncher.view.Terminal
-import javafx.application.Platform
-import javafx.geometry.Dimension2D
-import javafx.geometry.Point2D
-import javafx.geometry.Rectangle2D
-import javafx.scene.Parent
-import javafx.stage.Screen
-import javafx.stage.Window
-import javafx.stage.WindowEvent
-import io.github.nayasis.kotlin.javafx.misc.runLater
+import java.awt.GraphicsEnvironment
+import java.awt.Point
+import java.awt.Rectangle
+import java.awt.Window
+import java.awt.event.ComponentAdapter
+import java.awt.event.ComponentEvent
+import java.awt.event.WindowAdapter
+import java.awt.event.WindowEvent
 
+/**
+ * progress dialogs and terminals started by the launcher.
+ *
+ * they are hidden while the main window is hidden or minimized, and come back with it.
+ * a window shown while the main window is hidden is hidden right away.
+ */
 internal class LauncherChildWindows {
 
     private val progressDialogs = LinkedHashSet<ProgressDialog>()
@@ -22,25 +30,22 @@ internal class LauncherChildWindows {
     private val progressQueuePopOvers = LinkedHashMap<ProgressDialog, ProgressQueuePopOver>()
     private val terminals = LinkedHashSet<Terminal>()
     private val hiddenTerminals = LinkedHashSet<Terminal>()
+    @Volatile
     private var visible = true
     private val boundaryChecker = BoundaryChecker()
-    private var lastProgressDialogPosition: Point2D? = loadSavedProgressDialogPosition()
+    private var lastProgressDialogPosition: Point? = loadSavedProgressDialogPosition()
 
     fun hide() {
-        synchronized(this) {
-            visible = false
-        }
-        runOnFxThread {
+        visible = false
+        onUiThread {
             hideProgressDialogs()
             hideTerminals()
         }
     }
 
     fun restore() {
-        synchronized(this) {
-            visible = true
-        }
-        runOnFxThread {
+        visible = true
+        onUiThread {
             restoreProgressDialogs()
             restoreTerminals()
         }
@@ -49,17 +54,10 @@ internal class LauncherChildWindows {
     fun hasProgressDialogs(): Boolean {
         return synchronized(progressDialogs) {
             progressDialogs
-                .filter { dialog -> !dialog.stage.isShowing && dialog !in hiddenProgressDialogs }
+                .filter { dialog -> !dialog.window.isShowing && dialog !in hiddenProgressDialogs }
                 .forEach { dialog -> unregister(dialog) }
             progressDialogs.isNotEmpty()
         }
-    }
-
-    fun register(dialog: ProgressDialog) {
-        synchronized(progressDialogs) {
-            progressDialogs.add(dialog)
-        }
-        bindHiddenState(dialog)
     }
 
     fun register(dialog: ProgressDialog, popOver: ProgressQueuePopOver) {
@@ -67,7 +65,11 @@ internal class LauncherChildWindows {
             progressDialogs.add(dialog)
             progressQueuePopOvers[dialog] = popOver
         }
-        bindHiddenState(dialog)
+        dialog.window.addComponentListener(object: ComponentAdapter() {
+            override fun componentShown(e: ComponentEvent) = hideIfParentHidden(dialog)
+            override fun componentHidden(e: ComponentEvent) = rememberProgressDialogPosition(dialog)
+        })
+        hideIfParentHidden(dialog)
     }
 
     fun unregister(dialog: ProgressDialog) {
@@ -82,12 +84,13 @@ internal class LauncherChildWindows {
         synchronized(terminals) {
             terminals.add(terminal)
         }
-        terminal.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST) {
-            unregister(terminal)
-        }
-        terminal.addEventHandler(WindowEvent.WINDOW_SHOWN) {
-            hideIfParentHidden(terminal)
-        }
+        terminal.addWindowListener(object: WindowAdapter() {
+            override fun windowClosing(e: WindowEvent) = unregister(terminal)
+            override fun windowClosed(e: WindowEvent) = unregister(terminal)
+        })
+        terminal.addComponentListener(object: ComponentAdapter() {
+            override fun componentShown(e: ComponentEvent) = hideIfParentHidden(terminal)
+        })
     }
 
     fun unregister(terminal: Terminal) {
@@ -98,70 +101,56 @@ internal class LauncherChildWindows {
     }
 
     fun show(terminal: Terminal) {
-        terminal.show()
+        terminal.isVisible = true
         hideIfParentHidden(terminal)
-    }
-
-    fun hideProgressQueue(dialog: ProgressDialog) {
-        progressQueuePopOvers[dialog]?.hide()
     }
 
     fun refreshProgressQueue(dialog: ProgressDialog) {
         progressQueuePopOvers[dialog]?.refreshIfShowing()
     }
 
+    /** where to show [dialog]: where the last one was, or centered on the main window's screen. */
     fun progressDialogPosition(dialog: ProgressDialog): PositionProperty? {
-        val mainStage = Context.main.currentStage ?: return null
-        val dialogSize = measureProgressDialog(dialog) ?: return null
-        val mainBounds = majorScreenBoundsOf(mainStage)
+        val mainFrame = runCatching { Context.main.primaryFrame }.getOrNull() ?: return null
+        val size = dialog.window.size.takeIf { it.width > 0 && it.height > 0 } ?: dialog.window.preferredSize
         val position = resolveProgressDialogPosition(
             lastPosition = lastProgressDialogPosition,
-            dialogWidth = dialogSize.width,
-            dialogHeight = dialogSize.height,
-            mainBounds = mainBounds,
+            dialogWidth = size.width,
+            dialogHeight = size.height,
+            mainBounds = majorScreenBoundsOf(mainFrame),
             isShownOnScreen = boundaryChecker::isShownOnScreen,
         )
-        return PositionProperty(position.x.toInt(), position.y.toInt())
-    }
-
-    private fun bindHiddenState(dialog: ProgressDialog) {
-        dialog.stage.addEventHandler(WindowEvent.WINDOW_SHOWN) {
-            placeProgressDialog(dialog)
-            hideIfParentHidden(dialog)
-        }
-        dialog.stage.addEventHandler(WindowEvent.WINDOW_HIDDEN) {
-            rememberProgressDialogPosition(dialog)
-        }
-        hideIfParentHidden(dialog)
+        lastProgressDialogPosition = position
+        return PositionProperty(position.x, position.y)
     }
 
     private fun hideIfParentHidden(dialog: ProgressDialog) {
-        if(isVisible()) return
+        if(visible) return
         synchronized(progressDialogs) {
             if(dialog !in progressDialogs) return
             hiddenProgressDialogs.add(dialog)
-            hideProgressQueue(dialog)
+            progressQueuePopOvers[dialog]?.hide()
         }
-        if(dialog.stage.isShowing) {
-            dialog.stage.hide()
+        if(dialog.window.isShowing) {
+            dialog.window.isVisible = false
         }
     }
 
     private fun hideIfParentHidden(terminal: Terminal) {
-        if(isVisible()) return
+        if(visible) return
         trackTerminal(terminal)
         if(terminal.isShowing) {
-            terminal.hide()
+            terminal.isVisible = false
         }
     }
 
     private fun hideProgressDialogs() {
         synchronized(progressDialogs) {
             progressDialogs.forEach { dialog ->
-                if(dialog.stage.isShowing) {
+                if(dialog.window.isShowing) {
                     hiddenProgressDialogs.add(dialog)
-                    hideProgressQueue(dialog)
-                    dialog.stage.hide()
+                    progressQueuePopOvers[dialog]?.hide()
+                    dialog.window.isVisible = false
                 }
             }
         }
@@ -170,18 +159,13 @@ internal class LauncherChildWindows {
     private fun restoreProgressDialogs() {
         synchronized(progressDialogs) {
             hiddenProgressDialogs.toList().forEach { dialog ->
-                if(dialog !in progressDialogs) {
-                    hiddenProgressDialogs.remove(dialog)
-                    return@forEach
-                }
+                hiddenProgressDialogs.remove(dialog)
+                if(dialog !in progressDialogs) return@forEach
                 runCatching {
-                    if(!dialog.stage.isShowing) {
-                        dialog.show()
-                    }
+                    if(!dialog.window.isShowing) dialog.show()
                 }.onFailure {
                     unregister(dialog)
                 }
-                hiddenProgressDialogs.remove(dialog)
             }
         }
     }
@@ -190,7 +174,7 @@ internal class LauncherChildWindows {
         currentTerminals().forEach { terminal ->
             trackTerminal(terminal)
             if(terminal.isShowing) {
-                terminal.hide()
+                terminal.isVisible = false
             }
         }
     }
@@ -198,31 +182,20 @@ internal class LauncherChildWindows {
     private fun restoreTerminals() {
         synchronized(terminals) {
             hiddenTerminals.toList().forEach { terminal ->
-                if(terminal !in terminals) {
-                    hiddenTerminals.remove(terminal)
-                    return@forEach
-                }
+                hiddenTerminals.remove(terminal)
+                if(terminal !in terminals || !terminal.isDisplayable) return@forEach
                 runCatching {
-                    if(!terminal.isShowing) {
-                        terminal.show()
-                    }
+                    if(!terminal.isShowing) terminal.isVisible = true
                 }.onFailure {
                     unregister(terminal)
                 }
-                hiddenTerminals.remove(terminal)
             }
-        }
-    }
-
-    private fun isVisible(): Boolean {
-        return synchronized(this) {
-            visible
         }
     }
 
     private fun currentTerminals(): List<Terminal> {
         return synchronized(terminals) {
-            val openTerminals = Window.getWindows().filterIsInstance<Terminal>()
+            val openTerminals = Window.getWindows().filterIsInstance<Terminal>().filter { it.isDisplayable }
             (terminals + openTerminals).distinct()
         }
     }
@@ -234,103 +207,57 @@ internal class LauncherChildWindows {
         }
     }
 
-    private fun runOnFxThread(block: () -> Unit) {
-        if(Platform.isFxApplicationThread()) {
-            block()
-        } else {
-            runLater {
-                block()
-            }
-        }
-    }
-
-    private fun placeProgressDialog(dialog: ProgressDialog) {
-        val mainStage = Context.main.currentStage ?: return
-        val dialogStage = dialog.stage
-        val dialogWidth = dialogStage.width.takeIf { it > 0 } ?: return
-        val dialogHeight = dialogStage.height.takeIf { it > 0 } ?: return
-
-        val position = resolveProgressDialogPosition(
-            lastPosition = lastProgressDialogPosition,
-            dialogWidth = dialogWidth,
-            dialogHeight = dialogHeight,
-            mainBounds = majorScreenBoundsOf(mainStage),
-            isShownOnScreen = boundaryChecker::isShownOnScreen,
-        )
-
-        dialogStage.x = position.x
-        dialogStage.y = position.y
-        lastProgressDialogPosition = position
+    private fun onUiThread(block: () -> Unit) {
+        if(isUiThread) block() else runLater(block)
     }
 
     private fun rememberProgressDialogPosition(dialog: ProgressDialog) {
-        val x = dialog.stage.x
-        val y = dialog.stage.y
-        if(!x.isFinite() || !y.isFinite()) return
-        val position = Point2D(x, y)
+        // hiding along with the main window is not a move by the user
+        if(!visible) return
+        val position = dialog.window.location
         lastProgressDialogPosition = position
-        saveProgressDialogPosition(position)
-    }
-
-    private fun measureProgressDialog(dialog: ProgressDialog): Dimension2D? {
-        val stage = dialog.stage
-        val root = stage.scene?.root as? Parent ?: return null
-        root.applyCss()
-        root.autosize()
-        val width = stage.width.takeIf { it > 0.0 }
-            ?: root.prefWidth(-1.0).takeIf { it > 0.0 }
-            ?: root.layoutBounds.width.takeIf { it > 0.0 }
-            ?: return null
-        val height = stage.height.takeIf { it > 0.0 }
-            ?: root.prefHeight(width).takeIf { it > 0.0 }
-            ?: root.layoutBounds.height.takeIf { it > 0.0 }
-            ?: return null
-        return Dimension2D(width, height)
-    }
-
-    private fun majorScreenBoundsOf(window: Window): Rectangle2D {
-        return runCatching { boundaryChecker.getMajorScreen(window).visualBounds }
-            .getOrElse { Screen.getPrimary().visualBounds }
-    }
-
-    private fun saveProgressDialogPosition(position: Point2D) {
         runCatching {
             val config = Context.config
-            config.progressDialogX = position.x
-            config.progressDialogY = position.y
+            config.progressDialogX = position.x.toDouble()
+            config.progressDialogY = position.y.toDouble()
             config.save()
         }
     }
 
-    private fun loadSavedProgressDialogPosition(): Point2D? {
+    private fun majorScreenBoundsOf(window: Window): Rectangle {
+        return runCatching { boundaryChecker.getMajorScreen(window).visibleBounds }
+            .getOrElse { GraphicsEnvironment.getLocalGraphicsEnvironment().defaultScreenDevice.defaultConfiguration.visibleBounds }
+    }
+
+    private fun loadSavedProgressDialogPosition(): Point? {
         val x = Context.config.progressDialogX
         val y = Context.config.progressDialogY
         if(x == null || y == null) return null
         if(!x.isFinite() || !y.isFinite()) return null
-        return Point2D(x, y)
+        return Point(x.toInt(), y.toInt())
     }
 
 }
 
 internal fun resolveProgressDialogPosition(
-    lastPosition: Point2D?,
-    dialogWidth: Double,
-    dialogHeight: Double,
-    mainBounds: Rectangle2D,
-    isShownOnScreen: (Rectangle2D) -> Boolean,
-): Point2D {
-    if(dialogWidth <= 0.0 || dialogHeight <= 0.0) {
-        return Point2D(mainBounds.minX, mainBounds.minY)
+    lastPosition: Point?,
+    dialogWidth: Int,
+    dialogHeight: Int,
+    mainBounds: Rectangle,
+    isShownOnScreen: (Rectangle) -> Boolean,
+): Point {
+    if(dialogWidth <= 0 || dialogHeight <= 0) {
+        return Point(mainBounds.x, mainBounds.y)
     }
 
     val savedPosition = lastPosition?.takeIf {
-        isShownOnScreen(Rectangle2D(it.x, it.y, dialogWidth, dialogHeight))
+        isShownOnScreen(Rectangle(it.x, it.y, dialogWidth, dialogHeight))
     }
     if(savedPosition != null) {
         return savedPosition
     }
 
-    val x = mainBounds.minX + (mainBounds.width - dialogWidth) / 2.0
-    val y = mainBounds.minY + (mainBounds.height - dialogHeight) / 2.0
-    return Point2D(x, y)
+    val x = mainBounds.x + (mainBounds.width - dialogWidth) / 2
+    val y = mainBounds.y + (mainBounds.height - dialogHeight) / 2
+    return Point(x, y)
 }
