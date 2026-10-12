@@ -1,24 +1,22 @@
 package io.github.nayasis.simplelauncher
 
 import io.github.nayasis.kotlin.basica.core.extension.runIfNotEmpty
-import io.github.nayasis.kotlin.basica.model.Messages
 import io.github.nayasis.kotlin.basica.model.Messages.Companion.loadMessages
 import io.github.nayasis.kotlin.basica.net.Networks
-import io.github.nayasis.kotlin.javafx.app.Environment
-import io.github.nayasis.kotlin.javafx.app.FxApp
-import io.github.nayasis.kotlin.javafx.app.di.SimpleDiContainer
-import io.github.nayasis.kotlin.javafx.preloader.DefaultPreloader
-import io.github.nayasis.kotlin.javafx.stage.Stages
+import io.github.nayasis.kotlin.swing.app.Environment
+import io.github.nayasis.kotlin.swing.app.SwingApp
+import io.github.nayasis.kotlin.swing.app.di.SimpleDiContainer
+import io.github.nayasis.kotlin.swing.preloader.DefaultPreloader
+import io.github.nayasis.kotlin.swing.window.Windows
+import io.github.nayasis.simplelauncher.common.Context
 import io.github.nayasis.simplelauncher.common.ExposedHelper
 import io.github.nayasis.simplelauncher.service.LinkExecutor
 import io.github.nayasis.simplelauncher.service.LinkService
+import io.github.nayasis.simplelauncher.view.AppTheme
 import io.github.nayasis.simplelauncher.view.Main
 import io.github.nayasis.simplelauncher.view.Splash
 import io.github.oshai.kotlinlogging.KotlinLogging
-import javafx.application.Application
-import javafx.stage.Stage
-import javafx.stage.StageStyle
-import org.apache.commons.cli.CommandLine
+import kotlinx.coroutines.runBlocking
 import java.util.*
 import java.util.logging.Level
 import java.util.logging.Logger
@@ -42,22 +40,23 @@ fun main(args: Array<String>) {
     // turn off external logs
     Logger.getLogger("").level = Level.SEVERE
 
-    System.setProperty("javafx.suppressPreviewWarning", "true")
-    System.setProperty("javafx.enablePreview", "true")
-
     Networks.ignoreCerts()
     MESSAGE_BUNDLES.forEach { it.loadMessages() }
     DefaultPreloader.set(Splash::class)
 
-    Application.launch(Simplelauncher::class.java, *args)
+    SwingApp.launch(Simplelauncher::class, *args)
 }
 
-class Simplelauncher: FxApp(Main::class) {
+class Simplelauncher: SwingApp(Main::class) {
+
+    override fun setupLookAndFeel() {
+        AppTheme.of(Context.config.theme).install()
+    }
 
     /**
      * Register the @Inject services explicitly.
      *
-     * FxApp also scans the application package, but that walks .class resources on
+     * SwingApp also scans the application package, but that walks .class resources on
      * the classpath, which a GraalVM native image does not have. Registering here
      * keeps both the JVM and the native image working; the scan simply finds these
      * already created.
@@ -67,23 +66,31 @@ class Simplelauncher: FxApp(Main::class) {
         context.create(LinkExecutor::class)
     }
 
-    override fun onStart(command: CommandLine) {
-        // set favicon
-        Stages.defaultIcons.add("/image/icon/favicon.png")
-
-        DefaultPreloader.notifyMessage("Preparing...")
+    /**
+     * Prepare the data before the main window is built.
+     *
+     * This runs on the launching thread while the splash lives on the event dispatch
+     * thread, so the splash keeps repainting the loading progress.
+     */
+    override fun afterInitialization(context: SimpleDiContainer, environment: Environment) {
+        Windows.defaultIcons.add("/image/icon/favicon.png")
 
         // set i18n
         environment.get<String>("simplelauncher.locale").runIfNotEmpty { locale ->
             Locale.setDefault(Locale.forLanguageTag(locale))
         }
 
+        DefaultPreloader.notifyMessage("Preparing...")
         ExposedHelper.connectDatabase()
         logger.debug { ">> database prepared" }
-    }
 
-    override fun onStart(stage: Stage) {
-        stage.initStyle(StageStyle.EXTENDED)
+        runBlocking {
+            val linkService = Context.linkService
+            val total = linkService.countAll()
+            linkService.loadAll { i, link ->
+                DefaultPreloader.notifyProgress(i, total, link.title)
+            }
+        }
     }
 
 }

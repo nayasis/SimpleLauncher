@@ -6,6 +6,8 @@ enum class SearchTokenKind {
     TERM,
     AND,
     OR,
+    /** prefix operator: negates the term or group right after it. */
+    NOT,
     PAREN,
 }
 
@@ -36,9 +38,13 @@ fun matchesSearchTokens(haystack: Iterable<String?>?, tokens: List<SearchToken>)
 
     fun applyTopOperator(): Boolean {
         val operator = operators.popOrNull()
-        val right = values.popOrNull()
-        val left = values.popOrNull()
-        if (operator == null || operator.isOpenParenthesis() || left == null || right == null) return false
+        if (operator == null || operator.isOpenParenthesis()) return false
+        val right = values.popOrNull() ?: return false
+        if (operator.kind == SearchTokenKind.NOT) {
+            values.push(!right)
+            return true
+        }
+        val left = values.popOrNull() ?: return false
         values.push(if (operator.kind == SearchTokenKind.AND) left && right else left || right)
         return true
     }
@@ -53,6 +59,15 @@ fun matchesSearchTokens(haystack: Iterable<String?>?, tokens: List<SearchToken>)
                     return fallbackMatch()
                 }
                 pushSearchOperator(operators, token, ::applyTopOperator)
+                previous = PreviousSearchToken.OPERATOR
+            }
+            SearchTokenKind.NOT -> {
+                // "a NOT b" reads as "a AND NOT b"
+                if (previous == PreviousSearchToken.VALUE || previous == PreviousSearchToken.CLOSE) {
+                    pushSearchOperator(operators, SearchToken(SearchTokenKind.AND, "and"), ::applyTopOperator)
+                }
+                // a prefix operator has no left operand to reduce first
+                operators.push(token)
                 previous = PreviousSearchToken.OPERATOR
             }
             SearchTokenKind.PAREN -> {
@@ -117,19 +132,49 @@ fun createOperatorSearchToken(value: String): SearchToken? {
     return when {
         clean.isAndOperatorText() -> SearchToken(SearchTokenKind.AND, "and")
         clean.isOrOperatorText() -> SearchToken(SearchTokenKind.OR, "or")
+        clean.isNotOperatorText() -> SearchToken(SearchTokenKind.NOT, "not")
         clean.isSearchParenthesisText() -> SearchToken(SearchTokenKind.PAREN, clean)
         else -> null
     }
 }
 
-fun hasAdjacentSearchOperatorToken(tokens: List<SearchToken>, index: Int): Boolean {
-    return tokens.getOrNull(index - 1).isSearchOperatorToken() || tokens.getOrNull(index).isSearchOperatorToken()
+/**
+ * insert [term] at [index] joined to what precedes it with OR, and return the index right after it.
+ *
+ * - nothing to join at the start, after "(", after OR, or after NOT (which needs the term itself)
+ * - a preceding AND becomes the OR
+ * - after a term or ")" an OR goes in between
+ */
+fun insertTermWithOr(tokens: MutableList<SearchToken>, index: Int, term: SearchToken): Int {
+    val previous = tokens.getOrNull(index - 1)
+    var at = index
+    when {
+        previous == null || previous.isOpenParenthesis() -> {}
+        previous.kind == SearchTokenKind.OR || previous.kind == SearchTokenKind.NOT -> {}
+        previous.kind == SearchTokenKind.AND -> tokens[index - 1] = SearchToken(SearchTokenKind.OR, "or")
+        else -> tokens.add(at++, SearchToken(SearchTokenKind.OR, "or"))
+    }
+    tokens.add(at++, term)
+    return at
+}
+
+/** whether [token] can go in at [index] without an operator ending up next to an AND / OR: "NOT AND" is as broken as "AND AND". */
+fun canInsertSearchToken(tokens: List<SearchToken>, index: Int, token: SearchToken): Boolean {
+    val previous = tokens.getOrNull(index - 1)
+    val next     = tokens.getOrNull(index)
+    return when (token.kind) {
+        SearchTokenKind.AND,
+        SearchTokenKind.OR  -> !previous.isSearchOperatorToken() && previous?.kind != SearchTokenKind.NOT && !next.isSearchOperatorToken()
+        SearchTokenKind.NOT -> !next.isSearchOperatorToken()
+        else -> true
+    }
 }
 
 fun searchTokenLabel(token: SearchToken): String {
     return when(token.kind) {
         SearchTokenKind.AND -> "AND"
         SearchTokenKind.OR -> "OR"
+        SearchTokenKind.NOT -> "NOT"
         else -> token.value
     }
 }
@@ -163,6 +208,7 @@ private fun SearchToken.matchingOpenParenthesis(): String? =
 
 private fun SearchToken.precedence(): Int =
     when(kind) {
+        SearchTokenKind.NOT -> 3
         SearchTokenKind.AND -> 2
         SearchTokenKind.OR -> 1
         else -> -1
@@ -174,11 +220,14 @@ private fun String.isAndOperatorText(): Boolean =
 private fun String.isOrOperatorText(): Boolean =
     this == "," || this == "|" || uppercase() == "OR"
 
+private fun String.isNotOperatorText(): Boolean =
+    this == "-" || this == "!" || uppercase() == "NOT"
+
 private fun String.isSearchParenthesisText(): Boolean =
     this in listOf("(", ")", "[", "]", "{", "}")
 
 private fun String.isTextOperatorWord(): Boolean =
-    uppercase() == "AND" || uppercase() == "OR"
+    uppercase() in listOf("AND", "OR", "NOT")
 
 private fun <T> Stack<T>.popOrNull(): T? =
     if (isEmpty()) null else pop()

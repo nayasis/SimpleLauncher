@@ -12,14 +12,15 @@ import io.github.nayasis.kotlin.basica.core.io.toRelativeOrSelf
 import io.github.nayasis.kotlin.basica.core.string.toPath
 import io.github.nayasis.kotlin.basica.etc.Platforms
 import io.github.nayasis.kotlin.basica.etc.error
-import io.github.nayasis.kotlin.javafx.misc.resize
-import io.github.nayasis.kotlin.javafx.misc.toBinary
-import io.github.nayasis.kotlin.javafx.misc.toIconImage
-import io.github.nayasis.kotlin.javafx.misc.toImage
+import io.github.nayasis.kotlin.swing.misc.resize
+import io.github.nayasis.kotlin.swing.misc.toBinary
+import io.github.nayasis.kotlin.swing.misc.toBufferedImage
+import io.github.nayasis.kotlin.swing.misc.toIconImages
+import io.github.nayasis.kotlin.swing.misc.toSystemIconImage
 import io.github.nayasis.simplelauncher.common.Context
 import io.github.oshai.kotlinlogging.KotlinLogging
-import javafx.scene.image.Image
 import mslinks.ShellLink
+import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.file.Path
 import java.time.LocalDateTime
@@ -29,6 +30,7 @@ import kotlin.io.path.div
 private val logger = KotlinLogging.logger {}
 
 const val ICON_IMAGE_TYPE = "png"
+private const val ICON_MAX_SIZE = 128
 
 @Entity(name = "TB_LINK_TEST")
 data class Link(
@@ -75,16 +77,23 @@ data class Link(
     var updatedAt: LocalDateTime = LocalDateTime.now(),
 ) {
 
-    var iconImage: Image? = null
+    // decoded once from [icon]; reset whenever the icon bytes are replaced through this class
+    private var decodedIcon: BufferedImage? = null
+    private var decodedFrom: ByteArray? = null
+
+    var iconImage: BufferedImage?
         get() {
-            if( field == null && icon != null ) {
-                field = runCatching { icon?.toImage() }.getOrNull()
+            val bytes = icon ?: return null
+            if( decodedFrom !== bytes ) {
+                decodedIcon = runCatching { bytes.toBufferedImage() }.getOrNull()
+                decodedFrom = bytes
             }
-            return field
+            return decodedIcon
         }
         set(value) {
-            field = value
             icon = value?.toBinary(ICON_IMAGE_TYPE)
+            decodedIcon = value
+            decodedFrom = icon
         }
 
     init {
@@ -143,22 +152,13 @@ data class Link(
         }.onFailure { e -> logger.error(e) }
     }
 
-    fun setIcon(file: File): Image? {
-        return when(file.extension.lowercase()) {
-            "jpg", "jpeg", "png" -> file.toImage()
-            "gif" -> runCatching { ImageIO.read(file).toBinary(ICON_IMAGE_TYPE).toImage() }.getOrNull()
-            "ico" -> runCatching { file.toIconImage().firstOrNull() }.getOrNull()
-            else  -> runCatching { file.toIconImage().firstOrNull() }.getOrNull()
-        }?.let { img ->
-            runCatching { img.resize(128) }.getOrElse { img }
-        }.also { image ->
-            try {
-                icon = image?.toBinary(ICON_IMAGE_TYPE)
-            } catch (e: Exception) {
-                logger.error(e) { ">> file : $file" }
-                throw e
-            }
-        }
+    /**
+     * use the icon of [file]: the image itself, or the icon the file carries.
+     *
+     * @return the icon, or null when none could be read (the current icon is kept then)
+     */
+    fun setIcon(file: File): BufferedImage? {
+        return readIcon(file)?.also { iconImage = it }
     }
 
     fun toPath(): Path? {
@@ -172,14 +172,14 @@ data class Link(
             ?.let { runCatching { Paths.applicationRoot.resolve(it) }.getOrNull() }
             ?.takeIf { it.exists() }
             ?.let { return it }
-        
+
         // 3. use relativePath
         relativePath?.takeIf { it.isNotEmpty() }
             ?.let { Paths.applicationRoot / it }
             ?.takeIf { it.exists() }
             ?.let { p ->
                 path = p.invariantPath
-                Context.linkService.save(this, false)
+                Context.linkService.launchSave(this)
                 return p
             }
 
@@ -230,6 +230,25 @@ data class Link(
 
     override fun toString(): String {
         return "Link(id=$id, title=$title, group=$group, path=$path, relativePath=$relativePath, showConsole=$showConsole, executeEach=$executeEach, argument=$argument, commandPrefix=$commandPrefix, commandPrev=$commandPrev, commandNext=$commandNext, description=$description, hashtag=$hashtag, executeCount=$executeCount, executedAt=$executedAt, createdAt=$createdAt, updatedAt=$updatedAt)"
+    }
+
+    companion object {
+
+        /**
+         * read the icon of [file] without touching any link: the image itself for image files,
+         * the embedded icon for icon files, otherwise the icon the operating system shows for it.
+         */
+        fun readIcon(file: File): BufferedImage? {
+            val image = runCatching {
+                when(file.extension.lowercase()) {
+                    "jpg", "jpeg", "png", "gif", "bmp" -> ImageIO.read(file)
+                    "ico" -> file.toIconImages().maxByOrNull { it.width }
+                    else  -> file.toSystemIconImage(ICON_MAX_SIZE)
+                }
+            }.onFailure { logger.error(it) { ">> file : $file" } }.getOrNull() ?: return null
+            return runCatching { image.resize(ICON_MAX_SIZE) }.getOrElse { image }
+        }
+
     }
 
 }

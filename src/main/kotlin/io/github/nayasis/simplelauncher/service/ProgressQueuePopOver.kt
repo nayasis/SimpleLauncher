@@ -2,23 +2,29 @@ package io.github.nayasis.simplelauncher.service
 
 import io.github.nayasis.kotlin.basica.core.string.message
 import io.github.nayasis.kotlin.basica.exec.CommandExecutor
-import javafx.geometry.Insets
-import javafx.geometry.Pos
-import javafx.scene.Node
-import javafx.scene.control.Button
-import javafx.scene.control.Label
-import javafx.scene.control.ScrollPane
-import javafx.scene.layout.HBox
-import javafx.scene.layout.Priority
-import javafx.scene.layout.Region
-import javafx.scene.layout.VBox
-import org.controlsfx.control.PopOver
-import io.github.nayasis.kotlin.javafx.misc.runLater
+import io.github.nayasis.kotlin.swing.misc.runLater
+import io.github.nayasis.kotlin.swing.window.PopOver
+import java.awt.BorderLayout
+import java.awt.Color
+import java.awt.Component
+import java.awt.Dimension
+import java.awt.Font
+import java.awt.Insets
+import javax.swing.BorderFactory
+import javax.swing.BoxLayout
+import javax.swing.JButton
+import javax.swing.JComponent
+import javax.swing.JLabel
+import javax.swing.JPanel
+import javax.swing.JScrollPane
+import javax.swing.ScrollPaneConstants
+import javax.swing.UIManager
 import java.io.File
 
 private const val MAX_VISIBLE_ITEMS = 20
-private const val MAX_ITEMS_HEIGHT = 600.0
-private const val ACTION_BUTTON_WIDTH = 48.0
+private const val MAX_ITEMS_HEIGHT = 600
+private const val POPOVER_WIDTH = 280
+private val CURRENT_ITEM_COLOR = Color(0x2f6fda)
 
 private fun messageOr(key: String, fallback: String): String {
     return key.message().takeIf { it != key } ?: fallback
@@ -132,171 +138,114 @@ internal class ProgressQueuePopOver(
     private val onPendingRemoved: () -> Unit,
 ) {
 
-    private var root: VBox? = null
-    private var popOver: PopOver? = null
-
-    val isShowing: Boolean
-        get() = popOver?.isShowing == true
-
-    fun toggle(anchor: Node) {
-        if (isShowing) {
-            hide()
-        } else {
-            show(anchor)
-        }
+    private val root = JPanel(BorderLayout()).apply {
+        border = BorderFactory.createEmptyBorder(5, 5, 5, 10)
     }
 
-    fun show(anchor: Node) {
-        val popOver = ensurePopOver()
-        refresh()
-        if (!popOver.isShowing) {
-            popOver.show(anchor)
-        }
+    private val popOver = PopOver(root)
+
+    val isShowing: Boolean
+        get() = popOver.isShowing
+
+    fun toggle(anchor: Component) {
+        if (isShowing) hide() else show(anchor)
+    }
+
+    fun show(anchor: Component) {
+        render()
+        popOver.show(anchor)
     }
 
     fun refresh() {
-        root?.let { render(it) }
+        render()
+        popOver.repack()
     }
 
     fun refreshIfShowing() {
         runLater {
-            if (isShowing) {
-                refresh()
-            }
+            if (isShowing) refresh()
         }
     }
 
     fun hide() {
-        popOver?.let { popOver ->
-            if (popOver.isShowing) {
-                popOver.hide()
-            }
-        }
-        clearPopup()
+        popOver.hide()
     }
 
-    private fun ensurePopOver(): PopOver {
-        popOver?.let { return it }
-
-        val root = VBox().apply {
-            style = """
-                -fx-font-size: 10px;
-                -fx-pref-width: 280;
-                -fx-padding: 5 0 5 0;
-            """.trimIndent()
-        }
-
-        val popOver = PopOver().apply {
-            isAutoHide = false
-            contentNode = root
-            setOnHidden {
-                clearPopup()
-            }
-        }
-
-        this.root = root
-        this.popOver = popOver
-        return popOver
-    }
-
-    private fun clearPopup() {
-        popOver = null
-        root = null
-    }
-
-    private fun render(root: VBox) {
+    private fun render() {
         val current = items.currentItem()
         val pendingItems = items.pendingItems()
         val visibleItemCount = pendingItems.size + if (current == null) 0 else 1
-        val itemList = VBox().apply {
-            spacing = 1.0
-            padding = Insets(0.0, 10.0, 0.0, 5.0)
-            current?.let { item ->
-                children += currentRow(item)
-            }
+        val itemList = JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            current?.let { add(currentRow(it)) }
             if (pendingItems.isEmpty()) {
                 if (current == null) {
-                    children += Label(messageOr("label.work.queue.pending.empty", "대기 중인 작업이 없습니다."))
+                    add(row(JLabel(messageOr("label.work.queue.pending.empty", "대기 중인 작업이 없습니다.")), null))
                 }
             } else {
-                pendingItems.forEach { item ->
-                    children += pendingRow(item)
-                }
+                pendingItems.forEach { add(pendingRow(it)) }
             }
         }
-        root.children.clear()
+        root.removeAll()
         if (visibleItemCount <= MAX_VISIBLE_ITEMS) {
-            root.children += itemList
+            root.add(itemList, BorderLayout.CENTER)
         } else {
-            root.children += ScrollPane(itemList).apply {
-                fitToWidthProperty().set(true)
-                prefViewportHeight = MAX_ITEMS_HEIGHT
-                maxHeight = MAX_ITEMS_HEIGHT
-                hbarPolicy = ScrollPane.ScrollBarPolicy.NEVER
-                vbarPolicy = ScrollPane.ScrollBarPolicy.AS_NEEDED
-                style = """
-                    -fx-background-color: transparent;
-                    -fx-padding: 0;
-                """.trimIndent()
-            }
+            root.add(JScrollPane(itemList).apply {
+                border = BorderFactory.createEmptyBorder()
+                horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
+                verticalScrollBar.unitIncrement = 16
+                preferredSize = Dimension(POPOVER_WIDTH, MAX_ITEMS_HEIGHT)
+            }, BorderLayout.CENTER)
         }
+        root.preferredSize = null
+        root.preferredSize = Dimension(POPOVER_WIDTH, root.preferredSize.height)
+        root.revalidate()
+        root.repaint()
     }
 
-    private fun currentRow(item: ProgressFileQueueItem): HBox {
-        return HBox().apply {
-            alignment = Pos.CENTER_LEFT
-            spacing = 4.0
-            children += Label(item.title).apply {
-                maxWidth = Double.MAX_VALUE
-                style = "-fx-text-fill: #2f6fda; -fx-font-weight: bold;"
-                HBox.setHgrow(this, Priority.ALWAYS)
+    private fun currentRow(item: ProgressFileQueueItem): JComponent {
+        val label = JLabel(item.title).apply {
+            foreground = UIManager.getColor("Component.accentColor") ?: CURRENT_ITEM_COLOR
+            font = font.deriveFont(Font.BOLD)
+        }
+        val button = actionButton(messageOr("btn.cancel", "취소")).apply {
+            isEnabled = control.canCancel(item) && !control.isCancelling(item)
+            addActionListener {
+                if (control.cancel(item)) isEnabled = false
             }
-            children += Region().apply {
-                HBox.setHgrow(this, Priority.ALWAYS)
-            }
-            children += Button(messageOr("btn.cancel", "취소")).apply {
-                style = "-fx-padding: 1 8 1 8; -fx-min-height: 20px;"
-                minWidth = ACTION_BUTTON_WIDTH
-                prefWidth = ACTION_BUTTON_WIDTH
-                maxWidth = ACTION_BUTTON_WIDTH
-                isDisable = !control.canCancel(item) || control.isCancelling(item)
-                setOnAction { event ->
-                    event.consume()
-                    val cancelled = control.cancel(item)
-                    if (cancelled) {
-                        isDisable = true
-                    }
+        }
+        return row(label, button)
+    }
+
+    private fun pendingRow(item: ProgressFileQueueItem): JComponent {
+        val button = actionButton(messageOr("btn.delete", "삭제")).apply {
+            addActionListener {
+                if (items.removePending(item)) {
+                    isEnabled = false
+                    onPendingRemoved()
+                    refreshIfShowing()
                 }
             }
         }
+        return row(JLabel(item.title), button)
     }
 
-    private fun pendingRow(item: ProgressFileQueueItem): HBox {
-        return HBox().apply {
-            alignment = Pos.CENTER_LEFT
-            spacing = 4.0
-            children += Label(item.title).apply {
-                maxWidth = Double.MAX_VALUE
-                HBox.setHgrow(this, Priority.ALWAYS)
-            }
-            children += Region().apply {
-                HBox.setHgrow(this, Priority.ALWAYS)
-            }
-            children += Button(messageOr("btn.delete", "삭제")).apply {
-                style = "-fx-padding: 1 8 1 8; -fx-min-height: 20px;"
-                minWidth = ACTION_BUTTON_WIDTH
-                prefWidth = ACTION_BUTTON_WIDTH
-                maxWidth = ACTION_BUTTON_WIDTH
-                setOnAction { event ->
-                    event.consume()
-                    val removed = items.removePending(item)
-                    if (removed) {
-                        isDisable = true
-                        onPendingRemoved()
-                        refreshIfShowing()
-                    }
-                }
-            }
+    private fun row(label: JLabel, button: JButton?): JComponent {
+        return JPanel(BorderLayout(4, 0)).apply {
+            isOpaque = false
+            border = BorderFactory.createEmptyBorder(1, 0, 1, 0)
+            add(label, BorderLayout.CENTER)
+            button?.let { add(it, BorderLayout.EAST) }
+            alignmentX = Component.LEFT_ALIGNMENT
+            maximumSize = Dimension(Int.MAX_VALUE, preferredSize.height)
         }
     }
+
+    private fun actionButton(text: String) = JButton(text).apply {
+        isFocusable = false
+        margin = Insets(1, 8, 1, 8)
+        font = font.deriveFont(font.size2D * 0.9f)
+    }
+
 }
+
