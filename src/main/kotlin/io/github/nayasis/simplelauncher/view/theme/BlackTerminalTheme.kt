@@ -1,12 +1,21 @@
 package io.github.nayasis.simplelauncher.view.theme
 
-import com.techsenger.jeditermfx.core.TerminalColor
-import com.techsenger.jeditermfx.core.TextStyle
-import com.techsenger.jeditermfx.ui.settings.DefaultSettingsProvider
+import com.jediterm.terminal.TerminalColor
+import com.jediterm.terminal.TextStyle
+import com.jediterm.terminal.ui.settings.DefaultSettingsProvider
+import java.awt.Font
+import javax.swing.text.StyleContext
 
 class BlackTerminalTheme: DefaultSettingsProvider() {
 
     override fun getTerminalFontSize(): Float = 10.2f
+
+    // a plain physical font has no glyph fallback, so Hangul would render as boxes.
+    // StyleContext returns a composite font that falls back to a system font for missing glyphs.
+    override fun getTerminalFont(): Font {
+        val base = super.getTerminalFont()
+        return StyleContext.getDefaultStyleContext().getFont(base.family, Font.PLAIN, base.size)
+    }
 
     override fun getLineSpacing(): Float = 1.2f
 

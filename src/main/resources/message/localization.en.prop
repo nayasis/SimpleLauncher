@@ -11,6 +11,7 @@ menu.view.showMenuBar               = Menu
 menu.view.description               = Description
 menu.view.alwaysOnTop               = Always on top
 menu.view.showInputGroup            = Group filter
+menu.view.theme                     = Theme
 menu.help                           = Help
 menu.help.about                     = About
 search.keyword                      = Keyword
