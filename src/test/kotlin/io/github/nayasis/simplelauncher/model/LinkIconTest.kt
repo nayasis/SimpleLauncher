@@ -4,22 +4,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.io.File
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
-import javax.swing.SwingUtilities
-import javafx.embed.swing.JFXPanel
 
 class LinkIconTest : FunSpec({
-
-    beforeSpec {
-        // Initialize JavaFX toolkit once for image processing in tests
-        val latch = CountDownLatch(1)
-        SwingUtilities.invokeLater {
-            JFXPanel() // triggers JavaFX initialization
-            latch.countDown()
-        }
-        latch.await(10, TimeUnit.SECONDS)
-    }
 
     test("setIcon should load and encode various image formats") {
         val filenames = listOf(

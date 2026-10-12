@@ -20,6 +20,16 @@ internal class KeywordParserTest {
     }
 
     @Test
+    fun precedenceIsParenthesisNotAndOr() {
+        // NOT before AND before OR: ((NOT a) AND b) OR c
+        assertEquals("[a, NOT, b, AND, c, OR]", parser.toPostfix("-a b, c"))
+        // AND before OR on either side
+        assertEquals("[a, b, c, AND, OR]", parser.toPostfix("a, b c"))
+        // parentheses before NOT: NOT (a OR b), then AND c
+        assertEquals("[a, b, OR, NOT, c, AND]", parser.toPostfix("-(a, b) c"))
+    }
+
+    @Test
     fun toPostfix() {
         assertEquals("[a, b, AND]", parser.toPostfix("a b"))
         assertEquals("[a, b, AND]", parser.toPostfix("a   b"))

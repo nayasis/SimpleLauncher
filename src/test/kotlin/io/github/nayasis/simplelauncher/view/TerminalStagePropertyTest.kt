@@ -1,8 +1,8 @@
 package io.github.nayasis.simplelauncher.view
 
-import io.github.nayasis.kotlin.javafx.property.InsetProperty
-import io.github.nayasis.kotlin.javafx.property.StageProperty
-import io.github.nayasis.kotlin.javafx.stage.MaximizedProperty
+import io.github.nayasis.kotlin.swing.property.InsetProperty
+import io.github.nayasis.kotlin.swing.property.WindowProperty
+import io.github.nayasis.kotlin.swing.window.MaximizedProperty
 import kotlin.test.Test
 import kotlin.test.assertFalse
 import kotlin.test.assertSame
@@ -12,7 +12,7 @@ class TerminalStagePropertyTest {
 
     @Test
     fun `clear stale maximized state when previous boundary was never captured`() {
-        val property = StageProperty(
+        val property = WindowProperty(
             inset = InsetProperty(x = -723, y = 247, width = 670, height = 411),
             maximized = true,
             previousBoundary = MaximizedProperty().apply {
@@ -21,7 +21,7 @@ class TerminalStagePropertyTest {
             },
         )
 
-        val sanitized = property.sanitizeTerminalStageProperty()
+        val sanitized = property.sanitizeTerminalWindowProperty()
 
         assertSame(property, sanitized)
         assertFalse(sanitized.maximized)
@@ -30,7 +30,7 @@ class TerminalStagePropertyTest {
 
     @Test
     fun `keep maximized state when previous boundary was captured`() {
-        val property = StageProperty(
+        val property = WindowProperty(
             inset = InsetProperty(x = -10, y = -10, width = 1940, height = 1040),
             maximized = true,
             previousBoundary = MaximizedProperty().apply {
@@ -39,7 +39,7 @@ class TerminalStagePropertyTest {
             },
         )
 
-        val sanitized = property.sanitizeTerminalStageProperty()
+        val sanitized = property.sanitizeTerminalWindowProperty()
 
         assertSame(property, sanitized)
         assertTrue(sanitized.maximized)
