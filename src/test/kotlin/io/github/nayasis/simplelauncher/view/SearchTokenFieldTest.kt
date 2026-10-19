@@ -66,22 +66,28 @@ internal class SearchTokenFieldTest {
     }
 
     @Test
-    fun pendingTextNextToChipsBecomesOneTermChip() = runUiAndWait<Unit> {
+    fun pendingTextBecomesOneTermChip() = runUiAndWait<Unit> {
         val field = SearchTokenField()
         var notified = 0
         field.onTokensChanged = { notified++ }
 
-        // no chips: plain text keeps its own syntax
-        field.text = "pp ink"
-        field.commitPendingTextNextToChips()
-        field.tokens() shouldBe emptyList()
-        field.text shouldBe "pp ink"
+        // no chips yet: the text is searched as one term, and Enter turns it into that chip
+        field.text = "pp, -ink"
+        field.searchTokens() shouldBe listOf(SearchToken(SearchTokenKind.TERM, "pp, -ink"))
+        field.commitPendingText()
+        field.tokens() shouldBe listOf(SearchToken(SearchTokenKind.TERM, "pp, -ink"))
+        field.text shouldBe ""
+
+        field.clearTokens()
+        field.searchTokens() shouldBe emptyList()
 
         field.text = "NOT"
         press(field, KeyEvent.VK_ENTER, SHIFT_DOWN_MASK)
         notified = 0
         field.text = "pp ink"
-        field.commitPendingTextNextToChips()
+        // next to chips the typed text does not count until it is committed
+        field.searchTokens() shouldBe listOf(SearchToken(SearchTokenKind.NOT, "not"))
+        field.commitPendingText()
 
         field.tokens() shouldBe listOf(SearchToken(SearchTokenKind.NOT, "not"), SearchToken(SearchTokenKind.TERM, "pp ink"))
         field.text shouldBe ""
@@ -99,8 +105,16 @@ internal class SearchTokenFieldTest {
 
     /** run [block] with the clipboard, putting back what was there. */
     private fun withClipboard(block: () -> Unit) {
-        val saved = runCatching { Desktop.clipboard.getText() }.getOrNull()
-        try { block() } finally { saved?.let { Desktop.clipboard.set(it) } }
+        val saved = runCatching { retryClipboard { Desktop.clipboard.getText() } }.getOrNull()
+        try { block() } finally { saved?.let { runCatching { retryClipboard { Desktop.clipboard.set(it) } } } }
+    }
+
+    /** another program can hold the windows clipboard for a moment: try again a few times. */
+    private fun <T> retryClipboard(attempts: Int = 20, action: () -> T): T {
+        repeat(attempts - 1) {
+            try { return action() } catch (e: IllegalStateException) { Thread.sleep(50) }
+        }
+        return action()
     }
 
     @Test
@@ -203,7 +217,7 @@ internal class SearchTokenFieldTest {
         withClipboard {
             val field = fieldWith("alpha", "beta")
             click(field.chips()[1], count = 2)
-            Desktop.clipboard.getText() shouldBe "beta"
+            retryClipboard { Desktop.clipboard.getText() } shouldBe "beta"
             field.tokens().size shouldBe 2
         }
     }
@@ -211,7 +225,7 @@ internal class SearchTokenFieldTest {
     @Test
     fun blankRightClickPastesTextOrAChip() = runUiAndWait<Unit> {
         withClipboard {
-            Desktop.clipboard.set("pasted\nvalue")
+            retryClipboard { Desktop.clipboard.set("pasted\nvalue") }
 
             // no chip after the cursor: goes into the text
             val field = fieldWith("alpha")
