@@ -49,7 +49,6 @@ import io.github.nayasis.simplelauncher.service.LinkExecutor
 import io.github.nayasis.simplelauncher.service.LinkService
 import io.github.nayasis.simplelauncher.service.ShortcutAction
 import io.github.nayasis.simplelauncher.service.ShortcutSettings
-import io.github.nayasis.simplelauncher.service.TextMatcher
 import io.github.nayasis.simplelauncher.service.matchesSearchTokens
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.Dispatchers
@@ -463,9 +462,6 @@ class Main: SwingView("application.title".message()) {
     var detail: Link? = null
     private var detailIcon: BufferedImage? = null
 
-    val keywordMatcher = TextMatcher()
-    val groupMatcher = TextMatcher()
-
     private var lastFocused: Component? = null
     private var descEditorWidth = Context.config.descEditorWidth?.toInt()?.takeIf { it > 0 } ?: DEFAULT_LINK_EDITOR_WIDTH
     // while the saved window state is applied, toggles must not resize the already restored window
@@ -797,7 +793,7 @@ class Main: SwingView("application.title".message()) {
         })
 
         inputKeyword.onPlainEnter = {
-            inputKeyword.commitPendingTextNextToChips()
+            inputKeyword.commitPendingText()
             handleSearchEnter(saveKeywordHistory = true)
         }
         inputKeyword.onEscape = {
@@ -987,8 +983,6 @@ class Main: SwingView("application.title".message()) {
 
     private fun initSearchFilter(onApplied: (() -> Unit)? = null) {
         restoreSearchState()
-        keywordMatcher.setKeyword(inputKeyword.text)
-        groupMatcher.setKeyword(inputGroup.text)
         setSearchFilter(onApplied)
         setSearchEvent()
     }
@@ -998,14 +992,12 @@ class Main: SwingView("application.title".message()) {
      * the result. a newer search cancels the running one, so only the latest result is ever applied.
      */
     private fun setSearchFilter(onApplied: (() -> Unit)? = null) {
-        val keywordTokens  = inputKeyword.tokens()
-        val groupTokens    = inputGroup.tokens()
-        val hasKeywordText = inputKeyword.text.isNotBlank()
-        val hasGroupText   = inputGroup.text.isNotBlank()
+        val keywordTokens = inputKeyword.searchTokens()
+        val groupTokens   = inputGroup.searchTokens()
 
         searchJob?.cancel()
 
-        if(keywordTokens.isEmpty() && !hasKeywordText && groupTokens.isEmpty() && !hasGroupText) {
+        if(keywordTokens.isEmpty() && groupTokens.isEmpty()) {
             searchJob = null
             linkService.links.predicate = { true }
             printSearchResult()
@@ -1015,16 +1007,8 @@ class Main: SwingView("application.title".message()) {
 
         val matches: (Link) -> Boolean = { link ->
             val keywordHaystack = listOf(link.title) + link.hashtag
-            val inKeyword = when {
-                keywordTokens.isNotEmpty() -> matchesSearchTokens(keywordHaystack, keywordTokens)
-                hasKeywordText -> keywordMatcher.isMatch(keywordHaystack)
-                else -> true
-            }
-            inKeyword && when {
-                groupTokens.isNotEmpty() -> matchesSearchTokens(link.group, groupTokens)
-                hasGroupText -> groupMatcher.isMatch(link.group)
-                else -> true
-            }
+            (keywordTokens.isEmpty() || matchesSearchTokens(keywordHaystack, keywordTokens)) &&
+                (groupTokens.isEmpty() || matchesSearchTokens(link.group, groupTokens))
         }
 
         val snapshot = ArrayList(linkService.links.items)
@@ -1050,7 +1034,7 @@ class Main: SwingView("application.title".message()) {
     private fun setSearchEvent() {
 
         inputGroup.onPlainEnter = {
-            inputGroup.commitPendingTextNextToChips()
+            inputGroup.commitPendingText()
             handleSearchEnter()
         }
         // a chip is a committed condition, so apply it right away; plain text still waits for Enter
@@ -1075,8 +1059,6 @@ class Main: SwingView("application.title".message()) {
     }
 
     private fun submitSearch(saveKeywordHistory: Boolean = false, onApplied: (() -> Unit)? = null) {
-        keywordMatcher.setKeyword(inputKeyword.text)
-        groupMatcher.setKeyword(inputGroup.text)
         setSearchFilter(onApplied)
         if(saveKeywordHistory) {
             saveSubmittedKeyword()

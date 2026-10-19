@@ -6,8 +6,7 @@ enum class SearchTokenKind {
     TERM,
     AND,
     OR,
-    /** prefix operator: negates the term or group right after it. */
-    NOT,
+    NOT, /** prefix operator: negates the term or group right after it. */
     PAREN,
 }
 
@@ -231,3 +230,18 @@ private fun String.isTextOperatorWord(): Boolean =
 
 private fun <T> Stack<T>.popOrNull(): T? =
     if (isEmpty()) null else pop()
+
+fun matchesSearchTerm(haystack: String?, value: String): Boolean {
+    val text = haystack?.trim()?.lowercase() ?: return false
+    val needle = value.trim().lowercase()
+    return needle.isNotEmpty() && (text.contains(needle) || fuzzyContains(text, needle))
+}
+
+fun fuzzyContains(haystack: String, needle: String): Boolean {
+    var index = 0
+    for (char in haystack) {
+        if (index < needle.length && char == needle[index]) index++
+        if (index == needle.length) return true
+    }
+    return false
+}

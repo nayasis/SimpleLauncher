@@ -212,15 +212,17 @@ class SearchTokenField: TokenInputPane(SEARCH_INPUT_COLUMNS) {
     }
 
     /**
-     * next to chips, pending text would be ignored by the search; turn all of it into one term chip.
-     * without chips the text stays as it is, since plain text has its own keyword syntax.
+     * turn all of the typed text into one term chip.
      * does not call [onTokensChanged]: the caller is about to search anyway.
      */
-    fun commitPendingTextNextToChips() {
-        if (tokens.isEmpty()) return
+    fun commitPendingText() {
         val token = createLiteralTermSearchToken(text) ?: return
         insertToken(token, notifyTokensChanged = false)
     }
+
+    /** what to search with: the chips, or while there are none, the typed text as one term. */
+    fun searchTokens(): List<SearchToken> =
+        tokens.toList().ifEmpty { listOfNotNull(createLiteralTermSearchToken(text)) }
 
     private fun insertToken(token: SearchToken, notifyTokensChanged: Boolean = true) =
         commitEdit(notifyTokensChanged) {
