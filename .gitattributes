@@ -1,5 +1,5 @@
 # Windows batch files must keep CRLF. cmd.exe mis-parses an LF-only .bat:
-# native-build.bat silently produced no output at all until it was converted back.
+# an LF-only batch file produces no output at all.
 *.bat text eol=crlf
 *.cmd text eol=crlf
 
