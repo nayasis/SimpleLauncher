@@ -5,7 +5,7 @@
 **Simple Launcher** helps you launch applications quickly and find them easily.
 You can configure each launcher item with a **relative path** or a **custom command**.
 
-![screenshot](https://github.com/nayasis/simpleLauncher/blob/master/doc/screenshot.jpg?raw=true)
+![screenshot](./doc/screenshot.jpg?raw=true)
 
 ## Requirements
 
@@ -36,7 +36,7 @@ gradlew run
 - Create a native executable (`.exe` on Windows) with jpackage:
 
 ```shell
-gradlew clean createNativeExe
+gradlew clean makeExecutable
 ```
 
 - The executable is generated in `build/dist/simplelauncher/`.
@@ -46,7 +46,7 @@ gradlew clean createNativeExe
 - Create a native executable (`.exe` on Windows) with jpackage:
 
 ```shell
-gradlew createNativeExe
+gradlew makeExecutable
 ```
 
 - The executable is generated in `build/dist/simplelauncher/`.
@@ -101,26 +101,22 @@ Only works when the Link Editor is open.
 | Ctrl + **O**         | Open item folder         |
 | Ctrl + **I**         | Change item icon         |
 
-![link editor](https://github.com/nayasis/simpleLauncher/blob/master/doc/link-editor.jpg?raw=true)
+![link editor](./doc/link-editor.jpg?raw=true)
 
 ### Keyword History
 
-When the keyword field is focused:
+When the keyword field is focused, Enter history mode by pressing **Alt + Down**.
 
-![keyword focused](https://github.com/nayasis/simpleLauncher/blob/master/doc/keyword-focused.jpg?raw=true)
-
-Enter history mode by pressing **Alt + Down**.
-
-![history mode](https://github.com/nayasis/simpleLauncher/blob/master/doc/keyword-historymode.jpg?raw=true)
+![history mode](./doc/keyword-autocomplete.jpg?raw=true)
 
 #### Keyword History Functions
 
-| Shortcut      | Description |
-|---------------|-------------|
-| Alt + **Left**  | Move to the previously executed link |
-| Alt + **Right** | Move to the next executed link |
-| Any key         | Filter executed links ![autocompleted links](https://github.com/nayasis/simpleLauncher/blob/master/doc/keyword-autocomplete.jpg?raw=true) |
-| Esc             | Exit history mode |
+| Shortcut        | Description                                                            |
+|-----------------|------------------------------------------------------------------------|
+| Alt + **Left**  | Move to the previous search word                                       |
+| Alt + **Right** | Move to the next search word                                           |
+| Any key         | Filter executed links ![autocompleted links](./doc/keyword-autocomplete.jpg?raw=true) |
+| Esc             | Exit history mode                                                      |
 
 ## Binding Parameters
 
@@ -146,8 +142,3 @@ When you drag and drop a file (or directory) onto an item, these placeholders ar
 ```shell
 ape2wav.exe "${path}" "${dir}\\${name}.wav"
 ```
-
-## Contact
-
-- Issues: https://github.com/nayasis/SimpleLauncher/issues
-- Email: [nayasis@gmail.com](mailto:nayasis@gmail.com)

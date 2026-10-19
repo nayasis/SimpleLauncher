@@ -10,9 +10,8 @@
 ## Build, Test, and Development Commands
 - `./gradlew run` – start the Swing app from source and attach to the dev toolchain.
 - `./gradlew build` – compile Kotlin, run tests, and assemble the distributable JAR under `build/libs/`.
-- `./gradlew runtime` – produce the self-contained runtime image in `build/image/` for packaging.
-- `./gradlew createNativeExe` – create a native executable using jpackage with custom runtime image (smaller size). Outputs to `build/dist/simplelauncher/`.
-- `./gradlew createRuntimeImage` – create a custom runtime image with jlink (required by `createNativeExe`). Outputs to `build/runtime-image/`.
+- `./gradlew makeExecutable` – package the app with a trimmed JVM using jpackage. Outputs to `build/dist/simplelauncher/`.
+- `./gradlew deploy` – package and install to `D:/app/SimpleLauncher` (or `C:/app/SimpleLauncher`).
 - `./gradlew test` – execute the JUnit 5 / Kotest suite; run before sharing changes. Use `./gradlew clean` when caches misbehave.
 
 ## Coding Style & Naming Conventions
