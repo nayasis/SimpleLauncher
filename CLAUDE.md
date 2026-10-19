@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Simple Launcher** is a Swing desktop application for organizing and launching applications with advanced search capabilities. It features a database-backed link catalog with Boolean search operators, keyboard shortcuts, drag-and-drop support, and embedded terminal execution.
 
-**Tech Stack**: Kotlin 2.2.20, Swing with FlatLaf (IntelliJ theme), kotlinx-coroutines (`Dispatchers.Swing`), Exposed ORM with KSP code generation, H2 database, JediTerm (Swing) terminal emulator with pty4j. Java toolchain 25.
+**Tech Stack**: Kotlin 2.4.21, Swing with FlatLaf (IntelliJ theme), kotlinx-coroutines (`Dispatchers.Swing`), Exposed ORM with KSP code generation, H2 database, JediTerm (Swing) terminal emulator with pty4j. Java toolchain 25.
 
 The UI is plain Swing built in code (no form files), with the `basica-swing` library supplying the `SwingApp`/`SwingView` base classes, dialogs, controls and coroutine helpers. JavaFX, TornadoFX and `basicafx-kt` were removed — do not reintroduce them.
 
@@ -23,7 +23,7 @@ The UI is plain Swing built in code (no form files), with the `basica-swing` lib
 ./gradlew test
 
 # Run a specific test class
-./gradlew test --tests "io.github.nayasis.simplelauncher.service.KeywordParserTest"
+./gradlew test --tests "io.github.nayasis.simplelauncher.service.SearchTokenTest"
 
 # Manual demos (assert nothing)
 ./gradlew runTerminalDemo
@@ -32,13 +32,12 @@ The UI is plain Swing built in code (no form files), with the `basica-swing` lib
 # Create fat JAR
 ./gradlew shadowJar
 
-# Bundle a JVM with the app (jpackage)
-./gradlew createNativeExe
+# Bundle a trimmed JVM with the app (jpackage)
+./gradlew makeExecutable
 # Output: build/dist/simplelauncher/
 
-# Compile ahead of time to a real native binary (GraalVM native-image)
-native-build.bat
-# Output: build/native/nativeCompile/simplelauncher.exe
+# Package and install to D:/app/SimpleLauncher (or C:/app/SimpleLauncher)
+./gradlew deploy
 ```
 
 ## Architecture
@@ -59,9 +58,7 @@ service/      # Business logic
 ├── LinkService.kt       # CRUD operations for links (suspend functions), file pickers
 ├── LinkExecutor.kt      # Command execution engine (coroutines)
 ├── LinkCommand.kt       # Command template parameter binding
-├── TextMatcher.kt       # Search with Boolean operators
-├── KeywordParser.kt     # Converts search to postfix notation (RPN)
-├── SearchToken.kt       # Token-based search terms
+├── SearchToken.kt       # Search tokens and their Boolean evaluation
 ├── ShortcutSettings.kt  # Shortcut actions and user bindings (KeyStroke)
 ├── Config.kt            # Persisted app state
 └── LauncherChildWindows.kt, ProgressQueuePopOver.kt
@@ -113,18 +110,16 @@ Coroutines are the concurrency model; do not add raw threads or `SwingWorker`.
 - The search filter in `Main` is a cancellable job: a new search cancels the previous one, and the evaluation runs on `Dispatchers.Default` with `ensureActive()` checks.
 
 ### 3. Boolean Search Engine
-Search syntax supports Boolean operators with precedence:
-- **AND**: space (highest precedence after NOT)
-- **OR**: comma
-- **NOT**: dash prefix
-- **Grouping**: parentheses
+A search is a list of `SearchToken`s (chips in `SearchTokenField`): terms, `AND`, `OR`, `NOT` and parentheses.
+There is no text syntax: typed text without chips is searched as one term, and Enter turns it into that chip.
 
-Example: `foo bar, -baz (qux quux)` → "foo AND bar OR NOT baz OR (qux AND quux)"
+- Precedence: parentheses > `NOT` (prefix) > `AND` > `OR`
+- Adjacent terms, and a `NOT` after a term, are joined with an implicit `AND`
+- Shift+Enter on a term joins it with `OR` (`insertTermWithOr`); Ctrl+Enter always adds a plain term
+- A malformed expression falls back to matching any of its terms
+- Terms match by substring or by fuzzy subsequence (`matchesSearchTerm`)
 
-Implementation:
-- `KeywordParser.kt`: Converts infix to postfix notation
-- `TextMatcher.kt`: Evaluates postfix expression against keyword sets
-- Uses LRU cache (20 entries) for parsed queries
+`matchesSearchTokens()` in `SearchToken.kt` evaluates the tokens with a shunting-yard pass.
 
 ### 4. Relative Path Support
 Links store both absolute and relative paths with fallback resolution:
@@ -202,12 +197,12 @@ Key methods:
 `Terminal` is a `JFrame` holding a JediTerm `JediTermWidget`:
 - `suspend fun run(command)` starts the command through pty4j (`PtyProcessTtyConnector`, UTF-8) and resumes when it exits
 - `BlackTerminalTheme` sets colors and the font. The font comes from `StyleContext` so that it is a composite font with glyph fallback; a plain `Font("Consolas")` renders Hangul as boxes.
-- JediTerm is pinned to 3.72 from the JetBrains repository: 3.73+ needs kotlin-stdlib 2.4.
+- JediTerm 3.72 comes from the JetBrains repository (the Swing build is published only there).
 
 ## Testing
 
 ### Test Structure
-- **Unit tests**: `KeywordParserTest`, `TextMatcherTest`, `SearchTokenTest`, `ShortcutSettingsTest`, `SearchSubmitTrackerTest`, `MainShortcutRoutingTest`, `MainTableContextMenuTest`, `SearchTokenFieldTest`, `ShortcutEditorTest`, `LauncherChildWindowsTest`, `TerminalStagePropertyTest`
+- **Unit tests**: `SearchTokenTest`, `ShortcutSettingsTest`, `SearchSubmitTrackerTest`, `MainShortcutRoutingTest`, `MainTableContextMenuTest`, `SearchTokenFieldTest`, `ShortcutEditorTest`, `LauncherChildWindowsTest`, `TerminalStagePropertyTest`
 - **Integration tests**: `LinksTest` (database), `LinkServiceSuggestionTest`, `LinkExecutorTest` (disabled)
 - **Framework**: JUnit 5 + Kotest assertions
 
@@ -221,7 +216,7 @@ Not everything under `src/test` is an automated test. `TerminalDemo` and `Shortc
 ./gradlew test
 
 # Specific test class
-./gradlew test --tests "KeywordParserTest"
+./gradlew test --tests "SearchTokenTest"
 
 # With debug output
 ./gradlew test --info
@@ -229,11 +224,11 @@ Not everything under `src/test` is an automated test. `TerminalDemo` and `Shortc
 
 ## JVM arguments
 
-`build.gradle.kts:appJvmArgs` holds `--enable-native-access=ALL-UNNAMED` (JNA for pty4j, FlatLaf native libraries). It is wired into `application.applicationDefaultJvmArgs`, every `JavaExec` task, and passed to `createNativeExe` as `--java-options`.
+`build.gradle.kts:appJvmArgs` holds `--enable-native-access=ALL-UNNAMED` (JNA for pty4j, FlatLaf native libraries). It is wired into `application.applicationDefaultJvmArgs`, every `JavaExec` task, and passed to `makeExecutable` as `--java-options`.
 
 ### jlink module list
 
-`requiredJdkModules` in `build.gradle.kts` drives `createRuntimeImage`. Removing a module still passes `./gradlew run` (the full JDK is present) but can break the packaged app at runtime, so always verify module changes with `./gradlew createNativeExe` and by running the produced executable, not just `./gradlew run`.
+`requiredJdkModules` in `build.gradle.kts` is passed to jpackage as `--add-modules`. Removing a module still passes `./gradlew run` (the full JDK is present) but can break the packaged app at runtime, so always verify module changes with `./gradlew makeExecutable` and by running the produced executable, not just `./gradlew run`.
 
 ## Distribution
 
@@ -245,53 +240,21 @@ Not everything under `src/test` is an automated test. `TerminalDemo` and `Shortc
 
 The version comes from the branch name: `release/x.y.z` yields `x.y.z`, anything else yields `0.1.0-SNAPSHOT`.
 
-### GraalVM native-image (true AOT binary)
-
+### Native Executable (jpackage — bundles a JVM)
 ```bash
-native-build.bat
-# Output: build/native/nativeCompile/simplelauncher.exe
+./gradlew makeExecutable
+# Output: build/dist/simplelauncher/
 ```
 
-Not re-verified since the move to Swing.
+One `jpackage` call over the `installDist` jars; jpackage runs jlink itself with `requiredJdkModules`. The package type is `app-image` unless `SIMPLELAUNCHER_PACKAGE_TYPE` says otherwise (the release workflow passes `deb` / `dmg`).
 
-Do not call `./gradlew nativeCompile` directly — native-image drives `cl.exe`, and
-without the MSVC environment it fails with `fatal error C1034: stdio.h`.
-`native-build.bat` runs `vcvars64.bat` first, then Gradle.
+`./gradlew deploy` kills a running `simplelauncher.exe` and replaces `app/`, `runtime/` and the exe in the install directory, leaving `conf/` and `db/` alone.
 
-Requirements:
-- A GraalVM-based JDK 25 (Liberica NIK 25) at `%NATIVE_JAVA_HOME%`.
-- Visual Studio 2022 Build Tools, C++ workload plus Windows SDK.
-- A local copy of the shared reachability metadata (the plugin cannot fetch it
-  from GitHub releases here); see the comment in `build.gradle.kts`.
-
-Things that cost time to rediscover:
-
-| Trap | Why |
-|---|---|
-| No classpath to scan at runtime | Anything built on `Classes.findResources` glob patterns silently finds nothing. That is why message bundles are listed explicitly in `Simplelauncher.kt` and the `@Inject` services are registered in `beforeInitialization()` instead of relying on `SwingApp`'s package scan. Adding a new `@Inject` service means registering it there too. |
-| `.bat` files must stay CRLF | An LF-only batch file makes `cmd.exe` produce no output at all. Enforced by `.gitattributes`. |
-
-### Native Executable (jpackage — bundles a JVM)
-Two-stage process:
-1. **jlink**: Creates custom runtime with only required modules
-   ```bash
-   ./gradlew createRuntimeImage
-   # Output: build/runtime-image/
-   ```
-
-2. **jpackage**: Creates platform-specific installer
-   ```bash
-   ./gradlew createNativeExe
-   # Output: build/dist/simplelauncher/
-   ```
-
-Platform-specific notes:
-- **Windows**: Attempts to create .exe installer if WiX Toolset is installed (light.exe), otherwise creates app-image
-- **Linux/Mac**: Creates app-image
+`@Inject` services are registered in `beforeInitialization()`, a leftover from the GraalVM native-image build (no classpath to scan there). Adding a new `@Inject` service means registering it there too.
 
 ## Dependencies of Note
 
-- **basica-kt**: Custom utility library (path, string, reflection helpers)
+- **basica-kt**: Custom utility library (path, string, reflection, `Messages` helpers). Like basica-swing it is developed in parallel (`C:\project_nayasis\basica-kt`) and consumed from mavenLocal as `0.1.0-SNAPSHOT`, declared `strictly` so it also replaces the release version basica-swing depends on. `mavenLocal()` is limited to the `io.github.nayasis` group.
 - **basica-swing**: Custom Swing library. Supplies `SwingApp`/`SwingView`, `SimpleDiContainer`, `Dialog`, `ProgressDialog`, `DefaultPreloader`, `FilterSortList`/`ListTableModel`, `WindowProperty`, token controls, `AutoCompletion`, `PopOver`, `HistorySet`, `KeyStroke` helpers and the coroutine helpers. Developed in parallel at `C:\project_nayasis\basica-swing` and consumed from mavenLocal as `0.1.0-SNAPSHOT`, so run `./gradlew publishToMavenLocal` there after changing it.
 - **FlatLaf**: look and feel (IntelliJ theme)
 - **kotlinx-coroutines-swing**: `Dispatchers.Swing`
@@ -317,15 +280,23 @@ Platform-specific notes:
 Views are not DI beans and must not be annotated: `SwingApp.find()` instantiates them through their no-arg constructor and caches them.
 
 ### Modifying Search Logic
-- **Parser**: `KeywordParser.kt:toPostfix()` (infix to RPN)
-- **Matcher**: `TextMatcher.kt:match()` (evaluates postfix)
-- **Indexing**: `Link.kt:keywords` property (space-delimited)
+- **Evaluation**: `SearchToken.kt:matchesSearchTokens()`
+- **Turning input into tokens**: `createCommandOrTermSearchToken()`, `createOperatorSearchToken()`, `insertTermWithOr()` in `SearchToken.kt`; key and mouse handling in `SearchTokenField.kt`
+- **What is searched**: `Main.setSearchFilter()` (title and hashtags for the keyword, groups for the group field)
+
+### Localization
+Labels come from `src/main/resources/message/localization.<lang>[_<COUNTRY>].prop` (`zh_CN` is language `zh`, country `CN`), read with `"key".message()`.
+
+- Every bundle must have the same keys. `language.name` is the bundle's own name, shown in 설정 > 언어 (Settings > Language).
+- The language menu lists whatever bundles exist (`Languages.available`); `Languages.ORDER` puts the most spoken first, unlisted ones go last.
+- The choice is saved as a language tag in `Config.language` and applied at startup in `Simplelauncher.afterInitialization()` through `Languages.apply()`, ahead of `simplelauncher.locale` in `application.yml` and the system locale. `Languages.apply()` sets both `Locale.setDefault()` and `Messages.defaultLocale` (Messages keeps the default it saw on first use).
+- A switch in the menu applies at once: build texts with `localize { text = "key".message() }` (basica-swing `Localization`) so `Localization.refresh()` reads them again. Texts put together from several parts (table headers, tooltips with shortcuts, the status line) are redone in the `Localization.onRefresh` block in `Main.init`. Dialogs and popups built on demand need nothing.
 
 ### Adding Keyboard Shortcuts
 Shortcuts are data, not hardcoded key handlers. They are user-rebindable through the shortcut settings dialog and stored as `KeyStroke`s; the config keeps them as text like `Ctrl+Shift+N` (strings saved by the JavaFX version still parse).
 
 1. Add an entry to the `ShortcutAction` enum in `ShortcutSettings.kt` with its message key, `ShortcutGroup` and default key stroke
-2. Add the message key to `src/main/resources/message/`
+2. Add the message key to every bundle in `src/main/resources/message/`
 3. Handle it in `handleMainShortcutEvent()` in `Main.kt` and add the matching lambda to `MainShortcutHandlers`
 4. For table context-menu entries, add the action to `TABLE_ITEM_SHORTCUT_ACTIONS` in `Main.kt`
 
@@ -342,6 +313,7 @@ When adding icon support for new file types, modify `Link.readIcon()`.
 
 ## Recent Changes
 
+- Packaging is a single jpackage task; the GraalVM native-image build was removed
 - Moved from JavaFX to Swing + FlatLaf IntelliJ, from `basicafx-kt` to `basica-swing`, and from JediTermFx to JediTerm Swing. Concurrency now uses coroutines. Generic controls moved into basica-swing. Window state saved by the JavaFX version (`stageMain`/`stageTerminal`) is not migrated.
 - Table rendering caches icons; search filtering runs off the EDT
 - Migrated from Komapper to Exposed ORM (commit: 4543400)
