@@ -25,8 +25,10 @@ import io.github.nayasis.kotlin.swing.control.table.visibleRows
 import io.github.nayasis.kotlin.swing.control.token.TokenField
 import io.github.nayasis.kotlin.swing.control.token.TokenInputPane
 import io.github.nayasis.kotlin.swing.misc.Desktop
+import io.github.nayasis.kotlin.swing.misc.Localization
 import io.github.nayasis.kotlin.swing.misc.displayText
 import io.github.nayasis.kotlin.swing.misc.launchUi
+import io.github.nayasis.kotlin.swing.misc.localize
 import io.github.nayasis.kotlin.swing.misc.onFileDrop
 import io.github.nayasis.kotlin.swing.misc.onLookAndFeelChange
 import io.github.nayasis.kotlin.swing.misc.removeAlpha
@@ -46,6 +48,7 @@ import io.github.nayasis.simplelauncher.model.Link
 import io.github.nayasis.simplelauncher.model.formatTokens
 import io.github.nayasis.simplelauncher.model.normalizeHashtags
 import io.github.nayasis.simplelauncher.service.LinkExecutor
+import io.github.nayasis.simplelauncher.service.Languages
 import io.github.nayasis.simplelauncher.service.LinkService
 import io.github.nayasis.simplelauncher.service.ShortcutAction
 import io.github.nayasis.simplelauncher.service.ShortcutSettings
@@ -81,6 +84,7 @@ import java.awt.event.WindowEvent
 import java.awt.image.BufferedImage
 import java.io.File
 import java.time.LocalDateTime
+import java.util.Locale
 import java.util.WeakHashMap
 import javax.imageio.ImageIO
 import javax.swing.BorderFactory
@@ -200,19 +204,19 @@ internal fun createTableItemContextMenu(
     onSaveIcon: () -> Unit = {},
 ): JPopupMenu {
     val actionItems = TABLE_ITEM_SHORTCUT_ACTIONS.associateWith { action ->
-        JMenuItem(action.messageKey.message()).apply {
+        JMenuItem().localize { text = action.messageKey.message() }.apply {
             putClientProperty(CONTEXT_MENU_ACTION_KEY, action)
             addActionListener { onAction(action) }
         }
     }
-    val showDetailItem = JMenuItem("shortcut.action.showDetailEditor".message()).apply {
+    val showDetailItem = JMenuItem().localize { text = "shortcut.action.showDetailEditor".message() }.apply {
         name = CONTEXT_MENU_SHOW_DETAIL_ID
         addActionListener { onShowDetail() }
     }
-    val copyIconItem = JMenuItem("contextmenu.icon.copy".message()).apply {
+    val copyIconItem = JMenuItem().localize { text = "contextmenu.icon.copy".message() }.apply {
         addActionListener { onCopyIcon() }
     }
-    val saveIconItem = JMenuItem("contextmenu.icon.save".message()).apply {
+    val saveIconItem = JMenuItem().localize { text = "contextmenu.icon.save".message() }.apply {
         addActionListener { onSaveIcon() }
     }
     fun refreshAccelerators() {
@@ -260,16 +264,16 @@ class Main: SwingView("application.title".message()) {
 
     // ─── menu ────────────────────────────────────────────────────────────────
 
-    val menuImportData       = JMenuItem("menu.file.import".message())
-    val menuExportData       = JMenuItem("menu.file.export".message())
-    val menuDeleteAll        = JMenuItem("menu.file.clear".message())
-    val menuShortcutSettings = JMenuItem("menu.settings.shortcut".message())
+    val menuImportData       = JMenuItem().localize { text = "menu.file.import".message() }
+    val menuExportData       = JMenuItem().localize { text = "menu.file.export".message() }
+    val menuDeleteAll        = JMenuItem().localize { text = "menu.file.clear".message() }
+    val menuShortcutSettings = JMenuItem().localize { text = "menu.settings.shortcut".message() }
     // named components are saved and restored with the window state
-    val menuViewDesc         = JCheckBoxMenuItem("menu.view.description".message(), true).apply { name = "menuViewDesc" }
-    val menuShowInputGroup   = JCheckBoxMenuItem("menu.view.showInputGroup".message(), true).apply { name = "menuShowInputGroup" }
-    val menuAlwaysOnTop      = JCheckBoxMenuItem("menu.view.alwaysOnTop".message(), false).apply { name = "menuAlwaysOnTop" }
-    val menuHelp             = JMenuItem("menu.help.about".message())
-    val menuTheme            = JMenu("menu.view.theme".message()).apply {
+    val menuViewDesc         = JCheckBoxMenuItem("", true).localize { text = "menu.view.description".message() }.apply { name = "menuViewDesc" }
+    val menuShowInputGroup   = JCheckBoxMenuItem("", true).localize { text = "menu.view.showInputGroup".message() }.apply { name = "menuShowInputGroup" }
+    val menuAlwaysOnTop      = JCheckBoxMenuItem("", false).localize { text = "menu.view.alwaysOnTop".message() }.apply { name = "menuAlwaysOnTop" }
+    val menuHelp             = JMenuItem().localize { text = "menu.help.about".message() }
+    val menuTheme            = JMenu().localize { text = "menu.view.theme".message() }.apply {
         name = "menuTheme"
         val group   = ButtonGroup()
         val current = AppTheme.of(Context.config.theme)
@@ -281,23 +285,36 @@ class Main: SwingView("application.title".message()) {
         }
     }
 
+    val menuLanguage         = JMenu().localize { text = "menu.settings.language".message() }.apply {
+        name = "menuLanguage"
+        val group   = ButtonGroup()
+        val current = Languages.current()
+        Languages.available.forEach { locale ->
+            add(JRadioButtonMenuItem(Languages.label(locale), locale == current).apply {
+                group.add(this)
+                addActionListener { changeLanguage(locale) }
+            })
+        }
+    }
+
     val menubarTop = JMenuBar().apply {
-        add(JMenu("menu.file".message()).apply {
+        add(JMenu().localize { text = "menu.file".message() }.apply {
             add(menuImportData)
             add(menuExportData)
             add(menuDeleteAll)
         })
-        add(JMenu("menu.settings".message()).apply {
+        add(JMenu().localize { text = "menu.settings".message() }.apply {
             add(menuShortcutSettings)
+            add(menuLanguage)
         })
-        add(JMenu("menu.view".message()).apply {
+        add(JMenu().localize { text = "menu.view".message() }.apply {
             add(menuViewDesc)
             add(menuShowInputGroup)
             add(menuAlwaysOnTop)
             addSeparator()
             add(menuTheme)
         })
-        add(JMenu("menu.help".message()).apply {
+        add(JMenu().localize { text = "menu.help".message() }.apply {
             add(menuHelp)
         })
     }
@@ -316,7 +333,7 @@ class Main: SwingView("application.title".message()) {
     private val groupFilter = JPanel(BorderLayout(5, 0)).apply {
         isOpaque = false
         border = BorderFactory.createEmptyBorder(0, 10, 0, 0)
-        add(JLabel("search.group".message()), BorderLayout.WEST)
+        add(JLabel().localize { text = "search.group".message() }, BorderLayout.WEST)
         add(inputGroup, BorderLayout.CENTER)
     }
 
@@ -328,7 +345,7 @@ class Main: SwingView("application.title".message()) {
     private val searchBar = JPanel(GridBagLayout()).apply {
         border = BorderFactory.createEmptyBorder(2, 0, 2, 0)
         val c = GridBagConstraints().apply { gridy = 0; anchor = GridBagConstraints.WEST }
-        add(JLabel("search.keyword".message()), c.apply { gridx = 0; insets = Insets(0, 2, 0, 0) })
+        add(JLabel().localize { text = "search.keyword".message() }, c.apply { gridx = 0; insets = Insets(0, 2, 0, 0) })
         add(inputKeyword, c.apply { gridx = 1; weightx = 1.0; fill = GridBagConstraints.HORIZONTAL; insets = Insets(0, 5, 0, 0) })
         add(groupFilter, c.apply { gridx = 2; weightx = 0.0; fill = GridBagConstraints.NONE; insets = Insets(0, 0, 0, 0) })
         add(buttonAddFile, c.apply { gridx = 3; insets = Insets(0, 15, 0, 10) })
@@ -337,10 +354,10 @@ class Main: SwingView("application.title".message()) {
     // ─── table ───────────────────────────────────────────────────────────────
 
     val tableModel = ListTableModel(linkService.links)
-        .column<String>("table.groupName".message(), id = "colGroup", getter = { formatTokens(it.group) })
-        .column<Link>("table.title".message(), id = "colTitle", comparator = compareBy { it.title.orEmpty() }, getter = { it })
-        .column<LocalDateTime>("table.lastUsedDt".message(), id = "colLastUsedDt", getter = { it.executedAt })
-        .column<Int>("table.execCount".message(), id = "colExecCount", getter = { it.executeCount })
+        .column<String>(columnTitle("colGroup"), id = "colGroup", getter = { formatTokens(it.group) })
+        .column<Link>(columnTitle("colTitle"), id = "colTitle", comparator = compareBy { it.title.orEmpty() }, getter = { it })
+        .column<LocalDateTime>(columnTitle("colLastUsedDt"), id = "colLastUsedDt", getter = { it.executedAt })
+        .column<Int>(columnTitle("colExecCount"), id = "colExecCount", getter = { it.executeCount })
 
     val tableMain = JTable().apply {
         name = "tableMain"
@@ -359,8 +376,8 @@ class Main: SwingView("application.title".message()) {
     // ─── detail editor ───────────────────────────────────────────────────────
 
     val descGroupName    = TokenField(8, ::normalizeHashtags)
-    val descShowConsole  = JCheckBox("desc.showConsole".message())
-    val descSeqExecution = JCheckBox("desc.execution.sequential".message())
+    val descShowConsole  = JCheckBox().localize { text = "desc.showConsole".message() }
+    val descSeqExecution = JCheckBox().localize { text = "desc.execution.sequential".message() }
     val descTitle        = detailTextField()
     val descHashtag      = TokenField(8, ::normalizeHashtags)
     val descDescription  = textArea()
@@ -385,7 +402,7 @@ class Main: SwingView("application.title".message()) {
         minimumSize = Dimension(MIN_LINK_EDITOR_WIDTH, 0)
         border = BorderFactory.createEmptyBorder(0, 4, 0, 0)
 
-        fun label(key: String, row: Int) = add(JLabel(key.message()), GridBagConstraints().apply {
+        fun label(key: String, row: Int) = add(JLabel().localize { text = key.message() }, GridBagConstraints().apply {
             gridx = 0; gridy = row
             anchor = GridBagConstraints.NORTHEAST
             insets = Insets(6, 0, 3, 5)
@@ -484,6 +501,14 @@ class Main: SwingView("application.title".message()) {
         initEvent()
         initTable()
         applyShortcutSettings()
+        // texts that are not a single bound property: header titles (the model keeps the first ones),
+        // tooltips with the shortcut in them, the status line
+        Localization.onRefresh {
+            COLUMN_TITLE_KEYS.keys.forEach { tableMain.findColumnBy(it).headerValue = columnTitle(it) }
+            tableMain.tableHeader.repaint()
+            updateShortcutTooltips()
+            printSearchResult()
+        }
         // the context menu and the half of the layout swapped out with the editor are outside the window
         onLookAndFeelChange {
             listOf(tableMenu, splitPane, tableScroll, descPanel)
@@ -496,6 +521,14 @@ class Main: SwingView("application.title".message()) {
         if (theme == AppTheme.of(Context.config.theme)) return
         theme.apply()
         Context.config.theme = theme.name
+        Context.config.save()
+    }
+
+    private fun changeLanguage(locale: Locale) {
+        if (locale == Languages.current()) return
+        Languages.apply(locale)
+        Localization.refresh()
+        Context.config.language = locale.toLanguageTag()
         Context.config.save()
     }
 
@@ -1473,7 +1506,16 @@ private fun scroll(component: JComponent) = JScrollPane(component).apply {
     minimumSize = Dimension(50, 40)
 }
 
-private fun button(key: String) = JButton(key.message()).apply {
+private val COLUMN_TITLE_KEYS = mapOf(
+    "colGroup"      to "table.groupName",
+    "colTitle"      to "table.title",
+    "colLastUsedDt" to "table.lastUsedDt",
+    "colExecCount"  to "table.execCount",
+)
+
+private fun columnTitle(id: String) = COLUMN_TITLE_KEYS.getValue(id).message()
+
+private fun button(key: String) = JButton().localize { text = key.message() }.apply {
     isFocusable = false
     margin = Insets(2, 8, 2, 8)
 }

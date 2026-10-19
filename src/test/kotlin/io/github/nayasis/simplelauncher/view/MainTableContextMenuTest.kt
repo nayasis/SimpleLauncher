@@ -1,7 +1,10 @@
 package io.github.nayasis.simplelauncher.view
 
+import io.github.nayasis.kotlin.basica.model.Messages
 import io.github.nayasis.kotlin.basica.model.Messages.Companion.loadMessages
+import io.github.nayasis.kotlin.swing.misc.Localization
 import io.github.nayasis.kotlin.swing.misc.runUiAndWait
+import io.github.nayasis.simplelauncher.service.Languages
 import io.github.nayasis.simplelauncher.service.ShortcutAction
 import io.github.nayasis.simplelauncher.service.ShortcutSettings
 import io.kotest.matchers.collections.shouldContainExactly
@@ -9,6 +12,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import java.util.Locale
 import javax.swing.JMenuItem
 
 internal class MainTableContextMenuTest {
@@ -57,6 +61,24 @@ internal class MainTableContextMenuTest {
 
         showDetailItem.doClick()
         showDetailCount shouldBe 1
+    }
+
+    @Test
+    fun contextMenuFollowsALanguageSwitch() = runUiAndWait<Unit> {
+        val saved = Messages.defaultLocale
+        try {
+            Languages.apply(Locale.ENGLISH)
+            val menu = createTableItemContextMenu({ ShortcutSettings.load(emptyMap()) }, {}, {})
+            val showDetailItem = menu.components.filterIsInstance<JMenuItem>().first { it.name == CONTEXT_MENU_SHOW_DETAIL_ID }
+            showDetailItem.text shouldBe "Details"
+
+            Languages.apply(Locale.JAPANESE)
+            Localization.refresh()
+            showDetailItem.text shouldBe "詳細"
+        } finally {
+            Languages.apply(saved)
+            Localization.refresh()
+        }
     }
 
     companion object {

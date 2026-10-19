@@ -10,6 +10,7 @@ import io.github.nayasis.kotlin.swing.preloader.DefaultPreloader
 import io.github.nayasis.kotlin.swing.window.Windows
 import io.github.nayasis.simplelauncher.common.Context
 import io.github.nayasis.simplelauncher.common.ExposedHelper
+import io.github.nayasis.simplelauncher.service.Languages
 import io.github.nayasis.simplelauncher.service.LinkExecutor
 import io.github.nayasis.simplelauncher.service.LinkService
 import io.github.nayasis.simplelauncher.view.AppTheme
@@ -23,25 +24,13 @@ import java.util.logging.Logger
 
 private val logger = KotlinLogging.logger {}
 
-/**
- * Message bundles, listed one by one on purpose.
- *
- * A glob pattern over the message directory needs a classpath scan, and a GraalVM
- * native image has no classpath to scan, so the glob silently resolves to nothing
- * and every label falls back to its key. Add new bundles here.
- */
-private val MESSAGE_BUNDLES = listOf(
-    "/message/localization.en.prop",
-    "/message/localization.ko.prop",
-)
-
 fun main(args: Array<String>) {
 
     // turn off external logs
     Logger.getLogger("").level = Level.SEVERE
 
     Networks.ignoreCerts()
-    MESSAGE_BUNDLES.forEach { it.loadMessages() }
+    "/message/localization.*.prop".loadMessages()
     DefaultPreloader.set(Splash::class)
 
     SwingApp.launch(Simplelauncher::class, *args)
@@ -56,10 +45,7 @@ class Simplelauncher: SwingApp(Main::class) {
     /**
      * Register the @Inject services explicitly.
      *
-     * SwingApp also scans the application package, but that walks .class resources on
-     * the classpath, which a GraalVM native image does not have. Registering here
-     * keeps both the JVM and the native image working; the scan simply finds these
-     * already created.
+     * SwingApp also scans the application package; the scan simply finds these already created.
      */
     override fun beforeInitialization(context: SimpleDiContainer, environment: Environment) {
         context.create(LinkService::class)
@@ -75,9 +61,9 @@ class Simplelauncher: SwingApp(Main::class) {
     override fun afterInitialization(context: SimpleDiContainer, environment: Environment) {
         Windows.defaultIcons.add("/image/icon/favicon.png")
 
-        // set i18n
-        environment.get<String>("simplelauncher.locale").runIfNotEmpty { locale ->
-            Locale.setDefault(Locale.forLanguageTag(locale))
+        // set i18n: the language chosen in the menu, else the configured one, else the system's
+        (Context.config.language ?: environment.get<String>("simplelauncher.locale")).runIfNotEmpty { locale ->
+            Languages.apply(Locale.forLanguageTag(locale))
         }
 
         DefaultPreloader.notifyMessage("Preparing...")
