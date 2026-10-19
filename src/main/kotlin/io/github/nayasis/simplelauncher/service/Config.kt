@@ -33,6 +33,8 @@ class Config {
     var progressDialogY: Double? = null
     var shortcuts = mutableMapOf<String, String>()
     var theme: String? = null
+    /** language tag of the chosen message bundle, like "en" or "zh-CN"; null follows the system. */
+    var language: String? = null
 
     fun save() = configPath.writeText(Reflector.toJson(this,true))
 

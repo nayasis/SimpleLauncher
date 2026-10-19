@@ -1,5 +1,5 @@
 simplelauncher:
-#  locale: ko
+  locale: en
   datasource:
     url: jdbc:h2:file:./db/simplelauncher
     driver_class: org.h2.Driver

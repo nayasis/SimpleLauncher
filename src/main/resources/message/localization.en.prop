@@ -1,4 +1,5 @@
 application.title                   = SimpleLauncher
+language.name                       = English
 menu.file                           = File
 menu.file.save                      = Save
 menu.file.import                    = Import
@@ -6,6 +7,7 @@ menu.file.export                    = Export
 menu.file.clear                     = Clear all
 menu.settings                       = Settings
 menu.settings.shortcut              = Shortcuts
+menu.settings.language              = Language
 menu.view                           = View
 menu.view.showMenuBar               = Menu
 menu.view.description               = Description

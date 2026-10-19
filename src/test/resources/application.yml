@@ -32,7 +32,7 @@ logging:
     "com.github.nayasis.simplelauncher": debug
     "com.techsenger.jeditermfx.core.emulator.JediEmulator": error
 #simplalauncher:
-#  locale: ko
+#  locale: en
 ---
 spring:
   application:
