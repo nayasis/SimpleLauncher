@@ -12,9 +12,10 @@ class BlackTerminalTheme: DefaultSettingsProvider() {
 
     // a plain physical font has no glyph fallback, so Hangul would render as boxes.
     // StyleContext returns a composite font that falls back to a system font for missing glyphs.
+    // it takes a whole size, so the fractional one is derived afterwards.
     override fun getTerminalFont(): Font {
         val base = super.getTerminalFont()
-        return StyleContext.getDefaultStyleContext().getFont(base.family, Font.PLAIN, base.size)
+        return StyleContext.getDefaultStyleContext().getFont(base.family, Font.PLAIN, base.size).deriveFont(terminalFontSize)
     }
 
     override fun getLineSpacing(): Float = 1.2f

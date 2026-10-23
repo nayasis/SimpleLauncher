@@ -1,15 +1,18 @@
 package io.github.nayasis.simplelauncher.model.vo
 
 import io.github.nayasis.kotlin.basica.annotation.NoArg
-import io.github.nayasis.kotlin.basica.core.string.decodeBase64
-import io.github.nayasis.kotlin.basica.core.string.encodeBase64
 import io.github.nayasis.simplelauncher.model.Link
 import io.github.nayasis.simplelauncher.model.normalizeTokens
 import io.github.nayasis.simplelauncher.model.normalizeHashtags
 import io.github.nayasis.simplelauncher.model.parseImportedHashtags
 import io.github.nayasis.simplelauncher.model.parseImportedTokens
 import java.time.LocalDateTime
+import java.util.Base64
 
+/**
+ * a link as it is exported and imported. the icon is the image file itself in plain Base64,
+ * never a serialized Java object: an imported file is untrusted input.
+ */
 @NoArg
 data class JsonLink(
     var title: String?               = null,
@@ -44,7 +47,7 @@ data class JsonLink(
         commandNext  = entity.commandNext,
         description  = entity.description,
         hashtag      = normalizeHashtags(entity.hashtag),
-        icon         = entity.icon?.encodeBase64(),
+        icon         = entity.icon?.let { Base64.getEncoder().encodeToString(it) },
         execCount    = entity.executeCount,
         executedAt   = entity.executedAt,
         createdAt    = entity.createdAt,
@@ -65,7 +68,7 @@ data class JsonLink(
             commandNext   = it.commandNext,
             description   = it.description,
             hashtag       = parseImportedHashtags(it.hashtag),
-            icon          = runCatching { it.icon?.decodeBase64<ByteArray>() }.getOrNull(),
+            icon          = runCatching { it.icon?.let { icon -> Base64.getDecoder().decode(icon) } }.getOrNull(),
             executeCount  = it.execCount,
             executedAt    = it.executedAt,
             createdAt     = it.createdAt ?: LocalDateTime.now(),

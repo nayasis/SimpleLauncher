@@ -14,8 +14,17 @@ val isLinux = osName.contains("linux")
 val isMac = osName.contains("mac")
 
 val appJvmArgs = listOf(
-	// JNA (pty4j) and FlatLaf load native libraries
+	// for native libraries (pty4j, FlatLaf)
 	"--enable-native-access=ALL-UNNAMED",
+	// Serial GC is better than G1 in small app (committed memories are smaller 45MB than G1)
+	"-XX:+UseSerialGC",
+	"-Xms8m",
+	"-Xmx128m",
+	"-XX:MinHeapFreeRatio=10",
+	"-XX:MaxHeapFreeRatio=20",
+	"-XX:TieredStopAtLevel=1",
+	"-XX:ReservedCodeCacheSize=24m",
+	"-Xss512k",
 )
 
 application {
@@ -31,14 +40,7 @@ java {
 }
 
 repositories {
-	// only for the libraries published locally (basica-kt, basica-swing)
-	mavenLocal {
-		content { includeGroup("io.github.nayasis") }
-	}
 	mavenCentral()
-	google()
-	gradlePluginPortal()
-	// the Swing JediTerm is published only here
 	maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies") {
 		content { includeGroup("org.jetbrains.jediterm") }
 	}
@@ -66,7 +68,7 @@ dependencies {
 
 	// exposed
 	ksp("io.github.nayasis:exposed-crud-processor:0.1.0")
-	kspTest("io.github.nayasis:exposed-crud-processor:0.1.0")  // test entities (Department, ...)
+	kspTest("io.github.nayasis:exposed-crud-processor:0.1.0")
 	implementation("io.github.nayasis:exposed-crud:0.1.0")
 	implementation("com.h2database:h2:2.3.232")
 
@@ -75,11 +77,12 @@ dependencies {
 	implementation("org.jetbrains.jediterm:jediterm-ui:3.72")
 	implementation("org.jetbrains.pty4j:pty4j:0.13.10")
 
-	implementation(kotlin("scripting-compiler-embeddable"))
-
 	testImplementation(kotlin("test"))
 	testImplementation("io.kotest:kotest-runner-junit5:5.8.0")
 	testImplementation("io.github.classgraph:classgraph:4.8.184")
+
+	testImplementation("io.kotest:kotest-runner-junit5-jvm:6.2.4")
+
 
 }
 
@@ -125,7 +128,6 @@ val requiredJdkModules = listOf(
 	"java.sql",
 	"java.xml",
 	"java.naming",
-	"java.scripting",   // javax.script, used by the embedded kotlin scripting compiler
 	"jdk.unsupported",  // sun.misc.Unsafe, used by JNA (pty4j) and kotlinx-coroutines
 	"jdk.crypto.ec",
 )
@@ -153,7 +155,8 @@ tasks.register<Exec>("makeExecutable") {
 
 	val icon = when {
 		isWindows -> "src/main/resources/image/icon/favicon.ico"
-		isLinux   -> "src/main/resources/image/icon/favicon.png"
+		isLinux   -> "src/main/resources/image/icon/favicon-256.png"
+		isMac     -> "src/main/resources/image/icon/favicon.icns"
 		else      -> null
 	}
 
@@ -190,15 +193,35 @@ tasks.register("deploy") {
 		val target = listOf("d:/app/SimpleLauncher", "c:/app/SimpleLauncher").map(::File).firstOrNull { it.exists() }
 			?: throw GradleException("No install directory: create D:/app/SimpleLauncher or C:/app/SimpleLauncher")
 
+		// replace only what jpackage made: conf/ and db/ beside it are user data
+		val parts = listOf("app", "runtime", "$appName.exe")
+		parts.map(source::resolve).filterNot { it.exists() }.takeIf { it.isNotEmpty() }?.let { missing ->
+			throw GradleException("Not an app image (SIMPLELAUNCHER_PACKAGE_TYPE must be app-image), missing: ${missing.joinToString()}")
+		}
+
+		// copy next to the installation first, so a failed copy leaves the installed app untouched
+		val staging = target.resolve(".deploy")
+		if (staging.exists()) staging.deleteForce()
+		parts.forEach { source.resolve(it).copyRecursively(staging.resolve(it)) }
+
 		// kill locked instance if it exists
 		ProcessBuilder("taskkill", "/IM", "$appName.exe", "/F", "/T").redirectErrorStream(true).start().waitFor()
 
-		// replace only what jpackage made: conf/ and db/ beside it are user data
-		listOf("app", "runtime", "$appName.exe").forEach { name ->
-			target.resolve(name).deleteForce()
-			source.resolve(name).copyRecursively(target.resolve(name))
+		parts.forEach { name ->
+			val installed = target.resolve(name)
+			// the killed process can hold its files for a moment
+			retry { if (installed.exists()) installed.deleteForce() }
+			if (!staging.resolve(name).renameTo(installed)) throw GradleException("Cannot move ${staging.resolve(name)} to $installed")
 		}
+		staging.deleteForce()
 	}
+}
+
+fun retry(times: Int = 10, delayMillis: Long = 500, block: () -> Unit) {
+	repeat(times - 1) {
+		try { return block() } catch (e: Exception) { Thread.sleep(delayMillis) }
+	}
+	block()
 }
 
 fun Project.findReleaseVersionFromBranch(): String? {

@@ -1,10 +1,8 @@
 package io.github.nayasis.simplelauncher.service
 
 import io.github.nayasis.kotlin.basica.core.string.message
-import io.github.nayasis.kotlin.basica.core.string.tokenize
 import io.github.nayasis.kotlin.basica.etc.error
 import io.github.nayasis.kotlin.basica.exec.Command
-import io.github.nayasis.kotlin.basica.exec.CommandExecutor
 import io.github.nayasis.kotlin.swing.app.di.Inject
 import io.github.nayasis.kotlin.swing.misc.withBackground
 import io.github.nayasis.kotlin.swing.window.Dialog
@@ -26,6 +24,7 @@ import kotlinx.coroutines.runInterruptible
 import kotlinx.coroutines.swing.Swing
 import java.awt.Insets
 import java.io.File
+import java.lang.ProcessBuilder.Redirect
 import java.time.LocalDateTime
 import javax.swing.JButton
 
@@ -98,9 +97,9 @@ class LinkExecutor{
             while (queue.hasNext()) {
                 val item = queue.next() ?: continue
                 updateProgress(dialog, queue, item)
-                run(LinkCommand(link, item.file), wait = true, onExecutorChanged = context.control::updateExecutor)
+                run(LinkCommand(link, item.file), wait = true, onProcessChanged = context.control::updateProcess)
                 queue.finish(item)
-                context.control.updateExecutor(null)
+                context.control.updateProcess(null)
                 childWindows.refreshProgressQueue(dialog)
             }
         } finally {
@@ -148,14 +147,14 @@ class LinkExecutor{
         )
     }
 
-    private suspend fun run(link: LinkCommand, wait: Boolean = false, onExecutorChanged: ((CommandExecutor?) -> Unit)? = null) {
+    private suspend fun run(link: LinkCommand, wait: Boolean = false, onProcessChanged: ((Process?) -> Unit)? = null) {
 
-        val nextCommands = toCommands(link.commandNext, link.workingDirectory)
+        val nextCommands = link.nextCommands()
 
         executeSequential(
-            commands = toCommands(link.commandPrev, link.workingDirectory),
+            commands = link.prevCommands(),
             showConsole = link.showConsole,
-            onExecutorChanged = onExecutorChanged,
+            onProcessChanged = onProcessChanged,
         )
 
         execute(
@@ -163,60 +162,72 @@ class LinkExecutor{
             wait = wait || nextCommands.isNotEmpty(),
             showConsole = link.showConsole,
             keepTerminalOpen = link.showConsole && !wait,
-            onExecutorChanged = onExecutorChanged,
+            onProcessChanged = onProcessChanged,
         )
 
         executeSequential(
             commands = nextCommands,
             showConsole = link.showConsole,
-            onExecutorChanged = onExecutorChanged,
+            onProcessChanged = onProcessChanged,
         )
 
     }
 
-    private fun toCommands(script: String, workingDirectory: String?): List<Command> {
-        return script
-            .tokenize("\n\r")
-            .map { Command(it, workingDirectory) }
-            .filterNot { it.isEmpty() }
-    }
-
-    private suspend fun executeSequential(commands: Collection<Command>, showConsole: Boolean, onExecutorChanged: ((CommandExecutor?) -> Unit)? = null) {
+    private suspend fun executeSequential(commands: Collection<Command>, showConsole: Boolean, onProcessChanged: ((Process?) -> Unit)? = null) {
         commands.forEach { command ->
             execute(
                 command = command,
                 wait = true,
                 showConsole = showConsole,
                 keepTerminalOpen = false,
-                onExecutorChanged = onExecutorChanged,
+                onProcessChanged = onProcessChanged,
             )
         }
     }
 
-    private suspend fun execute(command: Command, wait: Boolean, showConsole: Boolean, keepTerminalOpen: Boolean, onExecutorChanged: ((CommandExecutor?) -> Unit)? = null) {
+    private suspend fun execute(command: Command, wait: Boolean, showConsole: Boolean, keepTerminalOpen: Boolean, onProcessChanged: ((Process?) -> Unit)? = null) {
         if( command.isEmpty() ) return
         main.printCommand("$command")
         if(showConsole) {
             runInTerminal(command, keepTerminalOpen)
         } else {
-            runInBackground(command, wait, onExecutorChanged)
+            runInBackground(command, wait, onProcessChanged)
         }
     }
 
-    private suspend fun runInBackground(command: Command, wait: Boolean, onExecutorChanged: ((CommandExecutor?) -> Unit)? = null) {
+    private suspend fun runInBackground(command: Command, wait: Boolean, onProcessChanged: ((Process?) -> Unit)? = null) {
         logger.debug { "- command: $command" }
-        val executor = try {
-            withBackground { command.run() }
+        val process = try {
+            withBackground { command.start() }
         } catch (e: Exception) {
             throw RuntimeException("msg.error.runtime".message().format("$command"), e)
         }
         if(!wait) return
-        onExecutorChanged?.invoke(executor)
+        onProcessChanged?.invoke(process)
         try {
-            runInterruptible(Dispatchers.IO) { executor.waitFor() }
+            runInterruptible(Dispatchers.IO) { process.waitFor() }
+        } catch (e: CancellationException) {
+            process.destroyForcibly()
+            throw e
         } finally {
-            onExecutorChanged?.invoke(null)
+            onProcessChanged?.invoke(null)
         }
+    }
+
+    /**
+     * start [this] without a console.
+     *
+     * the output goes where the launcher's own goes instead of into a pipe: nobody reads a pipe, so a program
+     * printing more than its buffer would block, and a program started from it would keep it open.
+     */
+    private fun Command.start(): Process {
+        return ProcessBuilder(command).apply {
+            environment().putAll(this@start.environment)
+            workingDirectory?.let(::File)?.takeIf { it.isDirectory }?.let { directory(it) }
+            redirectInput(Redirect.INHERIT)
+            redirectOutput(Redirect.INHERIT)
+            redirectError(Redirect.INHERIT)
+        }.start()
     }
 
     /**
@@ -229,17 +240,21 @@ class LinkExecutor{
         val terminal = Terminal()
         childWindows.register(terminal)
         childWindows.show(terminal)
+        var ended = false
         try {
             terminal.run(command)
+            ended = true
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            logger.error(e)
-            Dialog.error(e)
-        }
-        if(!keepOpen) {
-            terminal.close()
-            childWindows.unregister(terminal)
+            // stops the run like a failure in the background does, so the next commands do not run
+            throw RuntimeException("msg.error.runtime".message().format("$command"), e)
+        } finally {
+            // a failed or cancelled run ends its command: closing the window kills the process
+            if(!ended || !keepOpen) {
+                terminal.close()
+                childWindows.unregister(terminal)
+            }
         }
     }
 

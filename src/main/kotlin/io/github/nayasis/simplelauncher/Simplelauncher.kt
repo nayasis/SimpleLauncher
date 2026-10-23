@@ -2,7 +2,6 @@ package io.github.nayasis.simplelauncher
 
 import io.github.nayasis.kotlin.basica.core.extension.runIfNotEmpty
 import io.github.nayasis.kotlin.basica.model.Messages.Companion.loadMessages
-import io.github.nayasis.kotlin.basica.net.Networks
 import io.github.nayasis.kotlin.swing.app.Environment
 import io.github.nayasis.kotlin.swing.app.SwingApp
 import io.github.nayasis.kotlin.swing.app.di.SimpleDiContainer
@@ -29,7 +28,6 @@ fun main(args: Array<String>) {
     // turn off external logs
     Logger.getLogger("").level = Level.SEVERE
 
-    Networks.ignoreCerts()
     "/message/localization.*.prop".loadMessages()
     DefaultPreloader.set(Splash::class)
 

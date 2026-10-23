@@ -4,8 +4,11 @@ import io.github.nayasis.kotlin.swing.misc.displayText
 import io.github.nayasis.kotlin.swing.misc.keyStroke
 import io.github.nayasis.kotlin.swing.misc.toKeyStroke
 import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
+import java.awt.event.InputEvent.ALT_DOWN_MASK
 import java.awt.event.InputEvent.CTRL_DOWN_MASK
 import java.awt.event.InputEvent.META_DOWN_MASK
 import java.awt.event.InputEvent.SHIFT_DOWN_MASK
@@ -78,6 +81,53 @@ class ShortcutSettingsTest {
         )
 
         settings.displayText(ShortcutAction.SAVE_DETAIL) shouldBe ShortcutAction.SAVE_DETAIL.defaultKeyStroke(ShortcutPlatform.current()).displayText
+    }
+
+    @Test
+    fun unboundShortcutShouldStayUnboundAfterReload() {
+        val settings = ShortcutSettings.fromBindings(mapOf(ShortcutAction.SAVE_DETAIL to null))
+
+        val reloaded = ShortcutSettings.load(settings.toConfigMap())
+
+        reloaded[ShortcutAction.SAVE_DETAIL].shouldBeNull()
+        reloaded.displayText(ShortcutAction.SAVE_DETAIL) shouldBe ""
+        reloaded[ShortcutAction.COPY_DETAIL] shouldBe ShortcutAction.COPY_DETAIL.defaultKeyStroke
+    }
+
+    @Test
+    fun unboundShortcutsAreNoDuplicates() {
+        findDuplicateShortcuts(mapOf(ShortcutAction.SAVE_DETAIL to null, ShortcutAction.COPY_DETAIL to null)) shouldBe emptyList()
+    }
+
+    @Test
+    fun defaultShortcutsShouldPassTheRestrictions() {
+        ShortcutPlatform.entries.forEach { platform ->
+            ShortcutAction.entries.forEach { action ->
+                shortcutRestriction(action, action.defaultKeyStroke(platform)) shouldBe null
+            }
+        }
+    }
+
+    @Test
+    fun globalShortcutsShouldLeaveTextInputKeysAlone() {
+        // typing
+        shortcutRestriction(ShortcutAction.SAVE_DETAIL, keyStroke(KeyEvent.VK_A)).shouldNotBeNull()
+        shortcutRestriction(ShortcutAction.SAVE_DETAIL, keyStroke(KeyEvent.VK_ESCAPE)).shouldNotBeNull()
+        // cut in a text field
+        shortcutRestriction(ShortcutAction.DELETE_DETAIL, keyStroke(KeyEvent.VK_DELETE, SHIFT_DOWN_MASK)).shouldNotBeNull()
+        // editing and the search history
+        shortcutRestriction(ShortcutAction.SAVE_DETAIL, keyStroke(KeyEvent.VK_Z, CTRL_DOWN_MASK)).shouldNotBeNull()
+        shortcutRestriction(ShortcutAction.SAVE_DETAIL, keyStroke(KeyEvent.VK_C, META_DOWN_MASK)).shouldNotBeNull()
+        shortcutRestriction(ShortcutAction.SAVE_DETAIL, keyStroke(KeyEvent.VK_DOWN, ALT_DOWN_MASK)).shouldNotBeNull()
+
+        shortcutRestriction(ShortcutAction.SAVE_DETAIL, keyStroke(KeyEvent.VK_F5)).shouldBeNull()
+        shortcutRestriction(ShortcutAction.SAVE_DETAIL, keyStroke(KeyEvent.VK_S, ALT_DOWN_MASK)).shouldBeNull()
+    }
+
+    @Test
+    fun tableShortcutsTakeAnyKey() {
+        shortcutRestriction(ShortcutAction.FOCUS_SEARCH, keyStroke(KeyEvent.VK_ESCAPE)).shouldBeNull()
+        shortcutRestriction(ShortcutAction.MOVE_FOCUS_TO_DETAIL, keyStroke(KeyEvent.VK_TAB)).shouldBeNull()
     }
 
     @Test

@@ -10,6 +10,7 @@ import io.github.nayasis.simplelauncher.service.ShortcutAction
 import io.github.nayasis.simplelauncher.service.ShortcutGroup
 import io.github.nayasis.simplelauncher.service.ShortcutSettings
 import io.github.nayasis.simplelauncher.service.findDuplicateShortcuts
+import io.github.nayasis.simplelauncher.service.shortcutRestriction
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
@@ -18,8 +19,12 @@ import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.awt.Insets
 import java.awt.Window
+import java.awt.event.FocusAdapter
+import java.awt.event.FocusEvent
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import java.util.EnumMap
 import javax.swing.BorderFactory
 import javax.swing.Box
@@ -29,6 +34,7 @@ import javax.swing.JComponent
 import javax.swing.JDialog
 import javax.swing.JLabel
 import javax.swing.JPanel
+import javax.swing.JRootPane
 import javax.swing.JScrollPane
 import javax.swing.JTextArea
 import javax.swing.JTextField
@@ -36,7 +42,10 @@ import javax.swing.KeyStroke
 import javax.swing.UIManager
 
 /**
- * dialog to rebind the shortcuts. a binding is set by focusing its field and pressing the keys.
+ * dialog to rebind the shortcuts.
+ *
+ * a field records the next keys once it is clicked or Enter / Space is pressed on it. until then Tab moves on
+ * and Escape closes the dialog, so the keyboard can always leave it.
  */
 class ShortcutEditor {
 
@@ -57,8 +66,11 @@ class ShortcutEditor {
 
     val title: String = "shortcut.dialog.title".message()
 
-    private val bindings = EnumMap<ShortcutAction, KeyStroke>(ShortcutAction::class.java)
+    private val bindings = EnumMap<ShortcutAction, KeyStroke?>(ShortcutAction::class.java)
     private val editors = EnumMap<ShortcutAction, JTextField>(ShortcutAction::class.java)
+    /** the field waiting for keys, if any. */
+    private var recording: ShortcutAction? = null
+    private val notice = JLabel(" ").apply { foreground = Color(0xc62828) }
 
     private var result: ShortcutSettings? = null
     private var dialog: JDialog? = null
@@ -70,6 +82,8 @@ class ShortcutEditor {
      */
     fun showDialog(owner: Window?, shortcuts: ShortcutSettings): ShortcutSettings? {
         result = null
+        recording = null
+        notice.text = " "
         editors.clear()
         bindings.clear()
         bindings.putAll(shortcuts.toMutableBindings())
@@ -89,6 +103,8 @@ class ShortcutEditor {
                 add(buildFooter(), BorderLayout.SOUTH)
             }
             minimumSize = Dimension(600, 400)
+            // reached only when no field is recording: a recording field consumes the key first
+            rootPane.registerKeyboardAction({ dispose() }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JRootPane.WHEN_IN_FOCUSED_WINDOW)
             loadDefaultIcon()
             pack()
             setLocationRelativeTo(owner)
@@ -107,6 +123,8 @@ class ShortcutEditor {
             add(JButton("btn.reset.all".message()).apply {
                 addActionListener { resetBindingsToDefault() }
             })
+            add(Box.createHorizontalStrut(12))
+            add(notice)
             add(Box.createHorizontalGlue())
             add(JButton("btn.save".message()).apply {
                 addActionListener { save() }
@@ -199,12 +217,15 @@ class ShortcutEditor {
                 cell(JLabel(action.messageKey.message()), 0, row)
                 cell(createEditor(action), 1, row)
                 cell(JLabel(action.defaultKeyStroke.displayText), 2, row)
-                cell(JButton("btn.reset".message()).apply {
-                    addActionListener {
-                        bindings[action] = action.defaultKeyStroke
-                        editors[action]?.text = action.defaultKeyStroke.displayText
-                        refreshDuplicateHighlighting()
-                    }
+                cell(JPanel().apply {
+                    layout = BoxLayout(this, BoxLayout.X_AXIS)
+                    add(JButton("btn.reset".message()).apply {
+                        addActionListener { bind(action, action.defaultKeyStroke) }
+                    })
+                    add(Box.createHorizontalStrut(4))
+                    add(JButton("btn.clear".message()).apply {
+                        addActionListener { bind(action, null) }
+                    })
                 }, 3, row)
                 row++
             }
@@ -213,23 +234,70 @@ class ShortcutEditor {
     }
 
     private fun createEditor(action: ShortcutAction): JTextField {
-        return JTextField((bindings[action] ?: action.defaultKeyStroke).displayText).apply {
+        return JTextField(bindings[action]?.displayText ?: "").apply {
             name = "shortcut-${action.name}"
             isEditable = false
-            // let Tab be recorded as a shortcut instead of moving the focus
-            focusTraversalKeysEnabled = false
             editors[action] = this
+            addMouseListener(object: MouseAdapter() {
+                override fun mousePressed(e: MouseEvent) {
+                    requestFocusInWindow()
+                    startRecording(action)
+                }
+            })
+            addFocusListener(object: FocusAdapter() {
+                override fun focusLost(e: FocusEvent) = stopRecording(action)
+            })
             addKeyListener(object: KeyAdapter() {
                 override fun keyPressed(e: KeyEvent) {
+                    if(recording != action) {
+                        if(e.modifiersEx == 0 && (e.keyCode == KeyEvent.VK_ENTER || e.keyCode == KeyEvent.VK_SPACE)) {
+                            e.consume()
+                            startRecording(action)
+                        }
+                        return
+                    }
                     e.consume()
-                    e.toKeyStroke()?.let { keyStroke ->
-                        bindings[action] = keyStroke
-                        text = keyStroke.displayText
-                        refreshDuplicateHighlighting()
+                    // a modifier alone is not a shortcut yet
+                    val keyStroke = e.toKeyStroke() ?: return
+                    stopRecording(action)
+                    val restriction = shortcutRestriction(action, keyStroke)
+                    if(restriction != null) {
+                        notice.text = restriction.message().format(keyStroke.displayText)
+                    } else {
+                        bind(action, keyStroke)
                     }
                 }
             })
         }
+    }
+
+    /** let the field of [action] record the next keys, Tab and Escape among them. */
+    private fun startRecording(action: ShortcutAction) {
+        if(recording == action) return
+        recording?.let { stopRecording(it) }
+        recording = action
+        notice.text = " "
+        editors[action]?.apply {
+            focusTraversalKeysEnabled = false
+            text = "shortcut.recording".message()
+        }
+    }
+
+    private fun stopRecording(action: ShortcutAction) {
+        if(recording != action) return
+        recording = null
+        editors[action]?.apply {
+            focusTraversalKeysEnabled = true
+            text = bindings[action]?.displayText ?: ""
+        }
+    }
+
+    /** @param keyStroke the new shortcut of [action], null for none */
+    private fun bind(action: ShortcutAction, keyStroke: KeyStroke?) {
+        bindings[action] = keyStroke
+        notice.text = " "
+        editors[action]?.text = keyStroke?.displayText ?: ""
+        refreshDuplicateHighlighting()
     }
 
     private fun resetBindingsToDefault() {
@@ -238,7 +306,7 @@ class ShortcutEditor {
             bindings[action] = action.defaultKeyStroke
         }
         editors.forEach { (action, editor) ->
-            editor.text = bindings[action]!!.displayText
+            editor.text = bindings[action]?.displayText ?: ""
         }
         refreshDuplicateHighlighting()
     }

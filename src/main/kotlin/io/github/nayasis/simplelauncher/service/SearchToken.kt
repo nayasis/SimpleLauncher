@@ -27,10 +27,15 @@ fun matchesSearchTokens(haystack: Iterable<String?>?, tokens: List<SearchToken>)
     val terms = tokens.filter { it.kind == SearchTokenKind.TERM }
     if (terms.isEmpty()) return true
 
-    fun matchTerm(value: String): Boolean =
-        haystack?.firstOrNull { matchesSearchTerm(it, value) } != null
+    fun matchTerm(value: String, fuzzy: Boolean = true): Boolean =
+        haystack?.firstOrNull { matchesSearchTerm(it, value, fuzzy) } != null
 
-    fun fallbackMatch(): Boolean = terms.any { matchTerm(it.value) }
+    // a malformed expression matches any of its terms, but never what a NOT right before a term excludes
+    fun fallbackMatch(): Boolean {
+        val negated  = tokens.filterIndexed { i, token -> token.kind == SearchTokenKind.TERM && tokens.getOrNull(i - 1)?.kind == SearchTokenKind.NOT }
+        val positive = terms - negated.toSet()
+        return (positive.isEmpty() || positive.any { matchTerm(it.value) }) && negated.none { matchTerm(it.value, fuzzy = false) }
+    }
 
     val values = Stack<Boolean>()
     val operators = Stack<SearchToken>()
@@ -50,6 +55,9 @@ fun matchesSearchTokens(haystack: Iterable<String?>?, tokens: List<SearchToken>)
 
     var hasValue = false
     var previous = PreviousSearchToken.START
+    // what NOT excludes matches by substring only: a fuzzy match of a short term would exclude almost anything
+    var afterNot = false
+    val negatedGroups = Stack<Boolean>()
     for (token in tokens) {
         when (token.kind) {
             SearchTokenKind.AND,
@@ -59,6 +67,7 @@ fun matchesSearchTokens(haystack: Iterable<String?>?, tokens: List<SearchToken>)
                 }
                 pushSearchOperator(operators, token, ::applyTopOperator)
                 previous = PreviousSearchToken.OPERATOR
+                afterNot = false
             }
             SearchTokenKind.NOT -> {
                 // "a NOT b" reads as "a AND NOT b"
@@ -68,6 +77,7 @@ fun matchesSearchTokens(haystack: Iterable<String?>?, tokens: List<SearchToken>)
                 // a prefix operator has no left operand to reduce first
                 operators.push(token)
                 previous = PreviousSearchToken.OPERATOR
+                afterNot = true
             }
             SearchTokenKind.PAREN -> {
                 if (token.isOpenParenthesis()) {
@@ -76,6 +86,8 @@ fun matchesSearchTokens(haystack: Iterable<String?>?, tokens: List<SearchToken>)
                     }
                     operators.push(token)
                     previous = PreviousSearchToken.OPEN
+                    negatedGroups.push(afterNot || negatedGroups.lastOrNull() == true)
+                    afterNot = false
                 } else {
                     if (previous == PreviousSearchToken.START || previous == PreviousSearchToken.OPEN || previous == PreviousSearchToken.OPERATOR) {
                         return fallbackMatch()
@@ -85,13 +97,16 @@ fun matchesSearchTokens(haystack: Iterable<String?>?, tokens: List<SearchToken>)
                     }
                     if (operators.popOrNull()?.value != token.matchingOpenParenthesis()) return fallbackMatch()
                     previous = PreviousSearchToken.CLOSE
+                    negatedGroups.popOrNull()
+                    afterNot = false
                 }
             }
             SearchTokenKind.TERM -> {
                 if (previous == PreviousSearchToken.VALUE || previous == PreviousSearchToken.CLOSE) {
                     pushSearchOperator(operators, SearchToken(SearchTokenKind.AND, "and"), ::applyTopOperator)
                 }
-                values.push(matchTerm(token.value))
+                values.push(matchTerm(token.value, fuzzy = !afterNot && negatedGroups.lastOrNull() != true))
+                afterNot = false
                 hasValue = true
                 previous = PreviousSearchToken.VALUE
             }
@@ -157,14 +172,18 @@ fun insertTermWithOr(tokens: MutableList<SearchToken>, index: Int, term: SearchT
     return at
 }
 
-/** whether [token] can go in at [index] without an operator ending up next to an AND / OR: "NOT AND" is as broken as "AND AND". */
+/**
+ * whether [token] can go in at [index] without breaking the expression: "NOT AND" is as broken as "AND AND",
+ * and an AND / OR needs an operand on both sides, so not at the start, after "(" or before ")".
+ */
 fun canInsertSearchToken(tokens: List<SearchToken>, index: Int, token: SearchToken): Boolean {
     val previous = tokens.getOrNull(index - 1)
     val next     = tokens.getOrNull(index)
     return when (token.kind) {
         SearchTokenKind.AND,
-        SearchTokenKind.OR  -> !previous.isSearchOperatorToken() && previous?.kind != SearchTokenKind.NOT && !next.isSearchOperatorToken()
-        SearchTokenKind.NOT -> !next.isSearchOperatorToken()
+        SearchTokenKind.OR  -> previous != null && !previous.isOpenParenthesis() && !previous.isSearchOperatorToken() &&
+            previous.kind != SearchTokenKind.NOT && !next.isSearchOperatorToken() && !next.isCloseParenthesis()
+        SearchTokenKind.NOT -> !next.isSearchOperatorToken() && !next.isCloseParenthesis()
         else -> true
     }
 }
@@ -196,6 +215,9 @@ private fun SearchToken?.isSearchOperatorToken(): Boolean =
 
 private fun SearchToken.isOpenParenthesis(): Boolean =
     kind == SearchTokenKind.PAREN && value in listOf("(", "[", "{")
+
+private fun SearchToken?.isCloseParenthesis(): Boolean =
+    this?.kind == SearchTokenKind.PAREN && value in listOf(")", "]", "}")
 
 private fun SearchToken.matchingOpenParenthesis(): String? =
     when(value) {
@@ -231,10 +253,10 @@ private fun String.isTextOperatorWord(): Boolean =
 private fun <T> Stack<T>.popOrNull(): T? =
     if (isEmpty()) null else pop()
 
-fun matchesSearchTerm(haystack: String?, value: String): Boolean {
+fun matchesSearchTerm(haystack: String?, value: String, fuzzy: Boolean = true): Boolean {
     val text = haystack?.trim()?.lowercase() ?: return false
     val needle = value.trim().lowercase()
-    return needle.isNotEmpty() && (text.contains(needle) || fuzzyContains(text, needle))
+    return needle.isNotEmpty() && (text.contains(needle) || (fuzzy && fuzzyContains(text, needle)))
 }
 
 fun fuzzyContains(haystack: String, needle: String): Boolean {

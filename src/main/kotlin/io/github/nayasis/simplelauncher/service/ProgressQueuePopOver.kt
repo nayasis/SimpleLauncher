@@ -1,7 +1,6 @@
 package io.github.nayasis.simplelauncher.service
 
 import io.github.nayasis.kotlin.basica.core.string.message
-import io.github.nayasis.kotlin.basica.exec.CommandExecutor
 import io.github.nayasis.kotlin.swing.misc.runLater
 import io.github.nayasis.kotlin.swing.window.PopOver
 import java.awt.BorderLayout
@@ -86,13 +85,10 @@ internal class ProgressFileQueue(files: Collection<File>) {
 
     @Synchronized
     fun removePending(item: ProgressFileQueueItem): Boolean {
-        val index = items.indexOf(item)
-        return if (index >= currentNo) {
-            items.removeAt(index)
-            true
-        } else {
-            false
-        }
+        // look among the pending ones only: the same file can be queued again after a done one
+        val index = (currentNo until items.size).firstOrNull { items[it] == item } ?: return false
+        items.removeAt(index)
+        return true
     }
 }
 
@@ -102,21 +98,21 @@ internal class ProgressQueueControl(
 ) {
 
     @Volatile
-    private var executor: CommandExecutor? = null
+    private var process: Process? = null
 
     @Volatile
     private var cancellingItem: ProgressFileQueueItem? = null
 
-    fun updateExecutor(executor: CommandExecutor?) {
-        this.executor = executor
-        if (executor == null) {
+    fun updateProcess(process: Process?) {
+        this.process = process
+        if (process == null) {
             cancellingItem = null
         }
         onChanged()
     }
 
     fun canCancel(item: ProgressFileQueueItem): Boolean {
-        return queue.currentItem() == item && executor != null
+        return queue.currentItem() == item && process != null
     }
 
     fun isCancelling(item: ProgressFileQueueItem): Boolean {
@@ -126,7 +122,7 @@ internal class ProgressQueueControl(
     fun cancel(item: ProgressFileQueueItem): Boolean {
         if (!canCancel(item)) return false
         cancellingItem = item
-        executor?.destroy()
+        process?.destroyForcibly()
         onChanged()
         return true
     }

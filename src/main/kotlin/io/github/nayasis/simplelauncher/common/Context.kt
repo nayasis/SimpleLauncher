@@ -1,6 +1,5 @@
 package io.github.nayasis.simplelauncher.common
 
-import io.github.nayasis.kotlin.swing.app.Environment
 import io.github.nayasis.kotlin.swing.app.SwingApp
 import io.github.nayasis.simplelauncher.service.Config
 import io.github.nayasis.simplelauncher.service.LinkExecutor
@@ -17,6 +16,5 @@ class Context { companion object {
     val linkService   by lazy { bean(LinkService::class) }
     val linkExecutor  by lazy { bean(LinkExecutor::class) }
     val main          by lazy { SwingApp.find(Main::class) }
-    val environment   by lazy { bean(Environment::class) }
 
 }}

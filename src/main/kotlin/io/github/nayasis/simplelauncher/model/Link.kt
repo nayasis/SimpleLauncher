@@ -5,7 +5,6 @@ import com.dshatz.exposed_crud.Entity
 import com.dshatz.exposed_crud.Id
 import com.dshatz.exposed_crud.LargeText
 import io.github.nayasis.kotlin.basica.core.extension.ifEmpty
-import io.github.nayasis.kotlin.basica.core.io.Paths
 import io.github.nayasis.kotlin.basica.core.io.exists
 import io.github.nayasis.kotlin.basica.core.io.invariantPath
 import io.github.nayasis.kotlin.basica.core.io.toRelativeOrSelf
@@ -18,6 +17,7 @@ import io.github.nayasis.kotlin.swing.misc.toBufferedImage
 import io.github.nayasis.kotlin.swing.misc.toIconImages
 import io.github.nayasis.kotlin.swing.misc.toSystemIconImage
 import io.github.nayasis.simplelauncher.common.Context
+import io.github.nayasis.simplelauncher.common.applicationRoot
 import io.github.oshai.kotlinlogging.KotlinLogging
 import mslinks.ShellLink
 import java.awt.image.BufferedImage
@@ -32,7 +32,7 @@ private val logger = KotlinLogging.logger {}
 const val ICON_IMAGE_TYPE = "png"
 private const val ICON_MAX_SIZE = 128
 
-@Entity(name = "TB_LINK_TEST")
+@Entity(name = "TB_LINK")
 data class Link(
 
     @Id(autoGenerate = true)
@@ -41,7 +41,7 @@ data class Link(
     @Column(length = 300)
     var title: String? = null,
     var group: HashSet<String> = hashSetOf(),
-    @Column(name = "a_group", length = 300)
+    @Column(name = "a_group", length = 2000)
     var groupJson: String? = null,
     @Column(length = 2000)
     var path: String? = null,
@@ -108,7 +108,17 @@ data class Link(
 
     fun setPath(file: File) {
         this.path = file.invariantSeparatorsPath
-        relativePath = file.toPath().toRelativeOrSelf(Paths.applicationRoot).invariantPath
+        relativePath = file.toPath().toRelativeOrSelf(applicationRoot).invariantPath
+    }
+
+    /** set the path typed in the editor, keeping the relative path in line with it. */
+    fun changePath(path: String?) {
+        if( path.isNullOrBlank() ) {
+            this.path    = null
+            relativePath = null
+        } else {
+            setPath(File(path))
+        }
     }
 
     constructor(file: File): this(
@@ -124,7 +134,7 @@ data class Link(
                 when(file.extension) {
                     "lnk" -> {
                         if(Platforms.isWindows) {
-                            bindLink(file)
+                            runCatching { bindLink(file) }.onFailure { e -> logger.error(e) { ">> link : $file" } }
                         }
                     }
                     "jar" -> {
@@ -143,8 +153,8 @@ data class Link(
     private fun bindLink(file: File) {
         if( ! Platforms.isWindows ) return
         val link = ShellLink(file)
-        path = link.linkInfo.localBasePath
-        relativePath = link.relativePath
+        // the link's own relative path is relative to the .lnk file, so derive both paths from the target
+        link.resolveTarget()?.takeIf { it.isNotBlank() }?.let { setPath(File(it)) }
         argument = link.cmdArgs
         description = link.name
         runCatching {
@@ -162,24 +172,26 @@ data class Link(
     }
 
     fun toPath(): Path? {
-        // 1. convert path directly
-        path?.let { runCatching { it.toPath() }.getOrNull() }
+        // 1. convert path directly ("" would be the working directory)
+        path?.takeIf { it.isNotBlank() }
+            ?.let { runCatching { it.toPath() }.getOrNull() }
             ?.takeIf { it.exists() }
             ?.let { return it }
 
         // 2. combine applicationRoot with path
         path?.takeIf { it.isNotEmpty() }
-            ?.let { runCatching { Paths.applicationRoot.resolve(it) }.getOrNull() }
+            ?.let { runCatching { applicationRoot.resolve(it) }.getOrNull() }
             ?.takeIf { it.exists() }
             ?.let { return it }
 
         // 3. use relativePath
         relativePath?.takeIf { it.isNotEmpty() }
-            ?.let { Paths.applicationRoot / it }
+            ?.let { runCatching { applicationRoot / it }.getOrNull() }
             ?.takeIf { it.exists() }
             ?.let { p ->
                 path = p.invariantPath
-                Context.linkService.launchSave(this)
+                // a link not saved yet, like one being edited, is saved by its editor
+                if( id > 0 ) Context.linkService.launchSave(this)
                 return p
             }
 
@@ -194,7 +206,27 @@ data class Link(
         return this
     }
 
-    fun syncHashtagStorage(): Link = syncTokenStorage()
+    /** take the stored fields of [other], the id aside. */
+    fun restoreFrom(other: Link) {
+        title         = other.title
+        group         = HashSet(other.group)
+        path          = other.path
+        relativePath  = other.relativePath
+        showConsole   = other.showConsole
+        executeEach   = other.executeEach
+        argument      = other.argument
+        icon          = other.icon
+        commandPrefix = other.commandPrefix
+        commandPrev   = other.commandPrev
+        commandNext   = other.commandNext
+        description   = other.description
+        hashtag       = HashSet(other.hashtag)
+        executeCount  = other.executeCount
+        executedAt    = other.executedAt
+        createdAt     = other.createdAt
+        updatedAt     = other.updatedAt
+        syncTokenStorage()
+    }
 
     fun clone(): Link {
         return this.let { Link(

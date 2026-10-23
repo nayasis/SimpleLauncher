@@ -73,7 +73,8 @@ internal fun chipStyleOf(kind: SearchTokenKind): ChipStyle = when (kind) {
  * - Enter submits ([onPlainEnter]); Escape calls [onEscape]
  * - Ctrl+Enter adds the text as a term, Shift+Enter as an operator when it is AND / OR / NOT, Ctrl+Shift+Enter as an operator
  * - Left / Right at the ends of the text move the input between chips
- * - Backspace / Delete in an empty input remove the chip next to it, Ctrl+Z brings it back
+ * - Backspace / Delete in an empty input remove the selected chip, else the chip next to it
+ * - Ctrl+Z in an empty input undoes the last change of the chips
  * - click on a chip selects it and puts the cursor in front of it; double click copies it; right click removes it
  * - right click elsewhere pastes the clipboard: as text when no chip follows the cursor, as a new chip otherwise
  */
@@ -123,17 +124,20 @@ class SearchTokenField: TokenInputPane(SEARCH_INPUT_COLUMNS) {
         if (e.isAltDown) return false
         val modifiers = e.modifiersEx and (CTRL_DOWN_MASK or SHIFT_DOWN_MASK)
         when {
-            e.keyCode == KeyEvent.VK_Z && modifiers == CTRL_DOWN_MASK && text.isEmpty() -> restoreDeletedToken()
+            e.keyCode == KeyEvent.VK_Z && modifiers == CTRL_DOWN_MASK && text.isEmpty() -> undoTokenChange()
             e.keyCode == KeyEvent.VK_ESCAPE -> onEscape?.invoke()
             e.keyCode == KeyEvent.VK_ENTER && modifiers == (CTRL_DOWN_MASK or SHIFT_DOWN_MASK) -> addOperatorTokenFromInput()
             e.keyCode == KeyEvent.VK_ENTER && modifiers == CTRL_DOWN_MASK -> addTermTokenFromInput()
             e.keyCode == KeyEvent.VK_ENTER && modifiers == SHIFT_DOWN_MASK -> addCommandOrTermTokenFromInput()
             e.keyCode == KeyEvent.VK_ENTER -> onPlainEnter?.invoke()
-            e.keyCode == KeyEvent.VK_LEFT && input.caretPosition == 0 && cursorIndex > 0 -> {
+            // a selected chip is removed rather than the one next to the cursor
+            (e.keyCode == KeyEvent.VK_BACK_SPACE || e.keyCode == KeyEvent.VK_DELETE) && text.isEmpty() && selectedChip in tokens.indices -> removeTokenAt(selectedChip)
+            // with Shift or Ctrl the arrows select or jump within the text
+            e.keyCode == KeyEvent.VK_LEFT && modifiers == 0 && input.selectedText == null && input.caretPosition == 0 && cursorIndex > 0 -> {
                 cursorIndex--
                 render()
             }
-            e.keyCode == KeyEvent.VK_RIGHT && input.caretPosition == text.length && cursorIndex < tokens.size -> {
+            e.keyCode == KeyEvent.VK_RIGHT && modifiers == 0 && input.selectedText == null && input.caretPosition == text.length && cursorIndex < tokens.size -> {
                 cursorIndex++
                 render()
             }
@@ -232,6 +236,7 @@ class SearchTokenField: TokenInputPane(SEARCH_INPUT_COLUMNS) {
 
     /** change the chips with [edit], which consumes the typed text, then redraw and notify once. */
     private fun commitEdit(notifyTokensChanged: Boolean = true, edit: () -> Unit) {
+        rememberForUndo()
         edit()
         suppressSearchChange = true
         try {
@@ -247,7 +252,7 @@ class SearchTokenField: TokenInputPane(SEARCH_INPUT_COLUMNS) {
     /** @param moveCursor put the cursor where the chip was, instead of keeping it where it is */
     private fun removeTokenAt(index: Int, moveCursor: Boolean = false) {
         if (index !in tokens.indices) return
-        undoStack += UndoSnapshot(tokens.toList(), cursorIndex)
+        rememberForUndo()
         tokens.removeAt(index)
         cursorIndex = when {
             moveCursor          -> index
@@ -263,7 +268,11 @@ class SearchTokenField: TokenInputPane(SEARCH_INPUT_COLUMNS) {
         onTokensChanged?.invoke()
     }
 
-    private fun restoreDeletedToken() {
+    private fun rememberForUndo() {
+        undoStack += UndoSnapshot(tokens.toList(), cursorIndex)
+    }
+
+    private fun undoTokenChange() {
         val snapshot = undoStack.removeLastOrNull() ?: return
         tokens.clear()
         tokens.addAll(snapshot.tokens)
@@ -309,6 +318,7 @@ class SearchTokenField: TokenInputPane(SEARCH_INPUT_COLUMNS) {
         if (cursorIndex < tokens.size) {
             // text between chips would be ignored by the search, so it goes in as a chip; typed text stays
             val token = createLiteralTermSearchToken(pasted) ?: return
+            rememberForUndo()
             tokens.add(cursorIndex, token)
             cursorIndex++
             render()
