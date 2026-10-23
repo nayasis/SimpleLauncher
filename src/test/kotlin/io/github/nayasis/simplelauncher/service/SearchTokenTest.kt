@@ -13,6 +13,64 @@ internal class SearchTokenTest {
     }
 
     @Test
+    fun notExcludesBySubstringOnly() {
+        val tokens = listOf(
+            SearchToken(SearchTokenKind.NOT, "not"),
+            SearchToken(SearchTokenKind.TERM, "exe"),
+        )
+
+        // "Excel Viewer" holds e-x-e as a subsequence, which must not exclude it
+        matchesSearchTokens(listOf("Excel Viewer"), tokens) shouldBe true
+        matchesSearchTokens(listOf("setup.exe"), tokens) shouldBe false
+    }
+
+    @Test
+    fun notGroupExcludesBySubstringOnly() {
+        val tokens = listOf(
+            SearchToken(SearchTokenKind.TERM, "ev"),
+            SearchToken(SearchTokenKind.NOT, "not"),
+            SearchToken(SearchTokenKind.PAREN, "("),
+            SearchToken(SearchTokenKind.TERM, "exe"),
+            SearchToken(SearchTokenKind.OR, "or"),
+            SearchToken(SearchTokenKind.TERM, "zip"),
+            SearchToken(SearchTokenKind.PAREN, ")"),
+        )
+
+        // "ev" still matches fuzzily outside of the NOT
+        matchesSearchTokens(listOf("Excel Viewer"), tokens) shouldBe true
+        matchesSearchTokens(listOf("Excel Viewer.zip"), tokens) shouldBe false
+    }
+
+    @Test
+    fun malformedExpressionStillExcludesWhatNotNames() {
+        // "a OR" ends in an operator, so it falls back to the terms
+        val tokens = listOf(
+            SearchToken(SearchTokenKind.TERM, "alpha"),
+            SearchToken(SearchTokenKind.NOT, "not"),
+            SearchToken(SearchTokenKind.TERM, "beta"),
+            SearchToken(SearchTokenKind.OR, "or"),
+        )
+
+        matchesSearchTokens(listOf("alpha"), tokens) shouldBe true
+        matchesSearchTokens(listOf("alpha beta"), tokens) shouldBe false
+        matchesSearchTokens(listOf("beta"), tokens) shouldBe false
+    }
+
+    @Test
+    fun andOrCannotGoWhereAnOperandIsMissing() {
+        val and = SearchToken(SearchTokenKind.AND, "and")
+        val term = SearchToken(SearchTokenKind.TERM, "a")
+        val open = SearchToken(SearchTokenKind.PAREN, "(")
+        val close = SearchToken(SearchTokenKind.PAREN, ")")
+
+        canInsertSearchToken(emptyList(), 0, and) shouldBe false
+        canInsertSearchToken(listOf(open, term), 1, and) shouldBe false
+        canInsertSearchToken(listOf(open, term, close), 2, and) shouldBe false
+        canInsertSearchToken(listOf(term, close), 1, SearchToken(SearchTokenKind.NOT, "not")) shouldBe false
+        canInsertSearchToken(listOf(term), 1, and) shouldBe true
+    }
+
+    @Test
     fun adjacentTermsUseImplicitAnd() {
         val tokens = listOf(
             SearchToken(SearchTokenKind.TERM, "final"),

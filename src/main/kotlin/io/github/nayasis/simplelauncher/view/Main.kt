@@ -484,6 +484,8 @@ class Main: SwingView("application.title".message()) {
     // while the saved window state is applied, toggles must not resize the already restored window
     private var restoringState = false
     private val searchSubmitTracker = SearchSubmitTracker()
+    /** while set, selecting a row leaves the editor as it is. */
+    private var keepingDetail = false
     private var searchJob: Job? = null
     private var shortcuts = ShortcutSettings.load(Context.config.shortcuts)
 
@@ -687,7 +689,17 @@ class Main: SwingView("application.title".message()) {
         })
 
         tableMain.selectionModel.addListSelectionListener { e ->
-            if(!e.valueIsAdjusting) selectedLink()?.let { drawDetail(it) }
+            if(e.valueIsAdjusting || keepingDetail) return@addListSelectionListener
+            val link = selectedLink() ?: return@addListSelectionListener
+            if(link === detail) return@addListSelectionListener
+            // leaving unsaved changes asks first; declining selects the edited link again
+            if(hasUnsavedChanges() && !Dialog.confirm("msg.confirm.discard.detail".message())) {
+                keepDetailOnSelection {
+                    detail?.takeIf { it.id > 0 }?.let { tableMain.selectBy(it) } ?: tableMain.clearSelection()
+                }
+                return@addListSelectionListener
+            }
+            drawDetail(link)
         }
 
         tableMain.onFileDrop { files, support ->
@@ -725,6 +737,10 @@ class Main: SwingView("application.title".message()) {
                 launchUi {
                     linkService.importData(file)
                     linkService.loadAll()
+                    // the links were read again: the editor must not keep editing the replaced object
+                    detail?.takeIf { it.id > 0 }?.let { stale ->
+                        linkService.links.items.firstOrNull { it.id == stale.id }?.let { drawDetail(it) } ?: clearDetail()
+                    }
                     printSearchResult()
                     Dialog.alert( "msg.success.import".message().format(file) )
                 }
@@ -785,8 +801,8 @@ class Main: SwingView("application.title".message()) {
         buttonDelete.addActionListener { detail?.let{ deleteLink(it) } }
         buttonCopy.addActionListener { copyDetail() }
         buttonNew.addActionListener { createDetail() }
-        buttonOpenFolder.addActionListener { selectedLink()?.let { linkService.openFolder(it) } }
-        buttonCopyFolder.addActionListener { selectedLink()?.let { linkService.copyFolder(it) } }
+        buttonOpenFolder.addActionListener { editedPathLink()?.let { linkService.openFolder(it) } }
+        buttonCopyFolder.addActionListener { editedPathLink()?.let { linkService.copyFolder(it) } }
 
         descIcon.addMouseListener(object: MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
@@ -800,16 +816,17 @@ class Main: SwingView("application.title".message()) {
         })
         descIcon.onFileDrop { files, _ -> changeIcon(files.first()) }
 
+        // the link takes the path on save, like a typed one
         descExecPath.onFileDrop { files, _ ->
+            if( detail == null ) return@onFileDrop
             val file = files.first()
-            detail?.setPath(file)
-            descExecPath.text = detail?.path
+            descExecPath.text = file.invariantSeparatorsPath
             changeIcon(file)
         }
 
         buttonAddFile.onFileDrop { files, _ ->
-            files.forEach { file -> drawDetailForAdd(Link(file)) }
             primaryFrame.toFront()
+            if(files.size == 1) drawDetailForAdd(Link(files.first())) else addLinks(files)
         }
         buttonAddFile.addMouseListener(object: MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
@@ -856,9 +873,6 @@ class Main: SwingView("application.title".message()) {
             tokens.onTokenChanged = markEdited
         }
 
-        descIcon.toolTipText = "btn.change.icon.tooltip".message()
-        buttonAddFile.toolTipText = "btn.addfile.tooltip".message()
-
     }
 
     /** on Escape, remember [target] for coming back with Tab, and move to the table. */
@@ -870,6 +884,22 @@ class Main: SwingView("application.title".message()) {
                 tableMain.requestFocusInWindow()
             }
         })
+    }
+
+    /** save a link for each of [files] at once, after asking: the editor holds only one. */
+    private fun addLinks(files: List<File>) {
+        if(!Dialog.confirm("msg.confirm.add.links".message().format(files.size))) return
+        launchUi {
+            val links = files.map { Link(it) }
+            links.forEach { linkService.save(it) }
+            setSearchFilter {
+                links.lastOrNull()?.let {
+                    tableMain.selectBy(it)
+                    tableMain.scrollBy(it, ScrollMode.OUTBOUND_TO_MIDDLE)
+                }
+                printStatus("msg.alert.save.link".message())
+            }
+        }
     }
 
     private fun addFileByPicker() {
@@ -915,10 +945,14 @@ class Main: SwingView("application.title".message()) {
             onFocusSearch = { inputKeyword.focusInput() },
             onDeleteSelectedLink = { selectedLink()?.let { performTableItemAction(ShortcutAction.DELETE_SELECTED_LINK, it) } },
             onMoveFocusToDetail = {
-                when(val target = lastFocused) {
-                    null, tableMain -> descGroupName.focusInput()
-                    is TokenInputPane -> target.focusInput()
-                    else -> target.requestFocusInWindow()
+                if(!isDescEditorShown) menuViewDesc.isSelected = true
+                // a just shown editor takes the focus once it is laid out
+                runLater {
+                    when(val target = lastFocused) {
+                        null, tableMain -> descGroupName.focusInput()
+                        is TokenInputPane -> target.focusInput()
+                        else -> target.requestFocusInWindow()
+                    }
                 }
             },
             onCopyFolderFromTable = { selectedLink()?.let { performTableItemAction(ShortcutAction.COPY_FOLDER_FROM_TABLE, it) } },
@@ -956,8 +990,13 @@ class Main: SwingView("application.title".message()) {
         buttonNew.toolTipText = shortcuts.displayText(ShortcutAction.CREATE_DETAIL)
         buttonOpenFolder.toolTipText = shortcuts.displayText(ShortcutAction.OPEN_FOLDER)
         buttonCopyFolder.toolTipText = shortcuts.displayText(ShortcutAction.COPY_FOLDER)
-        descIcon.toolTipText = "${"shortcut.action.changeIcon".message()} (${shortcuts.displayText(ShortcutAction.CHANGE_ICON)})"
-        buttonAddFile.toolTipText = "${"shortcut.action.addFile".message()} (${shortcuts.displayText(ShortcutAction.ADD_FILE)})"
+        descIcon.toolTipText = withShortcut("shortcut.action.changeIcon".message(), ShortcutAction.CHANGE_ICON)
+        buttonAddFile.toolTipText = withShortcut("shortcut.action.addFile".message(), ShortcutAction.ADD_FILE)
+    }
+
+    private fun withShortcut(label: String, action: ShortcutAction): String {
+        val shortcut = shortcuts.displayText(action)
+        return if(shortcut.isEmpty()) label else "$label ($shortcut)"
     }
 
     // ─── detail editor visibility ────────────────────────────────────────────
@@ -1027,38 +1066,41 @@ class Main: SwingView("application.title".message()) {
     private fun setSearchFilter(onApplied: (() -> Unit)? = null) {
         val keywordTokens = inputKeyword.searchTokens()
         val groupTokens   = inputGroup.searchTokens()
+        val inputs        = searchSubmitSnapshot()
 
         searchJob?.cancel()
 
         if(keywordTokens.isEmpty() && groupTokens.isEmpty()) {
             searchJob = null
             linkService.links.predicate = { true }
+            searchSubmitTracker.applied(inputs)
             printSearchResult()
             onApplied?.invoke()
             return
         }
 
-        val matches: (Link) -> Boolean = { link ->
-            val keywordHaystack = listOf(link.title) + link.hashtag
-            (keywordTokens.isEmpty() || matchesSearchTokens(keywordHaystack, keywordTokens)) &&
-                (groupTokens.isEmpty() || matchesSearchTokens(link.group, groupTokens))
+        val matches: (SearchTarget) -> Boolean = { target ->
+            (keywordTokens.isEmpty() || matchesSearchTokens(target.keywords, keywordTokens)) &&
+                (groupTokens.isEmpty() || matchesSearchTokens(target.groups, groupTokens))
         }
 
-        val snapshot = ArrayList(linkService.links.items)
+        // links are changed on the event dispatch thread, so their fields are copied here, not read in the background
+        val snapshot = linkService.links.items.map { SearchTarget(it) }
         searchJob = launchUi {
             val evaluated = HashSet<Long>(snapshot.size)
             val matched   = HashSet<Long>()
             withContext(Dispatchers.Default) {
-                for(link in snapshot) {
+                for(target in snapshot) {
                     ensureActive()
-                    evaluated.add(link.id)
-                    if(matches(link)) matched.add(link.id)
+                    evaluated.add(target.id)
+                    if(matches(target)) matched.add(target.id)
                 }
             }
             // links added after the snapshot are evaluated inline, so they are never hidden silently
             linkService.links.predicate = { link ->
-                if(link.id in evaluated) link.id in matched else matches(link)
+                if(link.id in evaluated) link.id in matched else matches(SearchTarget(link))
             }
+            searchSubmitTracker.applied(inputs)
             printSearchResult()
             onApplied?.invoke()
         }
@@ -1345,7 +1387,7 @@ class Main: SwingView("application.title".message()) {
     }
 
     fun drawDetail(link: Link?) {
-        if( link == null || detail === link || (link.id > 0 && detail?.id == link.id) ) return
+        if( link == null || detail === link ) return
         detail = link
         with(link) {
             descTitle.text               = title
@@ -1390,11 +1432,15 @@ class Main: SwingView("application.title".message()) {
         if( ! Dialog.confirm("msg.confirm.delete".message().format(summary)) ) return
 
         val prev = tableMain.selectedRow
+        val editing = detail === link
 
         launchUi {
-            linkService.delete(link)
-            clearDetail()
-            if(tableMain.rowCount > 0) tableMain.select(prev.coerceIn(0, tableMain.rowCount - 1))
+            if(editing) clearDetail()
+            // deleting another link leaves what the editor holds alone
+            keepDetailOnSelection(!editing) {
+                linkService.delete(link)
+                if(tableMain.rowCount > 0) tableMain.select(prev.coerceIn(0, tableMain.rowCount - 1))
+            }
             printSearchResult()
         }
 
@@ -1402,6 +1448,8 @@ class Main: SwingView("application.title".message()) {
 
     fun saveDetail() {
         val link = detail ?: return
+        val saved = link.clone()
+        val savedId = link.id
 
         link.title         = descTitle.text?.trim()
         link.hashtag       = descHashtag.getTokens()
@@ -1409,7 +1457,7 @@ class Main: SwingView("application.title".message()) {
         link.executeEach   = descSeqExecution.isSelected
         link.group         = descGroupName.getTokens()
         link.description   = descDescription.text?.trim()
-        link.path          = descExecPath.text?.trim()
+        if(normalizedTrimmed(descExecPath.text) != normalizedTrimmed(link.path)) link.changePath(descExecPath.text?.trim())
         link.argument      = descArg.text?.trim()
         link.commandPrefix = descCmdPrefix.text?.trim()
         link.commandPrev   = descCmdPrev.text
@@ -1421,12 +1469,41 @@ class Main: SwingView("application.title".message()) {
         buttonSave.isEnabled   = false
 
         launchUi {
-            linkService.save(link)
-            tableMain.selectBy(link)
-            tableMain.scrollBy(link, ScrollMode.OUTBOUND_TO_MIDDLE)
-            printSearchResult()
-            printStatus("msg.alert.save.link".message())
+            try {
+                linkService.save(link)
+            } catch (e: Exception) {
+                // the link goes back to what is stored, the editor keeps the edits to save again
+                logger.error(e)
+                link.restoreFrom(saved)
+                link.id = savedId
+                buttonSave.isEnabled = true
+                Dialog.error("msg.error.save.link".message(), e)
+                return@launchUi
+            }
+            // the search remembers which links matched: evaluate the changed one again
+            setSearchFilter {
+                tableMain.selectBy(link)
+                tableMain.scrollBy(link, ScrollMode.OUTBOUND_TO_MIDDLE)
+                printStatus("msg.alert.save.link".message())
+            }
         }
+    }
+
+    private inline fun keepDetailOnSelection(keep: Boolean = true, block: () -> Unit) {
+        if(!keep) return block()
+        keepingDetail = true
+        try {
+            block()
+        } finally {
+            keepingDetail = false
+        }
+    }
+
+    /** the link in the editor, or one with the path as typed when it was changed but not saved yet. */
+    private fun editedPathLink(): Link? {
+        val link = detail ?: return null
+        val path = normalizedTrimmed(descExecPath.text)
+        return if(path == normalizedTrimmed(link.path)) link else Link(path = path)
     }
 
     fun copyDetail() {
@@ -1490,6 +1567,13 @@ class Main: SwingView("application.title".message()) {
 
     }
 
+}
+
+/** what the search reads of a link. */
+private class SearchTarget(link: Link) {
+    val id: Long = link.id
+    val keywords: List<String?> = listOf(link.title) + link.hashtag
+    val groups: List<String> = link.group.toList()
 }
 
 private fun textArea() = JTextArea(3, 20).apply {

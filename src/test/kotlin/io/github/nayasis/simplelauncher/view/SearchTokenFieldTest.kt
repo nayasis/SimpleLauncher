@@ -23,15 +23,61 @@ internal class SearchTokenFieldTest {
         val andField = SearchTokenField()
         val orField = SearchTokenField()
 
+        andField.text = "a"
+        press(andField, KeyEvent.VK_ENTER, CTRL_DOWN_MASK)
         andField.text = "AND"
         press(andField, KeyEvent.VK_ENTER, SHIFT_DOWN_MASK)
 
-        andField.tokens() shouldBe listOf(SearchToken(SearchTokenKind.AND, "and"))
+        andField.tokens() shouldBe listOf(SearchToken(SearchTokenKind.TERM, "a"), SearchToken(SearchTokenKind.AND, "and"))
 
+        orField.text = "a"
+        press(orField, KeyEvent.VK_ENTER, CTRL_DOWN_MASK)
         orField.text = "OR"
         press(orField, KeyEvent.VK_ENTER, SHIFT_DOWN_MASK)
 
-        orField.tokens() shouldBe listOf(SearchToken(SearchTokenKind.OR, "or"))
+        orField.tokens() shouldBe listOf(SearchToken(SearchTokenKind.TERM, "a"), SearchToken(SearchTokenKind.OR, "or"))
+    }
+
+    @Test
+    fun andOrNeedAnOperandOnBothSides() = runUiAndWait<Unit> {
+        val field = SearchTokenField()
+
+        // nothing in front of it
+        field.text = "AND"
+        press(field, KeyEvent.VK_ENTER, SHIFT_DOWN_MASK)
+        field.tokens() shouldBe emptyList()
+
+        // right after "("
+        field.text = "("
+        press(field, KeyEvent.VK_ENTER, CTRL_DOWN_MASK or SHIFT_DOWN_MASK)
+        field.text = "OR"
+        press(field, KeyEvent.VK_ENTER, SHIFT_DOWN_MASK)
+        field.tokens() shouldBe listOf(SearchToken(SearchTokenKind.PAREN, "("))
+    }
+
+    @Test
+    fun backspaceRemovesTheSelectedChip() = runUiAndWait<Unit> {
+        val field = fieldWith("a", "b", "c")
+
+        click(field.chips()[1])
+        press(field, KeyEvent.VK_BACK_SPACE)
+
+        field.tokens() shouldBe listOf(SearchToken(SearchTokenKind.TERM, "a"), SearchToken(SearchTokenKind.TERM, "c"))
+    }
+
+    @Test
+    fun shiftLeftSelectsInsteadOfMovingBetweenChips() = runUiAndWait<Unit> {
+        val field = SearchTokenField()
+        field.text = "a"
+        press(field, KeyEvent.VK_ENTER, CTRL_DOWN_MASK)
+        field.text = "bc"
+        field.input.caretPosition = 0
+
+        press(field, KeyEvent.VK_LEFT, SHIFT_DOWN_MASK)
+
+        // the input still follows the chip
+        field.components.last() shouldBe field.input
+        field.searchState().cursorIndex shouldBe 1
     }
 
     @Test
@@ -266,10 +312,12 @@ internal class SearchTokenFieldTest {
     fun operatorAndOrTokenChipsUseCompactOperatorStyle() = runUiAndWait<Unit> {
         val field = SearchTokenField()
 
+        field.text = "a"
+        press(field, KeyEvent.VK_ENTER, CTRL_DOWN_MASK)
         field.text = "AND"
         press(field, KeyEvent.VK_ENTER, SHIFT_DOWN_MASK)
 
-        field.chips().first().style shouldBe chipStyleOf(SearchTokenKind.AND)
+        field.chips()[1].style shouldBe chipStyleOf(SearchTokenKind.AND)
     }
 
     @Test
@@ -307,6 +355,24 @@ internal class SearchTokenFieldTest {
 
         press(field, KeyEvent.VK_Z, CTRL_DOWN_MASK)
         field.tokens() shouldBe listOf(SearchToken(SearchTokenKind.TERM, "alpha"))
+    }
+
+    @Test
+    fun controlZUndoesTheLastChipChange() = runUiAndWait<Unit> {
+        val field = SearchTokenField()
+        listOf("a", "b").forEach {
+            field.text = it
+            press(field, KeyEvent.VK_ENTER, CTRL_DOWN_MASK)
+        }
+        press(field, KeyEvent.VK_BACK_SPACE)
+        field.text = "c"
+        press(field, KeyEvent.VK_ENTER, CTRL_DOWN_MASK)
+
+        // [a][c]: the first undo takes c out, the second brings b back
+        press(field, KeyEvent.VK_Z, CTRL_DOWN_MASK)
+        field.tokens() shouldBe listOf(SearchToken(SearchTokenKind.TERM, "a"))
+        press(field, KeyEvent.VK_Z, CTRL_DOWN_MASK)
+        field.tokens() shouldBe listOf(SearchToken(SearchTokenKind.TERM, "a"), SearchToken(SearchTokenKind.TERM, "b"))
     }
 
     @Test

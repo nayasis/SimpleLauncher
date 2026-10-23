@@ -64,21 +64,28 @@ class Terminal: JFrame() {
 
     /**
      * run [command] and suspend until it ends. the window stays open, titled as done.
+     *
+     * the widget is left alone when the command ends, so its output can still be scrolled and selected.
+     * if the run fails or is cancelled, the process is ended.
      */
     suspend fun run(command: Command) {
         title = "$command"
         val process = withBackground { toPtyProcess(command) }
-        val widget = JediTermWidget(80, 200, BlackTerminalTheme()).apply {
-            ttyConnector = PtyProcessTtyConnector(process, StandardCharsets.UTF_8, command.command)
-            addHyperlinkFilter(UrlHyperlinkFilter)
-            addListener { this.close() }
-            start()
+        try {
+            val widget = JediTermWidget(80, 200, BlackTerminalTheme()).apply {
+                ttyConnector = PtyProcessTtyConnector(process, StandardCharsets.UTF_8, command.command)
+                addHyperlinkFilter(UrlHyperlinkFilter)
+                start()
+            }
+            this.widget = widget
+            contentPane.add(widget, BorderLayout.CENTER)
+            contentPane.revalidate()
+            widget.requestFocusInWindow()
+            runInterruptible(Dispatchers.IO) { process.waitFor() }
+        } catch (e: Throwable) {
+            process.destroyForcibly()
+            throw e
         }
-        this.widget = widget
-        contentPane.add(widget, BorderLayout.CENTER)
-        contentPane.revalidate()
-        widget.requestFocusInWindow()
-        runInterruptible(Dispatchers.IO) { process.waitFor() }
         title = "Done - $title"
     }
 

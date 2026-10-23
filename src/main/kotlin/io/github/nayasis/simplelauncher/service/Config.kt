@@ -3,14 +3,22 @@ package io.github.nayasis.simplelauncher.service
 import io.github.nayasis.kotlin.basica.core.io.exists
 import io.github.nayasis.kotlin.basica.core.io.readText
 import io.github.nayasis.kotlin.basica.core.io.writeText
+import io.github.nayasis.kotlin.basica.etc.error
 import io.github.nayasis.kotlin.basica.reflection.Reflector
 import io.github.nayasis.kotlin.swing.collection.HistorySet
 import io.github.nayasis.kotlin.swing.property.WindowProperty
+import io.github.nayasis.simplelauncher.common.applicationRoot
 import io.github.nayasis.simplelauncher.view.SearchFieldState
-import java.nio.file.Paths
+import io.github.oshai.kotlinlogging.KotlinLogging
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import kotlin.reflect.jvm.jvmName
 
-private val configPath = Paths.get("conf").resolve("${Config::class.jvmName}.json")
+private val logger = KotlinLogging.logger {}
+
+private val configPath = applicationRoot.resolve("conf").resolve("${Config::class.jvmName}.json")
 
 /**
  * persisted application state.
@@ -39,16 +47,23 @@ class Config {
     fun save() = configPath.writeText(Reflector.toJson(this,true))
 
     companion object {
+        /**
+         * the saved state, or the defaults when there is none.
+         *
+         * a file that cannot be read is moved aside before the defaults are used, so the next save does not
+         * overwrite what may still be recovered from it.
+         */
         fun load(): Config {
-            if( configPath.exists() ) {
-                runCatching {
-                    configPath.readText().let {
-                        return Reflector.toObject(it)
-                    }
-                }
+            if( ! configPath.exists() ) return Config()
+            return runCatching { Reflector.toObject<Config>(configPath.readText()) }.getOrElse { e ->
+                val backup = configPath.resolveSibling("${configPath.fileName}.${LocalDateTime.now().format(BACKUP_SUFFIX)}.broken")
+                logger.error(e) { "cannot read $configPath, moved to $backup" }
+                runCatching { Files.move(configPath, backup, StandardCopyOption.REPLACE_EXISTING) }.onFailure { logger.error(it) }
+                Config()
             }
-            return Config()
         }
+
+        private val BACKUP_SUFFIX = DateTimeFormatter.ofPattern("yyyyMMddHHmmss")
     }
 
 }
