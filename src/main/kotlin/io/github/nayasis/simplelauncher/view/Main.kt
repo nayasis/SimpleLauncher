@@ -3,6 +3,7 @@
 package io.github.nayasis.simplelauncher.view
 
 import com.formdev.flatlaf.FlatClientProperties
+import com.formdev.flatlaf.FlatLaf
 import io.github.nayasis.kotlin.basica.core.localdate.toString
 import io.github.nayasis.kotlin.basica.core.string.message
 import io.github.nayasis.kotlin.basica.core.string.toPath
@@ -268,6 +269,7 @@ class Main: SwingView("application.title".message()) {
     val menuExportData       = JMenuItem().localize { text = "menu.file.export".message() }
     val menuDeleteAll        = JMenuItem().localize { text = "menu.file.clear".message() }
     val menuShortcutSettings = JMenuItem().localize { text = "menu.settings.shortcut".message() }
+    val menuFontSettings     = JMenuItem().localize { text = "menu.settings.font".message() }.apply { name = "menuFontSettings" }
     // named components are saved and restored with the window state
     val menuViewDesc         = JCheckBoxMenuItem("", true).localize { text = "menu.view.description".message() }.apply { name = "menuViewDesc" }
     val menuShowInputGroup   = JCheckBoxMenuItem("", true).localize { text = "menu.view.showInputGroup".message() }.apply { name = "menuShowInputGroup" }
@@ -305,6 +307,7 @@ class Main: SwingView("application.title".message()) {
         })
         add(JMenu().localize { text = "menu.settings".message() }.apply {
             add(menuShortcutSettings)
+            add(menuFontSettings)
             add(menuLanguage)
         })
         add(JMenu().localize { text = "menu.view".message() }.apply {
@@ -326,8 +329,8 @@ class Main: SwingView("application.title".message()) {
     }
 
     val inputGroup = SearchTokenField().apply {
-        preferredSize = Dimension(220, preferredSize.height)
-        minimumSize = Dimension(140, preferredSize.height)
+        preferredSize = Dimension(60, preferredSize.height)
+        minimumSize = Dimension(60, preferredSize.height)
     }
 
     private val groupFilter = JPanel(BorderLayout(5, 0)).apply {
@@ -343,12 +346,12 @@ class Main: SwingView("application.title".message()) {
     }
 
     private val searchBar = JPanel(GridBagLayout()).apply {
-        border = BorderFactory.createEmptyBorder(2, 0, 2, 0)
+        border = BorderFactory.createEmptyBorder(0, 0, 2, 0)
         val c = GridBagConstraints().apply { gridy = 0; anchor = GridBagConstraints.WEST }
         add(JLabel().localize { text = "search.keyword".message() }, c.apply { gridx = 0; insets = Insets(0, 2, 0, 0) })
-        add(inputKeyword, c.apply { gridx = 1; weightx = 1.0; fill = GridBagConstraints.HORIZONTAL; insets = Insets(0, 5, 0, 0) })
-        add(groupFilter, c.apply { gridx = 2; weightx = 0.0; fill = GridBagConstraints.NONE; insets = Insets(0, 0, 0, 0) })
-        add(buttonAddFile, c.apply { gridx = 3; insets = Insets(0, 15, 0, 10) })
+        add(inputKeyword, c.apply { gridx = 1; weightx = 2.0; anchor = GridBagConstraints.NORTHWEST; fill = GridBagConstraints.HORIZONTAL; insets = Insets(0, 5, 0, 0) })
+        add(groupFilter, c.apply { gridx = 2; weightx = 1.0; fill = GridBagConstraints.HORIZONTAL; insets = Insets(0, 0, 0, 0) })
+        add(buttonAddFile, c.apply { gridx = 3; weightx = 0.0; anchor = GridBagConstraints.WEST; fill = GridBagConstraints.NONE; insets = Insets(0, 15, 0, 10) })
     }
 
     // ─── table ───────────────────────────────────────────────────────────────
@@ -398,16 +401,17 @@ class Main: SwingView("application.title".message()) {
     val buttonOpenFolder = button("btn.open.folder")
     val buttonCopyFolder = button("btn.copy.folder")
 
-    val descPanel = JPanel(GridBagLayout()).apply {
+    val descPanel = JPanel(BorderLayout()).apply {
         minimumSize = Dimension(MIN_LINK_EDITOR_WIDTH, 0)
         border = BorderFactory.createEmptyBorder(0, 4, 0, 0)
+        val form = JPanel(GridBagLayout())
 
-        fun label(key: String, row: Int) = add(JLabel().localize { text = key.message() }, GridBagConstraints().apply {
+        fun label(key: String, row: Int) = form.add(JLabel().localize { text = key.message() }, GridBagConstraints().apply {
             gridx = 0; gridy = row
             anchor = GridBagConstraints.NORTHEAST
             insets = Insets(6, 0, 3, 5)
         })
-        fun field(component: Component, row: Int, weighty: Double = 0.0) = add(component, GridBagConstraints().apply {
+        fun field(component: Component, row: Int, weighty: Double = 0.0) = form.add(component, GridBagConstraints().apply {
             gridx = 1; gridy = row
             weightx = 1.0
             this.weighty = weighty
@@ -429,7 +433,7 @@ class Main: SwingView("application.title".message()) {
 
         fun spacer() = JPanel().apply { isOpaque = false }
 
-        spacer().let { field(row(it, buttonNew, buttonDelete, buttonCopy, buttonSave, stretch = it), 0) }
+        spacer().let { add(row(it, buttonNew, buttonDelete, buttonCopy, buttonSave, stretch = it), BorderLayout.NORTH) }
         label("desc.groupName", 1);   field(row(descGroupName, descShowConsole, descSeqExecution, stretch = descGroupName), 1)
         label("desc.title", 2);       field(descTitle, 2)
         label("desc.hashtag", 3);     field(descHashtag, 3)
@@ -440,6 +444,11 @@ class Main: SwingView("application.title".message()) {
         label("desc.execCmdPrefix", 8); field(descCmdPrefix, 8)
         label("desc.cmdPrev", 9);     field(scroll(descCmdPrev), 9, weighty = 1.0)
         label("desc.cmdNext", 10);    field(scroll(descCmdNext), 10, weighty = 1.0)
+        add(JScrollPane(form).apply {
+            border = BorderFactory.createEmptyBorder()
+            minimumSize = Dimension(0, 0)
+            verticalScrollBar.unitIncrement = 16
+        }, BorderLayout.CENTER)
     }
 
     private val splitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT).apply {
@@ -502,6 +511,7 @@ class Main: SwingView("application.title".message()) {
     init {
         initEvent()
         initTable()
+        refreshFontLayout()
         applyShortcutSettings()
         // texts that are not a single bound property: header titles (the model keeps the first ones),
         // tooltips with the shortcut in them, the status line
@@ -513,15 +523,29 @@ class Main: SwingView("application.title".message()) {
         }
         // the context menu and the half of the layout swapped out with the editor are outside the window
         onLookAndFeelChange {
-            listOf(tableMenu, splitPane, tableScroll, descPanel)
-                .filter { SwingUtilities.getWindowAncestor(it) == null }
-                .forEach(SwingUtilities::updateComponentTreeUI)
+            updateDetachedUI()
         }
+    }
+
+    private fun updateDetachedUI() {
+        listOf(tableMenu, splitPane, tableScroll, descPanel)
+            .filter { SwingUtilities.getWindowAncestor(it) == null }
+            .forEach(SwingUtilities::updateComponentTreeUI)
+    }
+
+    private fun refreshFontLayout() {
+        tableMain.rowHeight = maxOf(TABLE_ROW_HEIGHT, tableMain.getFontMetrics(tableMain.font).height + 6)
+        inputKeyword.minimumSize = Dimension(100, inputKeyword.preferredSize.height)
+        inputGroup.preferredSize = null
+        val height = inputGroup.preferredSize.height
+        inputGroup.preferredSize = Dimension(60, height)
+        inputGroup.minimumSize = Dimension(60, height)
     }
 
     private fun changeTheme(theme: AppTheme) {
         if (theme == AppTheme.of(Context.config.theme)) return
         theme.apply()
+        refreshFontLayout()
         Context.config.theme = theme.name
         Context.config.save()
     }
@@ -653,11 +677,17 @@ class Main: SwingView("application.title".message()) {
         tableMain.findColumnBy("colTitle").apply { preferredWidth = 253; minWidth = 80 }
         tableMain.findColumnBy("colLastUsedDt").apply {
             preferredWidth = 139
-            minWidth = 80
+            minWidth = 50
             cellRenderer = object: DefaultTableCellRenderer() {
                 init { horizontalAlignment = SwingConstants.CENTER }
-                override fun setValue(value: Any?) {
-                    text = (value as? LocalDateTime)?.toString("YYYY-MM-DD HH:MI:SS") ?: ""
+                override fun getTableCellRendererComponent(table: JTable, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int): Component {
+                    super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
+                    val date = value as? LocalDateTime
+                    val full = date?.toString("YYYY-MM-DD HH:MI:SS").orEmpty()
+                    val available = table.columnModel.getColumn(column).width - table.intercellSpacing.width - insets.left - insets.right
+                    text = if (getFontMetrics(font).stringWidth(full) > available) date?.toString("YYYY-MM-DD").orEmpty() else full
+                    toolTipText = full.ifEmpty { null }
+                    return this
                 }
             }
         }
@@ -767,6 +797,7 @@ class Main: SwingView("application.title".message()) {
         }
 
         menuShortcutSettings.addActionListener { openShortcutSettings() }
+        menuFontSettings.addActionListener { openFontSettings() }
 
         menuViewDesc.addItemListener { e ->
             if(e.stateChange == ItemEvent.SELECTED) showDescEditor() else hideDescEditor()
@@ -980,6 +1011,20 @@ class Main: SwingView("application.title".message()) {
             Context.config.shortcuts = shortcuts.toConfigMap()
             Context.config.save()
             applyShortcutSettings()
+        }
+    }
+
+    private fun openFontSettings() {
+        FontEditor().showDialog(primaryFrame)?.let { font ->
+            Context.config.fontFamily = font.family
+            Context.config.fontSize = font.size
+            Context.config.save()
+            AppFonts.install(font.family, font.size)
+            FlatLaf.updateUI()
+            updateDetachedUI()
+            refreshFontLayout()
+            root.revalidate()
+            root.repaint()
         }
     }
 

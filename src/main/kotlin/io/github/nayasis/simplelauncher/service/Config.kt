@@ -41,6 +41,9 @@ class Config {
     var progressDialogY: Double? = null
     var shortcuts = mutableMapOf<String, String>()
     var theme: String? = null
+    /** null keeps the look and feel's default font. */
+    var fontFamily: String? = null
+    var fontSize: Int? = null
     /** language tag of the chosen message bundle, like "en" or "zh-CN"; null follows the system. */
     var language: String? = null
 

@@ -13,6 +13,7 @@ import io.github.nayasis.simplelauncher.service.Languages
 import io.github.nayasis.simplelauncher.service.LinkExecutor
 import io.github.nayasis.simplelauncher.service.LinkService
 import io.github.nayasis.simplelauncher.view.AppTheme
+import io.github.nayasis.simplelauncher.view.AppFonts
 import io.github.nayasis.simplelauncher.view.Main
 import io.github.nayasis.simplelauncher.view.Splash
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -38,6 +39,7 @@ class Simplelauncher: SwingApp(Main::class) {
 
     override fun setupLookAndFeel() {
         AppTheme.of(Context.config.theme).install()
+        AppFonts.install(Context.config.fontFamily, Context.config.fontSize)
     }
 
     /**
