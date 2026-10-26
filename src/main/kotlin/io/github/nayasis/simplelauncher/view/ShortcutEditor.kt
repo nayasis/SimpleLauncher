@@ -95,11 +95,7 @@ class ShortcutEditor {
             defaultCloseOperation = JDialog.DISPOSE_ON_CLOSE
             contentPane = JPanel(BorderLayout()).apply {
                 border = BorderFactory.createEmptyBorder(4, 4, 8, 4)
-                add(JScrollPane(content).apply {
-                    border = BorderFactory.createEmptyBorder()
-                    verticalScrollBar.unitIncrement = 16
-                    preferredSize = Dimension(740, 540)
-                }, BorderLayout.CENTER)
+                add(content, BorderLayout.CENTER)
                 add(buildFooter(), BorderLayout.SOUTH)
             }
             minimumSize = Dimension(600, 400)
@@ -147,10 +143,9 @@ class ShortcutEditor {
     }
 
     internal fun buildContent(): JPanel {
-        return JPanel().apply {
+        val groups = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             border = BorderFactory.createEmptyBorder(2, 2, 6, 2)
-            add(buildHelpBox())
             ShortcutGroup.entries.forEach { group ->
                 add(Box.createVerticalStrut(6))
                 add(buildGroupTitle(group.messageKey.message()))
@@ -159,6 +154,14 @@ class ShortcutEditor {
             }
         }.also { panel ->
             panel.components.filterIsInstance<JComponent>().forEach { it.alignmentX = 0f }
+        }
+        return JPanel(BorderLayout(0, 6)).apply {
+            preferredSize = Dimension(740, 540)
+            add(buildHelpBox(), BorderLayout.NORTH)
+            add(JScrollPane(groups).apply {
+                border = BorderFactory.createEmptyBorder()
+                verticalScrollBar.unitIncrement = 16
+            }, BorderLayout.CENTER)
         }
     }
 
@@ -187,7 +190,6 @@ class ShortcutEditor {
                 isOpaque = false
                 font = UIManager.getFont("Label.font")
             }, BorderLayout.CENTER)
-            maximumSize = Dimension(Int.MAX_VALUE, preferredSize.height)
         }
     }
 
