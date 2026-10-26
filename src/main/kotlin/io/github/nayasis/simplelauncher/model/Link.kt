@@ -85,7 +85,7 @@ data class Link(
         get() {
             val bytes = icon ?: return null
             if( decodedFrom !== bytes ) {
-                decodedIcon = runCatching { bytes.toBufferedImage() }.getOrNull()
+                decodedIcon = runCatching { bytes.unwrapLegacyIcon().toBufferedImage() }.getOrNull()
                 decodedFrom = bytes
             }
             return decodedIcon

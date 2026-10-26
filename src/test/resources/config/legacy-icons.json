@@ -1,0 +1,22 @@
+[
+  {
+    "title": "Legacy executable",
+    "group": "utility tools",
+    "path": "missing/legacy.exe",
+    "option": "-legacy",
+    "executeEach": false,
+    "hashtag": "legacy icon",
+    "icon": "rO0ABXVyAAJbQqzzF/gGCFTgAgAAeHAAAACdiVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAZElEQVR4XmNgGHDQ2tnznxJMsgGHjhxDocEGPHv2jCyM1YBfv34RjXEawFB+HQWDxGbOnImCCRrAW3fzP1v1DbgB2DBeA8CaKyhwAUwz2S7AFwZkGYAN4zSAWAw3gBKMnjXoDwC1319gIrE5sAAAAABJRU5ErkJggg=="
+  },
+  {
+    "title": "Legacy application",
+    "group": "utility",
+    "path": "missing/application.exe",
+    "icon": "rO0ABXVyAAJbQqzzF/gGCFTgAgAAeHAAAAKjiVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAACaklEQVR4Xn2TbUhTYRTHlx9EkPoUylC0VbdWwQrWtxF+G0WD6MMKUodjEoktRGtiUIygERIEkrW1FwOnOMGNJhSBUCwYJUzDdLjZfIFwc+ZktubMvP+ec2GXsZF/7uV5Luec33Puc86RSP6vSrVa3WMymXxszxUb91O5SqW67Xa74zs7O+B3dxEIBLY1Go2Z2SqKnQtVplAodHa7fTG9vILVR08QPn0e0wcO4Uf3A+RyOdhstgWZTKYuDpRwHHe5r69vLrW2hrjlKVZa2/F76it+BT9jSnIQc9xZfJMex/dLVxGNRnmj0ehhYVIR4HA4wgCPTZ8fm2NvsLedw+rDx1i8pkP6/QT+xBOYOXwEy/o25sazh4fFYpkRAU6nMzwdCoEg9JJDjv0GrVsfPyF25TqSL+zg9/aQl8vlmhcB9HGqrg7dHR1IpTYECJ261GRA8rkVfzMZISjDVqfVCr/XWwqQ19bCYjajTa/Hh4kJMRsSZUJBN5ubMe7zYiudLgWcZIAR9yB2WdkI8m7cL6b7rLcX97u6BFBepYCaGgZwC8Ykq4ZSLsfP9XUsxWI4Vl0NrUaDdoMBOq0WX4LBUsCZ+nqMDA6KJ1xsaMCr/n6sJRJobWrErZYW9HR2CrC3fj/o4kUAlSQ6Py+k7h4YQHh2FudOcLhrNIpASt/DMrx3xyhUg0ovApik1ByRSIQf83hwQanE0aoqvHY4hODR4WEYGm9gdGiIVSkFajpqvkKAIGpTm+3lQjabFVLPX1pochKpjQ1Qm1O7M9ey4thCVdDg0ABRMA0UDRYNGLOVFzvvJ45GmUaa7SuLjXn9A9sU9fLhN09KAAAAAElFTkSuQmCC"
+  },
+  {
+    "title": "Without icon",
+    "group": "utility",
+    "icon": null
+  }
+]

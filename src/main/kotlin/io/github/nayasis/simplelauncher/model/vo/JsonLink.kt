@@ -6,12 +6,13 @@ import io.github.nayasis.simplelauncher.model.normalizeTokens
 import io.github.nayasis.simplelauncher.model.normalizeHashtags
 import io.github.nayasis.simplelauncher.model.parseImportedHashtags
 import io.github.nayasis.simplelauncher.model.parseImportedTokens
+import io.github.nayasis.simplelauncher.model.unwrapLegacyIcon
 import java.time.LocalDateTime
 import java.util.Base64
 
 /**
  * a link as it is exported and imported. the icon is the image file itself in plain Base64,
- * never a serialized Java object: an imported file is untrusted input.
+ * Legacy byte-array wrappers are stripped without deserializing Java objects.
  */
 @NoArg
 data class JsonLink(
@@ -68,7 +69,7 @@ data class JsonLink(
             commandNext   = it.commandNext,
             description   = it.description,
             hashtag       = parseImportedHashtags(it.hashtag),
-            icon          = runCatching { it.icon?.let { icon -> Base64.getDecoder().decode(icon) } }.getOrNull(),
+            icon          = runCatching { it.icon?.let { icon -> Base64.getDecoder().decode(icon).unwrapLegacyIcon() } }.getOrNull(),
             executeCount  = it.execCount,
             executedAt    = it.executedAt,
             createdAt     = it.createdAt ?: LocalDateTime.now(),

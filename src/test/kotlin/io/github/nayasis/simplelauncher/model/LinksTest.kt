@@ -8,6 +8,7 @@ import io.github.nayasis.simplelauncher.common.ICON_NEW
 import io.github.nayasis.simplelauncher.model.vo.JsonLink
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import mslinks.ShellLink
@@ -16,6 +17,9 @@ import org.junit.jupiter.api.condition.EnabledOnOs
 import org.junit.jupiter.api.condition.OS
 import org.junit.jupiter.api.io.TempDir
 import java.io.File
+import java.io.ByteArrayOutputStream
+import java.io.ObjectOutputStream
+import java.nio.ByteBuffer
 import java.util.Base64
 
 private val logger = KotlinLogging.logger {}
@@ -123,6 +127,33 @@ class LinksTest {
     @Test
     fun notBase64IconIsDropped() {
         JsonLink(title = "A", icon = "not base64 !").toLink().icon.shouldBeNull()
+    }
+
+    @Test
+    fun legacySerializedIconImportsAsImageBytes() {
+        val bytes = ByteArrayOutputStream().use { output ->
+            ObjectOutputStream(output).use { it.writeObject(ICON_NEW) }
+            output.toByteArray()
+        }
+
+        val link = JsonLink(icon = Base64.getEncoder().encodeToString(bytes)).toLink()
+
+        link.icon?.toList() shouldBe ICON_NEW.toList()
+        link.iconImage.shouldNotBeNull()
+        JsonLink(link).icon shouldStartWith "iVBORw0KGgo"
+    }
+
+    @Test
+    fun malformedLegacyIconIsDropped() {
+        val bytes = ByteArrayOutputStream().use { output ->
+            ObjectOutputStream(output).use { it.writeObject(ICON_NEW) }
+            output.toByteArray()
+        }
+        val wrongLength = bytes.clone().apply { ByteBuffer.wrap(this, 23, 4).putInt(Int.MAX_VALUE) }
+
+        listOf(bytes.copyOf(26), wrongLength, bytes + byteArrayOf(0)).forEach { malformed ->
+            JsonLink(icon = Base64.getEncoder().encodeToString(malformed)).toLink().icon.shouldBeNull()
+        }
     }
 
     @Test
