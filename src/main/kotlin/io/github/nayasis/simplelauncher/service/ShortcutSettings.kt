@@ -20,9 +20,10 @@ enum class ShortcutGroup(val messageKey: String) {
     TABLE("shortcut.group.table"),
 }
 
-enum class ShortcutPlatform {
-    WINDOWS_LINUX,
-    MAC,
+/** [commandMask]: the primary modifier of the platform, Ctrl or Command. */
+enum class ShortcutPlatform(val commandMask: Int) {
+    WINDOWS_LINUX(CTRL_DOWN_MASK),
+    MAC(META_DOWN_MASK),
     ;
 
     companion object {
@@ -131,11 +132,7 @@ private fun commandShortcut(
     platform: ShortcutPlatform,
     modifiers: Int = 0,
 ): KeyStroke {
-    val primary = when (platform) {
-        ShortcutPlatform.MAC -> META_DOWN_MASK
-        ShortcutPlatform.WINDOWS_LINUX -> CTRL_DOWN_MASK
-    }
-    return keyStroke(keyCode, primary or modifiers)
+    return keyStroke(keyCode, platform.commandMask or modifiers)
 }
 
 fun findDuplicateShortcuts(bindings: Map<ShortcutAction, KeyStroke?>): List<List<ShortcutAction>> {

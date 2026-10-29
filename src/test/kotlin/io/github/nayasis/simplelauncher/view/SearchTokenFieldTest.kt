@@ -6,17 +6,41 @@ import io.github.nayasis.kotlin.swing.misc.runUiAndWait
 import io.github.nayasis.kotlin.swing.misc.set
 import io.github.nayasis.simplelauncher.service.SearchToken
 import io.github.nayasis.simplelauncher.service.SearchTokenKind
+import io.github.nayasis.simplelauncher.service.ShortcutPlatform
 import io.github.nayasis.simplelauncher.service.matchesSearchTokens
 import io.github.nayasis.simplelauncher.service.searchTokenLabel
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import org.junit.jupiter.api.Test
 import java.awt.event.InputEvent.CTRL_DOWN_MASK
+import java.awt.event.InputEvent.META_DOWN_MASK
 import java.awt.event.InputEvent.SHIFT_DOWN_MASK
 import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
 
 internal class SearchTokenFieldTest {
+
+    private val command = ShortcutPlatform.current().commandMask
+
+    @Test
+    fun macUsesCommandInsteadOfControl() = runUiAndWait<Unit> {
+        val field = SearchTokenField(commandMask = META_DOWN_MASK)
+        field.text = "alpha"
+        press(field, KeyEvent.VK_ENTER, META_DOWN_MASK)
+        field.tokens() shouldBe listOf(SearchToken(SearchTokenKind.TERM, "alpha"))
+
+        field.text = "or"
+        press(field, KeyEvent.VK_ENTER, META_DOWN_MASK or SHIFT_DOWN_MASK)
+        field.tokens() shouldBe listOf(SearchToken(SearchTokenKind.TERM, "alpha"), SearchToken(SearchTokenKind.OR, "or"))
+
+        field.text = ""
+        press(field, KeyEvent.VK_Z, META_DOWN_MASK)
+        field.tokens() shouldBe listOf(SearchToken(SearchTokenKind.TERM, "alpha"))
+
+        // Ctrl is not the command key on macOS: Ctrl+Z does not undo
+        press(field, KeyEvent.VK_Z, CTRL_DOWN_MASK)
+        field.tokens() shouldBe listOf(SearchToken(SearchTokenKind.TERM, "alpha"))
+    }
 
     @Test
     fun shiftEnterTurnsAndOrTextIntoOperatorTokens() = runUiAndWait<Unit> {
@@ -24,14 +48,14 @@ internal class SearchTokenFieldTest {
         val orField = SearchTokenField()
 
         andField.text = "a"
-        press(andField, KeyEvent.VK_ENTER, CTRL_DOWN_MASK)
+        press(andField, KeyEvent.VK_ENTER, command)
         andField.text = "AND"
         press(andField, KeyEvent.VK_ENTER, SHIFT_DOWN_MASK)
 
         andField.tokens() shouldBe listOf(SearchToken(SearchTokenKind.TERM, "a"), SearchToken(SearchTokenKind.AND, "and"))
 
         orField.text = "a"
-        press(orField, KeyEvent.VK_ENTER, CTRL_DOWN_MASK)
+        press(orField, KeyEvent.VK_ENTER, command)
         orField.text = "OR"
         press(orField, KeyEvent.VK_ENTER, SHIFT_DOWN_MASK)
 
@@ -49,7 +73,7 @@ internal class SearchTokenFieldTest {
 
         // right after "("
         field.text = "("
-        press(field, KeyEvent.VK_ENTER, CTRL_DOWN_MASK or SHIFT_DOWN_MASK)
+        press(field, KeyEvent.VK_ENTER, command or SHIFT_DOWN_MASK)
         field.text = "OR"
         press(field, KeyEvent.VK_ENTER, SHIFT_DOWN_MASK)
         field.tokens() shouldBe listOf(SearchToken(SearchTokenKind.PAREN, "("))
@@ -69,7 +93,7 @@ internal class SearchTokenFieldTest {
     fun shiftLeftSelectsInsteadOfMovingBetweenChips() = runUiAndWait<Unit> {
         val field = SearchTokenField()
         field.text = "a"
-        press(field, KeyEvent.VK_ENTER, CTRL_DOWN_MASK)
+        press(field, KeyEvent.VK_ENTER, command)
         field.text = "bc"
         field.input.caretPosition = 0
 
@@ -146,7 +170,7 @@ internal class SearchTokenFieldTest {
     }
 
     private fun fieldWith(vararg terms: String) = SearchTokenField().apply {
-        terms.forEach { text = it; press(this, KeyEvent.VK_ENTER, CTRL_DOWN_MASK) }
+        terms.forEach { text = it; press(this, KeyEvent.VK_ENTER, command) }
     }
 
     /** run [block] with the clipboard, putting back what was there. */
@@ -233,7 +257,7 @@ internal class SearchTokenFieldTest {
 
         // Ctrl+Enter still adds a plain term
         field.text = "delta"
-        press(field, KeyEvent.VK_ENTER, CTRL_DOWN_MASK)
+        press(field, KeyEvent.VK_ENTER, command)
         field.tokens().map { searchTokenLabel(it) }.last() shouldBe "delta"
         field.tokens().size shouldBe 6
     }
@@ -298,12 +322,12 @@ internal class SearchTokenFieldTest {
         val orField = SearchTokenField()
 
         andField.text = "AND"
-        press(andField, KeyEvent.VK_ENTER, CTRL_DOWN_MASK)
+        press(andField, KeyEvent.VK_ENTER, command)
 
         andField.tokens() shouldBe listOf(SearchToken(SearchTokenKind.TERM, "AND"))
 
         orField.text = "OR"
-        press(orField, KeyEvent.VK_ENTER, CTRL_DOWN_MASK)
+        press(orField, KeyEvent.VK_ENTER, command)
 
         orField.tokens() shouldBe listOf(SearchToken(SearchTokenKind.TERM, "OR"))
     }
@@ -313,7 +337,7 @@ internal class SearchTokenFieldTest {
         val field = SearchTokenField()
 
         field.text = "a"
-        press(field, KeyEvent.VK_ENTER, CTRL_DOWN_MASK)
+        press(field, KeyEvent.VK_ENTER, command)
         field.text = "AND"
         press(field, KeyEvent.VK_ENTER, SHIFT_DOWN_MASK)
 
@@ -325,7 +349,7 @@ internal class SearchTokenFieldTest {
         val field = SearchTokenField()
 
         field.text = "AND"
-        press(field, KeyEvent.VK_ENTER, CTRL_DOWN_MASK)
+        press(field, KeyEvent.VK_ENTER, command)
 
         field.chips().first().style shouldBe chipStyleOf(SearchTokenKind.TERM)
         chipStyleOf(SearchTokenKind.TERM) shouldNotBe chipStyleOf(SearchTokenKind.AND)
@@ -348,12 +372,12 @@ internal class SearchTokenFieldTest {
     fun backspaceRemovesTokenAndControlZRestoresIt() = runUiAndWait<Unit> {
         val field = SearchTokenField()
         field.text = "alpha"
-        press(field, KeyEvent.VK_ENTER, CTRL_DOWN_MASK)
+        press(field, KeyEvent.VK_ENTER, command)
 
         press(field, KeyEvent.VK_BACK_SPACE)
         field.tokens() shouldBe emptyList()
 
-        press(field, KeyEvent.VK_Z, CTRL_DOWN_MASK)
+        press(field, KeyEvent.VK_Z, command)
         field.tokens() shouldBe listOf(SearchToken(SearchTokenKind.TERM, "alpha"))
     }
 
@@ -362,16 +386,16 @@ internal class SearchTokenFieldTest {
         val field = SearchTokenField()
         listOf("a", "b").forEach {
             field.text = it
-            press(field, KeyEvent.VK_ENTER, CTRL_DOWN_MASK)
+            press(field, KeyEvent.VK_ENTER, command)
         }
         press(field, KeyEvent.VK_BACK_SPACE)
         field.text = "c"
-        press(field, KeyEvent.VK_ENTER, CTRL_DOWN_MASK)
+        press(field, KeyEvent.VK_ENTER, command)
 
         // [a][c]: the first undo takes c out, the second brings b back
-        press(field, KeyEvent.VK_Z, CTRL_DOWN_MASK)
+        press(field, KeyEvent.VK_Z, command)
         field.tokens() shouldBe listOf(SearchToken(SearchTokenKind.TERM, "a"))
-        press(field, KeyEvent.VK_Z, CTRL_DOWN_MASK)
+        press(field, KeyEvent.VK_Z, command)
         field.tokens() shouldBe listOf(SearchToken(SearchTokenKind.TERM, "a"), SearchToken(SearchTokenKind.TERM, "b"))
     }
 
@@ -379,7 +403,7 @@ internal class SearchTokenFieldTest {
     fun tokensKeepTheInputAttached() = runUiAndWait<Unit> {
         val field = SearchTokenField()
         field.text = "alpha"
-        press(field, KeyEvent.VK_ENTER, CTRL_DOWN_MASK)
+        press(field, KeyEvent.VK_ENTER, command)
 
         field.input.parent shouldBe field
         field.components.last() shouldBe field.input

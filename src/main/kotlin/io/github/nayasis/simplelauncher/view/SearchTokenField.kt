@@ -7,6 +7,7 @@ import io.github.nayasis.kotlin.swing.misc.getText
 import io.github.nayasis.kotlin.swing.misc.set
 import io.github.nayasis.simplelauncher.service.SearchToken
 import io.github.nayasis.simplelauncher.service.SearchTokenKind
+import io.github.nayasis.simplelauncher.service.ShortcutPlatform
 import io.github.nayasis.simplelauncher.service.createCommandOrTermSearchToken
 import io.github.nayasis.simplelauncher.service.createLiteralTermSearchToken
 import io.github.nayasis.simplelauncher.service.createOperatorSearchToken
@@ -15,7 +16,6 @@ import io.github.nayasis.simplelauncher.service.insertTermWithOr
 import io.github.nayasis.simplelauncher.service.searchTokenLabel
 import java.awt.Color
 import java.awt.Dimension
-import java.awt.event.InputEvent.CTRL_DOWN_MASK
 import java.awt.event.InputEvent.SHIFT_DOWN_MASK
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
@@ -69,6 +69,7 @@ internal fun chipStyleOf(kind: SearchTokenKind): ChipStyle = when (kind) {
 
 /**
  * search input of terms and operators, shown as chips around a text cursor.
+ * Ctrl below is [commandMask]: Command on macOS.
  *
  * - Enter submits ([onPlainEnter]); Escape calls [onEscape]
  * - Ctrl+Enter adds the text as a term, Shift+Enter as an operator when it is AND / OR / NOT, Ctrl+Shift+Enter as an operator
@@ -78,7 +79,9 @@ internal fun chipStyleOf(kind: SearchTokenKind): ChipStyle = when (kind) {
  * - click on a chip selects it and puts the cursor in front of it; double click copies it; right click removes it
  * - right click elsewhere pastes the clipboard: as text when no chip follows the cursor, as a new chip otherwise
  */
-class SearchTokenField: TokenInputPane(SEARCH_INPUT_COLUMNS) {
+class SearchTokenField(
+    private val commandMask: Int = ShortcutPlatform.current().commandMask,
+): TokenInputPane(SEARCH_INPUT_COLUMNS) {
 
     private data class UndoSnapshot(
         val tokens: List<SearchToken>,
@@ -122,12 +125,12 @@ class SearchTokenField: TokenInputPane(SEARCH_INPUT_COLUMNS) {
     private fun handleKey(e: KeyEvent): Boolean {
         // Alt combinations belong to the search history
         if (e.isAltDown) return false
-        val modifiers = e.modifiersEx and (CTRL_DOWN_MASK or SHIFT_DOWN_MASK)
+        val modifiers = e.modifiersEx and (commandMask or SHIFT_DOWN_MASK)
         when {
-            e.keyCode == KeyEvent.VK_Z && modifiers == CTRL_DOWN_MASK && text.isEmpty() -> undoTokenChange()
+            e.keyCode == KeyEvent.VK_Z && modifiers == commandMask && text.isEmpty() -> undoTokenChange()
             e.keyCode == KeyEvent.VK_ESCAPE -> onEscape?.invoke()
-            e.keyCode == KeyEvent.VK_ENTER && modifiers == (CTRL_DOWN_MASK or SHIFT_DOWN_MASK) -> addOperatorTokenFromInput()
-            e.keyCode == KeyEvent.VK_ENTER && modifiers == CTRL_DOWN_MASK -> addTermTokenFromInput()
+            e.keyCode == KeyEvent.VK_ENTER && modifiers == (commandMask or SHIFT_DOWN_MASK) -> addOperatorTokenFromInput()
+            e.keyCode == KeyEvent.VK_ENTER && modifiers == commandMask -> addTermTokenFromInput()
             e.keyCode == KeyEvent.VK_ENTER && modifiers == SHIFT_DOWN_MASK -> addCommandOrTermTokenFromInput()
             e.keyCode == KeyEvent.VK_ENTER -> onPlainEnter?.invoke()
             // a selected chip is removed rather than the one next to the cursor
