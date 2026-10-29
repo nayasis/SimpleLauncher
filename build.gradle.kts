@@ -40,6 +40,7 @@ java {
 }
 
 repositories {
+	mavenLocal()
 	mavenCentral()
 	maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies") {
 		content { includeGroup("org.jetbrains.jediterm") }
@@ -53,7 +54,7 @@ configurations.all {
 dependencies {
 
 	implementation("io.github.nayasis:basica-kt:0.4.0")
-	implementation("io.github.nayasis:basica-swing:0.1.0")
+	implementation("io.github.nayasis:basica-swing:0.1.0-SNAPSHOT")
 	implementation("ch.qos.logback:logback-classic:1.6.3")
 
 	// UI

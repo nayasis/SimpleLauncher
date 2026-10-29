@@ -12,10 +12,12 @@ import io.github.nayasis.kotlin.swing.app.SwingView
 import io.github.nayasis.kotlin.swing.collection.HistorySet
 import io.github.nayasis.kotlin.swing.control.AutoCompletion
 import io.github.nayasis.kotlin.swing.control.addTextChanged
+import io.github.nayasis.kotlin.swing.control.table.DropHighlight
 import io.github.nayasis.kotlin.swing.control.table.ListTableModel
 import io.github.nayasis.kotlin.swing.control.table.ScrollMode
 import io.github.nayasis.kotlin.swing.control.table.bind
 import io.github.nayasis.kotlin.swing.control.table.clipTextInsteadOfEllipsis
+import io.github.nayasis.kotlin.swing.control.table.dropHighlight
 import io.github.nayasis.kotlin.swing.control.table.findColumnBy
 import io.github.nayasis.kotlin.swing.control.table.focusBy
 import io.github.nayasis.kotlin.swing.control.table.installColumnVisibilityMenu
@@ -694,6 +696,8 @@ class Main: SwingView("application.title".message()) {
         tableMain.findColumnBy("colExecCount").apply { preferredWidth = 50; minWidth = 50; maxWidth = 200 }
         tableMain.findColumnBy("colTitle").cellRenderer = TitleRenderer()
         tableMain.clipTextInsteadOfEllipsis()
+        // a dropped file goes to the link of the row, not to a cell
+        tableMain.dropHighlight = DropHighlight.ROW
 
         tableMain.addMouseListener(object: MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
